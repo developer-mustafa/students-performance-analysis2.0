@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="bn">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description"
+    content="শিক্ষার্থীদের পারফর্ম্যান্স বিশ্লেষণ ড্যাশবোর্ড - Students Performance Analysis Dashboard" />
+  <meta name="keywords"
+    content="student, performance, analysis, dashboard, education, bengali, শিক্ষার্থী, পারফর্ম্যান্স" />
+  <meta name="author" content="Students Performance Analysis" />
+
+  <title>শিক্ষার্থীদের পারফর্ম্যান্স ড্যাশবোর্ড</title>
+
+  <!-- Favicon -->
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
+
+  <!-- Main Entry Point -->
+  <script type="module" src="/src/app.js"></script>
+</head>
+
+<body>
+  <!-- Loading Overlay -->
+  <div class="loading-overlay" id="loadingOverlay">
+    <div class="loading-spinner">
+      <i class="fas fa-spinner fa-spin"></i>
+      <span>ডেটা লোড হচ্ছে...</span>
+    </div>
+  </div>
+
+  <div class="container-fluid px-4">
+    <!-- Header Controls -->
+    <div class="header-controls">
+      <!-- Sync Status Indicator -->
+
+      <button class="theme-toggle" id="themeToggle" aria-label="Toggle Theme">
+        <i class="fas fa-moon"></i>
+      </button>
+    </div>
+
+    <!-- Data Management Toolbar -->
+    <div class="card data-management-card">
+      <div class="dm-controls">
+
+        <!-- Upload Button -->
+        <div class="dm-upload-wrapper">
+          <input type="file" id="jsonFileInput" accept=".json,.xlsx,.xls" style="display: none;" />
+          <label for="jsonFileInput" class="dm-btn dm-upload">
+            <i class="fas fa-cloud-upload-alt"></i> <span class="dm-btn-text">আপলোড</span>
+          </label>
+        </div>
+
+        <!-- Download Template -->
+        <button id="downloadTemplateBtn" class="dm-btn dm-template">
+          <i class="fas fa-file-excel"></i> <span class="dm-btn-text">ডেমো এক্সেল ফাইল</span>
+        </button>
+
+        <!-- Report Download Dropdown -->
+        <div class="dropdown" style="position: relative;">
+          <button id="reportDropdownBtn" class="dm-btn dm-report">
+            <i class="fas fa-download"></i> <span class="dm-btn-text">রিপোর্ট</span> <i class="fas fa-chevron-down"
+              style="margin-left: 4px; font-size: 0.7em;"></i>
+          </button>
+          <div id="reportDropdownMenu" class="dropdown-menu">
+            <div class="dropdown-item" id="downloadChartBtn">
+              <i class="fas fa-file-image"></i> চার্ট (Image)
+            </div>
+            <div class="dropdown-item" id="downloadExcelBtn">
+              <i class="fas fa-file-excel"></i> ডেটা (Excel)
+            </div>
+          </div>
+        </div>
+
+        <!-- Save Analysis Button -->
+        <button id="saveAnalysisBtn" onclick="openSaveModal()" class="dm-btn dm-save">
+          <i class="fas fa-save"></i> <span class="dm-btn-text">সেভ</span>
+        </button>
+
+        <!-- Search Box -->
+        <div class="dm-search">
+          <i class="fas fa-search dm-search-icon"></i>
+          <input type="text" id="searchInput" placeholder="নাম বা রোল দিয়ে সার্চ..." />
+        </div>
+
+        <!-- Admin Login Button -->
+        <button class="dm-btn admin-toggle" id="adminToggle" title="অ্যাডমিন লগইন">
+          <i class="fab fa-google"></i> <span class="dm-btn-text">লগইন</span>
+        </button>
+
+      </div>
+
+      <!-- Inline Search Results Panel (hidden by default) -->
+      <div id="inlineSearchPanel" class="inline-search-panel" style="display: none;">
+        <!-- Candidate Cards (when multiple matches) -->
+        <div id="inlineSearchCandidates" class="inline-candidates-grid" style="display: none;"></div>
+
+        <!-- Student History Section (after selection) -->
+        <div id="inlineHistorySection" class="inline-history-section" style="display: none;">
+          <div id="inlineReportContent" class="inline-report-content">
+            <div id="inlineStudentDetails" class="student-details-container"></div>
+            <div class="inline-chart-controls">
+              <select id="inlineAnalysisType" class="form-select">
+                <option value="total">মোট নম্বর</option>
+                <option value="written">লিখিত</option>
+                <option value="mcq">এমসিকিউ</option>
+                <option value="practical">ব্যবহারিক</option>
+              </select>
+              <select id="inlineAnalysisMaxMarks" class="form-select">
+                <option value="100">মার্কস: ১০০</option>
+                <option value="75">মার্কস: ৭৫</option>
+                <option value="70">মার্কস: ৭০</option>
+                <option value="50">মার্কস: ৫০</option>
+                <option value="30">মার্কস: ৩০</option>
+                <option value="25">মার্কস: ২৫</option>
+              </select>
+              <button id="inlineDownloadBtn" class="dm-btn dm-report" style="padding: 6px 12px; font-size: 0.8rem;">
+                <i class="fas fa-file-image"></i> <span class="dm-btn-text">ডাউনলোড</span>
+              </button>
+            </div>
+            <div class="inline-chart-wrapper">
+              <canvas id="inlineHistoryChart"></canvas>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Saved Exams List -->
+      <div class="saved-exams-section"
+        style="margin-top: 12px; border-top: 1px solid var(--border-color); padding: 10px 12px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%); border-radius: 10px;">
+        <h3 style="color: var(--heading-color); margin-bottom: 8px; font-size: 0.9rem;"><i class="fas fa-history"></i>
+          সংরক্ষিত ফলাফল
+          (Saved Database)</h3>
+        <div id="savedExamsList" class="saved-exams-list" style="display: flex; flex-wrap: wrap; gap: 8px;">
+          <div style="text-align: center; color: var(--text-color); opacity: 0.6; padding: 10px; width: 100%;">লোডিং...
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Statistics Cards -->
+    <div class="stats" id="statsContainer">
+      <!-- Statistics will be rendered here -->
+    </div>
+
+    <!-- Filters and Controls -->
+    <div class="card">
+      <div class="controls">
+        <!-- Group Filter Buttons -->
+        <div class="group-filters">
+          <div class="group-btn active" data-group="all">
+            <i class="fas fa-users"></i>
+            সব গ্রুপ
+          </div>
+          <div class="group-btn" data-group="বিজ্ঞান গ্রুপ">
+            <i class="fas fa-flask"></i>
+            বিজ্ঞান
+          </div>
+          <div class="group-btn" data-group="ব্যবসায় গ্রুপ">
+            <i class="fas fa-book"></i>
+            ব্যবসায়
+          </div>
+          <div class="group-btn" data-group="মানবিক গ্রুপ">
+            <i class="fas fa-palette"></i>
+            মানবিক
+          </div>
+        </div>
+
+        <!-- Grade Filter Buttons -->
+        <div class="grade-filter">
+          <div class="grade-btn active" data-grade="all">সব গ্রেড</div>
+          <div class="grade-btn grade-A-plus" data-grade="A+">A+</div>
+          <div class="grade-btn grade-A" data-grade="A">A</div>
+          <div class="grade-btn grade-A-minus" data-grade="A-">A-</div>
+          <div class="grade-btn grade-B" data-grade="B">B</div>
+          <div class="grade-btn grade-C" data-grade="C">C</div>
+          <div class="grade-btn grade-D" data-grade="D">D</div>
+          <div class="grade-btn grade-F" data-grade="F">F</div>
+          <div class="grade-btn grade-absent" data-grade="absent">অনুপস্থিত</div>
+        </div>
+
+        <!-- Chart Type Selector -->
+        <select id="chartType">
+          <option value="total">মোট স্কোর অনুসারে</option>
+          <option value="written">লিখিত পরীক্ষার স্কোর</option>
+          <option value="mcq">এমসিকিউ স্কোর</option>
+          <option value="practical">প্র্যাকটিক্যাল স্কোর</option>
+        </select>
+
+        <!-- Sort Order Selector -->
+        <select id="sortOrder">
+          <option value="desc">সর্বোচ্চ থেকে সর্বনিম্ন</option>
+          <option value="asc">সর্বনিম্ন থেকে সর্বোচ্চ</option>
+        </select>
+      </div>
+    </div>
+
+    <!-- Main Chart Section -->
+    <div class="card">
+      <div class="card-header">
+        <h2 class="card-title" id="chartTitle">মোট স্কোর র‌্যাঙ্কিং</h2>
+        <div class="view-toggle">
+          <button class="view-btn" id="downloadBtn"
+            style="background: var(--success); color: white; border: none; margin-right: 10px;">
+            <i class="fas fa-download"></i> ডাউনলোড
+          </button>
+          <button class="view-btn" id="printBtn"
+            style="background: var(--info); color: white; border: none; margin-right: 10px;">
+            <i class="fas fa-print"></i> প্রিন্ট
+          </button>
+          <div class="view-btn active" data-view="chart">
+            <i class="fas fa-chart-bar"></i>
+            চার্ট
+          </div>
+          <div class="view-btn" data-view="table">
+            <i class="fas fa-table"></i>
+            টেবিল
+          </div>
+          <div class="view-btn" data-view="analysis">
+            <i class="fas fa-chart-line"></i>
+            এনালাইসিস
+          </div>
+        </div>
+      </div>
+      <div class="chart-container horizontal-chart" id="chartView">
+        <canvas id="performanceChart"></canvas>
+      </div>
+      <div class="table-container" id="tableView" style="display: none">
+        <table class="data-table" id="performanceTable">
+          <thead>
+            <tr>
+              <th>রোল</th>
+              <th>নাম</th>
+              <th>গ্রুপ</th>
+              <th>শ্রেণি</th>
+              <th>সেশন</th>
+              <th>লিখিত</th>
+              <th>এমসিকিউ</th>
+              <th>প্র্যাকটিক্যাল</th>
+              <th>মোট</th>
+              <th>গ্রেড</th>
+              <th>স্ট্যাটাস</th>
+            </tr>
+          </thead>
+          <tbody id="tableBody">
+            <!-- Table data will be rendered here -->
+          </tbody>
+        </table>
+      </div>
+
+
+      <!-- Student Analysis View -->
+      <div class="analysis-container" id="analysisView" style="display: none;">
+        <div class="analysis-controls">
+          <input type="text" id="analysisStudentId" placeholder="নাম বা রোল নম্বর দিয়ে খুঁজুন..." class="form-control">
+
+          <select id="analysisType" class="form-select" style="min-width: 150px;">
+            <option value="total">মোট নম্বর (Total)</option>
+            <option value="written">লিখিত (Written)</option>
+            <option value="mcq">এমসিকিউ (MCQ)</option>
+            <option value="practical">ব্যবহারিক (Practical)</option>
+          </select>
+
+          <select id="analysisMaxMarks" class="form-select" style="min-width: 130px;">
+            <option value="100">সেট মার্কস: ১০০</option>
+            <option value="75">সেট মার্কস: ৭৫</option>
+            <option value="70">সেট মার্কস: ৭০</option>
+            <option value="50">সেট মার্কস: ৫০</option>
+            <option value="30">সেট মার্কস: ৩০</option>
+            <option value="25">সেট মার্কস: ২৫</option>
+          </select>
+        </div>
+
+        <!-- Report Container (Target for Capture) - Now inside analysisView and hidden by default -->
+        <div id="analysisReportContent" class="analysis-report-wrapper" style="padding: 10px; display: none;">
+          <div id="studentDetails" class="student-details-container"></div>
+          <div class="analysis-chart-container analysis-card" style="margin-top: 20px;">
+            <canvas id="historyChart"></canvas>
+          </div>
+        </div>
+      </div>
+
+      <!-- Search Results (for multiple matches) -->
+      <div id="analysisSearchResults" class="search-results-grid" style="display: none;">
+        <!-- Candidates will be injected here -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Failed Students Section -->
+  <div class="card failed-students">
+    <div class="card-header">
+      <h2 class="card-title">ফেল করা শিক্ষার্থী (লিখিত &lt; ১৭)</h2>
+      <button class="view-btn" id="downloadFailedBtn"
+        style="background: var(--success); color: white; border: none; font-size: 0.8rem; padding: 4px 10px;">
+        <i class="fas fa-download"></i> ইমেজ ডাউনলোড
+      </button>
+    </div>
+    <div class="failed-list" id="failedStudentsContainer">
+      <!-- Failed students will be rendered here -->
+    </div>
+  </div>
+
+  <!-- Group Statistics Section -->
+  <div class="card">
+    <div class="card-header">
+      <h2 class="card-title">গ্রুপভিত্তিক পাস/ফেল পরিসংখ্যান</h2>
+      <button class="view-btn" id="downloadGroupStatsBtn"
+        style="background: var(--success); color: white; border: none; font-size: 0.8rem; padding: 4px 10px;">
+        <i class="fas fa-download"></i> ইমেজ ডাউনলোড
+      </button>
+    </div>
+    <div class="group-stats-grid" id="groupStatsContainer">
+      <!-- Group statistics will be rendered here -->
+    </div>
+  </div>
+  </div>
+  <!-- Save Exam Modal -->
+  <div id="saveExamModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeModalBtn">&times;</span>
+      <h2>পরীক্ষার ফলাফল সংরক্ষণ করুন</h2>
+      <form id="saveExamForm">
+        <div class="form-group">
+          <label for="examName">পরীক্ষার নাম (Exam Name):</label>
+          <input type="text" id="examName" class="form-control" required
+            placeholder="উদাহরণ: প্রাক-নির্বাচনী পরীক্ষা ২০২৫">
+        </div>
+        <div class="form-group">
+          <label for="subjectName">বিষয় (Subject):</label>
+          <input type="text" id="subjectName" class="form-control" required placeholder="উদাহরণ: বাংলা">
+        </div>
+        <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">সংরক্ষণ করুন</button>
+      </form>
+    </div>
+  </div>
+
+
+
+  <!-- Edit Exam Modal -->
+  <div id="editExamModal" class="modal">
+    <div class="modal-content">
+      <span class="close" id="closeEditModal">&times;</span>
+      <h2><i class="fas fa-edit"></i> পরীক্ষার তথ্য সম্পাদনা</h2>
+      <form id="editExamForm">
+        <input type="hidden" id="editExamDocId">
+        <div class="form-group">
+          <label for="editExamName">পরীক্ষার নাম:</label>
+          <input type="text" id="editExamName" class="form-control" required>
+        </div>
+        <div class="form-group">
+          <label for="editSubjectName">বিষয়:</label>
+          <input type="text" id="editSubjectName" class="form-control" required>
+        </div>
+        <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">আপডেট করুন</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Confirm Modal (Delete Confirmation) -->
+  <div id="confirmModal" class="modal">
+    <div class="modal-content confirm-modal-content">
+      <div class="confirm-modal-icon">
+        <i class="fas fa-exclamation-triangle"></i>
+      </div>
+      <h2 id="confirmTitle">নিশ্চিত করুন</h2>
+      <p id="confirmMessage">আপনি কি নিশ্চিত যে আপনি এটি মুছে ফেলতে চান?</p>
+      <div class="confirm-modal-actions">
+        <button id="confirmCancelBtn" class="btn-secondary">না, থাক</button>
+        <button id="confirmDeleteBtn" class="btn-danger">হ্যাঁ, মুছে ফেলুন</button>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="/src/app.js"></script>
+</body>
+
+</html>

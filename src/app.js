@@ -1,0 +1,1776 @@
+/**
+ * Main Application Entry Point
+ * শিক্ষার্থীদের পারফর্ম্যান্স ড্যাশবোর্ড
+ * With Firebase Firestore Integration
+ */
+
+import './styles/main.css';
+import html2canvas from 'html2canvas';
+import {
+    loadDataFromStorage,
+    saveDataToStorage,
+    getDefaultData,
+    clearDataFromStorage,
+    handleFileUpload,
+
+    exportChartAsImage,
+    exportStudentDataAsExcel, // Imported
+    loadThemePreference,
+    saveThemePreference,
+    subscribeToDataUpdates,
+    isFirestoreOnline,
+    downloadDemoTemplate
+} from './js/dataService.js';
+import {
+    filterStudentData,
+    showNotification,
+    calculateStatistics,
+} from './js/utils.js';
+import {
+    createPerformanceChart,
+    getCurrentChart,
+    getChartTitle,
+    createHistoryChart,
+} from './js/chartModule.js';
+import {
+    renderStats,
+    renderGroupStats,
+    renderFailedStudents,
+    renderTable,
+    renderJSONPreview,
+    toggleTheme,
+    applyTheme,
+} from './js/uiComponents.js';
+import {
+    saveAnalytics,
+    saveExam,
+    getSavedExams,
+    deleteExam,
+    updateExam,
+    getStudentHistory,
+    searchAnalyticsCandidates,
+    bulkImportStudents,
+    loginWithGoogle,
+    logoutAdmin,
+    onAuthChange
+} from './js/firestoreService.js';
+
+// Application State
+const state = {
+    studentData: [],
+    currentGroupFilter: 'all',
+    currentGradeFilter: 'all',
+    currentSearchTerm: '',
+    currentView: 'chart',
+    currentChartType: 'total',
+    currentExamName: 'প্রি-টেস্ট পরীক্ষা-২০২৫', // Default exam name
+    currentSubject: localStorage.getItem('currentSubject') || null,
+    currentSortOrder: 'desc',
+    isLoading: true,
+    isInitialized: false, // Track if initial data is loaded
+    allowEmptyData: false, // Flag for when user clears data explicitly
+    unsubscribe: null, // For cleanup of Firestore listener
+    isAdmin: false, // Super admin login status
+
+    // Inline search state
+    inlineSearchStudent: null,
+    inlineSearchHistory: [],
+    inlineHistoryChartInstance: null,
+    inlineSearchDebounce: null,
+    analysisSearchDebounce: null,
+    currentAnalysisPrevStudent: null,
+    currentAnalysisNextStudent: null,
+};
+
+// DOM Elements
+const elements = {
+    chartTypeSelect: null,
+    sortOrderSelect: null,
+    // exportBtn: null, // Removed
+    reportDropdownBtn: null, // New
+    reportDropdownMenu: null, // New
+    downloadChartBtn: null, // New
+    downloadExcelBtn: null, // New
+    groupFilters: null,
+    gradeFilters: null,
+    searchInput: null,
+    statsContainer: null,
+    groupStatsContainer: null,
+    failedStudentsContainer: null,
+    chartCanvas: null,
+    themeToggle: null,
+    chartTitle: null,
+    jsonFileInput: null,
+    loadSampleDataBtn: null,
+    clearDataBtn: null,
+    jsonPreview: null,
+    chartView: null,
+    tableView: null,
+    tableBody: null,
+    viewButtons: null,
+    syncStatus: null,
+    loadingOverlay: null,
+    // Exam Management UI
+    saveAnalysisBtn: null,
+    savedExamsList: null,
+    saveExamModal: null,
+    closeModalBtn: null,
+    saveExamForm: null,
+    // Analysis UI
+    analysisView: null,
+    analysisStudentId: null,
+    analyzeBtn: null,
+    historyChart: null,
+    studentDetails: null,
+    analysisType: null,
+    analysisMaxMarks: null,
+    analysisSearchResults: null,
+
+    // Analysis State
+    currentAnalysisStudent: null,
+    currentHistory: [],
+};
+
+/**
+ * Initialize DOM element references
+ */
+function initElements() {
+    elements.chartTypeSelect = document.getElementById('chartType');
+    elements.sortOrderSelect = document.getElementById('sortOrder');
+    // elements.exportBtn = document.getElementById('exportBtn'); // Removed
+    elements.reportDropdownBtn = document.getElementById('reportDropdownBtn');
+    elements.reportDropdownMenu = document.getElementById('reportDropdownMenu');
+    elements.downloadChartBtn = document.getElementById('downloadChartBtn');
+    elements.downloadExcelBtn = document.getElementById('downloadExcelBtn');
+
+    elements.groupFilters = document.querySelectorAll('.group-btn');
+    elements.gradeFilters = document.querySelectorAll('.grade-btn');
+    elements.searchInput = document.getElementById('searchInput');
+    elements.statsContainer = document.getElementById('statsContainer');
+    elements.groupStatsContainer = document.getElementById('groupStatsContainer');
+    elements.failedStudentsContainer = document.getElementById('failedStudentsContainer');
+    elements.chartCanvas = document.getElementById('performanceChart');
+    elements.themeToggle = document.getElementById('themeToggle');
+    elements.chartTitle = document.getElementById('chartTitle');
+    elements.jsonFileInput = document.getElementById('jsonFileInput');
+    elements.downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
+    // elements.loadSampleDataBtn = document.getElementById('loadSampleData'); // Removed
+    // elements.clearDataBtn = document.getElementById('clearData'); // Removed
+
+    // Exam Management UI
+    elements.saveAnalysisBtn = document.getElementById('saveAnalysisBtn');
+    elements.savedExamsList = document.getElementById('savedExamsList');
+    elements.saveExamModal = document.getElementById('saveExamModal');
+    elements.closeModalBtn = document.getElementById('closeModalBtn');
+    elements.saveExamForm = document.getElementById('saveExamForm');
+    elements.jsonPreview = document.getElementById('jsonPreview');
+    elements.chartView = document.getElementById('chartView');
+    elements.tableView = document.getElementById('tableView');
+    elements.tableBody = document.getElementById('tableBody');
+    elements.viewButtons = document.querySelectorAll('.view-btn[data-view]'); // Fix: Only select actual view toggles
+    elements.syncStatus = document.getElementById('syncStatus');
+    elements.loadingOverlay = document.getElementById('loadingOverlay');
+
+    // Analysis UI
+    elements.analysisView = document.getElementById('analysisView');
+    elements.analysisStudentId = document.getElementById('analysisStudentId');
+    elements.analyzeBtn = document.getElementById('analyzeBtn');
+    elements.historyChart = document.getElementById('historyChart');
+    elements.studentDetails = document.getElementById('studentDetails');
+    elements.analysisType = document.getElementById('analysisType');
+    elements.analysisMaxMarks = document.getElementById('analysisMaxMarks');
+    elements.analysisMaxMarks = document.getElementById('analysisMaxMarks');
+    elements.analysisSearchResults = document.getElementById('analysisSearchResults');
+    elements.printBtn = document.getElementById('printBtn');
+
+    // Inline Search UI
+    elements.inlineSearchPanel = document.getElementById('inlineSearchPanel');
+    elements.inlineSearchCandidates = document.getElementById('inlineSearchCandidates');
+    elements.inlineHistorySection = document.getElementById('inlineHistorySection');
+    elements.inlineStudentDetails = document.getElementById('inlineStudentDetails');
+    elements.inlineHistoryChart = document.getElementById('inlineHistoryChart');
+    elements.inlineAnalysisType = document.getElementById('inlineAnalysisType');
+    elements.inlineAnalysisMaxMarks = document.getElementById('inlineAnalysisMaxMarks');
+    elements.inlineAnalysisMaxMarks = document.getElementById('inlineAnalysisMaxMarks');
+    elements.inlineDownloadBtn = document.getElementById('inlineDownloadBtn');
+
+    // Global Download Button
+    elements.downloadBtn = document.getElementById('downloadBtn');
+
+    // Section Export Buttons
+    elements.downloadFailedBtn = document.getElementById('downloadFailedBtn');
+    elements.downloadGroupStatsBtn = document.getElementById('downloadGroupStatsBtn');
+
+    // Admin UI
+    elements.adminToggle = document.getElementById('adminToggle');
+    elements.editExamModal = document.getElementById('editExamModal');
+    elements.closeEditModal = document.getElementById('closeEditModal');
+    elements.editExamForm = document.getElementById('editExamForm');
+    elements.editExamDocId = document.getElementById('editExamDocId');
+    elements.editSubjectName = document.getElementById('editSubjectName');
+    elements.closeEditModal = document.getElementById('closeEditModal');
+
+    // Confirm Modal
+    elements.confirmModal = document.getElementById('confirmModal');
+    elements.confirmCancelBtn = document.getElementById('confirmCancelBtn');
+    elements.confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
+    elements.confirmMessage = document.getElementById('confirmMessage');
+}
+
+/**
+ * Show/hide loading overlay
+ */
+function setLoading(isLoading) {
+    state.isLoading = isLoading;
+    if (elements.loadingOverlay) {
+        elements.loadingOverlay.style.display = isLoading ? 'flex' : 'none';
+    }
+}
+
+/**
+ * Update sync status indicator
+ */
+function updateSyncStatus(isOnline) {
+    if (elements.syncStatus) {
+        elements.syncStatus.innerHTML = isOnline
+            ? '<i class="fas fa-cloud"></i> সিঙ্ক'
+            : '<i class="fas fa-cloud-slash"></i> অফলাইন';
+        elements.syncStatus.className = `sync-status ${isOnline ? 'online' : 'offline'}`;
+    }
+}
+
+/**
+ * Get filtered data based on current filters
+ */
+function getFilteredData() {
+    return filterStudentData(state.studentData, {
+        group: state.currentGroupFilter,
+        searchTerm: state.currentSearchTerm,
+        grade: state.currentGradeFilter,
+    });
+}
+
+/**
+ * Update all views
+ */
+function updateViews() {
+    if (state.isLoading) return;
+
+    const filteredData = getFilteredData();
+
+    // Update stats
+    renderStats(elements.statsContainer, filteredData);
+
+    // Update group stats (always use full data)
+    renderGroupStats(elements.groupStatsContainer, state.studentData);
+
+    // Update failed students
+    renderFailedStudents(elements.failedStudentsContainer, filteredData);
+
+    // Update chart title (Dynamic)
+    elements.chartTitle.textContent = getChartTitle(state.currentChartType, state.currentExamName, state.currentSubject);
+
+    // Update chart or table based on current view
+    if (state.currentView === 'chart') {
+        createPerformanceChart(elements.chartCanvas, filteredData, {
+            chartType: state.currentChartType,
+            sortOrder: state.currentSortOrder,
+            subject: state.currentSubject,
+            group: state.currentGroupFilter !== 'all' ? state.currentGroupFilter : null,
+            grade: state.currentGradeFilter !== 'all' ? state.currentGradeFilter : null,
+            examName: state.currentExamName,
+            onBarClick: activateAnalysisView // Pass the callback
+        });
+    } else if (state.currentView === 'table') {
+        renderTable(elements.tableBody, filteredData, {
+            sortBy: state.currentChartType,
+            sortOrder: state.currentSortOrder,
+            onRowClick: activateAnalysisView // Pass the callback
+        });
+    }
+
+    // Update JSON preview - Removed as per user request
+    // renderJSONPreview(elements.jsonPreview, state.studentData);
+
+    // Update sync status
+    updateSyncStatus(isFirestoreOnline());
+
+    // Save analytics to Firestore (async, don't wait)
+    if (state.studentData.length > 0) {
+        const stats = calculateStatistics(state.studentData);
+        saveAnalytics(stats).catch(err => console.error('Analytics save error:', err));
+    }
+}
+
+/**
+ * Toggle between chart and table view
+ */
+function toggleView() {
+    // Hide all
+    elements.chartView.style.display = 'none';
+    elements.tableView.style.display = 'none';
+    if (elements.analysisView) elements.analysisView.style.display = 'none';
+
+    // Show active
+    if (state.currentView === 'chart') {
+        elements.chartView.style.display = 'block';
+    } else if (state.currentView === 'table') {
+        elements.tableView.style.display = 'block';
+    } else if (state.currentView === 'analysis') {
+        if (elements.analysisView) elements.analysisView.style.display = 'block';
+    }
+    updateViews();
+}
+
+/**
+ * Handle file upload
+ */
+async function onFileUpload(event) {
+    const file = event.target.files[0];
+    if (!file) return;
+
+    console.log('File selected:', file.name, file.type);
+    setLoading(true);
+    try {
+        console.log('Starting file upload processing...');
+        const uploadedData = await handleFileUpload(file);
+        console.log('Upload processed, students count:', uploadedData.length);
+
+        state.studentData = uploadedData;
+        state.allowEmptyData = false; // Reset the flag
+        console.log('State updated, saving to storage...');
+
+        await saveDataToStorage(state.studentData);
+        console.log('Saved to storage, updating views...');
+
+        updateViews();
+        console.log('Views updated');
+
+        const fileType = file.name.endsWith('.json') ? 'JSON' : 'Excel';
+        showNotification(`${fileType} ডেটা সফলভাবে আপলোড হয়েছে (${uploadedData.length} জন শিক্ষার্থী)`);
+    } catch (error) {
+        console.error('File upload error:', error);
+        alert(error.message);
+    } finally {
+        setLoading(false);
+    }
+
+    // Reset file input
+    event.target.value = '';
+}
+
+/**
+ * Load sample data
+ */
+async function loadSampleData() {
+    setLoading(true);
+    state.allowEmptyData = false; // Reset empty data flag when loading new data
+    try {
+        state.studentData = getDefaultData();
+        await saveDataToStorage(state.studentData);
+        updateViews();
+        showNotification('স্যাম্পল ডেটা লোড ও সিঙ্ক করা হয়েছে');
+    } catch (error) {
+        showNotification('ডেটা সেভ করতে সমস্যা হয়েছে');
+        console.error(error);
+    } finally {
+        setLoading(false);
+    }
+}
+
+/**
+ * Clear all data
+ */
+async function clearData() {
+    if (confirm('আপনি কি নিশ্চিত যে আপনি সমস্ত ডেটা মুছতে চান?')) {
+        setLoading(true);
+        state.allowEmptyData = true; // Allow empty data when user explicitly clears
+        try {
+            state.studentData = [];
+            await clearDataFromStorage();
+            updateViews();
+            showNotification('সমস্ত ডেটা মুছে ফেলা হয়েছে');
+        } catch (error) {
+            showNotification('ডেটা মুছতে সমস্যা হয়েছে');
+            console.error(error);
+        } finally {
+            setLoading(false);
+        }
+    }
+}
+
+/**
+ * Handle real-time data updates from Firestore
+ */
+function onDataUpdate(students) {
+    // If students array is empty and we haven't allowed empty data, skip update
+    // This prevents the empty listener from overwriting initial sample data load
+    if (students.length === 0 && !state.allowEmptyData && state.studentData.length > 0) {
+        console.log('Skipping empty data update to preserve existing data');
+        return;
+    }
+
+    // Only update if we have data, or if empty data is allowed (user cleared explicitly)
+    if (students.length > 0 || state.allowEmptyData) {
+        state.studentData = students;
+        updateViews();
+    }
+    updateSyncStatus(true);
+}
+
+/**
+ * Initialize event listeners
+ */
+function initEventListeners() {
+    console.log('Initializing event listeners...');
+
+    // Chart type and sort order
+    if (elements.chartTypeSelect) {
+        elements.chartTypeSelect.addEventListener('change', (e) => {
+            state.currentChartType = e.target.value;
+            updateViews();
+        });
+    }
+
+    // Update chart on option change
+    if (elements.analysisType) {
+        elements.analysisType.addEventListener('change', updateAnalysisChart);
+    }
+    if (elements.analysisMaxMarks) {
+        elements.analysisMaxMarks.addEventListener('change', updateAnalysisChart);
+    }
+
+    // Real-time Analysis Search
+    if (elements.analysisStudentId) {
+        elements.analysisStudentId.addEventListener('input', (e) => {
+            clearTimeout(state.analysisSearchDebounce);
+            const query = e.target.value.trim();
+
+            if (!query) {
+                // Clear view if search is empty
+                if (elements.analysisSearchResults) elements.analysisSearchResults.style.display = 'none';
+                if (elements.studentDetails) elements.studentDetails.innerHTML = '';
+                const reportContent = document.getElementById('analysisReportContent');
+                if (reportContent) reportContent.style.display = 'none';
+
+                if (state.historyChartInstance) {
+                    state.historyChartInstance.destroy();
+                    state.historyChartInstance = null;
+                }
+                return;
+            }
+
+            state.analysisSearchDebounce = setTimeout(() => {
+                handleAnalysisSearch();
+            }, 300);
+        });
+    }
+
+    if (elements.sortOrderSelect) {
+        elements.sortOrderSelect.addEventListener('change', (e) => {
+            state.currentSortOrder = e.target.value;
+            updateViews();
+        });
+    }
+
+    // Export button - REPLACED WITH DROPDOWN LOGIC
+    /*
+    if (elements.exportBtn) {
+        elements.exportBtn.addEventListener('click', () => {
+            const chart = getCurrentChart();
+            if (chart) {
+                exportChartAsImage(elements.chartCanvas);
+            }
+        });
+    }
+    */
+
+    // Report Dropdown Logic
+    if (elements.reportDropdownBtn && elements.reportDropdownMenu) {
+        // Toggle dropdown
+        elements.reportDropdownBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            elements.reportDropdownMenu.classList.toggle('show');
+        });
+
+        // Close dropdown when clicking outside
+        window.addEventListener('click', () => {
+            if (elements.reportDropdownMenu.classList.contains('show')) {
+                elements.reportDropdownMenu.classList.remove('show');
+            }
+        });
+    }
+
+    // Download Chart Action
+    if (elements.downloadChartBtn) {
+        elements.downloadChartBtn.addEventListener('click', () => {
+            const chart = getCurrentChart();
+            if (chart) {
+                exportChartAsImage(elements.chartCanvas);
+            } else {
+                showNotification('চার্ট লোড হয়নি', 'error');
+            }
+        });
+    }
+
+    // Download Excel Action
+    if (elements.downloadExcelBtn) {
+        elements.downloadExcelBtn.addEventListener('click', () => {
+            const filteredData = getFilteredData(); // Download filtered or All, let's use filtered for "Report" context or All? User usually expects what they see or all. Let's use filtered to be consistent with "Report".
+            // Actually, "Data Management" usually implies all data. But since it's "Report Download", filtered view might be useful.
+            // Let's stick to ALL data for "Data Management" section export to be safe/comprehensive, 
+            // OR use filtered if users want specific reports.
+            // The prompt "Report Download" suggests maybe the current report.
+            // However, the previous behavior was just chart image.
+
+            // Let's export ALL data for now as it makes more sense for "Data Management" tab.
+            // Or maybe better: use `getFilteredData()` if we want to support downloading specific group reports.
+            // Let's use `getFilteredData()` so it matches the visual report (Chart).
+
+            const dataToExport = getFilteredData();
+            if (dataToExport.length > 0) {
+                exportStudentDataAsExcel(dataToExport, `Student_Performance_Report_${new Date().toLocaleDateString('bn-BD')}.xlsx`);
+            } else {
+                showNotification('এক্সপোর্ট করার মতো ডেটা নেই', 'error');
+            }
+        });
+    }
+
+    // Download Analysis Image Logic
+    const downloadAnalysisBtn = document.getElementById('downloadAnalysisBtn');
+    if (downloadAnalysisBtn) {
+        downloadAnalysisBtn.addEventListener('click', downloadAnalysisReport);
+    }
+
+    // Theme toggle
+    if (elements.themeToggle) {
+        elements.themeToggle.addEventListener('click', async () => {
+            const isDark = toggleTheme(elements.themeToggle);
+            await saveThemePreference(isDark ? 'dark' : 'light');
+
+            // Force chart refresh by updating all views
+            // This will destroy and recreate charts with new theme colors
+            updateViews();
+
+            // Also update analysis chart if visible
+            if (state.currentView === 'analysis' && state.currentHistory && state.currentHistory.length > 0) {
+                updateAnalysisChart();
+            }
+        });
+    }
+
+    // Download Template
+    if (elements.downloadTemplateBtn) {
+        elements.downloadTemplateBtn.addEventListener('click', downloadDemoTemplate);
+    }
+
+    // File upload
+    if (elements.jsonFileInput) {
+        elements.jsonFileInput.addEventListener('change', onFileUpload);
+    }
+
+    // Load Sample Data & Clear Data buttons REMOVED from HTML
+    // Keeping logic here commented out or removed if needed later
+    /*
+    if (elements.loadSampleDataBtn) {
+        elements.loadSampleDataBtn.addEventListener('click', loadSampleData);
+    }
+    if (elements.clearDataBtn) {
+        elements.clearDataBtn.addEventListener('click', clearData);
+    }
+    */
+
+    // Search input — real-time filter + inline history search
+    if (elements.searchInput) {
+        elements.searchInput.addEventListener('input', (e) => {
+            const raw = e.target.value;
+            state.currentSearchTerm = raw.toLowerCase();
+            updateViews();
+
+            // Debounced inline search across saved exams
+            clearTimeout(state.inlineSearchDebounce);
+            const query = raw.trim();
+            if (!query) {
+                hideInlineSearch();
+                return;
+            }
+            state.inlineSearchDebounce = setTimeout(() => {
+                handleRealtimeSearch(query);
+            }, 300);
+        });
+    }
+
+    // Inline chart controls
+    if (elements.inlineAnalysisType) {
+        elements.inlineAnalysisType.addEventListener('change', updateInlineChart);
+    }
+    if (elements.inlineAnalysisMaxMarks) {
+        elements.inlineAnalysisMaxMarks.addEventListener('change', updateInlineChart);
+    }
+    if (elements.inlineDownloadBtn) {
+        elements.inlineDownloadBtn.addEventListener('click', downloadInlineReport);
+    }
+
+    // Group filters
+    if (elements.groupFilters) {
+        elements.groupFilters.forEach((btn) => {
+            btn.addEventListener('click', function () {
+                elements.groupFilters.forEach((b) => b.classList.remove('active'));
+                this.classList.add('active');
+                state.currentGroupFilter = this.getAttribute('data-group');
+                updateViews();
+            });
+        });
+    }
+
+    // Grade filters
+    if (elements.gradeFilters) {
+        elements.gradeFilters.forEach((btn) => {
+            btn.addEventListener('click', function () {
+                elements.gradeFilters.forEach((b) => b.classList.remove('active'));
+                this.classList.add('active');
+                state.currentGradeFilter = this.getAttribute('data-grade');
+                updateViews();
+            });
+        });
+    }
+
+    // Keyboard Navigation for Analysis View
+    document.addEventListener('keydown', (e) => {
+        if (state.currentView !== 'analysis') return;
+
+        // Don't trigger if user is typing in an input or select
+        if (['INPUT', 'SELECT', 'TEXTAREA'].includes(document.activeElement.tagName)) return;
+
+        if (e.key === 'ArrowLeft' && state.currentAnalysisPrevStudent) {
+            selectStudentForAnalysis(state.currentAnalysisPrevStudent);
+        } else if (e.key === 'ArrowRight' && state.currentAnalysisNextStudent) {
+            selectStudentForAnalysis(state.currentAnalysisNextStudent);
+        }
+    });
+
+    // View toggle
+    if (elements.viewButtons) {
+        elements.viewButtons.forEach((btn) => {
+            btn.addEventListener('click', function () {
+                elements.viewButtons.forEach((b) => b.classList.remove('active'));
+                this.classList.add('active');
+                state.currentView = this.getAttribute('data-view');
+                toggleView();
+                toggleView();
+            });
+        });
+    }
+
+    // Print Button
+    if (elements.printBtn) {
+        elements.printBtn.addEventListener('click', () => {
+            window.print(); // Trigger browser print dialog
+        });
+    }
+
+    // Download Button
+    if (elements.downloadBtn) {
+        elements.downloadBtn.addEventListener('click', async () => {
+            if (state.currentView === 'chart') {
+                if (elements.chartCanvas) {
+                    const filename = `${state.currentExamName}-${state.currentChartType}-Analysis.png`;
+                    exportChartAsImage(elements.chartCanvas, filename);
+                }
+            } else if (state.currentView === 'table') {
+                if (elements.tableView) {
+                    setLoading(true);
+                    try {
+                        const filename = `${state.currentExamName}-Table-Data.png`;
+                        // Use html2canvas to capture the table view
+                        const canvas = await html2canvas(elements.tableView, {
+                            scale: 3, // High DPI resolution
+                            backgroundColor: '#ffffff',
+                            useCORS: true,
+                            logging: false,
+                            onclone: (clonedDoc) => {
+                                const clonedTable = clonedDoc.getElementById('tableView');
+                                if (clonedTable) clonedTable.classList.add('capturing-mode');
+                            }
+                        });
+
+                        const link = document.createElement('a');
+                        link.download = filename;
+                        link.href = canvas.toDataURL('image/png');
+                        document.body.appendChild(link);
+                        link.click();
+                        document.body.removeChild(link);
+
+                        showNotification('টেবিল ডাউনলোড সম্পন্ন!');
+                    } catch (error) {
+                        console.error('Table download error:', error);
+                        showNotification('ডাউনলোড করতে সমস্যা হয়েছে', 'error');
+                    } finally {
+                        setLoading(false);
+                    }
+                }
+            }
+        });
+    }
+
+    // Failed Students Section Download
+    if (elements.downloadFailedBtn) {
+        elements.downloadFailedBtn.addEventListener('click', async () => {
+            const container = document.getElementById('failedStudentsContainer').parentElement;
+            if (!container) return;
+            setLoading(true);
+            try {
+                const canvas = await html2canvas(container, {
+                    scale: 3,
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    onclone: (clonedDoc) => {
+                        const cloned = clonedDoc.querySelector('.failed-students');
+                        if (cloned) cloned.classList.add('capturing-mode');
+                    }
+                });
+                const link = document.createElement('a');
+                link.download = `Failed_Students_${state.currentExamName || 'Report'}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showNotification('ফেল করা শিক্ষার্থীর তালিকা ডাউনলোড হয়েছে!');
+            } catch (err) {
+                console.error(err);
+                showNotification('ডাউনলোড করতে সমস্যা হয়েছে', 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
+    }
+
+    // Group Statistics Section Download
+    if (elements.downloadGroupStatsBtn) {
+        elements.downloadGroupStatsBtn.addEventListener('click', async () => {
+            const container = document.getElementById('groupStatsContainer').parentElement;
+            if (!container) return;
+            setLoading(true);
+            try {
+                const canvas = await html2canvas(container, {
+                    scale: 3,
+                    backgroundColor: '#ffffff',
+                    useCORS: true,
+                    onclone: (clonedDoc) => {
+                        const cards = clonedDoc.querySelectorAll('.card');
+                        const cloned = Array.from(cards).find(c => c.contains(clonedDoc.getElementById('groupStatsContainer')));
+                        if (cloned) cloned.classList.add('capturing-mode');
+                    }
+                });
+                const link = document.createElement('a');
+                link.download = `Group_Statistics_${state.currentExamName || 'Report'}.png`;
+                link.href = canvas.toDataURL('image/png');
+                link.click();
+                showNotification('গ্রুপ পরিসংখ্যান ডাউনলোড হয়েছে!');
+            } catch (err) {
+                console.error(err);
+                showNotification('ডাউনলোড করতে সমস্যা হয়েছে', 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
+    }
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+        if (state.currentView === 'chart') {
+            updateViews();
+        }
+    });
+
+    // Cleanup on page unload
+    window.addEventListener('beforeunload', () => {
+        if (state.unsubscribe) {
+            state.unsubscribe();
+        }
+    });
+
+    // Initialize Exam Management
+    try {
+        initExamManagement();
+        console.log('Exam management initialized');
+    } catch (e) {
+        console.error('Error in initExamManagement:', e);
+    }
+}
+
+/**
+ * Initialize application
+ */
+async function init() {
+    // Initialize DOM elements
+    initElements();
+
+    // Show loading state
+    setLoading(true);
+
+    try {
+        // Load theme preference (async now)
+        const theme = await loadThemePreference();
+        applyTheme(theme === 'dark', elements.themeToggle);
+
+        // Load data from Firestore/storage
+        const savedData = await loadDataFromStorage();
+        if (savedData && savedData.length > 0) {
+            state.studentData = savedData;
+            // showNotification('ডেটা Firebase থেকে লোড করা হয়েছে');
+        } else {
+            state.studentData = [];
+            // showNotification('কোনো ডেটা নেই');
+        }
+
+        // Subscribe to real-time updates
+        state.unsubscribe = subscribeToDataUpdates(onDataUpdate);
+
+        // Initialize event listeners
+        initEventListeners();
+
+        // Initial render
+        updateViews();
+
+    } catch (error) {
+        console.error('অ্যাপ্লিকেশন শুরু করতে সমস্যা:', error);
+        showNotification('অ্যাপ্লিকেশন শুরু করতে সমস্যা হয়েছে');
+
+        // Fallback: try to load from localStorage
+        const localData = localStorage.getItem('studentPerformanceData');
+        if (localData) {
+            state.studentData = JSON.parse(localData);
+        } else {
+            state.studentData = getDefaultData();
+        }
+
+        initEventListeners();
+        updateViews();
+    } finally {
+        setLoading(false);
+    }
+}
+
+// Start application when DOM is ready
+if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', init);
+} else {
+    init();
+}
+
+// ==========================================
+// EXAM MANAGEMENT LOGIC
+// ==========================================
+
+/**
+ * Open Save Exam Modal
+ */
+function openSaveModal() {
+    console.log('Opening Save Modal...');
+    const modal = document.getElementById('saveExamModal');
+    if (modal) {
+        modal.style.display = 'block';
+        // Pre-fill exam name
+        const date = new Date();
+        const dateStr = date.toLocaleDateString('bn-BD');
+        const nameInput = document.getElementById('examName');
+        if (nameInput) {
+            nameInput.value = `পরীক্ষা - ${dateStr}`;
+        }
+    } else {
+        console.error('Save Modal not found!');
+    }
+}
+
+// Expose to window for HTML onclick
+window.openSaveModal = openSaveModal;
+
+/**
+ * Initialize Exam Management Event Listeners
+ */
+function initExamManagement() {
+    // We utilize window.openSaveModal now via HTML onclick for reliability
+    // But keep listener as backup
+    if (elements.saveAnalysisBtn) {
+        elements.saveAnalysisBtn.addEventListener('click', openSaveModal);
+    }
+
+    if (elements.closeModalBtn) {
+        elements.closeModalBtn.addEventListener('click', () => {
+            elements.saveExamModal.style.display = 'none';
+        });
+    }
+
+    // Close modal when clicking outside
+    window.addEventListener('click', (e) => {
+        if (e.target === elements.saveExamModal) {
+            elements.saveExamModal.style.display = 'none';
+        }
+        if (e.target === elements.editExamModal) {
+            elements.editExamModal.style.display = 'none';
+        }
+        if (e.target === elements.confirmModal) {
+            elements.confirmModal.style.display = 'none';
+        }
+    });
+
+    if (elements.saveExamForm) {
+        elements.saveExamForm.addEventListener('submit', handleSaveExam);
+    }
+
+    // ===== ADMIN AUTH =====
+    // Listen for auth state changes
+    onAuthChange((user) => {
+        state.isAdmin = !!user;
+        const btn = elements.adminToggle;
+        if (btn) {
+            if (user) {
+                btn.classList.add('logged-in');
+                btn.innerHTML = `<i class="fas fa-lock-open"></i> <span class="dm-btn-text">${user.displayName || 'অ্যাডমিন'}</span>`;
+                btn.title = 'লগআউট করতে ক্লিক করুন';
+            } else {
+                btn.classList.remove('logged-in');
+                btn.innerHTML = '<i class="fab fa-google"></i> <span class="dm-btn-text">লগইন</span>';
+                btn.title = 'গুগল দিয়ে লগইন';
+            }
+        }
+        renderSavedExamsList();
+    });
+
+    // Admin toggle button — Google popup login / logout
+    if (elements.adminToggle) {
+        elements.adminToggle.addEventListener('click', async () => {
+            if (state.isAdmin) {
+                if (confirm('আপনি কি লগআউট করতে চান?')) {
+                    await logoutAdmin();
+                    showNotification('লগআউট সফল!');
+                }
+            } else {
+                const result = await loginWithGoogle();
+                if (result.success) {
+                    showNotification(`স্বাগতম, ${result.user.displayName || 'অ্যাডমিন'}! 🎉`);
+                } else if (result.error !== 'auth/popup-closed-by-user') {
+                    showNotification('লগইন ব্যর্থ! আবার চেষ্টা করুন।', 'error');
+                }
+            }
+        });
+    }
+
+    // Close edit modal
+    if (elements.closeEditModal) {
+        elements.closeEditModal.addEventListener('click', () => {
+            elements.editExamModal.style.display = 'none';
+        });
+    }
+
+    // Edit form submit
+    if (elements.editExamForm) {
+        elements.editExamForm.addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const docId = elements.editExamDocId.value;
+            const name = elements.editExamName.value.trim();
+            const subject = elements.editSubjectName.value.trim();
+
+            if (!docId || !name || !subject) return;
+
+            setLoading(true);
+            try {
+                const success = await updateExam(docId, { name, subject });
+                if (success) {
+                    showNotification('পরীক্ষার তথ্য আপডেট সফল!');
+                    elements.editExamModal.style.display = 'none';
+                    renderSavedExamsList();
+                } else {
+                    showNotification('আপডেট করতে সমস্যা হয়েছে', 'error');
+                }
+            } catch (error) {
+                console.error('Edit exam error:', error);
+                showNotification('ত্রুটি: ' + error.message, 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
+    }
+
+    // Initial load of saved exams
+    renderSavedExamsList();
+}
+
+/**
+ * Handle Save Exam Form Submission
+ */
+async function handleSaveExam(e) {
+    e.preventDefault();
+
+    if (state.studentData.length === 0) {
+        showNotification('সংরক্ষণ করার মতো কোনো ডেটা নেই!', 'error');
+        return;
+    }
+
+    const name = document.getElementById('examName').value;
+    const subject = document.getElementById('subjectName').value;
+
+    setLoading(true);
+    try {
+        const stats = calculateStatistics(state.studentData);
+        const examData = {
+            name,
+            subject,
+            studentCount: state.studentData.length,
+            studentData: state.studentData,
+            stats,
+        };
+
+        const success = await saveExam(examData);
+        if (success) {
+            showNotification('পরীক্ষার ফলাফল সফলভাবে সংরক্ষণ করা হয়েছে!');
+            elements.saveExamModal.style.display = 'none';
+            elements.saveExamForm.reset();
+            renderSavedExamsList(); // Refresh list
+        } else {
+            showNotification('সংরক্ষণ করতে সমস্যা হয়েছে', 'error');
+        }
+    } catch (error) {
+        console.error('Exam save error:', error);
+        showNotification('ত্রুটি: ' + error.message, 'error');
+    } finally {
+        setLoading(false);
+    }
+}
+
+/**
+ * Render Saved Exams List
+ */
+async function renderSavedExamsList() {
+    if (!elements.savedExamsList) return;
+
+    elements.savedExamsList.innerHTML = '<div style="text-align: center; color: #666;">লোডিং...</div>';
+
+    const exams = await getSavedExams();
+
+    if (exams.length === 0) {
+        elements.savedExamsList.innerHTML = '<div style="text-align: center; color: #999; padding: 10px;">কোনো সংরক্ষিত ফলাফল নেই</div>';
+        return;
+    }
+
+    elements.savedExamsList.innerHTML = '';
+
+    // Helper for subject styles
+    const getSubjectStyle = (subjectName) => {
+        const subject = subjectName ? subjectName.toLowerCase() : '';
+        let style = {
+            background: 'var(--card-bg)',
+            color: 'var(--text-color)',
+            border: '1px solid var(--border-color)',
+            iconColor: 'var(--primary)',
+            shadow: 'var(--card-shadow)'
+        };
+
+        if (subject.includes('bangla') || subject.includes('বাংলা')) {
+            style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5253 100%)';
+            style.color = '#fff';
+            style.border = 'none';
+            style.iconColor = '#fff';
+            style.shadow = '0 4px 15px rgba(238, 82, 83, 0.4)';
+        } else if (subject.includes('english') || subject.includes('ইংরেজি')) {
+            style.background = 'linear-gradient(135deg, #4834d4 0%, #686de0 100%)';
+            style.color = '#fff';
+            style.border = 'none';
+            style.iconColor = '#fff';
+            style.shadow = '0 4px 15px rgba(104, 109, 224, 0.4)';
+        } else if (subject.includes('ict') || subject.includes('তথ্য')) {
+            style.background = 'linear-gradient(135deg, #0984e3 0%, #74b9ff 100%)'; // Blue
+            style.color = '#fff';
+            style.border = 'none';
+            style.iconColor = '#fff';
+            style.shadow = '0 4px 15px rgba(9, 132, 227, 0.4)';
+        } else if (subject.includes('math') || subject.includes('গণিত')) {
+            style.background = 'linear-gradient(135deg, #00b894 0%, #55efc4 100%)'; // Teal
+            style.color = '#fff';
+            style.border = 'none';
+            style.iconColor = '#fff';
+            style.shadow = '0 4px 15px rgba(0, 184, 148, 0.4)';
+        } else if (subject.includes('physics') || subject.includes('পদার্থ')) {
+            style.background = 'linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)'; // Purple
+            style.color = '#fff';
+            style.border = 'none';
+            style.iconColor = '#fff';
+            style.shadow = '0 4px 15px rgba(108, 92, 231, 0.4)';
+        } else if (subject.includes('chemistry') || subject.includes('রসায়ন')) {
+            style.background = 'linear-gradient(135deg, #e17055 0%, #fab1a0 100%)'; // Orange
+            style.color = '#fff';
+            style.border = 'none';
+            style.iconColor = '#fff';
+            style.shadow = '0 4px 15px rgba(225, 112, 85, 0.4)';
+        } else if (subject.includes('biology') || subject.includes('জীব')) {
+            style.background = 'linear-gradient(135deg, #27ae60 0%, #2ecc71 100%)'; // Green
+            style.color = '#fff';
+            style.border = 'none';
+            style.iconColor = '#fff';
+            style.shadow = '0 4px 15px rgba(39, 174, 96, 0.4)';
+        }
+
+        return style;
+    };
+
+    exams.forEach(exam => {
+        const date = exam.createdAt?.toDate ? exam.createdAt.toDate().toLocaleDateString('bn-BD') : '';
+        const theme = getSubjectStyle(exam.subject);
+
+        const card = document.createElement('div');
+        card.className = 'exam-card';
+        card.style.cssText = `
+            border: ${theme.border};
+            border-radius: 8px;
+            padding: 10px 12px;
+            background: ${theme.background};
+            box-shadow: ${theme.shadow};
+            color: ${theme.color};
+            transition: transform 0.15s, box-shadow 0.15s;
+            position: relative;
+            overflow: hidden;
+            flex: 0 0 auto;
+            min-width: 180px;
+            max-width: 260px;
+        `;
+
+        const isGradient = theme.background.includes('gradient');
+
+        card.innerHTML = `
+            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; position: relative; z-index: 1;">
+                <div style="font-weight: 700; font-size: 0.95em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">${exam.name}</div>
+                <span style="background: #ffffff; color: #2d3436; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75em; box-shadow: 0 1px 3px rgba(0,0,0,0.15); white-space: nowrap; flex-shrink: 0;">${exam.subject}</span>
+            </div>
+            <div style="font-size: 0.78em; opacity: 0.8; margin-bottom: 6px; position: relative; z-index: 1;">
+                <i class="far fa-calendar-alt"></i> ${date} &nbsp;|&nbsp; 
+                <i class="fas fa-user-graduate"></i> ${exam.studentCount} জন
+            </div>
+            <div style="display: flex; gap: 6px; position: relative; z-index: 1;">
+                <button class="load-exam-btn" style="flex: 1; background: rgba(255,255,255,0.25); color: inherit; border: 1px solid rgba(255,255,255,0.4); padding: 5px 8px; border-radius: 5px; cursor: pointer; backdrop-filter: blur(2px); font-weight: 500; font-size: 0.8em;">
+                    <i class="fas fa-upload"></i> লোড
+                </button>
+                ${state.isAdmin ? `
+                <button class="edit-exam-btn" style="background: rgba(255,165,0,0.25); color: inherit; border: 1px solid rgba(255,165,0,0.4); padding: 5px 8px; border-radius: 5px; cursor: pointer; backdrop-filter: blur(2px); font-size: 0.8em;" title="সম্পাদনা">
+                    <i class="fas fa-edit"></i>
+                </button>
+                <button class="delete-exam-btn" style="background: rgba(255,0,0,0.2); color: inherit; border: 1px solid rgba(255,0,0,0.3); padding: 5px 8px; border-radius: 5px; cursor: pointer; backdrop-filter: blur(2px); font-size: 0.8em;" title="মুছুন">
+                    <i class="fas fa-trash"></i>
+                </button>
+                ` : ''}
+            </div>
+        `;
+
+        // Hover effect helper
+        card.onmouseenter = () => {
+            card.style.transform = 'translateY(-2px)';
+            if (!isGradient) card.style.boxShadow = 'var(--shadow)';
+        };
+        card.onmouseleave = () => {
+            card.style.transform = 'translateY(0)';
+            if (!isGradient) card.style.boxShadow = theme.shadow;
+        };
+
+        // Load Event
+        card.querySelector('.load-exam-btn').addEventListener('click', () => handleLoadExam(exam));
+
+        // Edit & Delete events (admin only)
+        if (state.isAdmin) {
+            const editBtn = card.querySelector('.edit-exam-btn');
+            if (editBtn) {
+                editBtn.addEventListener('click', () => handleEditExam(exam));
+            }
+
+            const deleteBtn = card.querySelector('.delete-exam-btn');
+            if (deleteBtn) {
+                deleteBtn.addEventListener('click', async () => {
+                    const confirmed = await showConfirm(`আপনি কি নিশ্চিত যে "${exam.name}" মুছে ফেলতে চান?`);
+                    if (confirmed) {
+                        await deleteExam(exam.docId);
+                        renderSavedExamsList();
+                    }
+                });
+            }
+        }
+
+        elements.savedExamsList.appendChild(card);
+    });
+}
+
+/**
+ * Handle Load Exam
+ */
+async function handleLoadExam(exam) {
+    const confirmed = await showConfirm(`সতর্কতা: বর্তমান ডেটা "${exam.name}" এর ডেটা দ্বারা প্রতিস্থাপিত হবে। আপনি কি নিশ্চিত?`);
+    if (!confirmed) {
+        return;
+    }
+
+    setLoading(true);
+    try {
+        const success = await bulkImportStudents(exam.studentData);
+        if (success) {
+            state.studentData = exam.studentData;
+            state.currentExamName = exam.name;
+            state.currentSubject = exam.subject;
+            localStorage.setItem('currentSubject', exam.subject); // Persist
+            updateViews();
+            showNotification(`"${exam.name}" ডেটা সফলভাবে লোড হয়েছে!`);
+
+            // Scroll to top
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        } else {
+            showNotification('ডেটা লোড করতে সমস্যা হয়েছে', 'error');
+        }
+    } catch (error) {
+        console.error('Load exam error:', error);
+        showNotification('ত্রুটি: ' + error.message, 'error');
+    } finally {
+        setLoading(false);
+    }
+}
+
+/**
+ * Open Edit Exam Modal with pre-filled data
+ */
+function handleEditExam(exam) {
+    if (elements.editExamDocId) elements.editExamDocId.value = exam.docId;
+    if (elements.editExamName) elements.editExamName.value = exam.name || '';
+    if (elements.editSubjectName) elements.editSubjectName.value = exam.subject || '';
+    if (elements.editExamModal) elements.editExamModal.style.display = 'block';
+}
+
+/**
+ * Custom Beautiful Confirm Dialog
+ * @param {string} message - The message to show
+ * @returns {Promise<boolean>} - Resolves to true if confirmed, false otherwise
+ */
+function showConfirm(message) {
+    return new Promise((resolve) => {
+        if (!elements.confirmModal) return resolve(false);
+
+        if (elements.confirmMessage) {
+            elements.confirmMessage.innerText = message;
+        }
+
+        elements.confirmModal.style.display = 'block';
+
+        const handleConfirm = () => {
+            elements.confirmModal.style.display = 'none';
+            cleanup();
+            resolve(true);
+        };
+
+        const handleCancel = () => {
+            elements.confirmModal.style.display = 'none';
+            cleanup();
+            resolve(false);
+        };
+
+        const cleanup = () => {
+            elements.confirmDeleteBtn.removeEventListener('click', handleConfirm);
+            elements.confirmCancelBtn.removeEventListener('click', handleCancel);
+        };
+
+        elements.confirmDeleteBtn.addEventListener('click', handleConfirm);
+        elements.confirmCancelBtn.addEventListener('click', handleCancel);
+    });
+}
+
+
+// ==========================================
+// STUDENT ANALYSIS LOGIC
+// ==========================================
+
+/**
+ * Handle Analysis Search
+ */
+async function handleAnalysisSearch() {
+    const query = elements.analysisStudentId.value.trim();
+    if (!query) {
+        return;
+    }
+
+    setLoading(true);
+    // Hide previous results/charts
+    if (elements.analysisSearchResults) elements.analysisSearchResults.style.display = 'none';
+    const reportContent = document.getElementById('analysisReportContent');
+    if (reportContent) reportContent.style.display = 'none';
+
+    if (elements.studentDetails) elements.studentDetails.innerHTML = '';
+    // Clear chart
+    if (state.historyChartInstance) {
+        state.historyChartInstance.destroy();
+        state.historyChartInstance = null;
+    }
+
+    try {
+        const candidates = await searchAnalyticsCandidates(query);
+
+        if (candidates.length === 0) {
+            showNotification('কোনো শিক্ষার্থী পাওয়া যায়নি', 'warning');
+        } else if (candidates.length === 1) {
+            selectStudentForAnalysis(candidates[0]);
+        } else {
+            // Multiple candidates
+            renderAnalysisCandidates(candidates);
+        }
+    } catch (error) {
+        console.error('Search error:', error);
+        showNotification('খুঁজতে সমস্যা হয়েছে', 'error');
+    } finally {
+        setLoading(false);
+    }
+}
+
+/**
+ * Render Search Candidates
+ */
+function renderAnalysisCandidates(candidates) {
+    const container = elements.analysisSearchResults;
+    if (!container) return;
+
+    container.innerHTML = '';
+    container.style.display = 'grid'; // Grid layout (handled by class, but display toggled here)
+    // Actually, I should toggle the container visibility elsewhere, but setting display grid here overrides 'none'
+    // Better to just set it to grid.
+
+    candidates.forEach(student => {
+        const div = document.createElement('div');
+        div.className = 'candidate-card';
+        // Removed inline styles to rely on CSS
+
+        div.innerHTML = `
+            <div style="font-weight: bold; color: var(--heading-color);">${student.name}</div>
+            <div style="color: var(--text-color); opacity: 0.8; font-size: 0.9em;">
+                রোল: ${student.id} | গ্রুপ: ${student.group}
+            </div>
+            <div style="font-size: 0.8em; color: var(--text-color); opacity: 0.6;">শ্রেণি: ${student.class}</div>
+        `;
+
+        // Hover handled by CSS
+        div.addEventListener('click', () => {
+            container.style.display = 'none'; // Hide results after selection
+            selectStudentForAnalysis(student);
+        });
+
+        container.appendChild(div);
+    });
+
+    showNotification(`${candidates.length} জন শিক্ষার্থী পাওয়া গেছে, একজনকে সিলেক্ট করুন`);
+}
+
+/**
+ * Select Student and Load History
+ */
+async function selectStudentForAnalysis(student) {
+    state.currentAnalysisStudent = student;
+    setLoading(true);
+
+    try {
+        const history = await getStudentHistory(student.id, student.group);
+        state.currentHistory = history;
+
+        if (history.length === 0) {
+            showNotification('এই শিক্ষার্থীর পরীক্ষার ইতিহাস পাওয়া যায়নি', 'warning');
+        } else {
+            updateAnalysisChart();
+            renderAnalysisDetails(student, history);
+
+            // Show Report Content
+            const reportContent = document.getElementById('analysisReportContent');
+            if (reportContent) reportContent.style.display = 'block';
+
+            showNotification('ডেটা লোড হয়েছে');
+        }
+    } catch (error) {
+        console.error(error);
+        showNotification('ডেটা লোড করতে সমস্যা', 'error');
+    } finally {
+        setLoading(false);
+    }
+}
+
+/**
+ * Switch to Analysis view and load a specific student
+ */
+function activateAnalysisView(student) {
+    if (!student) return;
+
+    // Switch state
+    state.currentView = 'analysis';
+
+    // Update tabs
+    if (elements.viewButtons) {
+        elements.viewButtons.forEach(btn => {
+            if (btn.getAttribute('data-view') === 'analysis') {
+                btn.classList.add('active');
+            } else {
+                btn.classList.remove('active');
+            }
+        });
+    }
+
+    // Toggle view visibility
+    toggleView();
+
+    // Load student data
+    selectStudentForAnalysis(student);
+}
+
+/**
+ * Update Chart based on controls
+ */
+function updateAnalysisChart() {
+    if (!state.currentHistory || state.currentHistory.length === 0) return;
+
+    const chartType = elements.analysisType ? elements.analysisType.value : 'total';
+    const maxMarks = elements.analysisMaxMarks ? parseInt(elements.analysisMaxMarks.value) : 100;
+
+    const chart = createHistoryChart(elements.historyChart, state.currentHistory, {
+        chartType,
+        maxMarks
+    });
+    state.historyChartInstance = chart;
+}
+
+/**
+ * Render Student Details
+ */
+function renderAnalysisDetails(student, history) {
+    const latest = history[history.length - 1];
+
+    // Helper for Group Priority
+    const getGroupPriority = (group) => {
+        if (!group) return 99;
+        const g = group.toLowerCase().trim();
+        if (g.includes('বিজ্ঞান')) return 1;
+        if (g.includes('ব্যবসা')) return 2;
+        if (g.includes('মানবিক')) return 3;
+        return 99;
+    };
+
+    // Navigation Logic: Sort by Group Priority then ID (Roll)
+    const sortedStudents = [...state.studentData].sort((a, b) => {
+        // 1. Group Sort
+        const priorityA = getGroupPriority(a.group);
+        const priorityB = getGroupPriority(b.group);
+
+        if (priorityA !== priorityB) {
+            return priorityA - priorityB;
+        }
+
+        // 2. Roll Sort (within same group)
+        return (parseInt(a.id) || 0) - (parseInt(b.id) || 0);
+    });
+    // Find index using strictly matching ID and Group to avoid duplicates across groups
+    const currentIndex = sortedStudents.findIndex(s => s.id == student.id && s.group === student.group);
+    const prevStudent = currentIndex > 0 ? sortedStudents[currentIndex - 1] : null;
+    const nextStudent = currentIndex < sortedStudents.length - 1 ? sortedStudents[currentIndex + 1] : null;
+
+    // Update global navigation state for keyboard shortcuts
+    state.currentAnalysisPrevStudent = prevStudent;
+    state.currentAnalysisNextStudent = nextStudent;
+
+    elements.studentDetails.innerHTML = `
+        <div class="analysis-details-card">
+            <div style="display: flex; justify-content: space-between; align-items: start;">
+                <div>
+                    <h3>${student.name} (রোল: ${student.id})</h3>
+                    <p style="margin: 5px 0;"><strong>গ্রুপ:</strong> ${student.group} | <strong>শ্রেণি:</strong> ${student.class}</p>
+                    <p style="margin: 5px 0;"><strong>মোট পরীক্ষা:</strong> ${history.length}</p>
+                </div>
+                <div style="text-align: right;">
+                     <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 5px; flex-wrap: wrap;">
+                        <button id="downloadAnalysisBtn" title="ফলাফল ইমেজ হিসেবে ডাউনলোড করুন" style="padding: 4px 10px; font-size: 0.85em; cursor: pointer; border: none; background: var(--primary); color: white; border-radius: 4px; display: flex; align-items: center; gap: 5px; transition: all 0.2s; margin-right: 5px;">
+                            <i class="fas fa-file-image"></i> ফলাফল ডাউনলোড (Image)
+                        </button>
+                        ${prevStudent ? `
+                            <button id="prevStudentBtn" class="nav-btn" title="পূর্ববর্তী শিক্ষার্থী (রোল: ${prevStudent.id})" style="padding: 4px 10px; font-size: 0.85em; cursor: pointer; border: 1px solid var(--border-color); background: var(--card-bg); border-radius: 4px; color: var(--text-color); display: flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                <i class="fas fa-chevron-left"></i> ${prevStudent.id}
+                            </button>
+                        ` : ''}
+                        ${nextStudent ? `
+                            <button id="nextStudentBtn" class="nav-btn" title="পরবর্তী শিক্ষার্থী (রোল: ${nextStudent.id})" style="padding: 4px 10px; font-size: 0.85em; cursor: pointer; border: 1px solid var(--border-color); background: var(--card-bg); border-radius: 4px; color: var(--text-color); display: flex; align-items: center; gap: 5px; transition: all 0.2s;">
+                                ${nextStudent.id} <i class="fas fa-chevron-right"></i>
+                            </button>
+                        ` : ''}
+                        <div style="font-size: 0.9em; opacity: 0.8; margin-left: 8px; border-left: 1px solid var(--border-color); padding-left: 10px;">
+                            সর্বশেষ: ${latest.examName}
+                        </div>
+                     </div>
+                </div>
+            </div>
+        </div>
+    `;
+
+    // Attach Event Listeners
+    const downloadBtn = document.getElementById('downloadAnalysisBtn');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', downloadAnalysisReport);
+    }
+    if (prevStudent) {
+        document.getElementById('prevStudentBtn').addEventListener('click', () => selectStudentForAnalysis(prevStudent));
+    }
+    if (nextStudent) {
+        document.getElementById('nextStudentBtn').addEventListener('click', () => selectStudentForAnalysis(nextStudent));
+    }
+}
+
+/**
+ * Download Analysis Report as Image
+ */
+async function downloadAnalysisReport() {
+    const reportContent = document.getElementById('analysisReportContent');
+    if (!reportContent) return;
+
+    setLoading(true);
+    try {
+        // Get current theme colors
+        const style = getComputedStyle(document.body);
+        const bgColor = style.getPropertyValue('--bg-color').trim() || '#ffffff';
+        const textColor = style.getPropertyValue('--text-color').trim() || '#000000';
+
+        const canvas = await html2canvas(reportContent, {
+            scale: 3, // Increased quality (High DPI)
+            useCORS: true,
+            backgroundColor: '#ffffff', // Force white background for clean exports
+            ignoreElements: (element) => element.id === 'downloadAnalysisBtn',
+            logging: false,
+            onclone: (clonedDoc) => {
+                const clonedReport = clonedDoc.getElementById('analysisReportContent');
+                if (clonedReport) {
+                    clonedReport.classList.add('capturing-mode');
+                    // Force white background for report captures to ensure contrast
+                    clonedReport.style.backgroundColor = '#ffffff';
+                }
+            }
+        });
+
+        const image = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = image;
+        link.download = `Analysis_${state.currentAnalysisStudent?.id || 'Report'}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showNotification('রিপোর্ট ইমেজ ডাউনলোড সম্পন্ন! 📸');
+    } catch (error) {
+        console.error('Download error:', error);
+        showNotification('ডাউনলোড করতে সমস্যা হয়েছে', 'error');
+    } finally {
+        setLoading(false);
+    }
+}
+
+// ==========================================
+// INLINE REAL-TIME SEARCH LOGIC
+// ==========================================
+
+/**
+ * Handle real-time search from toolbar input
+ */
+async function handleRealtimeSearch(query) {
+    try {
+        const candidates = await searchAnalyticsCandidates(query);
+
+        if (candidates.length === 0) {
+            hideInlineSearch();
+            return;
+        }
+
+        // Show panel
+        if (elements.inlineSearchPanel) {
+            elements.inlineSearchPanel.style.display = 'block';
+        }
+
+        if (candidates.length === 1) {
+            // Single match → auto-select
+            if (elements.inlineSearchCandidates) elements.inlineSearchCandidates.style.display = 'none';
+            showInlineHistory(candidates[0]);
+        } else {
+            // Multiple matches → show candidate cards
+            if (elements.inlineHistorySection) elements.inlineHistorySection.style.display = 'none';
+            renderInlineCandidates(candidates);
+        }
+    } catch (error) {
+        console.error('Inline search error:', error);
+    }
+}
+
+/**
+ * Render candidate cards in the inline panel
+ */
+function renderInlineCandidates(candidates) {
+    const container = elements.inlineSearchCandidates;
+    if (!container) return;
+
+    container.innerHTML = '';
+    container.style.display = 'grid';
+
+    candidates.forEach(student => {
+        const card = document.createElement('div');
+        card.className = 'inline-candidate-card';
+        card.innerHTML = `
+            <div class="ic-name">${student.name}</div>
+            <div class="ic-info">রোল: ${student.id} | গ্রুপ: ${student.group}</div>
+            <div class="ic-class">শ্রেণি: ${student.class || '—'}</div>
+        `;
+        card.addEventListener('click', () => {
+            container.style.display = 'none';
+            showInlineHistory(student);
+        });
+        container.appendChild(card);
+    });
+}
+
+/**
+ * Load and display student history in the inline panel
+ */
+async function showInlineHistory(student) {
+    state.inlineSearchStudent = student;
+
+    if (elements.inlineHistorySection) elements.inlineHistorySection.style.display = 'block';
+
+    // Show loading
+    if (elements.inlineStudentDetails) {
+        elements.inlineStudentDetails.innerHTML = `<div class="inline-search-loading"><i class="fas fa-spinner fa-spin"></i> লোড হচ্ছে...</div>`;
+    }
+
+    try {
+        const history = await getStudentHistory(student.id, student.group);
+        state.inlineSearchHistory = history;
+
+        if (history.length === 0) {
+            if (elements.inlineStudentDetails) {
+                elements.inlineStudentDetails.innerHTML = `
+                    <div class="analysis-details-card">
+                        <h3>${student.name} (রোল: ${student.id})</h3>
+                        <p>গ্রুপ: ${student.group}</p>
+                        <p style="color: #e74c3c; margin-top: 8px;">কোনো পরীক্ষার ইতিহাস পাওয়া যায়নি</p>
+                    </div>
+                `;
+            }
+            return;
+        }
+
+        // Render details
+        const latest = history[history.length - 1];
+        if (elements.inlineStudentDetails) {
+            elements.inlineStudentDetails.innerHTML = `
+                <div class="analysis-details-card">
+                    <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 8px;">
+                        <div>
+                            <h3>${student.name} (রোল: ${student.id})</h3>
+                            <p><strong>গ্রুপ:</strong> ${student.group} | <strong>শ্রেণি:</strong> ${student.class || '—'}</p>
+                            <p><strong>মোট পরীক্ষা:</strong> ${history.length}</p>
+                        </div>
+                        <div style="text-align: right;">
+                            <div style="font-size: 0.85em; opacity: 0.7;">সর্বশেষ: ${latest.examName}</div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Render chart
+        updateInlineChart();
+
+    } catch (error) {
+        console.error('Inline history error:', error);
+        if (elements.inlineStudentDetails) {
+            elements.inlineStudentDetails.innerHTML = `
+                <div class="analysis-details-card">
+                    <p style="color: #e74c3c;">ডেটা লোড করতে সমস্যা হয়েছে</p>
+                </div>
+            `;
+        }
+    }
+}
+
+/**
+ * Hide inline search panel and reset state
+ */
+function hideInlineSearch() {
+    if (elements.inlineSearchPanel) elements.inlineSearchPanel.style.display = 'none';
+    if (elements.inlineSearchCandidates) {
+        elements.inlineSearchCandidates.style.display = 'none';
+        elements.inlineSearchCandidates.innerHTML = '';
+    }
+    if (elements.inlineHistorySection) elements.inlineHistorySection.style.display = 'none';
+    if (elements.inlineStudentDetails) elements.inlineStudentDetails.innerHTML = '';
+
+    // Destroy chart
+    if (state.inlineHistoryChartInstance) {
+        state.inlineHistoryChartInstance.destroy();
+        state.inlineHistoryChartInstance = null;
+    }
+    state.inlineSearchStudent = null;
+    state.inlineSearchHistory = [];
+}
+
+/**
+ * Update inline history chart based on controls
+ */
+function updateInlineChart() {
+    if (!state.inlineSearchHistory || state.inlineSearchHistory.length === 0) return;
+
+    const chartType = elements.inlineAnalysisType ? elements.inlineAnalysisType.value : 'total';
+    const maxMarks = elements.inlineAnalysisMaxMarks ? parseInt(elements.inlineAnalysisMaxMarks.value) : 100;
+
+    // Destroy previous
+    if (state.inlineHistoryChartInstance) {
+        state.inlineHistoryChartInstance.destroy();
+        state.inlineHistoryChartInstance = null;
+    }
+
+    const chart = createHistoryChart(elements.inlineHistoryChart, state.inlineSearchHistory, {
+        chartType,
+        maxMarks
+    });
+    state.inlineHistoryChartInstance = chart;
+}
+
+/**
+ * Download inline report as image
+ */
+async function downloadInlineReport() {
+    const reportContent = document.getElementById('inlineReportContent');
+    if (!reportContent) return;
+
+    setLoading(true);
+    try {
+        const style = getComputedStyle(document.body);
+        const bgColor = style.getPropertyValue('--bg-color').trim() || '#ffffff';
+        const textColor = style.getPropertyValue('--text-color').trim() || '#000000';
+
+        const canvas = await html2canvas(reportContent, {
+            scale: 3,
+            useCORS: true,
+            backgroundColor: '#ffffff',
+            ignoreElements: (el) => el.id === 'inlineDownloadBtn',
+            logging: false,
+            onclone: (clonedDoc) => {
+                const cloned = clonedDoc.getElementById('inlineReportContent');
+                if (cloned) {
+                    cloned.classList.add('capturing-mode');
+                    cloned.style.backgroundColor = '#ffffff';
+                }
+            }
+        });
+
+        const image = canvas.toDataURL('image/png');
+        const link = document.createElement('a');
+        link.href = image;
+        link.download = `Inline_Analysis_${state.inlineSearchStudent?.id || 'Report'}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+
+        showNotification('রিপোর্ট ডাউনলোড সম্পন্ন! 📸');
+    } catch (error) {
+        console.error('Inline download error:', error);
+        showNotification('ডাউনলোড করতে সমস্যা হয়েছে', 'error');
+    } finally {
+        setLoading(false);
+    }
+}

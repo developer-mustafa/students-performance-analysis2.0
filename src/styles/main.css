@@ -1,0 +1,1846 @@
+/* Tailwind CSS v4 */
+@import "tailwindcss";
+
+/**
+ * শিক্ষার্থীদের পারফর্ম্যান্স ড্যাশবোর্ড
+ * Students Performance Dashboard - Main Stylesheet
+ */
+
+/* =========================================
+   CSS Custom Properties (Variables)
+   ========================================= */
+:root {
+  --primary: #4361ee;
+  --secondary: #3f37c9;
+  --success: #10b981;
+  --danger: #ef4444;
+  --warning: #f59e0b;
+  --info: #3b82f6;
+  --science: #06b6d4;
+  --business: #8b5cf6;
+  --arts: #f59e0b;
+  --light: #f8f9fa;
+  --dark: #212529;
+  --bg-color: #f5f7fa;
+  --container-bg: white;
+  --text-color: #1f2937;
+  --heading-color: #111827;
+  --border-color: #e5e7eb;
+  --card-bg: #ffffff;
+  --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --card-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1), 0 1px 2px 0 rgba(0, 0, 0, 0.06);
+
+  /* Spacing */
+  --spacing-xs: 5px;
+  --spacing-sm: 8px;
+  --spacing-md: 8px;
+  --spacing-lg: 12px;
+  --spacing-xl: 16px;
+
+  /* Border Radius */
+  --radius-sm: 5px;
+  --radius-md: 8px;
+  --radius-lg: 10px;
+  --radius-xl: 20px;
+
+  /* Transitions */
+  --transition-fast: 0.2s;
+  --transition-normal: 0.3s;
+  --transition-slow: 0.5s;
+}
+
+/* Dark Mode Variables */
+.dark-mode {
+  --primary: #5a70f0;
+  --secondary: #4f47d4;
+  --success: #5dd3ff;
+  --danger: #ff4d94;
+  --warning: #ffaa4d;
+  --info: #5da5ff;
+  --science: #5dd3ff;
+  --business: #9d4edd;
+  --arts: #ffaa4d;
+  --light: #343a40;
+  --dark: #f8f9fa;
+  --bg-color: #121212;
+  --container-bg: #1e1e1e;
+  --text-color: #e0e0e0;
+  --heading-color: #ffffff;
+  --border-color: #444;
+  --card-bg: #2d2d2d;
+  --shadow: 0 0 20px rgba(0, 0, 0, 0.3);
+  --card-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+
+/* =========================================
+   Base Styles
+   ========================================= */
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+  font-family: 'Segoe UI', 'SolaimanLipi', Tahoma, Geneva, Verdana, sans-serif;
+  transition: background-color var(--transition-normal), color var(--transition-normal);
+}
+
+body {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  line-height: 1.6;
+  padding: 0;
+  direction: ltr;
+}
+
+/* =========================================
+   Layout
+   ========================================= */
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+
+}
+
+/* =========================================
+   Header
+   ========================================= */
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background-color: var(--container-bg);
+  padding: 8px 16px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--card-shadow);
+}
+
+.header h1 {
+  color: var(--heading-color);
+  font-size: 1.25rem;
+}
+
+.header-controls {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+
+/* =========================================
+   Cards
+   ========================================= */
+.card {
+  background-color: var(--container-bg);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--card-shadow);
+  padding: var(--spacing-lg);
+  margin-bottom: var(--spacing-xl);
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-lg);
+  padding-bottom: var(--spacing-md);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.card-title {
+  font-size: 1.2rem;
+  color: var(--heading-color);
+  font-weight: 600;
+}
+
+/* =========================================
+   Form Controls
+   ========================================= */
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-bottom: 8px;
+  align-items: center;
+}
+
+select,
+button,
+input {
+  padding: 4px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--container-bg);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  font-size: 0.85rem;
+}
+
+button {
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+}
+
+button:hover {
+  background-color: var(--secondary);
+  transform: translateY(-2px);
+}
+
+select:focus,
+button:focus,
+input:focus {
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.3);
+}
+
+/* =========================================
+   Chart Container
+   ========================================= */
+.chart-container {
+  position: relative;
+  height: 280px;
+  margin-bottom: 10px;
+  padding: 8px;
+  background-color: var(--container-bg);
+  border-radius: var(--radius-md);
+  box-shadow: var(--card-shadow);
+}
+
+/* =========================================
+   Statistics Cards
+   ========================================= */
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.stat-card {
+  background-color: var(--card-bg);
+  padding: 8px 10px;
+  border-radius: 8px;
+  text-align: center;
+  border-left: 3px solid var(--primary);
+  box-shadow: var(--card-shadow);
+  transition: transform var(--transition-normal);
+}
+
+.stat-card:hover {
+  transform: translateY(-2px);
+}
+
+.stat-value {
+  font-size: 18px;
+  font-weight: bold;
+  color: var(--heading-color);
+  margin-bottom: 1px;
+  line-height: 1.2;
+}
+
+.stat-label {
+  font-size: 11px;
+  color: var(--text-color);
+  opacity: 0.7;
+  font-weight: 500;
+  line-height: 1.2;
+}
+
+/* =========================================
+   Group Filters
+   ========================================= */
+.group-filters {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 0;
+  flex-wrap: wrap;
+}
+
+.group-btn {
+  padding: 4px 10px;
+  background-color: var(--card-bg);
+  border-radius: var(--radius-xl);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 0.8rem;
+  border: 1px solid var(--border-color);
+}
+
+.group-btn.active {
+  background-color: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.group-btn:hover {
+  box-shadow: var(--card-shadow);
+}
+
+/* =========================================
+   Theme Toggle
+   ========================================= */
+.theme-toggle {
+  background: none;
+  border: none;
+  font-size: 18px;
+  cursor: pointer;
+  color: var(--text-color);
+  padding: 6px;
+  border-radius: 50%;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: fixed;
+  top: 100px;
+  right: 20px;
+  z-index: 1000;
+}
+
+.theme-toggle:hover {
+  background-color: var(--card-bg);
+}
+
+/* =========================================
+   Failed Students List
+   ========================================= */
+.failed-students {
+  margin-top: var(--spacing-xl);
+}
+
+.failed-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: var(--spacing-sm);
+  margin-top: var(--spacing-md);
+}
+
+.failed-student {
+  background-color: rgba(247, 37, 133, 0.1);
+  padding: 12px;
+  border-radius: 6px;
+  border-left: 4px solid var(--danger);
+  font-size: 0.85rem;
+}
+
+/* =========================================
+   Group Statistics Grid
+   ========================================= */
+.group-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--spacing-lg);
+  margin-top: var(--spacing-md);
+}
+
+.group-stat-card {
+  background-color: var(--card-bg);
+  padding: var(--spacing-lg);
+  border-radius: 6px;
+  box-shadow: var(--card-shadow);
+}
+
+.group-stat-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--spacing-sm);
+  padding-bottom: var(--spacing-sm);
+  border-bottom: 1px solid var(--border-color);
+}
+
+.group-name {
+  font-weight: bold;
+  color: var(--heading-color);
+  font-size: 0.9rem;
+}
+
+.pass-fail-stats {
+  display: flex;
+  justify-content: space-between;
+  margin-top: var(--spacing-sm);
+}
+
+.pass-count,
+.fail-count {
+  text-align: center;
+  padding: var(--spacing-sm);
+  border-radius: var(--radius-sm);
+  width: 48%;
+  font-size: 0.85rem;
+}
+
+.pass-count {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #059669;
+  font-weight: 600;
+}
+
+.fail-count {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+  font-weight: 600;
+}
+
+/* =========================================
+   Data Table
+   ========================================= */
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: var(--spacing-lg);
+  font-size: 0.9rem;
+}
+
+.data-table th,
+.data-table td {
+  padding: var(--spacing-md);
+  text-align: left;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.data-table th {
+  background-color: var(--card-bg);
+  font-weight: 600;
+  color: var(--heading-color);
+}
+
+.data-table tr:hover {
+  background-color: var(--card-bg);
+}
+
+/* =========================================
+   View Toggle
+   ========================================= */
+.view-toggle {
+  display: flex;
+  gap: var(--spacing-md);
+  margin-bottom: var(--spacing-lg);
+}
+
+.view-btn {
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  font-size: 0.85rem;
+  border: 1px solid var(--border-color);
+}
+
+.view-btn.active {
+  background-color: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* =========================================
+   JSON Upload
+   ========================================= */
+.json-upload {
+  display: flex;
+  gap: var(--spacing-sm);
+  align-items: center;
+  margin-bottom: var(--spacing-md);
+  flex-wrap: wrap;
+}
+
+.json-upload input[type='file'] {
+  display: none;
+}
+
+.json-upload label {
+  background-color: var(--info);
+  color: white;
+  padding: var(--spacing-sm) 12px;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: var(--spacing-xs);
+  font-size: 0.85rem;
+}
+
+.json-upload label:hover {
+  opacity: 0.9;
+}
+
+.json-preview {
+  margin-top: var(--spacing-md);
+  padding: var(--spacing-md);
+  background-color: var(--card-bg);
+  border-radius: 6px;
+  max-height: 150px;
+  overflow-y: auto;
+  font-family: 'Consolas', 'Monaco', monospace;
+  font-size: 11px;
+}
+
+/* =========================================
+   Search Box
+   ========================================= */
+.search-box {
+  position: relative;
+  flex: 1;
+  min-width: 200px;
+}
+
+.search-box i {
+  position: absolute;
+  left: var(--spacing-md);
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--text-color);
+  opacity: 0.7;
+}
+
+.search-box input {
+  width: 100%;
+  padding-left: 35px;
+}
+
+/* =========================================
+   Grade Filter
+   ========================================= */
+.grade-filter {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 0;
+}
+
+.grade-btn {
+  padding: 2px 8px;
+  border-radius: var(--spacing-lg);
+  background-color: var(--card-bg);
+  color: var(--text-color);
+  cursor: pointer;
+  transition: all var(--transition-normal);
+  font-size: 0.75rem;
+  border: 1px solid var(--border-color);
+  font-weight: 600;
+}
+
+.grade-btn.active {
+  background-color: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+/* Grade Specific Colors */
+.grade-A-plus {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #059669;
+  font-weight: 600;
+}
+
+.grade-A {
+  background-color: rgba(59, 130, 246, 0.15);
+  color: #2563eb;
+  font-weight: 600;
+}
+
+.grade-A-minus {
+  background-color: rgba(139, 92, 246, 0.15);
+  color: #7c3aed;
+  font-weight: 600;
+}
+
+.grade-B {
+  background-color: rgba(245, 158, 11, 0.15);
+  color: #d97706;
+  font-weight: 600;
+}
+
+.grade-C {
+  background-color: rgba(249, 115, 22, 0.15);
+  color: #ea580c;
+  font-weight: 600;
+}
+
+.grade-D {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.grade-F {
+  background-color: rgba(107, 114, 128, 0.15);
+  color: #4b5563;
+  font-weight: 600;
+}
+
+.grade-btn.active.grade-A-plus {
+  background-color: #2ecc71;
+  color: white;
+}
+
+.grade-btn.active.grade-A {
+  background-color: #3498db;
+  color: white;
+}
+
+.grade-btn.active.grade-A-minus {
+  background-color: #9b59b6;
+  color: white;
+}
+
+.grade-btn.active.grade-B {
+  background-color: #f1c40f;
+  color: white;
+}
+
+.grade-btn.active.grade-C {
+  background-color: #e67e22;
+  color: white;
+}
+
+.grade-btn.active.grade-D {
+  background-color: #e74c3c;
+  color: white;
+}
+
+.grade-btn.active.grade-F {
+  background-color: #95a5a6;
+  color: white;
+}
+
+.grade-absent {
+  background-color: rgba(108, 117, 125, 0.2);
+  color: #6c757d;
+}
+
+.grade-btn.active.grade-absent {
+  background-color: #6c757d;
+  color: white;
+}
+
+/* =========================================
+   Table Grade and Status Cells
+   ========================================= */
+.grade-cell {
+  font-weight: bold;
+  text-align: center;
+  border-radius: 4px;
+  padding: 4px var(--spacing-sm);
+  display: inline-block;
+}
+
+.status-cell {
+  text-align: center;
+  border-radius: 4px;
+  padding: 4px var(--spacing-sm);
+  font-weight: bold;
+  display: inline-block;
+}
+
+.status-pass {
+  background-color: rgba(16, 185, 129, 0.15);
+  color: #059669;
+  font-weight: 600;
+}
+
+.status-fail {
+  background-color: rgba(239, 68, 68, 0.15);
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.status-absent {
+  background-color: rgba(107, 114, 128, 0.15);
+  color: #4b5563;
+  font-weight: 600;
+}
+
+/* =========================================
+   Group Classes
+   ========================================= */
+.science-group {
+  background-color: rgba(76, 201, 240, 0.1);
+  border-left: 4px solid var(--science);
+}
+
+.business-group {
+  background-color: rgba(114, 9, 183, 0.1);
+  border-left: 4px solid var(--business);
+}
+
+.arts-group {
+  background-color: rgba(248, 150, 30, 0.1);
+  border-left: 4px solid var(--arts);
+}
+
+/* =========================================
+   Notification
+   ========================================= */
+.notification {
+  position: fixed;
+  top: var(--spacing-xl);
+  right: 70px;
+  background: var(--primary);
+  color: white;
+  padding: 12px 16px;
+  border-radius: var(--radius-sm);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+  animation: fadeIn var(--transition-slow), fadeOut var(--transition-slow) 2.5s forwards;
+  font-size: 0.9rem;
+}
+
+/* =========================================
+   Animations
+   ========================================= */
+@keyframes spin {
+  0% {
+    transform: rotate(0deg);
+  }
+
+  100% {
+    transform: rotate(360deg);
+  }
+}
+
+/* Compact Analysis Card */
+.analysis-details-card {
+  padding: 10px;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  border-left: 4px solid var(--primary);
+  margin-bottom: 10px;
+  box-shadow: var(--card-shadow);
+}
+
+.analysis-details-card h3 {
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+.analysis-details-card p {
+  margin: 2px 0 !important;
+  font-size: 0.9rem;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeOut {
+  from {
+    opacity: 1;
+  }
+
+  to {
+    opacity: 0;
+  }
+}
+
+.fade-in {
+  animation: fadeIn var(--transition-slow) ease-out;
+}
+
+/* =========================================
+   Custom Scrollbar
+   ========================================= */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: var(--card-bg);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--primary);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--secondary);
+}
+
+/* =========================================
+   Responsive Design
+   ========================================= */
+@media (max-width: 768px) {
+  .header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: var(--spacing-md);
+  }
+
+  .controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .chart-container {
+    height: 300px;
+  }
+
+  .chart-container.horizontal-chart {
+    height: 500px;
+  }
+
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .header h1 {
+    font-size: 1.3rem;
+  }
+
+  .card-title {
+    font-size: 1.1rem;
+  }
+
+  .data-table {
+    font-size: 0.8rem;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: var(--spacing-sm) var(--spacing-xs);
+  }
+
+  .search-box {
+    min-width: 100%;
+  }
+}
+
+
+/* Dropdown Styles */
+.dropdown-menu {
+  display: none;
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background-color: var(--card-bg);
+  min-width: 180px;
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+  z-index: 1000;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  margin-top: 5px;
+  overflow: hidden;
+  animation: fadeIn 0.2s;
+}
+
+.dropdown-menu.show {
+  display: block;
+}
+
+.dropdown-item {
+  padding: 10px 15px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: var(--text-color);
+  transition: background-color 0.2s;
+  font-size: 0.9rem;
+}
+
+.dropdown-item:hover {
+  background-color: var(--bg-color);
+  color: var(--primary);
+}
+
+.dropdown-item i {
+  width: 20px;
+  text-align: center;
+}
+
+/* Dark mode overrides for dropdown */
+.dark-mode .dropdown-menu {
+  background-color: #2d2d2d;
+  border-color: #444;
+}
+
+.dark-mode .dropdown-item:hover {
+  background-color: #3d3d3d;
+}
+
+@media (max-width: 576px) {
+  .stats {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .group-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .failed-list {
+    grid-template-columns: 1fr;
+  }
+
+  .header h1 {
+    font-size: 1.2rem;
+  }
+
+  .data-table {
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  .container {
+    padding: var(--spacing-md);
+  }
+}
+
+/* =========================================
+   Analysis View Styles (Dark Mode Supported)
+   ========================================= */
+.analysis-container {
+
+  /* Background handled by parent but ensuring specific container rules */
+}
+
+.analysis-controls {
+  background-color: var(--card-bg);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-md);
+
+  display: grid;
+  grid-template-columns: 1fr auto auto auto;
+  gap: var(--spacing-sm);
+  align-items: center;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--card-shadow);
+}
+
+.analysis-controls #analysisStudentId {
+  width: 100%;
+}
+
+.analysis-controls .form-select {
+  min-width: 140px;
+}
+
+.analysis-controls .btn-primary-custom {
+  white-space: nowrap;
+  padding: 10px 16px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  .analysis-controls {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .analysis-controls #analysisStudentId {
+    grid-column: 1 / -1;
+  }
+}
+
+.search-box-container {
+  flex: 1;
+  min-width: 250px;
+}
+
+.controls-group {
+  display: flex;
+  gap: var(--spacing-md);
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.form-control,
+.form-select {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm);
+  background-color: var(--container-bg);
+  color: var(--text-color);
+  font-size: 1rem;
+}
+
+.form-control:focus,
+.form-select:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+}
+
+.btn-primary-custom {
+  padding: var(--spacing-md) var(--spacing-xl);
+  background-color: var(--primary);
+  color: white;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background-color var(--transition-fast);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 1rem;
+}
+
+.btn-primary-custom:hover {
+  background-color: var(--secondary);
+}
+
+.analysis-card {
+  height: 400px;
+  background-color: var(--card-bg);
+  /* Use card-bg for better contrast */
+  padding: var(--spacing-lg);
+  border-radius: var(--radius-md);
+  box-shadow: var(--card-shadow);
+  position: relative;
+  border: 1px solid var(--border-color);
+}
+
+.search-results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: var(--spacing-md);
+  padding: var(--spacing-md);
+
+}
+
+.candidate-card {
+  background-color: var(--card-bg);
+  border: 1px solid var(--border-color);
+  padding: var(--spacing-md);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  box-shadow: var(--card-shadow);
+  color: var(--text-color);
+}
+
+.candidate-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: var(--primary);
+}
+
+.student-details-container {
+  margin-top: 20px;
+  color: var(--text-color);
+}
+
+/* Modal Styles */
+.modal {
+  display: none;
+  position: fixed;
+  z-index: 1000;
+  left: 0;
+  top: 0;
+  width: 100%;
+  height: 100%;
+  overflow: auto;
+  background-color: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(5px);
+}
+
+.modal-content {
+  background-color: var(--card-bg);
+  margin: 10% auto;
+  padding: var(--spacing-xl);
+  border: 1px solid var(--border-color);
+  width: 90%;
+  max-width: 500px;
+  border-radius: var(--radius-lg);
+  box-shadow: var(--card-shadow);
+  color: var(--text-color);
+  animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.modal-content h2 {
+  margin-bottom: var(--spacing-lg);
+  color: var(--heading-color);
+}
+
+.close {
+  color: var(--text-secondary);
+  float: right;
+  font-size: 28px;
+  font-weight: bold;
+  cursor: pointer;
+  transition: color 0.3s;
+}
+
+.close:hover,
+.close:focus {
+  color: var(--danger);
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.form-group {
+  margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+  display: block;
+  margin-bottom: 5px;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+/* Confirm Modal Specifics */
+.confirm-modal-content {
+  text-align: center;
+  max-width: 400px;
+  padding: var(--spacing-xl) var(--spacing-lg);
+}
+
+.confirm-modal-icon {
+  font-size: 3.5rem;
+  color: #ef4444;
+  /* Danger red */
+  margin-bottom: var(--spacing-md);
+  animation: scaleIn 0.3s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0.5);
+    opacity: 0;
+  }
+
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+#confirmTitle {
+  margin-bottom: var(--spacing-xs);
+  font-size: 1.5rem;
+}
+
+#confirmMessage {
+  color: var(--text-color);
+  opacity: 0.8;
+  margin-bottom: var(--spacing-xl);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+
+.confirm-modal-actions {
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+}
+
+.confirm-modal-actions button {
+  padding: 10px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  border: none;
+  min-width: 120px;
+}
+
+.btn-secondary {
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color) !important;
+}
+
+.btn-secondary:hover {
+  background-color: var(--border-color);
+}
+
+.btn-danger {
+  background-color: #ef4444;
+  color: white;
+}
+
+.btn-danger:hover {
+  background-color: #dc2626;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+/* =========================================
+   Data Management Toolbar (Compact)
+   ========================================= */
+.data-management-card {
+  transition: all 0.3s ease;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-color);
+  padding: 0;
+  overflow: visible;
+}
+
+.data-management-card .dm-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
+  padding: 10px 14px;
+}
+
+/* Button Styles */
+.dm-btn {
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-weight: 500;
+  transition: transform 0.2s, box-shadow 0.2s;
+  border: none;
+  color: white;
+  font-size: 0.85rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.dm-btn:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  opacity: 0.95;
+}
+
+.dm-upload {
+  background: linear-gradient(90deg, #4facfe 0%, #00f2fe 100%);
+}
+
+.dm-template {
+  background: linear-gradient(90deg, #43e97b 0%, #38f9d7 100%);
+  color: #2c3e50 !important;
+  font-weight: 600;
+}
+
+.dm-report {
+  background: linear-gradient(90deg, #a18cd1 0%, #fbc2eb 100%);
+}
+
+.dm-save {
+  background: linear-gradient(90deg, #2ecc71 0%, #27ae60 100%);
+  color: white;
+}
+
+/* Search Box */
+.dm-search {
+  flex: 1;
+  min-width: 160px;
+  position: relative;
+}
+
+.dm-search input {
+  width: 100%;
+  padding: 8px 8px 8px 34px;
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  background: var(--bg-color);
+  color: var(--text-color);
+  outline: none;
+  font-size: 0.85rem;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+.dm-search input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.15);
+}
+
+.dm-search-icon {
+  position: absolute;
+  left: 11px;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #aaa;
+  font-size: 0.8rem;
+  pointer-events: none;
+}
+
+/* Upload wrapper */
+.dm-upload-wrapper {
+  display: inline-flex;
+}
+
+.dm-upload-wrapper label {
+  margin: 0;
+}
+
+/* Dark Mode Overrides */
+.dark-mode .data-management-card {
+  background: linear-gradient(135deg, #1e1e2f 0%, #2d2d44 100%) !important;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  color: white !important;
+}
+
+.dark-mode .dm-search input {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: white;
+}
+
+.dark-mode .dm-search input:focus {
+  border-color: var(--info);
+  box-shadow: 0 0 0 2px rgba(93, 211, 255, 0.15);
+}
+
+/* Saved Exams Section Styling */
+.saved-exams-section {
+  transition: all 0.3s ease;
+}
+
+.saved-exams-section h3 {
+  font-size: 1rem;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.saved-exams-section h3 i {
+  color: var(--primary);
+}
+
+/* Dark mode saved section */
+.dark-mode .saved-exams-section {
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%) !important;
+  border-color: rgba(255, 255, 255, 0.1) !important;
+}
+
+/* =========================================
+   Data Management Responsive
+   ========================================= */
+
+/* Tablet (≤ 768px) */
+@media (max-width: 768px) {
+  .data-management-card .dm-controls {
+    gap: 6px;
+    padding: 8px 10px;
+  }
+
+  .dm-btn {
+    padding: 7px 10px;
+    font-size: 0.8rem;
+    gap: 5px;
+  }
+
+  .dm-search {
+    min-width: 120px;
+    order: 10;
+  }
+}
+
+/* Mobile (≤ 576px) */
+@media (max-width: 576px) {
+  .data-management-card .dm-controls {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+    padding: 8px;
+  }
+
+  .dm-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 9px 6px;
+    font-size: 0.78rem;
+  }
+
+  .dm-upload-wrapper {
+    grid-column: span 1;
+    width: 100%;
+    order: 1;
+  }
+
+  .dm-upload-wrapper label {
+    width: 100%;
+    justify-content: center;
+    padding: 9px 6px;
+    font-size: 0.78rem;
+  }
+
+  #downloadTemplateBtn {
+    order: 2;
+  }
+
+  .data-management-card .dropdown {
+    order: 3;
+    width: 100%;
+  }
+
+  .data-management-card .dropdown .dm-btn {
+    width: 100%;
+  }
+
+  #saveAnalysisBtn {
+    order: 4;
+  }
+
+  .dm-search {
+    grid-column: 1 / -1;
+    min-width: unset;
+    order: 5;
+  }
+
+  .saved-exams-section {
+    padding: 12px !important;
+    margin-top: 10px !important;
+  }
+
+  .saved-exams-section h3 {
+    font-size: 0.9rem;
+    margin-bottom: 10px !important;
+  }
+}
+
+/* Extra small (≤ 380px) — icon-only buttons */
+@media (max-width: 380px) {
+  .dm-btn-text {
+    display: none;
+  }
+
+  .dm-btn {
+    padding: 9px 10px;
+    justify-content: center;
+  }
+
+  .dm-upload-wrapper label {
+    padding: 9px 10px;
+  }
+}
+
+/* =========================================
+   Inline Search Results Panel
+   ========================================= */
+.inline-search-panel {
+  border-top: 1px solid var(--border-color);
+  padding: 12px 14px;
+  animation: slideDown 0.25s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Candidate Cards Grid */
+.inline-candidates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.inline-candidate-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--card-shadow);
+}
+
+.inline-candidate-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: var(--primary);
+}
+
+.inline-candidate-card .ic-name {
+  font-weight: 600;
+  color: var(--heading-color);
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+
+.inline-candidate-card .ic-info {
+  color: var(--text-color);
+  opacity: 0.75;
+  font-size: 0.82rem;
+}
+
+.inline-candidate-card .ic-class {
+  color: var(--text-color);
+  opacity: 0.55;
+  font-size: 0.78rem;
+}
+
+/* History Section */
+.inline-history-section {
+  animation: slideDown 0.25s ease-out;
+}
+
+.inline-report-content {
+  padding: 5px 0;
+}
+
+.inline-chart-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+
+.inline-chart-controls .form-select {
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  min-width: 110px;
+  width: auto;
+}
+
+.inline-chart-wrapper {
+  position: relative;
+  height: 320px;
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--card-shadow);
+}
+
+/* Inline Analysis Details Card */
+.inline-search-panel .analysis-details-card {
+  padding: 10px;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  border-left: 4px solid var(--primary);
+  margin-bottom: 10px;
+  box-shadow: var(--card-shadow);
+}
+
+.analysis-details-card h3 {
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+.analysis-details-card p {
+  margin: 2px 0 !important;
+  font-size: 0.9rem;
+}
+
+.inline-search-panel .analysis-details-card h3 {
+  font-size: 1rem;
+  color: var(--heading-color);
+  margin: 0 0 4px 0;
+}
+
+.inline-search-panel .analysis-details-card p {
+  margin: 3px 0;
+  font-size: 0.88rem;
+  color: var(--text-color);
+}
+
+/* Inline search loading spinner */
+.inline-search-loading {
+  text-align: center;
+  padding: 15px;
+  color: var(--text-color);
+  opacity: 0.6;
+  font-size: 0.9rem;
+}
+
+/* Dark mode */
+.dark-mode .inline-search-panel {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .inline-candidate-card {
+  background: #2d2d2d;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .inline-candidate-card:hover {
+  border-color: var(--primary);
+}
+
+.dark-mode .inline-chart-wrapper {
+  background: #2d2d2d;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .inline-search-panel .analysis-details-card {
+  background: #2d2d2d;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 576px) {
+  .inline-search-panel {
+    padding: 8px;
+  }
+
+  .inline-candidates-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
+  }
+
+  .inline-chart-wrapper {
+    height: 250px;
+    padding: 6px;
+  }
+
+  .inline-chart-controls {
+    gap: 6px;
+  }
+
+  .inline-chart-controls .form-select {
+    min-width: 90px;
+    font-size: 0.78rem;
+  }
+}
+
+@media (max-width: 380px) {
+  .inline-candidates-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================
+   Admin Toggle Button (Toolbar Style)
+   ========================================= */
+.admin-toggle {
+  background: linear-gradient(135deg, #4285f4, #34a853) !important;
+  color: white !important;
+  border: none !important;
+  transition: all 0.3s ease;
+}
+
+.admin-toggle:hover {
+  background: linear-gradient(135deg, #3367d6, #2d9649) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(66, 133, 244, 0.4);
+}
+
+.admin-toggle.logged-in {
+  background: linear-gradient(135deg, #2ecc71, #27ae60) !important;
+  box-shadow: 0 2px 8px rgba(46, 204, 113, 0.4);
+}
+
+.admin-toggle.logged-in:hover {
+  background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
+}
+
+/* =========================================
+   Print Styles
+   ========================================= */
+@media print {
+  @page {
+    size: landscape;
+    margin: 1cm;
+  }
+
+  /* Hide non-essential elements */
+  .header-controls,
+  .controls,
+  .view-toggle button,
+  .theme-toggle,
+  .inline-search-wrapper,
+  #adminToggle,
+  .saved-exams-section,
+  .failed-students,
+  .group-stats-card,
+  #historyChart canvas,
+  #saveAnalysisBtn,
+  #downloadTemplateBtn,
+  .json-upload,
+  footer {
+    display: none !important;
+  }
+
+  /* Hide the inputs/selects that are not relevant to the printed report */
+  .controls select,
+  .controls input {
+    display: none !important;
+  }
+
+  /* Hide Admin/Search/Upload/Download buttons */
+  .header button,
+  .header input,
+  .json-upload,
+  #downloadTemplateBtn,
+  #saveAnalysisBtn,
+  #loadSampleData,
+  #clearData {
+    display: none !important;
+  }
+
+  /* Make sure the main card takes full width */
+  body,
+  .container,
+  .card {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+  }
+
+  /* Chart Canvas Size - Ensure it fits */
+  .chart-container {
+    height: 500px !important;
+    /* Fixed height for print */
+    page-break-inside: avoid;
+  }
+
+  canvas {
+    max-width: 100% !important;
+  }
+
+  /* Force light theme colors for print */
+  * {
+    color: #000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
+  }
+
+  /* Header adjustments */
+  /* Hide Header completely */
+  .header {
+    display: none !important;
+  }
+
+  /* Card Header Adjustments */
+  /* Hide Card Header for strict data print */
+  .card-header {
+    display: none !important;
+  }
+
+  .card-title {
+    font-size: 18pt !important;
+    text-align: center !important;
+  }
+
+  /* View Toggle - Hide buttons */
+  .view-toggle {
+    display: none !important;
+  }
+
+  /* Stats Container - Compact for Print */
+  /* Hide Stats Container */
+  .stats-container {
+    display: none !important;
+  }
+
+  /* Watermark / Footer */
+  /* Watermark / Footer */
+  /* Hide watermark for strict print */
+  body::after {
+    display: none !important;
+  }
+}
+
+/* =========================================
+   Image Capture / Download Overrides
+   ========================================= */
+/* Force clean high-contrast light theme for all exported images */
+.capturing-mode,
+.capturing-mode * {
+  background-color: transparent !important;
+  color: #000000 !important;
+  opacity: 1 !important;
+  text-shadow: none !important;
+  box-shadow: none !important;
+}
+
+/* Force solid white background for the main container and cards */
+.capturing-mode,
+.capturing-mode.card,
+.capturing-mode .card,
+.capturing-mode .analysis-card,
+.capturing-mode .group-stat-card,
+.capturing-mode .failed-student,
+.capturing-mode .analysis-details-card {
+  background-color: #ffffff !important;
+  border: 1px solid #000000 !important;
+  color: #000000 !important;
+}
+
+/* Specific table overrides */
+.capturing-mode .data-table th {
+  background-color: #f0f0f0 !important;
+  border: 2px solid #000000 !important;
+  font-weight: bold !important;
+}
+
+.capturing-mode .data-table td {
+  border: 1px solid #000000 !important;
+}
+
+/* Bold headers and labels */
+.capturing-mode h2,
+.capturing-mode h3,
+.capturing-mode .group-name,
+.capturing-mode strong,
+.capturing-mode b,
+.capturing-mode span {
+  color: #000000 !important;
+  font-weight: 800 !important;
+}
+
+/* Stat values - make them stand out */
+.capturing-mode .stat-value {
+  color: #000000 !important;
+  font-weight: bold !important;
+  font-size: 1.25rem !important;
+}
+
+/* Status badges in capture - high contrast borders */
+.capturing-mode .status-cell.status-pass,
+.capturing-mode .status-badge.pass,
+.capturing-mode .pass-count {
+  background-color: #e6fffa !important;
+  border: 1px solid #10b981 !important;
+}
+
+.capturing-mode .status-cell.status-fail,
+.capturing-mode .status-badge.fail,
+.capturing-mode .fail-count {
+  background-color: #fff5f5 !important;
+  border: 1px solid #ef4444 !important;
+}
+
+/* Hide download buttons within the capture if any remain */
+.capturing-mode button,
+.capturing-mode .view-btn,
+.capturing-mode .nav-btn {
+  display: none !important;
+}
