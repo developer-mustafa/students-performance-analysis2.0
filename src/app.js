@@ -77,6 +77,8 @@ const state = {
     inlineSearchHistory: [],
     inlineHistoryChartInstance: null,
     inlineSearchDebounce: null,
+    inlinePrevStudent: null,
+    inlineNextStudent: null,
     analysisSearchDebounce: null,
     currentAnalysisNextStudent: null,
 
@@ -835,6 +837,22 @@ function initEventListeners() {
     window.addEventListener('beforeunload', () => {
         if (state.unsubscribe) {
             state.unsubscribe();
+        }
+    });
+
+    // Keyboard arrow keys for inline search navigation
+    document.addEventListener('keydown', (e) => {
+        // Only when inline search panel is visible and no input is focused
+        const activeTag = document.activeElement?.tagName?.toLowerCase();
+        if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') return;
+        if (!elements.inlineSearchPanel || elements.inlineSearchPanel.style.display === 'none') return;
+
+        if (e.key === 'ArrowLeft' && state.inlinePrevStudent) {
+            e.preventDefault();
+            showInlineHistory(state.inlinePrevStudent);
+        } else if (e.key === 'ArrowRight' && state.inlineNextStudent) {
+            e.preventDefault();
+            showInlineHistory(state.inlineNextStudent);
         }
     });
 
@@ -1831,6 +1849,9 @@ function renderInlineCandidates(candidates) {
 async function showInlineHistory(student) {
     state.inlineSearchStudent = student;
 
+    // Blur search input so keyboard arrow keys work for navigation
+    if (elements.searchInput) elements.searchInput.blur();
+
     if (elements.inlineHistorySection) elements.inlineHistorySection.style.display = 'block';
 
     // Show loading
@@ -1857,21 +1878,75 @@ async function showInlineHistory(student) {
 
         // Render details
         const latest = history[history.length - 1];
+
+        // Navigation: sort by group priority then roll (group sequence: বিজ্ঞান → ব্যবসায় → মানবিক)
+        const getGroupPriority = (group) => {
+            if (!group) return 99;
+            const g = group.toLowerCase().trim();
+            if (g.includes('বিজ্ঞান')) return 1;
+            if (g.includes('ব্যবসা')) return 2;
+            if (g.includes('মানবিক')) return 3;
+            return 99;
+        };
+        const sortedStudents = [...state.studentData].sort((a, b) => {
+            const pA = getGroupPriority(a.group);
+            const pB = getGroupPriority(b.group);
+            if (pA !== pB) return pA - pB;
+            return (parseInt(a.id) || 0) - (parseInt(b.id) || 0);
+        });
+        const currentIdx = sortedStudents.findIndex(s => s.id == student.id && s.group === student.group);
+        const prevStudent = currentIdx > 0 ? sortedStudents[currentIdx - 1] : null;
+        const nextStudent = currentIdx < sortedStudents.length - 1 ? sortedStudents[currentIdx + 1] : null;
+
         if (elements.inlineStudentDetails) {
+            // Group badge color helper
+            const getGroupBadge = (group) => {
+                if (!group) return `<span class="group-badge group-badge-default">${group || '—'}</span>`;
+                const g = group.toLowerCase().trim();
+                if (g.includes('বিজ্ঞান')) return `<span class="group-badge group-badge-science"><i class="fas fa-flask"></i> ${group}</span>`;
+                if (g.includes('ব্যবসা')) return `<span class="group-badge group-badge-business"><i class="fas fa-book"></i> ${group}</span>`;
+                if (g.includes('মানবিক')) return `<span class="group-badge group-badge-arts"><i class="fas fa-palette"></i> ${group}</span>`;
+                return `<span class="group-badge group-badge-default">${group}</span>`;
+            };
+
             elements.inlineStudentDetails.innerHTML = `
                 <div class="analysis-details-card">
                     <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 8px;">
                         <div>
                             <h3>${student.name} (রোল: ${student.id})</h3>
-                            <p><strong>গ্রুপ:</strong> ${student.group} | <strong>শ্রেণি:</strong> ${student.class || '—'}</p>
+                            <p style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">${getGroupBadge(student.group)} <strong>শ্রেণি:</strong> ${student.class || '—'}</p>
                             <p><strong>মোট পরীক্ষা:</strong> ${history.length}</p>
                         </div>
                         <div style="text-align: right;">
-                            <div style="font-size: 0.85em; opacity: 0.7;">সর্বশেষ: ${latest.examName}</div>
+                            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 5px; flex-wrap: wrap;">
+                                ${prevStudent ? `
+                                    <button id="inlinePrevBtn" class="inline-nav-btn" title="পূর্ববর্তী রোল: ${prevStudent.id} (${prevStudent.name})">
+                                        <i class="fas fa-chevron-left"></i> ${prevStudent.id}
+                                    </button>
+                                ` : ''}
+                                ${nextStudent ? `
+                                    <button id="inlineNextBtn" class="inline-nav-btn" title="পরবর্তী রোল: ${nextStudent.id} (${nextStudent.name})">
+                                        ${nextStudent.id} <i class="fas fa-chevron-right"></i>
+                                    </button>
+                                ` : ''}
+                                <div style="font-size: 0.85em; opacity: 0.7; border-left: 1px solid var(--border-color); padding-left: 10px;">সর্বশেষ: ${latest.examName}</div>
+                            </div>
                         </div>
                     </div>
                 </div>
             `;
+
+            // Store nav state for keyboard shortcuts
+            state.inlinePrevStudent = prevStudent;
+            state.inlineNextStudent = nextStudent;
+
+            // Attach navigation event listeners
+            if (prevStudent) {
+                document.getElementById('inlinePrevBtn').addEventListener('click', () => showInlineHistory(prevStudent));
+            }
+            if (nextStudent) {
+                document.getElementById('inlineNextBtn').addEventListener('click', () => showInlineHistory(nextStudent));
+            }
         }
 
         // Render chart
@@ -1908,6 +1983,8 @@ function hideInlineSearch() {
     }
     state.inlineSearchStudent = null;
     state.inlineSearchHistory = [];
+    state.inlinePrevStudent = null;
+    state.inlineNextStudent = null;
 }
 
 /**

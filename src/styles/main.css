@@ -1834,7 +1834,88 @@ input:focus {
   font-size: 0.9rem;
 }
 
+/* Group Badge Styles */
+.group-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.8em;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.group-badge i {
+  font-size: 0.75em;
+}
+
+.group-badge-science {
+  background: linear-gradient(135deg, #0984e3 0%, #74b9ff 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(9, 132, 227, 0.35);
+}
+
+.group-badge-business {
+  background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.35);
+}
+
+.group-badge-arts {
+  background: linear-gradient(135deg, #e17055 0%, #fab1a0 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(225, 112, 85, 0.35);
+}
+
+.group-badge-default {
+  background: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+/* Inline Navigation Buttons (Prev/Next) */
+.inline-nav-btn {
+  padding: 4px 10px;
+  font-size: 0.85em;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  border-radius: 4px;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.inline-nav-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.inline-nav-btn:active {
+  transform: translateY(0);
+}
+
 /* Dark mode */
+.dark-mode .inline-nav-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.dark-mode .inline-nav-btn:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Dark mode inline search */
 .dark-mode .inline-search-panel {
   border-top-color: rgba(255, 255, 255, 0.1);
 }
@@ -2219,6 +2300,7 @@ input:focus {
 /* Hide download buttons within the capture if any remain */
 .capturing-mode button,
 .capturing-mode .view-btn,
-.capturing-mode .nav-btn {
+.capturing-mode .nav-btn,
+.capturing-mode .inline-nav-btn {
   display: none !important;
 }
