@@ -286,26 +286,40 @@ input:focus {
    Theme Toggle
    ========================================= */
 .theme-toggle {
-  background: none;
-  border: none;
-  font-size: 18px;
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  font-size: 16px;
   cursor: pointer;
   color: var(--text-color);
   padding: 6px;
   border-radius: 50%;
-  width: 36px;
-  height: 36px;
+  width: 34px;
+  height: 34px;
   display: flex;
   align-items: center;
   justify-content: center;
   position: fixed;
-  top: 100px;
-  right: 20px;
+  top: 12px;
+  right: 12px;
   z-index: 1000;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  transition: all 0.2s ease;
 }
 
 .theme-toggle:hover {
-  background-color: var(--card-bg);
+  background-color: var(--primary);
+  color: white;
+  transform: scale(1.1);
+}
+
+@media (max-width: 576px) {
+  .theme-toggle {
+    width: 30px;
+    height: 30px;
+    font-size: 13px;
+    top: 8px;
+    right: 8px;
+  }
 }
 
 /* =========================================
@@ -900,8 +914,25 @@ input:focus {
 }
 
 @media (max-width: 576px) {
+
+  /* Prevent horizontal overflow */
+  body {
+    overflow-x: hidden;
+  }
+
+  .container-fluid {
+    padding-left: 8px !important;
+    padding-right: 8px !important;
+  }
+
+  .card {
+    padding: 10px;
+    margin-bottom: 10px;
+  }
+
   .stats {
     grid-template-columns: repeat(2, 1fr);
+    gap: 6px;
   }
 
   .group-stats-grid {
@@ -923,7 +954,82 @@ input:focus {
   }
 
   .container {
-    padding: var(--spacing-md);
+    padding: 8px;
+  }
+
+  /* Saved exams grid - single column on mobile */
+  .saved-exams-list {
+    grid-template-columns: 1fr !important;
+    gap: 8px;
+  }
+
+  /* Filter controls wrap */
+  .controls {
+    gap: 8px;
+  }
+
+  .group-filters {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .group-btn {
+    font-size: 0.7rem;
+    padding: 4px 8px;
+  }
+
+  .grade-filter {
+    gap: 4px;
+  }
+
+  .grade-btn {
+    font-size: 0.65rem;
+    padding: 2px 6px;
+  }
+
+  /* Selects full-width on mobile */
+  .controls select {
+    width: 100%;
+    font-size: 0.8rem;
+  }
+
+  /* Reset button full width */
+  .reset-filters-btn {
+    width: 100%;
+    justify-content: center;
+    padding: 6px 10px;
+  }
+
+  /* Pagination compact */
+  .pagination-container {
+    gap: 4px;
+  }
+
+  .pagination-btn {
+    padding: 4px 8px;
+    font-size: 0.7rem;
+  }
+
+  /* Search box */
+  .search-box {
+    min-width: 100%;
+  }
+
+  /* Header controls */
+  .header-controls {
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  /* View toggle buttons */
+  .view-toggle {
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  .view-toggle button {
+    font-size: 0.7rem;
+    padding: 5px 8px;
   }
 }
 
