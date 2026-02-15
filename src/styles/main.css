@@ -299,8 +299,8 @@ input:focus {
   align-items: center;
   justify-content: center;
   position: fixed;
-  top: 12px;
-  right: 12px;
+  top: 58px;
+  right: 48px;
   z-index: 1000;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: all 0.2s ease;
@@ -317,8 +317,8 @@ input:focus {
     width: 30px;
     height: 30px;
     font-size: 13px;
-    top: 8px;
-    right: 8px;
+    top: 82px;
+    right: 26px;
   }
 }
 
