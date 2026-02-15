@@ -505,10 +505,11 @@ export function isFirestoreOnline() {
 export function downloadDemoTemplate() {
     const headers = [
         {
+            'Roll': '101',
+            'Name': 'রহিম উদ্দিন',
             'Class': '11',
             'Session': '2024-2025',
             'Subject': 'ICT',
-            'Roll': '101',
             'Group': 'Science',
             'Written (50)': 40,
             'MCQ(25)': 20,
@@ -519,10 +520,11 @@ export function downloadDemoTemplate() {
             'Status': 'Passed'
         },
         {
+            'Roll': '102',
+            'Name': 'করিম হোসেন',
             'Class': '11',
             'Session': '2024-2025',
             'Subject': 'ICT',
-            'Roll': '102',
             'Group': 'Humanities',
             'Written (50)': 35,
             'MCQ(25)': 18,
@@ -538,10 +540,11 @@ export function downloadDemoTemplate() {
 
     // Add column widths
     const wscols = [
+        { wch: 10 }, // Roll
+        { wch: 20 }, // Name
         { wch: 10 }, // Class
         { wch: 15 }, // Session
         { wch: 10 }, // Subject
-        { wch: 10 }, // Roll
         { wch: 15 }, // Group
         { wch: 15 }, // Written
         { wch: 10 }, // MCQ

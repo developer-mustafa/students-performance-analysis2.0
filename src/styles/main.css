@@ -623,6 +623,29 @@ input:focus {
   color: white;
 }
 
+/* Reset Filters Button */
+.reset-filters-btn {
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  color: white;
+  border: none;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  white-space: nowrap;
+}
+
+.reset-filters-btn:hover {
+  background: linear-gradient(135deg, #c0392b, #a93226);
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(231, 76, 60, 0.35);
+}
+
 /* =========================================
    Table Grade and Status Cells
    ========================================= */

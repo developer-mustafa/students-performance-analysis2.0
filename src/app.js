@@ -492,6 +492,37 @@ function initEventListeners() {
         });
     }
 
+    // Reset All Filters Button
+    const resetFiltersBtn = document.getElementById('resetFiltersBtn');
+    if (resetFiltersBtn) {
+        resetFiltersBtn.addEventListener('click', () => {
+            // Reset state
+            state.currentGroupFilter = 'all';
+            state.currentGradeFilter = 'all';
+            state.currentSearchTerm = '';
+            state.currentChartType = 'total';
+            state.currentSortOrder = 'desc';
+
+            // Reset UI elements
+            if (elements.searchInput) elements.searchInput.value = '';
+            if (elements.chartTypeSelect) elements.chartTypeSelect.value = 'total';
+            if (elements.sortOrderSelect) elements.sortOrderSelect.value = 'desc';
+
+            // Reset group filter active state
+            document.querySelectorAll('.group-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.group === 'all');
+            });
+
+            // Reset grade filter active state
+            document.querySelectorAll('.grade-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.grade === 'all');
+            });
+
+            updateViews();
+            showNotification('সকল ফিল্টার রিসেট হয়েছে');
+        });
+    }
+
     // Export button - REPLACED WITH DROPDOWN LOGIC
     /*
     if (elements.exportBtn) {
