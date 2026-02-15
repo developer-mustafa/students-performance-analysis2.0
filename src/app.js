@@ -608,6 +608,11 @@ function initEventListeners() {
             if (state.currentView === 'analysis' && state.currentHistory && state.currentHistory.length > 0) {
                 updateAnalysisChart();
             }
+
+            // Update inline chart if visible
+            if (elements.inlineSearchPanel && elements.inlineSearchPanel.style.display !== 'none' && state.inlineSearchHistory.length > 0) {
+                updateInlineChart();
+            }
         });
     }
 

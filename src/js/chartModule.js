@@ -11,6 +11,20 @@ import { getGroupColor, sortStudentData } from './utils.js';
 let currentChart = null;
 
 /**
+ * Set Chart.js global theme colors based on dark/light mode
+ */
+function setChartTheme() {
+    const isDark = document.body.classList.contains('dark-mode');
+    const textColor = isDark ? '#ffffff' : '#1f2937';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.12)';
+
+    Chart.defaults.color = textColor;
+    Chart.defaults.borderColor = gridColor;
+    Chart.defaults.scale.grid.color = gridColor;
+    Chart.defaults.scale.ticks.color = textColor;
+}
+
+/**
  * Create or update the performance chart
  * @param {HTMLCanvasElement} canvas - Chart canvas element
  * @param {Array} data - Student data array
@@ -18,6 +32,7 @@ let currentChart = null;
  * @returns {Chart} - Chart instance
  */
 export function createPerformanceChart(canvas, data, options = {}) {
+    setChartTheme();
     const {
         chartType = 'total',
         sortOrder = 'desc',
@@ -292,6 +307,7 @@ let currentHistoryChart = null;
  * @param {Object} options - Chart options { chartType, maxMarks }
  */
 export function createHistoryChart(canvas, historyData, options = {}) {
+    setChartTheme();
     const { chartType = 'total', maxMarks = 100 } = options;
 
     // Destroy existing chart
@@ -356,9 +372,8 @@ export function createHistoryChart(canvas, historyData, options = {}) {
         id: 'dataLabels',
         afterDatasetsDraw(chart) {
             const { ctx } = chart;
-            const style = getComputedStyle(document.body);
             const isDark = document.body.classList.contains('dark-mode');
-            const textColor = style.getPropertyValue('--text-color').trim() || (isDark ? '#e0e0e0' : '#1f2937');
+            const labelColor = isDark ? '#ffffff' : '#1f2937';
 
             chart.data.datasets.forEach((dataset, i) => {
                 const meta = chart.getDatasetMeta(i);
@@ -381,21 +396,20 @@ export function createHistoryChart(canvas, historyData, options = {}) {
                     ctx.save();
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'bottom';
-                    // Professional Font Sizing
                     ctx.font = 'bold 20px "SolaimanLipi", sans-serif';
+                    ctx.fillStyle = labelColor;
 
-                    // Match Theme Color
-                    ctx.fillStyle = textColor;
-
-                    // Shadow only for Dark Mode (Subtle Glow)
+                    // Shadow for better readability in both modes
                     if (isDark) {
-                        ctx.shadowColor = 'rgba(0, 0, 0, 0.5)'; // Softer shadow
-                        ctx.shadowBlur = 3;
+                        ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+                        ctx.shadowBlur = 4;
                         ctx.shadowOffsetX = 1;
                         ctx.shadowOffsetY = 1;
                     } else {
-                        // Clean look for Light Mode
-                        ctx.shadowColor = 'transparent';
+                        ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
+                        ctx.shadowBlur = 3;
+                        ctx.shadowOffsetX = 0;
+                        ctx.shadowOffsetY = 0;
                     }
 
                     ctx.fillText(labelText, bar.x, bar.y - 8);
@@ -405,10 +419,9 @@ export function createHistoryChart(canvas, historyData, options = {}) {
         }
     };
 
-    const style = getComputedStyle(document.body);
     const isDarkMode = document.body.classList.contains('dark-mode');
-    const textColor = style.getPropertyValue('--text-color').trim() || (isDarkMode ? '#e0e0e0' : '#1f2937');
-    const gridColor = style.getPropertyValue('--border-color').trim() || (isDarkMode ? '#444' : '#e5e7eb');
+    const textColor = isDarkMode ? '#ffffff' : '#1f2937';
+    const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)';
 
     currentHistoryChart = new Chart(ctx, {
         type: 'bar',
