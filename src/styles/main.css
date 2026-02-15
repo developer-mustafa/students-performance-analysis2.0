@@ -1186,6 +1186,18 @@ input:focus {
   box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
 }
 
+.btn-success {
+  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+  color: white;
+  border: none;
+}
+
+.btn-success:hover {
+  background: linear-gradient(135deg, #059669 0%, #047857 100%);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
+}
+
 /* =========================================
    Data Management Toolbar (Compact)
    ========================================= */
@@ -1310,27 +1322,146 @@ input:focus {
   box-shadow: 0 0 0 2px rgba(93, 211, 255, 0.15);
 }
 
-/* Saved Exams Section Styling */
+/* Saved Exams Section Styling (Collapsible) */
 .saved-exams-section {
-  transition: all 0.3s ease;
+  margin-top: 12px;
+  border-top: 1px solid var(--border-color);
+  padding: 0;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%);
+  border-radius: 10px;
+  overflow: hidden;
+  transition: all var(--transition-normal) ease;
 }
 
-.saved-exams-section h3 {
-  font-size: 1rem;
-  font-weight: 600;
+.section-toggle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  cursor: pointer;
+  transition: background-color var(--transition-fast) ease;
+  user-select: none;
+}
+
+.section-toggle-header:hover {
+  background-color: rgba(67, 97, 238, 0.08);
+}
+
+.section-title {
+  color: var(--heading-color);
+  margin: 0 !important;
+  font-size: 0.9rem !important;
   display: flex;
   align-items: center;
   gap: 8px;
 }
 
-.saved-exams-section h3 i {
+.section-title i {
   color: var(--primary);
 }
 
-/* Dark mode saved section */
-.dark-mode .saved-exams-section {
-  background: linear-gradient(135deg, rgba(99, 102, 241, 0.1) 0%, rgba(139, 92, 246, 0.1) 100%) !important;
-  border-color: rgba(255, 255, 255, 0.1) !important;
+.toggle-icon {
+  font-size: 0.8rem;
+  color: var(--text-color);
+  transition: transform var(--transition-normal) cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.rotate-180 {
+  transform: rotate(180deg);
+}
+
+.collapse-container {
+  max-height: 1000px;
+  /* Large enough for content */
+  overflow: hidden;
+  transition: max-height var(--transition-normal) cubic-bezier(0.4, 0, 0.2, 1),
+    opacity var(--transition-normal) ease;
+  padding: 0 12px 12px 12px;
+  opacity: 1;
+}
+
+.collapse-container.collapsed {
+  max-height: 0;
+  padding-bottom: 0;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.saved-exams-list {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  gap: 12px;
+  width: 100%;
+}
+
+.exam-card {
+  width: 100% !important;
+  max-width: none !important;
+  flex: none !important;
+}
+
+/* Pagination Styling */
+.pagination-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 8px;
+  margin-top: 15px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border-color);
+}
+
+.pagination-btn {
+  padding: 6px 12px;
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  color: var(--text-color);
+  font-size: 0.8rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.pagination-btn:hover:not(:disabled) {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.pagination-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.pagination-btn.active {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.pagination-page-info {
+  font-size: 0.8rem;
+  color: var(--text-color);
+  opacity: 0.7;
+  margin: 0 10px;
+}
+
+/* Dark mode pagination */
+.dark-mode .pagination-btn {
+  background: rgba(255, 255, 255, 0.05);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .pagination-btn:hover:not(:disabled) {
+  background: var(--primary);
+}
+
+.dark-mode .section-toggle-header:hover {
+  background-color: rgba(255, 255, 255, 0.05);
 }
 
 /* =========================================
@@ -1700,6 +1831,14 @@ input:focus {
     display: none !important;
   }
 
+  /* Base modal responsiveness */
+  @media (max-width: 480px) {
+    .modal-content {
+      width: 90% !important;
+      margin: 20% auto !important;
+    }
+  }
+
   /* Make sure the main card takes full width */
   body,
   .container,
@@ -1766,6 +1905,116 @@ input:focus {
   body::after {
     display: none !important;
   }
+}
+
+/* Profile Modal Styles */
+.profile-modal-content {
+  max-width: 350px !important;
+  text-align: center;
+  padding: 40px 25px 30px !important;
+  border-radius: 20px !important;
+  background: var(--card-bg);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
+
+#closeProfileIcon {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 1.5rem;
+  color: var(--text-color);
+  opacity: 0.5;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
+
+#closeProfileIcon:hover {
+  opacity: 1;
+}
+
+.profile-header {
+  margin-bottom: 25px;
+}
+
+.profile-pic-container {
+  width: 90px;
+  height: 90px;
+  margin: 0 auto 15px;
+  border-radius: 50%;
+  padding: 4px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
+}
+
+.profile-pic-container img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid white;
+}
+
+#userName {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--heading-color);
+  margin-bottom: 5px;
+}
+
+#userEmail {
+  font-size: 0.9rem;
+  color: var(--text-color);
+  opacity: 0.7;
+  word-break: break-all;
+}
+
+.profile-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.profile-actions button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+#modalLogoutBtn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+}
+
+#modalLogoutBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+#closeProfileBtn {
+  background: transparent;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+#closeProfileBtn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.dark-mode .profile-pic-container img {
+  border-color: #1e293b;
+}
+
+.dark-mode #closeProfileBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 /* =========================================

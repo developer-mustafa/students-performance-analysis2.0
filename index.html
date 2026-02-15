@@ -127,15 +127,22 @@
         </div>
       </div>
 
-      <!-- Saved Exams List -->
-      <div class="saved-exams-section"
-        style="margin-top: 12px; border-top: 1px solid var(--border-color); padding: 10px 12px; background: linear-gradient(135deg, rgba(99, 102, 241, 0.05) 0%, rgba(139, 92, 246, 0.05) 100%); border-radius: 10px;">
-        <h3 style="color: var(--heading-color); margin-bottom: 8px; font-size: 0.9rem;"><i class="fas fa-history"></i>
-          সংরক্ষিত ফলাফল
-          (Saved Database)</h3>
-        <div id="savedExamsList" class="saved-exams-list" style="display: flex; flex-wrap: wrap; gap: 8px;">
-          <div style="text-align: center; color: var(--text-color); opacity: 0.6; padding: 10px; width: 100%;">লোডিং...
+      <!-- Saved Exams List (Collapsible) -->
+      <div id="savedExamsSection" class="saved-exams-section">
+        <div id="savedExamsToggle" class="section-toggle-header">
+          <h3 class="section-title">
+            <i class="fas fa-history"></i> সংরক্ষিত ফলাফল (Saved Database)
+          </h3>
+          <i class="fas fa-chevron-up toggle-icon" id="savedExamsIcon"></i>
+        </div>
+        <div id="savedExamsCollapse" class="collapse-container">
+          <div id="savedExamsList" class="saved-exams-list">
+            <div style="text-align: center; color: var(--text-color); opacity: 0.6; padding: 10px; width: 100%;">
+              লোডিং...
+            </div>
           </div>
+          <!-- Pagination Controls -->
+          <div id="savedExamsPagination" class="pagination-container"></div>
         </div>
       </div>
     </div>
@@ -193,6 +200,8 @@
         <select id="sortOrder">
           <option value="desc">সর্বোচ্চ থেকে সর্বনিম্ন</option>
           <option value="asc">সর্বনিম্ন থেকে সর্বোচ্চ</option>
+          <option value="roll-asc">রোল: ছোট → বড়</option>
+          <option value="roll-desc">রোল: বড় → ছোট</option>
         </select>
       </div>
     </div>
@@ -356,6 +365,26 @@
         </div>
         <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">আপডেট করুন</button>
       </form>
+    </div>
+  </div>
+
+  <!-- Profile Modal -->
+  <div id="profileModal" class="modal">
+    <div class="modal-content profile-modal-content">
+      <span class="close" id="closeProfileIcon">&times;</span>
+      <div class="profile-header">
+        <div class="profile-pic-container">
+          <img id="userPhoto" src="https://ui-avatars.com/api/?name=Admin&background=random" alt="Profile">
+        </div>
+        <h2 id="userName">অ্যাডমিন ইউজার</h2>
+        <p id="userEmail">admin@example.com</p>
+      </div>
+      <div class="profile-actions">
+        <button id="modalLogoutBtn" class="btn-danger">
+          <i class="fas fa-sign-out-alt"></i> লগআউট করুন
+        </button>
+        <button id="closeProfileBtn" class="btn-secondary">বন্ধ করুন</button>
+      </div>
     </div>
   </div>
 

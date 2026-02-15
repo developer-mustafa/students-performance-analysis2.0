@@ -162,6 +162,13 @@ export function filterStudentData(data, filters) {
  * @returns {Array} - Sorted data
  */
 export function sortStudentData(data, sortBy, order = 'desc') {
+    // Roll number sorting
+    if (order === 'roll-asc') {
+        return [...data].sort((a, b) => Number(a.id) - Number(b.id));
+    }
+    if (order === 'roll-desc') {
+        return [...data].sort((a, b) => Number(b.id) - Number(a.id));
+    }
     return [...data].sort((a, b) => {
         const comparison = b[sortBy] - a[sortBy];
         return order === 'desc' ? comparison : -comparison;

@@ -417,7 +417,7 @@ function parseExcelRow(row, columnMap, rowIndex) {
  * @param {HTMLCanvasElement} canvas - Chart canvas element
  * @param {string} filename - Export filename
  */
-export function exportChartAsImage(canvas, filename = 'প্রি-টেস্ট-পরীক্ষা-২০২৫-পারফর্ম্যান্স-চার্ট.png') {
+export function exportChartAsImage(canvas, filename = 'পারফর্ম্যান্স-চার্ট.png') {
     // Get current theme colors
     const style = getComputedStyle(document.body);
     const isDarkMode = document.body.classList.contains('dark-mode');

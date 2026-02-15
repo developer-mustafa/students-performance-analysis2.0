@@ -78,8 +78,12 @@ const state = {
     inlineHistoryChartInstance: null,
     inlineSearchDebounce: null,
     analysisSearchDebounce: null,
-    currentAnalysisPrevStudent: null,
     currentAnalysisNextStudent: null,
+
+    // Saved Exams Pagination
+    savedExamsCurrentPage: 1,
+    savedExamsPerPage: 6,
+    currentUser: null, // Store Firebase user object
 };
 
 // DOM Elements
@@ -215,6 +219,21 @@ function initElements() {
     elements.confirmCancelBtn = document.getElementById('confirmCancelBtn');
     elements.confirmDeleteBtn = document.getElementById('confirmDeleteBtn');
     elements.confirmMessage = document.getElementById('confirmMessage');
+
+    // Saved Exams Section (Collapsible)
+    elements.savedExamsToggle = document.getElementById('savedExamsToggle');
+    elements.savedExamsCollapse = document.getElementById('savedExamsCollapse');
+    elements.savedExamsIcon = document.getElementById('savedExamsIcon');
+    elements.savedExamsPagination = document.getElementById('savedExamsPagination');
+
+    // Profile Modal
+    elements.profileModal = document.getElementById('profileModal');
+    elements.userName = document.getElementById('userName');
+    elements.userEmail = document.getElementById('userEmail');
+    elements.userPhoto = document.getElementById('userPhoto');
+    elements.modalLogoutBtn = document.getElementById('modalLogoutBtn');
+    elements.closeProfileBtn = document.getElementById('closeProfileBtn');
+    elements.closeProfileIcon = document.getElementById('closeProfileIcon');
 }
 
 /**
@@ -921,12 +940,21 @@ function initExamManagement() {
     // Listen for auth state changes
     onAuthChange((user) => {
         state.isAdmin = !!user;
+        state.currentUser = user; // Store user object
+
         const btn = elements.adminToggle;
         if (btn) {
             if (user) {
                 btn.classList.add('logged-in');
                 btn.innerHTML = `<i class="fas fa-lock-open"></i> <span class="dm-btn-text">${user.displayName || 'অ্যাডমিন'}</span>`;
-                btn.title = 'লগআউট করতে ক্লিক করুন';
+                btn.title = 'প্রোফাইল দেখতে ক্লিক করুন';
+
+                // Update Profile Modal Content
+                if (elements.userName) elements.userName.innerText = user.displayName || 'অ্যাডমিন ইউজার';
+                if (elements.userEmail) elements.userEmail.innerText = user.email || '';
+                if (elements.userPhoto) {
+                    elements.userPhoto.src = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'Admin')}&background=random`;
+                }
             } else {
                 btn.classList.remove('logged-in');
                 btn.innerHTML = '<i class="fab fa-google"></i> <span class="dm-btn-text">লগইন</span>';
@@ -936,13 +964,13 @@ function initExamManagement() {
         renderSavedExamsList();
     });
 
-    // Admin toggle button — Google popup login / logout
+    // Admin toggle button — Google popup login / Open Profile Modal
     if (elements.adminToggle) {
         elements.adminToggle.addEventListener('click', async () => {
             if (state.isAdmin) {
-                if (confirm('আপনি কি লগআউট করতে চান?')) {
-                    await logoutAdmin();
-                    showNotification('লগআউট সফল!');
+                // Open Profile Modal instead of confirm()
+                if (elements.profileModal) {
+                    elements.profileModal.style.display = 'block';
                 }
             } else {
                 const result = await loginWithGoogle();
@@ -953,6 +981,27 @@ function initExamManagement() {
                 }
             }
         });
+    }
+
+    // Modal Logout Button
+    if (elements.modalLogoutBtn) {
+        elements.modalLogoutBtn.addEventListener('click', async () => {
+            if (elements.profileModal) elements.profileModal.style.display = 'none';
+            await logoutAdmin();
+            showNotification('লগআউট সফল!');
+        });
+    }
+
+    // Close Profile Modal (X and Button)
+    const closeProfile = () => {
+        if (elements.profileModal) elements.profileModal.style.display = 'none';
+    };
+
+    if (elements.closeProfileBtn) {
+        elements.closeProfileBtn.addEventListener('click', closeProfile);
+    }
+    if (elements.closeProfileIcon) {
+        elements.closeProfileIcon.addEventListener('click', closeProfile);
     }
 
     // Close edit modal
@@ -978,7 +1027,7 @@ function initExamManagement() {
                 if (success) {
                     showNotification('পরীক্ষার তথ্য আপডেট সফল!');
                     elements.editExamModal.style.display = 'none';
-                    renderSavedExamsList();
+                    fetchAndRenderSavedExams();
                 } else {
                     showNotification('আপডেট করতে সমস্যা হয়েছে', 'error');
                 }
@@ -992,7 +1041,32 @@ function initExamManagement() {
     }
 
     // Initial load of saved exams
-    renderSavedExamsList();
+    fetchAndRenderSavedExams();
+
+    // Initialize Collapsible Section
+    initCollapsibleSavedExams();
+}
+
+/**
+ * Initialize Collapsible Saved Exams Logic
+ */
+function initCollapsibleSavedExams() {
+    if (!elements.savedExamsToggle || !elements.savedExamsCollapse || !elements.savedExamsIcon) return;
+
+    // Load initial state
+    const isCollapsed = localStorage.getItem('savedExamsCollapsed') === 'true';
+    if (isCollapsed) {
+        elements.savedExamsCollapse.classList.add('collapsed');
+        elements.savedExamsIcon.classList.add('rotate-180');
+    }
+
+    elements.savedExamsToggle.addEventListener('click', () => {
+        const collapsing = elements.savedExamsCollapse.classList.toggle('collapsed');
+        elements.savedExamsIcon.classList.toggle('rotate-180');
+
+        // Save preference
+        localStorage.setItem('savedExamsCollapsed', collapsing);
+    });
 }
 
 /**
@@ -1025,7 +1099,7 @@ async function handleSaveExam(e) {
             showNotification('পরীক্ষার ফলাফল সফলভাবে সংরক্ষণ করা হয়েছে!');
             elements.saveExamModal.style.display = 'none';
             elements.saveExamForm.reset();
-            renderSavedExamsList(); // Refresh list
+            fetchAndRenderSavedExams(); // Refresh list
         } else {
             showNotification('সংরক্ষণ করতে সমস্যা হয়েছে', 'error');
         }
@@ -1040,25 +1114,55 @@ async function handleSaveExam(e) {
 /**
  * Render Saved Exams List
  */
-async function renderSavedExamsList() {
+/**
+ * Fetch and Render Saved Exams
+ */
+async function fetchAndRenderSavedExams() {
     if (!elements.savedExamsList) return;
 
-    elements.savedExamsList.innerHTML = '<div style="text-align: center; color: #666;">লোডিং...</div>';
+    elements.savedExamsList.innerHTML = '<div style="text-align: center; color: var(--text-color); opacity: 0.6; padding: 10px; width: 100%;">লোডিং...</div>';
 
-    const exams = await getSavedExams();
+    try {
+        const exams = await getSavedExams();
+        state.savedExams = exams;
+        renderSavedExamsList();
+    } catch (error) {
+        console.error('Error fetching saved exams:', error);
+        elements.savedExamsList.innerHTML = '<div style="text-align: center; color: var(--danger); padding: 10px;">ডেটা লোড করতে সমস্যা হয়েছে।</div>';
+    }
+}
 
+/**
+ * Render Saved Exams List
+ */
+function renderSavedExamsList() {
+    if (!elements.savedExamsList) return;
+    elements.savedExamsList.innerHTML = '';
+
+    const exams = state.savedExams || [];
     if (exams.length === 0) {
-        elements.savedExamsList.innerHTML = '<div style="text-align: center; color: #999; padding: 10px;">কোনো সংরক্ষিত ফলাফল নেই</div>';
+        elements.savedExamsList.innerHTML = '<div style="text-align: center; color: var(--text-color); opacity: 0.6; padding: 10px; width: 100%;">কোন সংরক্ষিত ফলাফল পাওয়া যায়নি।</div>';
+        if (elements.savedExamsPagination) elements.savedExamsPagination.innerHTML = '';
         return;
     }
 
-    elements.savedExamsList.innerHTML = '';
+    // Pagination Calculations
+    const totalExams = exams.length;
+    const totalPages = Math.ceil(totalExams / state.savedExamsPerPage);
+
+    // Safety check for current page
+    if (state.savedExamsCurrentPage > totalPages) state.savedExamsCurrentPage = totalPages;
+    if (state.savedExamsCurrentPage < 1) state.savedExamsCurrentPage = 1;
+
+    const startIndex = (state.savedExamsCurrentPage - 1) * state.savedExamsPerPage;
+    const endIndex = startIndex + state.savedExamsPerPage;
+    const currentExams = exams.slice(startIndex, endIndex);
 
     // Helper for subject styles
-    const getSubjectStyle = (subjectName) => {
-        const subject = subjectName ? subjectName.toLowerCase() : '';
-        let style = {
-            background: 'var(--card-bg)',
+    const getSubjectStyle = (subject = '') => {
+        subject = subject.toLowerCase();
+        const style = {
+            background: 'linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%)',
             color: 'var(--text-color)',
             border: '1px solid var(--border-color)',
             iconColor: 'var(--primary)',
@@ -1066,7 +1170,7 @@ async function renderSavedExamsList() {
         };
 
         if (subject.includes('bangla') || subject.includes('বাংলা')) {
-            style.background = 'linear-gradient(135deg, #ff6b6b 0%, #ee5253 100%)';
+            style.background = 'linear-gradient(135deg, #ee5253 0%, #ff6b6b 100%)';
             style.color = '#fff';
             style.border = 'none';
             style.iconColor = '#fff';
@@ -1078,31 +1182,31 @@ async function renderSavedExamsList() {
             style.iconColor = '#fff';
             style.shadow = '0 4px 15px rgba(104, 109, 224, 0.4)';
         } else if (subject.includes('ict') || subject.includes('তথ্য')) {
-            style.background = 'linear-gradient(135deg, #0984e3 0%, #74b9ff 100%)'; // Blue
+            style.background = 'linear-gradient(135deg, #0984e3 0%, #74b9ff 100%)';
             style.color = '#fff';
             style.border = 'none';
             style.iconColor = '#fff';
             style.shadow = '0 4px 15px rgba(9, 132, 227, 0.4)';
         } else if (subject.includes('math') || subject.includes('গণিত')) {
-            style.background = 'linear-gradient(135deg, #00b894 0%, #55efc4 100%)'; // Teal
+            style.background = 'linear-gradient(135deg, #00b894 0%, #55efc4 100%)';
             style.color = '#fff';
             style.border = 'none';
             style.iconColor = '#fff';
             style.shadow = '0 4px 15px rgba(0, 184, 148, 0.4)';
         } else if (subject.includes('physics') || subject.includes('পদার্থ')) {
-            style.background = 'linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)'; // Purple
+            style.background = 'linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%)';
             style.color = '#fff';
             style.border = 'none';
             style.iconColor = '#fff';
             style.shadow = '0 4px 15px rgba(108, 92, 231, 0.4)';
         } else if (subject.includes('chemistry') || subject.includes('রসায়ন')) {
-            style.background = 'linear-gradient(135deg, #e17055 0%, #fab1a0 100%)'; // Orange
+            style.background = 'linear-gradient(135deg, #e17055 0%, #fab1a0 100%)';
             style.color = '#fff';
             style.border = 'none';
             style.iconColor = '#fff';
             style.shadow = '0 4px 15px rgba(225, 112, 85, 0.4)';
         } else if (subject.includes('biology') || subject.includes('জীব')) {
-            style.background = 'linear-gradient(135deg, #27ae60 0%, #2ecc71 100%)'; // Green
+            style.background = 'linear-gradient(135deg, #27ae60 0%, #2ecc71 100%)';
             style.color = '#fff';
             style.border = 'none';
             style.iconColor = '#fff';
@@ -1112,7 +1216,7 @@ async function renderSavedExamsList() {
         return style;
     };
 
-    exams.forEach(exam => {
+    currentExams.forEach(exam => {
         const date = exam.createdAt?.toDate ? exam.createdAt.toDate().toLocaleDateString('bn-BD') : '';
         const theme = getSubjectStyle(exam.subject);
 
@@ -1128,17 +1232,14 @@ async function renderSavedExamsList() {
             transition: transform 0.15s, box-shadow 0.15s;
             position: relative;
             overflow: hidden;
-            flex: 0 0 auto;
-            min-width: 180px;
-            max-width: 260px;
         `;
 
         const isGradient = theme.background.includes('gradient');
 
         card.innerHTML = `
-            <div style="display: flex; align-items: center; gap: 6px; margin-bottom: 4px; position: relative; z-index: 1;">
-                <div style="font-weight: 700; font-size: 0.95em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; flex: 1;">${exam.name}</div>
-                <span style="background: #ffffff; color: #2d3436; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.75em; box-shadow: 0 1px 3px rgba(0,0,0,0.15); white-space: nowrap; flex-shrink: 0;">${exam.subject}</span>
+            <div style="display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px; position: relative; z-index: 1;">
+                <div style="font-weight: 700; font-size: 0.82em; word-break: break-word; flex: 1; line-height: 1.3;">${exam.name}</div>
+                <span style="background: #ffffff; color: #2d3436; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.7em; box-shadow: 0 1px 3px rgba(0,0,0,0.15); white-space: nowrap; flex-shrink: 0;">${exam.subject}</span>
             </div>
             <div style="font-size: 0.78em; opacity: 0.8; margin-bottom: 6px; position: relative; z-index: 1;">
                 <i class="far fa-calendar-alt"></i> ${date} &nbsp;|&nbsp; 
@@ -1169,23 +1270,30 @@ async function renderSavedExamsList() {
             if (!isGradient) card.style.boxShadow = theme.shadow;
         };
 
-        // Load Event
-        card.querySelector('.load-exam-btn').addEventListener('click', () => handleLoadExam(exam));
+        // Load Event — stopPropagation prevents card-level bubbling
+        card.querySelector('.load-exam-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            handleLoadExam(exam);
+        });
 
         // Edit & Delete events (admin only)
         if (state.isAdmin) {
             const editBtn = card.querySelector('.edit-exam-btn');
             if (editBtn) {
-                editBtn.addEventListener('click', () => handleEditExam(exam));
+                editBtn.addEventListener('click', (e) => {
+                    e.stopPropagation();
+                    handleEditExam(exam);
+                });
             }
 
             const deleteBtn = card.querySelector('.delete-exam-btn');
             if (deleteBtn) {
-                deleteBtn.addEventListener('click', async () => {
+                deleteBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
                     const confirmed = await showConfirm(`আপনি কি নিশ্চিত যে "${exam.name}" মুছে ফেলতে চান?`);
                     if (confirmed) {
                         await deleteExam(exam.docId);
-                        renderSavedExamsList();
+                        await fetchAndRenderSavedExams();
                     }
                 });
             }
@@ -1193,13 +1301,63 @@ async function renderSavedExamsList() {
 
         elements.savedExamsList.appendChild(card);
     });
+
+    // Render Pagination
+    renderSavedExamsPagination(totalPages);
+}
+
+/**
+ * Render Saved Exams Pagination
+ */
+function renderSavedExamsPagination(totalPages) {
+    if (!elements.savedExamsPagination) return;
+    elements.savedExamsPagination.innerHTML = '';
+
+    if (totalPages <= 1) return;
+
+    // Previous Button
+    const prevBtn = document.createElement('button');
+    prevBtn.className = 'pagination-btn';
+    prevBtn.disabled = state.savedExamsCurrentPage === 1;
+    prevBtn.innerHTML = '<i class="fas fa-chevron-left"></i>';
+    prevBtn.onclick = () => {
+        state.savedExamsCurrentPage--;
+        renderSavedExamsList();
+    };
+    elements.savedExamsPagination.appendChild(prevBtn);
+
+    // Page Numbers
+    for (let i = 1; i <= totalPages; i++) {
+        const pageBtn = document.createElement('button');
+        pageBtn.className = `pagination-btn ${state.savedExamsCurrentPage === i ? 'active' : ''}`;
+        pageBtn.innerText = i;
+        pageBtn.onclick = () => {
+            state.savedExamsCurrentPage = i;
+            renderSavedExamsList();
+        };
+        elements.savedExamsPagination.appendChild(pageBtn);
+    }
+
+    // Next Button
+    const nextBtn = document.createElement('button');
+    nextBtn.className = 'pagination-btn';
+    nextBtn.disabled = state.savedExamsCurrentPage === totalPages;
+    nextBtn.innerHTML = '<i class="fas fa-chevron-right"></i>';
+    nextBtn.onclick = () => {
+        state.savedExamsCurrentPage++;
+        renderSavedExamsList();
+    };
+    elements.savedExamsPagination.appendChild(nextBtn);
 }
 
 /**
  * Handle Load Exam
  */
 async function handleLoadExam(exam) {
-    const confirmed = await showConfirm(`সতর্কতা: বর্তমান ডেটা "${exam.name}" এর ডেটা দ্বারা প্রতিস্থাপিত হবে। আপনি কি নিশ্চিত?`);
+    const confirmed = await showConfirm(
+        `সতর্কতা: বর্তমান ডেটা "${exam.name}" এর ডেটা দ্বারা প্রতিস্থাপিত হবে। আপনি কি নিশ্চিত?`,
+        { confirmText: '<i class="fas fa-download"></i> হ্যাঁ, লোড করুন', title: 'ডেটা লোড করুন', confirmClass: 'btn-success' }
+    );
     if (!confirmed) {
         return;
     }
@@ -1211,11 +1369,10 @@ async function handleLoadExam(exam) {
             state.studentData = exam.studentData;
             state.currentExamName = exam.name;
             state.currentSubject = exam.subject;
-            localStorage.setItem('currentSubject', exam.subject); // Persist
+            localStorage.setItem('currentSubject', exam.subject);
             updateViews();
             showNotification(`"${exam.name}" ডেটা সফলভাবে লোড হয়েছে!`);
 
-            // Scroll to top
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
             showNotification('ডেটা লোড করতে সমস্যা হয়েছে', 'error');
@@ -1240,15 +1397,30 @@ function handleEditExam(exam) {
 
 /**
  * Custom Beautiful Confirm Dialog
- * @param {string} message - The message to show
- * @returns {Promise<boolean>} - Resolves to true if confirmed, false otherwise
+ * @param {string} message - The message to display
+ * @param {Object} [options] - Optional config
+ * @param {string} [options.confirmText] - Custom confirm button text
+ * @param {string} [options.title] - Custom modal title
+ * @param {string} [options.confirmClass] - Custom CSS class for the confirm button
  */
-function showConfirm(message) {
+function showConfirm(message, options = {}) {
     return new Promise((resolve) => {
         if (!elements.confirmModal) return resolve(false);
 
         if (elements.confirmMessage) {
             elements.confirmMessage.innerText = message;
+        }
+
+        // Set dynamic title
+        const titleEl = document.getElementById('confirmTitle');
+        if (titleEl) {
+            titleEl.innerText = options.title || 'নিশ্চিত করুন';
+        }
+
+        // Set dynamic confirm button text and style
+        if (elements.confirmDeleteBtn) {
+            elements.confirmDeleteBtn.innerHTML = options.confirmText || '<i class="fas fa-trash"></i> হ্যাঁ, মুছে ফেলুন';
+            elements.confirmDeleteBtn.className = options.confirmClass || 'btn-danger';
         }
 
         elements.confirmModal.style.display = 'block';
@@ -1274,7 +1446,6 @@ function showConfirm(message) {
         elements.confirmCancelBtn.addEventListener('click', handleCancel);
     });
 }
-
 
 // ==========================================
 // STUDENT ANALYSIS LOGIC

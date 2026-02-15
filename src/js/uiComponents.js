@@ -169,10 +169,17 @@ export function renderTable(tbody, data, options = {}) {
   }
 
   // Sort data
-  let sortedData = [...data].sort((a, b) => {
-    const comparison = b[sortBy] - a[sortBy];
-    return sortOrder === 'desc' ? comparison : -comparison;
-  });
+  let sortedData;
+  if (sortOrder === 'roll-asc') {
+    sortedData = [...data].sort((a, b) => Number(a.id) - Number(b.id));
+  } else if (sortOrder === 'roll-desc') {
+    sortedData = [...data].sort((a, b) => Number(b.id) - Number(a.id));
+  } else {
+    sortedData = [...data].sort((a, b) => {
+      const comparison = b[sortBy] - a[sortBy];
+      return sortOrder === 'desc' ? comparison : -comparison;
+    });
+  }
 
   // Limit entries for table (use larger limit than chart)
   if (sortedData.length > MAX_TABLE_ENTRIES) {
