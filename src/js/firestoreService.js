@@ -20,6 +20,7 @@ import {
     query,
     orderBy,
     serverTimestamp,
+    limit
 } from 'firebase/firestore';
 
 // Collection names
@@ -27,7 +28,9 @@ const COLLECTIONS = {
     students: 'students',
     exams: 'exams',
     analytics: 'analytics',
+    analytics: 'analytics',
     settings: 'settings',
+    users: 'users',
 };
 
 // ==========================================
@@ -288,7 +291,10 @@ export async function saveExam(examData) {
             ...examData,
             createdAt: serverTimestamp(),
             // Store the ID explicitly too
-            id: docId
+            id: docId,
+            // Creator Metadata (if available in examData, otherwise null)
+            createdBy: examData.createdBy || null,
+            creatorName: examData.creatorName || null
         });
 
         console.log('Exam saved with ID:', docId);
@@ -585,10 +591,89 @@ export async function loginWithGoogle() {
     try {
         const provider = new GoogleAuthProvider();
         const result = await signInWithPopup(auth, provider);
-        return { success: true, user: result.user };
+        const role = await syncUserRole(result.user);
+        const userWithRole = { ...result.user, role };
+        return { success: true, user: userWithRole };
     } catch (error) {
         console.error('গুগল লগইন ত্রুটি:', error);
         return { success: false, error: error.code };
+    }
+}
+
+/**
+ * Logout admin
+ * @returns {Promise<boolean>}
+ */
+// ==========================================
+// USER MANAGEMENT OPERATIONS
+// ==========================================
+
+/**
+ * Sync user role with Firestore (Create if new, Get if exists)
+ * First ever user becomes 'super_admin'
+ */
+export async function syncUserRole(user) {
+    if (!user) return null;
+    try {
+        const userRef = doc(db, COLLECTIONS.users, user.uid);
+        const userSnap = await getDoc(userRef);
+
+        if (userSnap.exists()) {
+            // Update last login
+            await updateDoc(userRef, { lastLogin: serverTimestamp() });
+            return userSnap.data().role;
+        }
+
+        // Check if this is the first user (by checking if collection is empty)
+        const usersRef = collection(db, COLLECTIONS.users);
+        const q = query(usersRef, limit(1));
+        const snapshot = await getDocs(q);
+
+        const role = snapshot.empty ? 'super_admin' : 'user';
+
+        await setDoc(userRef, {
+            uid: user.uid,
+            email: user.email,
+            displayName: user.displayName,
+            photoURL: user.photoURL,
+            role: role,
+            createdAt: serverTimestamp(),
+            lastLogin: serverTimestamp()
+        });
+
+        return role;
+    } catch (error) {
+        console.error('Error syncing user role:', error);
+        return 'user'; // Default fallback
+    }
+}
+
+/**
+ * Get all users (Super Admin only)
+ */
+export async function getAllUsers() {
+    try {
+        const usersRef = collection(db, COLLECTIONS.users);
+        const q = query(usersRef, orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => doc.data());
+    } catch (error) {
+        console.error('Error fetching users:', error);
+        return [];
+    }
+}
+
+/**
+ * Update user role (Super Admin only)
+ */
+export async function updateUserRole(uid, newRole) {
+    try {
+        const userRef = doc(db, COLLECTIONS.users, uid);
+        await updateDoc(userRef, { role: newRole });
+        return true;
+    } catch (error) {
+        console.error('Error updating role:', error);
+        return false;
     }
 }
 

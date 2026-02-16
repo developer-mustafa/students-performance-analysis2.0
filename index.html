@@ -344,8 +344,27 @@
             placeholder="উদাহরণ: প্রাক-নির্বাচনী পরীক্ষা ২০২৫">
         </div>
         <div class="form-group">
-          <label for="subjectName">বিষয় (Subject):</label>
-          <input type="text" id="subjectName" class="form-control" required placeholder="উদাহরণ: বাংলা">
+          <label for="examSubject">বিষয় (Subject):</label>
+          <input type="text" id="examSubject" class="form-control" placeholder="উদাহরণ: বাংলা" required>
+        </div>
+        <div class="form-row" style="display: flex; gap: 10px;">
+          <div class="form-group" style="flex: 1;">
+            <label for="examClass">শ্রেণি (Class):</label>
+            <select id="examClass" class="form-control">
+              <option value="">সিলেক্ট করুন</option>
+              <option value="6">৬ষ্ঠ শ্রেণি</option>
+              <option value="7">৭ম শ্রেণি</option>
+              <option value="8">৮ম শ্রেণি</option>
+              <option value="9">৯ম শ্রেণি</option>
+              <option value="10">১০ম শ্রেণি</option>
+              <option value="SSC">SSC</option>
+              <option value="HSC">HSC</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label for="examSession">সেশন (Session):</label>
+            <input type="text" id="examSession" class="form-control" placeholder="2025" value="2025">
+          </div>
         </div>
         <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">সংরক্ষণ করুন</button>
       </form>
@@ -369,6 +388,25 @@
           <label for="editSubjectName">বিষয়:</label>
           <input type="text" id="editSubjectName" class="form-control" required>
         </div>
+        <div class="form-row" style="display: flex; gap: 10px;">
+          <div class="form-group" style="flex: 1;">
+            <label for="editExamClass">শ্রেণি (Class):</label>
+            <select id="editExamClass" class="form-control">
+              <option value="">সিলেক্ট করুন</option>
+              <option value="6">৬ষ্ঠ শ্রেণি</option>
+              <option value="7">৭ম শ্রেণি</option>
+              <option value="8">৮ম শ্রেণি</option>
+              <option value="9">৯ম শ্রেণি</option>
+              <option value="10">১০ম শ্রেণি</option>
+              <option value="SSC">SSC</option>
+              <option value="HSC">HSC</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex: 1;">
+            <label for="editExamSession">সেশন (Session):</label>
+            <input type="text" id="editExamSession" class="form-control" placeholder="2025">
+          </div>
+        </div>
         <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">আপডেট করুন</button>
       </form>
     </div>
@@ -390,6 +428,29 @@
           <i class="fas fa-sign-out-alt"></i> লগআউট করুন
         </button>
         <button id="closeProfileBtn" class="btn-secondary">বন্ধ করুন</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- User Management Modal -->
+  <div id="userManagementModal" class="modal">
+    <div class="modal-content" style="max-width: 800px;">
+      <span class="close" id="closeUserManagementBtn">&times;</span>
+      <h2><i class="fas fa-users-cog"></i> ব্যবহারকারী ব্যবস্থাপনা</h2>
+      <div class="user-list-container" style="overflow-x: auto;">
+        <table class="user-table" style="width: 100%; border-collapse: collapse; margin-top: 15px;">
+          <thead>
+            <tr style="background: #f1f2f6; text-align: left; color: #2d3436;">
+              <th style="padding: 10px;">ব্যবহারকারী</th>
+              <th style="padding: 10px;">ইমেইল</th>
+              <th style="padding: 10px;">বর্তমান রোল</th>
+              <th style="padding: 10px; text-align: right;">পদক্ষেপ</th>
+            </tr>
+          </thead>
+          <tbody id="userListBody">
+            <!-- User rows injected here -->
+          </tbody>
+        </table>
       </div>
     </div>
   </div>

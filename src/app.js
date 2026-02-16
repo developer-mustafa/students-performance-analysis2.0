@@ -31,8 +31,13 @@ import {
     getCurrentChart,
     getChartTitle,
     createHistoryChart,
-    downloadHighResChart, // Imported
+    downloadHighResChart,
 } from './js/chartModule.js';
+import {
+    updateSettings,
+    getSettings,
+    subscribeToSettings,
+} from './js/firestoreService.js';
 import {
     renderStats,
     renderGroupStats,
@@ -53,7 +58,10 @@ import {
     bulkImportStudents,
     loginWithGoogle,
     logoutAdmin,
-    onAuthChange
+    onAuthChange,
+    syncUserRole, // Imported
+    getAllUsers, // Imported
+    updateUserRole // Imported
 } from './js/firestoreService.js';
 
 // Application State
@@ -71,7 +79,10 @@ const state = {
     isInitialized: false, // Track if initial data is loaded
     allowEmptyData: false, // Flag for when user clears data explicitly
     unsubscribe: null, // For cleanup of Firestore listener
-    isAdmin: false, // Super admin login status
+    unsubscribe: null, // For cleanup of Firestore listener
+    isAdmin: false, // Admin login status
+    isSuperAdmin: false, // Super Admin login status
+    userRole: 'guest', // guest, user, admin, super_admin
 
     // Inline search state
     inlineSearchStudent: null,
@@ -85,7 +96,8 @@ const state = {
 
     // Saved Exams Pagination
     savedExamsCurrentPage: 1,
-    savedExamsPerPage: 6,
+    savedExamsPerPage: 5, // Changed from 6 to 5
+    defaultExamId: null, // Global default exam ID from Firestore
     currentUser: null, // Store Firebase user object
 };
 
@@ -131,6 +143,7 @@ const elements = {
     studentDetails: null,
     analysisType: null,
     analysisMaxMarks: null,
+    analysisMaxMarks: null,
     analysisSearchResults: null,
 
     // Analysis State
@@ -139,9 +152,50 @@ const elements = {
 };
 
 /**
+ * Inject dynamic styles for default exam card
+ */
+function injectDefaultCardStyles() {
+    if (document.getElementById('default-card-styles')) return;
+    const style = document.createElement('style');
+    style.id = 'default-card-styles';
+    style.textContent = `
+        @keyframes goldenPulse {
+            0% { border-color: #ffd700; box-shadow: 0 0 10px rgba(255, 215, 0, 0.4); }
+            50% { border-color: #ffaa00; box-shadow: 0 0 20px rgba(255, 215, 0, 0.7), inset 0 0 10px rgba(255, 215, 0, 0.1); }
+            100% { border-color: #ffd700; box-shadow: 0 0 10px rgba(255, 215, 0, 0.4); }
+        }
+        @keyframes shimmer {
+            0% { left: -150%; opacity: 0; }
+            50% { opacity: 0.5; }
+            100% { left: 150%; opacity: 0; }
+        }
+        .default-exam-card {
+            border: 2px solid #ffd700 !important;
+            animation: goldenPulse 2s infinite ease-in-out;
+            position: relative;
+            overflow: hidden !important;
+            z-index: 5;
+        }
+        .default-exam-card::after {
+            content: '';
+            position: absolute;
+            top: 0; left: -150%; width: 80%; height: 100%;
+            background: linear-gradient(to right, transparent, rgba(255, 255, 255, 0.4), transparent);
+            transform: skewX(-25deg);
+            animation: shimmer 3s infinite ease-in-out;
+            pointer-events: none;
+            z-index: 2;
+        }
+        .default-exam-card > * { position: relative; z-index: 3; }
+    `;
+    document.head.appendChild(style);
+}
+
+/**
  * Initialize DOM element references
  */
 function initElements() {
+    injectDefaultCardStyles();
     elements.chartTypeSelect = document.getElementById('chartType');
     elements.sortOrderSelect = document.getElementById('sortOrder');
     // elements.exportBtn = document.getElementById('exportBtn'); // Removed
@@ -214,7 +268,10 @@ function initElements() {
     elements.closeEditModal = document.getElementById('closeEditModal');
     elements.editExamForm = document.getElementById('editExamForm');
     elements.editExamDocId = document.getElementById('editExamDocId');
+    elements.editExamName = document.getElementById('editExamName'); // Added
     elements.editSubjectName = document.getElementById('editSubjectName');
+    elements.editExamClass = document.getElementById('editExamClass');
+    elements.editExamSession = document.getElementById('editExamSession');
     elements.closeEditModal = document.getElementById('closeEditModal');
 
     // Confirm Modal
@@ -237,6 +294,11 @@ function initElements() {
     elements.modalLogoutBtn = document.getElementById('modalLogoutBtn');
     elements.closeProfileBtn = document.getElementById('closeProfileBtn');
     elements.closeProfileIcon = document.getElementById('closeProfileIcon');
+
+    // User Management Modal
+    elements.userManagementModal = document.getElementById('userManagementModal');
+    elements.closeUserManagementBtn = document.getElementById('closeUserManagementBtn');
+    elements.userListBody = document.getElementById('userListBody');
 }
 
 /**
@@ -719,161 +781,160 @@ function initEventListeners() {
                 toggleView();
             });
         });
-    }
+        // Print Button
+        if (elements.printBtn) {
+            elements.printBtn.addEventListener('click', () => {
+                window.print(); // Trigger browser print dialog
+            });
+        }
 
-    // Print Button
-    if (elements.printBtn) {
-        elements.printBtn.addEventListener('click', () => {
-            window.print(); // Trigger browser print dialog
-        });
-    }
-
-    // Download Button
-    if (elements.downloadBtn) {
-        elements.downloadBtn.addEventListener('click', async () => {
-            if (state.currentView === 'chart') {
-                const filename = `${state.currentExamName}-${state.currentChartType}-Analysis.png`;
-                // Use native Chart.js high-res download for vector-like quality (no text blur)
-                downloadHighResChart(filename);
-            } else if (state.currentView === 'table') {
-                if (elements.tableView) {
-                    setLoading(true);
-                    try {
-                        const filename = `${state.currentExamName}-Table-Data.png`;
-                        // Use html2canvas to capture the table view
-                        const canvas = await html2canvas(elements.tableView, {
-                            scale: 4, // Higher resolution
-                            backgroundColor: '#ffffff',
-                            useCORS: true,
-                            logging: false,
-                            windowWidth: elements.tableView.scrollWidth, // Capture full width
-                            windowHeight: elements.tableView.scrollHeight, // Capture full height
-                            onclone: (clonedDoc) => {
-                                const clonedTable = clonedDoc.getElementById('tableView');
-                                if (clonedTable) {
-                                    clonedTable.classList.add('capturing-mode');
-                                    clonedTable.style.overflow = 'visible'; // Ensure no scrollbars
-                                    clonedTable.style.maxHeight = 'none';
+        // Download Button
+        if (elements.downloadBtn) {
+            elements.downloadBtn.addEventListener('click', async () => {
+                if (state.currentView === 'chart') {
+                    const filename = `${state.currentExamName}-${state.currentChartType}-Analysis.png`;
+                    // Use native Chart.js high-res download for vector-like quality (no text blur)
+                    downloadHighResChart(filename);
+                } else if (state.currentView === 'table') {
+                    if (elements.tableView) {
+                        setLoading(true);
+                        try {
+                            const filename = `${state.currentExamName}-Table-Data.png`;
+                            // Use html2canvas to capture the table view
+                            const canvas = await html2canvas(elements.tableView, {
+                                scale: 4, // Higher resolution
+                                backgroundColor: '#ffffff',
+                                useCORS: true,
+                                logging: false,
+                                windowWidth: elements.tableView.scrollWidth, // Capture full width
+                                windowHeight: elements.tableView.scrollHeight, // Capture full height
+                                onclone: (clonedDoc) => {
+                                    const clonedTable = clonedDoc.getElementById('tableView');
+                                    if (clonedTable) {
+                                        clonedTable.classList.add('capturing-mode');
+                                        clonedTable.style.overflow = 'visible'; // Ensure no scrollbars
+                                        clonedTable.style.maxHeight = 'none';
+                                    }
                                 }
-                            }
-                        });
+                            });
 
-                        const link = document.createElement('a');
-                        link.download = filename;
-                        link.href = canvas.toDataURL('image/png');
-                        document.body.appendChild(link);
-                        link.click();
-                        document.body.removeChild(link);
+                            const link = document.createElement('a');
+                            link.download = filename;
+                            link.href = canvas.toDataURL('image/png');
+                            document.body.appendChild(link);
+                            link.click();
+                            document.body.removeChild(link);
 
-                        showNotification('টেবিল ডাউনলোড সম্পন্ন!');
-                    } catch (error) {
-                        console.error('Table download error:', error);
-                        showNotification('ডাউনলোড করতে সমস্যা হয়েছে', 'error');
-                    } finally {
-                        setLoading(false);
+                            showNotification('টেবিল ডাউনলোড সম্পন্ন!');
+                        } catch (error) {
+                            console.error('Table download error:', error);
+                            showNotification('ডাউনলোড করতে সমস্যা হয়েছে', 'error');
+                        } finally {
+                            setLoading(false);
+                        }
                     }
                 }
+            });
+        }
+
+        // Failed Students Section Download
+        if (elements.downloadFailedBtn) {
+            elements.downloadFailedBtn.addEventListener('click', async () => {
+                const container = document.getElementById('failedStudentsContainer').parentElement;
+                if (!container) return;
+                setLoading(true);
+                try {
+                    const canvas = await html2canvas(container, {
+                        scale: 3,
+                        backgroundColor: '#ffffff',
+                        useCORS: true,
+                        onclone: (clonedDoc) => {
+                            const cloned = clonedDoc.querySelector('.failed-students');
+                            if (cloned) cloned.classList.add('capturing-mode');
+                        }
+                    });
+                    const link = document.createElement('a');
+                    link.download = `Failed_Students_${state.currentExamName || 'Report'}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    showNotification('ফেল করা শিক্ষার্থীর তালিকা ডাউনলোড হয়েছে!');
+                } catch (err) {
+                    console.error(err);
+                    showNotification('ডাউনলোড করতে সমস্যা হয়েছে', 'error');
+                } finally {
+                    setLoading(false);
+                }
+            });
+        }
+
+        // Group Statistics Section Download
+        if (elements.downloadGroupStatsBtn) {
+            elements.downloadGroupStatsBtn.addEventListener('click', async () => {
+                const container = document.getElementById('groupStatsContainer').parentElement;
+                if (!container) return;
+                setLoading(true);
+                try {
+                    const canvas = await html2canvas(container, {
+                        scale: 3,
+                        backgroundColor: '#ffffff',
+                        useCORS: true,
+                        onclone: (clonedDoc) => {
+                            const cards = clonedDoc.querySelectorAll('.card');
+                            const cloned = Array.from(cards).find(c => c.contains(clonedDoc.getElementById('groupStatsContainer')));
+                            if (cloned) cloned.classList.add('capturing-mode');
+                        }
+                    });
+                    const link = document.createElement('a');
+                    link.download = `Group_Statistics_${state.currentExamName || 'Report'}.png`;
+                    link.href = canvas.toDataURL('image/png');
+                    link.click();
+                    showNotification('গ্রুপ পরিসংখ্যান ডাউনলোড হয়েছে!');
+                } catch (err) {
+                    console.error(err);
+                    showNotification('ডাউনলোড করতে সমস্যা হয়েছে', 'error');
+                } finally {
+                    setLoading(false);
+                }
+            });
+        }
+
+        // Resize handler
+        window.addEventListener('resize', () => {
+            if (state.currentView === 'chart') {
+                updateViews();
             }
         });
-    }
 
-    // Failed Students Section Download
-    if (elements.downloadFailedBtn) {
-        elements.downloadFailedBtn.addEventListener('click', async () => {
-            const container = document.getElementById('failedStudentsContainer').parentElement;
-            if (!container) return;
-            setLoading(true);
-            try {
-                const canvas = await html2canvas(container, {
-                    scale: 3,
-                    backgroundColor: '#ffffff',
-                    useCORS: true,
-                    onclone: (clonedDoc) => {
-                        const cloned = clonedDoc.querySelector('.failed-students');
-                        if (cloned) cloned.classList.add('capturing-mode');
-                    }
-                });
-                const link = document.createElement('a');
-                link.download = `Failed_Students_${state.currentExamName || 'Report'}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                showNotification('ফেল করা শিক্ষার্থীর তালিকা ডাউনলোড হয়েছে!');
-            } catch (err) {
-                console.error(err);
-                showNotification('ডাউনলোড করতে সমস্যা হয়েছে', 'error');
-            } finally {
-                setLoading(false);
+        // Cleanup on page unload
+        window.addEventListener('beforeunload', () => {
+            if (state.unsubscribe) {
+                state.unsubscribe();
             }
         });
-    }
 
-    // Group Statistics Section Download
-    if (elements.downloadGroupStatsBtn) {
-        elements.downloadGroupStatsBtn.addEventListener('click', async () => {
-            const container = document.getElementById('groupStatsContainer').parentElement;
-            if (!container) return;
-            setLoading(true);
-            try {
-                const canvas = await html2canvas(container, {
-                    scale: 3,
-                    backgroundColor: '#ffffff',
-                    useCORS: true,
-                    onclone: (clonedDoc) => {
-                        const cards = clonedDoc.querySelectorAll('.card');
-                        const cloned = Array.from(cards).find(c => c.contains(clonedDoc.getElementById('groupStatsContainer')));
-                        if (cloned) cloned.classList.add('capturing-mode');
-                    }
-                });
-                const link = document.createElement('a');
-                link.download = `Group_Statistics_${state.currentExamName || 'Report'}.png`;
-                link.href = canvas.toDataURL('image/png');
-                link.click();
-                showNotification('গ্রুপ পরিসংখ্যান ডাউনলোড হয়েছে!');
-            } catch (err) {
-                console.error(err);
-                showNotification('ডাউনলোড করতে সমস্যা হয়েছে', 'error');
-            } finally {
-                setLoading(false);
+        // Keyboard arrow keys for inline search navigation
+        document.addEventListener('keydown', (e) => {
+            // Only when inline search panel is visible and no input is focused
+            const activeTag = document.activeElement?.tagName?.toLowerCase();
+            if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') return;
+            if (!elements.inlineSearchPanel || elements.inlineSearchPanel.style.display === 'none') return;
+
+            if (e.key === 'ArrowLeft' && state.inlinePrevStudent) {
+                e.preventDefault();
+                showInlineHistory(state.inlinePrevStudent);
+            } else if (e.key === 'ArrowRight' && state.inlineNextStudent) {
+                e.preventDefault();
+                showInlineHistory(state.inlineNextStudent);
             }
         });
-    }
 
-    // Resize handler
-    window.addEventListener('resize', () => {
-        if (state.currentView === 'chart') {
-            updateViews();
+        // Initialize Exam Management
+        try {
+            initExamManagement();
+            console.log('Exam management initialized');
+        } catch (e) {
+            console.error('Error in initExamManagement:', e);
         }
-    });
-
-    // Cleanup on page unload
-    window.addEventListener('beforeunload', () => {
-        if (state.unsubscribe) {
-            state.unsubscribe();
-        }
-    });
-
-    // Keyboard arrow keys for inline search navigation
-    document.addEventListener('keydown', (e) => {
-        // Only when inline search panel is visible and no input is focused
-        const activeTag = document.activeElement?.tagName?.toLowerCase();
-        if (activeTag === 'input' || activeTag === 'textarea' || activeTag === 'select') return;
-        if (!elements.inlineSearchPanel || elements.inlineSearchPanel.style.display === 'none') return;
-
-        if (e.key === 'ArrowLeft' && state.inlinePrevStudent) {
-            e.preventDefault();
-            showInlineHistory(state.inlinePrevStudent);
-        } else if (e.key === 'ArrowRight' && state.inlineNextStudent) {
-            e.preventDefault();
-            showInlineHistory(state.inlineNextStudent);
-        }
-    });
-
-    // Initialize Exam Management
-    try {
-        initExamManagement();
-        console.log('Exam management initialized');
-    } catch (e) {
-        console.error('Error in initExamManagement:', e);
     }
 }
 
@@ -883,6 +944,11 @@ function initEventListeners() {
 async function init() {
     // Initialize DOM elements
     initElements();
+
+    // Setup User Management Listeners
+    if (typeof setupUserManagementListeners === 'function') {
+        setupUserManagementListeners();
+    }
 
     // Show loading state
     setLoading(true);
@@ -962,12 +1028,32 @@ function openSaveModal() {
 }
 
 // Expose to window for HTML onclick
+// Expose to window for HTML onclick
 window.openSaveModal = openSaveModal;
+
+/**
+ * Setup Realtime Search
+ */
+function setupRealtimeSearch() {
+    if (!elements.searchInput) return;
+
+    // Remove existing listener if any (to prevent duplicates if re-initialized)
+    // Actually, simple add is fine as init only runs once usually.
+    // But let's be safe against multiple inits if that happens.
+    const newSearchInput = elements.searchInput.cloneNode(true);
+    elements.searchInput.parentNode.replaceChild(newSearchInput, elements.searchInput);
+    elements.searchInput = newSearchInput;
+
+    elements.searchInput.addEventListener('input', (e) => {
+        state.currentSearchTerm = e.target.value.trim().toLowerCase();
+        updateViews();
+    });
+}
 
 /**
  * Initialize Exam Management Event Listeners
  */
-function initExamManagement() {
+async function initExamManagement() { // Made async
     // We utilize window.openSaveModal now via HTML onclick for reliability
     // But keep listener as backup
     if (elements.saveAnalysisBtn) {
@@ -999,22 +1085,36 @@ function initExamManagement() {
 
     // ===== ADMIN AUTH =====
     // Listen for auth state changes
-    onAuthChange((user) => {
-        state.isAdmin = !!user;
-        state.currentUser = user; // Store user object
+    // Listen for auth state changes
+    onAuthChange(async (user) => {
+        state.currentUser = user;
+
+        if (user) {
+            // Fetch Role
+            const role = await syncUserRole(user);
+            state.userRole = role;
+            state.isAdmin = (role === 'admin' || role === 'super_admin');
+            state.isSuperAdmin = (role === 'super_admin');
+            console.log(`User logged in: ${user.email} (${role})`);
+        } else {
+            state.userRole = 'guest';
+            state.isAdmin = false;
+            state.isSuperAdmin = false;
+        }
 
         const btn = elements.adminToggle;
         if (btn) {
             if (user) {
                 btn.classList.add('logged-in');
-                btn.innerHTML = `<i class="fas fa-lock-open"></i> <span class="dm-btn-text">${user.displayName || 'অ্যাডমিন'}</span>`;
-                btn.title = 'প্রোফাইল দেখতে ক্লিক করুন';
+                const roleLabel = state.isSuperAdmin ? ' (Super Admin)' : (state.isAdmin ? ' (Admin)' : '');
+                btn.innerHTML = `<i class="fas fa-lock-open"></i> <span class="dm-btn-text">${user.displayName || 'User'}${roleLabel}</span>`;
+                btn.title = 'প্রোফাইল/ড্যাশবোর্ড দেখতে ক্লিক করুন';
 
                 // Update Profile Modal Content
-                if (elements.userName) elements.userName.innerText = user.displayName || 'অ্যাডমিন ইউজার';
-                if (elements.userEmail) elements.userEmail.innerText = user.email || '';
+                if (elements.userName) elements.userName.innerText = user.displayName || 'User';
+                if (elements.userEmail) elements.userEmail.innerText = `${user.email} [${state.userRole.toUpperCase()}]`;
                 if (elements.userPhoto) {
-                    elements.userPhoto.src = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'Admin')}&background=random`;
+                    elements.userPhoto.src = user.photoURL || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.displayName || 'User')}&background=random`;
                 }
             } else {
                 btn.classList.remove('logged-in');
@@ -1028,15 +1128,24 @@ function initExamManagement() {
     // Admin toggle button — Google popup login / Open Profile Modal
     if (elements.adminToggle) {
         elements.adminToggle.addEventListener('click', async () => {
-            if (state.isAdmin) {
-                // Open Profile Modal instead of confirm()
+            if (state.currentUser) {
+                // Open Profile Modal for any logged in user
                 if (elements.profileModal) {
                     elements.profileModal.style.display = 'block';
+                    elements.profileModal.style.display = 'block';
+                    // Load User Management if Super Admin
+                    if (state.isSuperAdmin) {
+                        try {
+                            await loadUserManagementPanel();
+                        } catch (err) {
+                            console.error('User management loading failed:', err);
+                        }
+                    }
                 }
             } else {
                 const result = await loginWithGoogle();
                 if (result.success) {
-                    showNotification(`স্বাগতম, ${result.user.displayName || 'অ্যাডমিন'}! 🎉`);
+                    showNotification(`স্বাগতম, ${result.user.displayName || 'ব্যবহারকারী'}! 🎉`);
                 } else if (result.error !== 'auth/popup-closed-by-user') {
                     showNotification('লগইন ব্যর্থ! আবার চেষ্টা করুন।', 'error');
                 }
@@ -1079,12 +1188,19 @@ function initExamManagement() {
             const docId = elements.editExamDocId.value;
             const name = elements.editExamName.value.trim();
             const subject = elements.editSubjectName.value.trim();
+            const className = elements.editExamClass ? elements.editExamClass.value : null;
+            const session = elements.editExamSession ? elements.editExamSession.value.trim() : null;
 
             if (!docId || !name || !subject) return;
 
             setLoading(true);
             try {
-                const success = await updateExam(docId, { name, subject });
+                const success = await updateExam(docId, {
+                    name,
+                    subject,
+                    class: className,
+                    session
+                });
                 if (success) {
                     showNotification('পরীক্ষার তথ্য আপডেট সফল!');
                     elements.editExamModal.style.display = 'none';
@@ -1102,8 +1218,29 @@ function initExamManagement() {
     }
 
     // Initial load of saved exams
-    fetchAndRenderSavedExams();
+    await fetchAndRenderSavedExams();
 
+    // Subscribe to global settings (Default Exam)
+    subscribeToSettings((settings) => {
+        if (settings && settings.defaultExamId) {
+            state.defaultExamId = settings.defaultExamId;
+            renderSavedExamsList(); // Re-render to update highlights
+        } else if (settings && !settings.defaultExamId) {
+            state.defaultExamId = null; // Clear if default is removed
+            renderSavedExamsList();
+        }
+    });
+
+    // Check for default exam on startup
+    const settings = await getSettings();
+    if (settings && settings.defaultExamId) {
+        state.defaultExamId = settings.defaultExamId;
+        console.log('Found default exam ID:', state.defaultExamId);
+    }
+
+    checkAndLoadDefaultExam();
+
+    setupRealtimeSearch();
     // Initialize Collapsible Section
     initCollapsibleSavedExams();
 }
@@ -1141,8 +1278,25 @@ async function handleSaveExam(e) {
         return;
     }
 
+    // Enforce Login
+    if (!state.currentUser) {
+        const confirmed = await showConfirm(
+            'আপনি নিজের এক্সাম ডাটা সংরক্ষণ ও এনাইলাইসিস করতে হলে গুগল দিয়ে লগইন করুন।',
+            { confirmText: '<i class="fab fa-google"></i> লগইন করুন', title: 'লগইন প্রয়োজন', confirmClass: 'btn-primary' }
+        );
+        if (confirmed) {
+            const result = await loginWithGoogle();
+            if (result.success) {
+                showNotification(`স্বাগতম, ${result.user.displayName}! এবার সেভ করুন।`);
+            }
+        }
+        return;
+    }
+
     const name = document.getElementById('examName').value;
-    const subject = document.getElementById('subjectName').value;
+    const subject = document.getElementById('examSubject').value;
+    const className = document.getElementById('examClass').value;
+    const session = document.getElementById('examSession').value;
 
     setLoading(true);
     try {
@@ -1150,9 +1304,13 @@ async function handleSaveExam(e) {
         const examData = {
             name,
             subject,
+            class: className,
+            session,
             studentCount: state.studentData.length,
             studentData: state.studentData,
             stats,
+            createdBy: state.currentUser.uid,
+            creatorName: state.currentUser.displayName
         };
 
         const success = await saveExam(examData);
@@ -1160,6 +1318,7 @@ async function handleSaveExam(e) {
             showNotification('পরীক্ষার ফলাফল সফলভাবে সংরক্ষণ করা হয়েছে!');
             elements.saveExamModal.style.display = 'none';
             elements.saveExamForm.reset();
+            // Reset date to current year if needed, but placeholder is fine
             fetchAndRenderSavedExams(); // Refresh list
         } else {
             showNotification('সংরক্ষণ করতে সমস্যা হয়েছে', 'error');
@@ -1272,14 +1431,35 @@ function renderSavedExamsList() {
             style.border = 'none';
             style.iconColor = '#fff';
             style.shadow = '0 4px 15px rgba(39, 174, 96, 0.4)';
+        } else if (subject.includes('islam') || subject.includes('ইসলাম')) {
+            style.background = 'linear-gradient(135deg, #2ecc71 0%, #27ae60 100%)';
+            style.color = '#fff';
+            style.border = 'none';
+            style.iconColor = '#fff';
+            style.shadow = '0 4px 15px rgba(39, 174, 96, 0.4)';
         }
 
         return style;
     };
 
+    // Helper for class badge color
+    const getClassBadgeColor = (cls) => {
+        if (!cls) return '#95a5a6'; // Gray
+        if (cls == '6') return '#e67e22'; // Orange
+        if (cls == '7') return '#27ae60'; // Green
+        if (cls == '8') return '#2980b9'; // Blue
+        if (cls == '9') return '#8e44ad'; // Purple
+        if (cls == '10') return '#c0392b'; // Red
+        if (cls == 'SSC') return '#d35400'; // Dark Orange
+        if (cls == 'HSC') return '#16a085'; // Teal
+        return '#34495e'; // Dark Blue
+    };
+
     currentExams.forEach(exam => {
         const date = exam.createdAt?.toDate ? exam.createdAt.toDate().toLocaleDateString('bn-BD') : '';
         const theme = getSubjectStyle(exam.subject);
+        const isDefault = state.defaultExamId === exam.docId;
+        const classColor = getClassBadgeColor(exam.class);
 
         const card = document.createElement('div');
         card.className = 'exam-card';
@@ -1290,17 +1470,27 @@ function renderSavedExamsList() {
             background: ${theme.background};
             box-shadow: ${theme.shadow};
             color: ${theme.color};
-            transition: transform 0.15s, box-shadow 0.15s;
+            transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
             position: relative;
             overflow: hidden;
         `;
+
+        if (isDefault) {
+            card.classList.add('default-exam-card');
+        }
 
         const isGradient = theme.background.includes('gradient');
 
         card.innerHTML = `
             <div style="display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px; position: relative; z-index: 1;">
-                <div style="font-weight: 700; font-size: 0.82em; word-break: break-word; flex: 1; line-height: 1.3;">${exam.name}</div>
-                <span style="background: #ffffff; color: #2d3436; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.7em; box-shadow: 0 1px 3px rgba(0,0,0,0.15); white-space: nowrap; flex-shrink: 0;">${exam.subject}</span>
+                <div style="font-weight: 700; font-size: 0.82em; word-break: break-word; flex: 1; line-height: 1.3;">
+                    ${exam.name}
+                    ${exam.session ? `<span style="font-size: 0.85em; opacity: 0.8; font-weight: normal;">(${exam.session})</span>` : ''}
+                </div>
+                <div style="display: flex; gap: 4px; flex-shrink: 0;">
+                    ${exam.class ? `<span style="background: ${classColor}; color: white; padding: 2px 6px; border-radius: 8px; font-weight: 700; font-size: 0.7em; box-shadow: 0 1px 3px rgba(0,0,0,0.15);">${exam.class}</span>` : ''}
+                    <span style="background: #ffffff; color: #2d3436; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.7em; box-shadow: 0 1px 3px rgba(0,0,0,0.15); white-space: nowrap;">${exam.subject}</span>
+                </div>
             </div>
             <div style="font-size: 0.78em; opacity: 0.8; margin-bottom: 6px; position: relative; z-index: 1;">
                 <i class="far fa-calendar-alt"></i> ${date} &nbsp;|&nbsp; 
@@ -1310,25 +1500,30 @@ function renderSavedExamsList() {
                 <button class="load-exam-btn" style="flex: 1; background: rgba(255,255,255,0.25); color: inherit; border: 1px solid rgba(255,255,255,0.4); padding: 5px 8px; border-radius: 5px; cursor: pointer; backdrop-filter: blur(2px); font-weight: 500; font-size: 0.8em;">
                     <i class="fas fa-upload"></i> লোড
                 </button>
-                ${state.isAdmin ? `
-                <button class="edit-exam-btn" style="background: rgba(255,165,0,0.25); color: inherit; border: 1px solid rgba(255,165,0,0.4); padding: 5px 8px; border-radius: 5px; cursor: pointer; backdrop-filter: blur(2px); font-size: 0.8em;" title="সম্পাদনা">
-                    <i class="fas fa-edit"></i>
-                </button>
-                <button class="delete-exam-btn" style="background: rgba(255,0,0,0.2); color: inherit; border: 1px solid rgba(255,0,0,0.3); padding: 5px 8px; border-radius: 5px; cursor: pointer; backdrop-filter: blur(2px); font-size: 0.8em;" title="মুছুন">
-                    <i class="fas fa-trash"></i>
-                </button>
-                ` : ''}
+                ${state.currentUser ? `
+                <div style="display: flex; gap: 4px;">
+                    <button class="edit-exam-btn" style="background: rgba(255,165,0,0.25); color: inherit; border: 1px solid rgba(255,165,0,0.4); padding: 5px 8px; border-radius: 5px; cursor: pointer; backdrop-filter: blur(2px); font-size: 0.8em;" title="সম্পাদনা">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                    <button class="delete-exam-btn" style="background: rgba(255,0,0,0.2); color: inherit; border: 1px solid rgba(255,0,0,0.3); padding: 5px 8px; border-radius: 5px; cursor: pointer; backdrop-filter: blur(2px); font-size: 0.8em;" title="মুছুন">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                    <button class="set-default-exam-btn" style="background: ${isDefault ? 'var(--primary)' : 'rgba(0,128,0,0.2)'}; color: ${isDefault ? '#fff' : 'inherit'}; border: 1px solid ${isDefault ? 'var(--primary)' : 'rgba(0,128,0,0.3)'}; padding: 5px 8px; border-radius: 5px; cursor: pointer; backdrop-filter: blur(2px); font-size: 0.8em;" title="${isDefault ? 'ডিফল্ট সেট করা আছে' : 'ডিফল্ট সেট করুন'}">
+                        <i class="fas fa-thumbtack"></i>
+                    </button>
+                </div>
+                ` : `<span style="font-size: 0.7em; opacity: 0.6; align-self: center;">READ ONLY</span>`}
             </div>
         `;
 
         // Hover effect helper
         card.onmouseenter = () => {
             card.style.transform = 'translateY(-2px)';
-            if (!isGradient) card.style.boxShadow = 'var(--shadow)';
+            if (!isGradient && !isDefault) card.style.boxShadow = 'var(--shadow)';
         };
         card.onmouseleave = () => {
             card.style.transform = 'translateY(0)';
-            if (!isGradient) card.style.boxShadow = theme.shadow;
+            if (!isGradient && !isDefault) card.style.boxShadow = theme.shadow;
         };
 
         // Load Event — stopPropagation prevents card-level bubbling
@@ -1337,26 +1532,74 @@ function renderSavedExamsList() {
             handleLoadExam(exam);
         });
 
-        // Edit & Delete events (admin only)
-        if (state.isAdmin) {
+        // RBAC Permissions
+        const isCreator = (state.currentUser && exam.createdBy === state.currentUser.uid);
+        const canEdit = state.isSuperAdmin || state.isAdmin || isCreator;
+        const canDelete = state.isSuperAdmin || isCreator; // Admin requires Super Admin to delete others, or be creator
+        const canSetDefault = state.isSuperAdmin;
+
+        // Edit & Delete events
+        if (state.currentUser) {
             const editBtn = card.querySelector('.edit-exam-btn');
             if (editBtn) {
-                editBtn.addEventListener('click', (e) => {
-                    e.stopPropagation();
-                    handleEditExam(exam);
-                });
+                // Only show if permitted, else remove/hide
+                if (canEdit) {
+                    editBtn.addEventListener('click', (e) => {
+                        e.stopPropagation();
+                        handleEditExam(exam);
+                    });
+                } else {
+                    editBtn.style.display = 'none';
+                }
             }
 
             const deleteBtn = card.querySelector('.delete-exam-btn');
             if (deleteBtn) {
-                deleteBtn.addEventListener('click', async (e) => {
-                    e.stopPropagation();
-                    const confirmed = await showConfirm(`আপনি কি নিশ্চিত যে "${exam.name}" মুছে ফেলতে চান?`);
-                    if (confirmed) {
-                        await deleteExam(exam.docId);
-                        await fetchAndRenderSavedExams();
-                    }
-                });
+                if (canDelete) {
+                    deleteBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        const confirmed = await showConfirm(`আপনি কি নিশ্চিত যে "${exam.name}" মুছে ফেলতে চান ? `);
+                        if (confirmed) {
+                            await deleteExam(exam.docId);
+                            await fetchAndRenderSavedExams();
+                        }
+                    });
+                } else {
+                    deleteBtn.style.display = 'none';
+                }
+            }
+
+            const setDefaultBtn = card.querySelector('.set-default-exam-btn');
+            if (setDefaultBtn) {
+                if (canSetDefault) {
+                    setDefaultBtn.addEventListener('click', async (e) => {
+                        e.stopPropagation();
+                        if (isDefault) {
+                            const confirmed = await showConfirm(`আপনি কি "${exam.name}" কে ডিফল্ট থেকে সরাতে চান ? `, { confirmText: '<i class="fas fa-times"></i> হ্যাঁ, সরান', title: 'ডিফল্ট সরান', confirmClass: 'btn-warning' });
+                            if (confirmed) {
+                                await updateSettings({ defaultExamId: null });
+                                showNotification('ডিফল্ট পরীক্ষা সরানো হয়েছে!');
+                            }
+                        } else {
+                            const confirmed = await showConfirm(`আপনি কি "${exam.name}" কে ডিফল্ট পরীক্ষা হিসেবে সেট করতে চান ? `, { confirmText: '<i class="fas fa-check"></i> হ্যাঁ, সেট করুন', title: 'ডিফল্ট সেট করুন', confirmClass: 'btn-success' });
+                            if (confirmed) {
+                                setLoading(true);
+                                const success = await updateSettings({ defaultExamId: exam.docId });
+                                if (success) {
+                                    state.defaultExamId = exam.docId;
+                                    showNotification('ডিফল্ট এক্সাম সেট করা হয়েছে এবং ডেটা লোড হচ্ছে... ⏳');
+                                    renderSavedExamsList();
+                                    await autoLoadExam(exam);
+                                } else {
+                                    setLoading(false);
+                                    showNotification('ডিফল্ট সেট করতে সমস্যা হয়েছে', 'error');
+                                }
+                            }
+                        }
+                    });
+                } else {
+                    setDefaultBtn.style.display = 'none';
+                }
             }
         }
 
@@ -1390,7 +1633,7 @@ function renderSavedExamsPagination(totalPages) {
     // Page Numbers
     for (let i = 1; i <= totalPages; i++) {
         const pageBtn = document.createElement('button');
-        pageBtn.className = `pagination-btn ${state.savedExamsCurrentPage === i ? 'active' : ''}`;
+        pageBtn.className = `pagination - btn ${state.savedExamsCurrentPage === i ? 'active' : ''}`;
         pageBtn.innerText = i;
         pageBtn.onclick = () => {
             state.savedExamsCurrentPage = i;
@@ -1412,27 +1655,92 @@ function renderSavedExamsPagination(totalPages) {
 }
 
 /**
+ * Check and Load Default Exam
+ */
+async function checkAndLoadDefaultExam() {
+    const settings = await getSettings();
+    if (settings && settings.defaultExamId) {
+        import('./js/firestoreService.js').then(async (module) => {
+            const exams = await module.getSavedExams();
+            const defaultExam = exams.find(e => e.docId === settings.defaultExamId);
+
+            if (defaultExam) {
+                console.log('Auto-loading default exam:', defaultExam.name);
+                autoLoadExam(defaultExam);
+            }
+        });
+    }
+}
+
+/**
+ * Auto Load Exam (No Confirmation)
+ */
+async function autoLoadExam(exam) {
+    if (!exam) return;
+
+    // Normalize data to handle potential legacy structures
+    const studentData = exam.studentData || exam.students;
+    const examName = exam.name || exam.examName || state.currentExamName;
+    const subject = exam.subject || state.currentSubject;
+
+    if (!studentData || !Array.isArray(studentData)) {
+        console.error('Auto load failed: Invalid student data', exam);
+        showNotification('ডিফল্ট এক্সামের ডেটা সঠিক নয় বা পাওয়া যায়নি!', 'error');
+        return;
+    }
+
+    setLoading(true);
+    try {
+        const success = await bulkImportStudents(studentData);
+        if (success) {
+            state.studentData = studentData;
+            state.currentExamName = examName;
+            state.currentSubject = subject;
+            localStorage.setItem('currentSubject', subject);
+            updateViews();
+            showNotification(`ডিফল্ট: "${examName}" লোড হয়েছে`);
+        } else {
+            showNotification('ডিফল্ট ডেটা লোড করতে ব্যর্থ!', 'error');
+        }
+    } catch (error) {
+        console.error('Auto load error:', error);
+        showNotification('অটো লোড এরর: ' + error.message, 'error');
+    } finally {
+        setLoading(false);
+    }
+}
+
+/**
  * Handle Load Exam
  */
 async function handleLoadExam(exam) {
+    const examName = exam.name || exam.examName || 'Exam';
     const confirmed = await showConfirm(
-        `সতর্কতা: বর্তমান ডেটা "${exam.name}" এর ডেটা দ্বারা প্রতিস্থাপিত হবে। আপনি কি নিশ্চিত?`,
+        `সতর্কতা: বর্তমান ডেটা "${examName}" এর ডেটা দ্বারা প্রতিস্থাপিত হবে। আপনি কি নিশ্চিত ? `,
         { confirmText: '<i class="fas fa-download"></i> হ্যাঁ, লোড করুন', title: 'ডেটা লোড করুন', confirmClass: 'btn-success' }
     );
     if (!confirmed) {
         return;
     }
 
+    const studentData = exam.studentData || exam.students;
+    const subject = exam.subject || 'Subject';
+
+    if (!studentData || !Array.isArray(studentData)) {
+        showNotification('এক্সামের ডেটা সঠিক পাওয়া যায়নি!', 'error');
+        return;
+    }
+
     setLoading(true);
     try {
-        const success = await bulkImportStudents(exam.studentData);
+        const success = await bulkImportStudents(studentData);
         if (success) {
-            state.studentData = exam.studentData;
-            state.currentExamName = exam.name;
-            state.currentSubject = exam.subject;
-            localStorage.setItem('currentSubject', exam.subject);
+            state.studentData = studentData;
+            state.currentExamName = examName;
+            state.currentSubject = subject;
+            localStorage.setItem('currentSubject', subject);
             updateViews();
-            showNotification(`"${exam.name}" ডেটা সফলভাবে লোড হয়েছে!`);
+            showNotification(`"${examName}" ডেটা সফলভাবে লোড হয়েছে!`);
 
             window.scrollTo({ top: 0, behavior: 'smooth' });
         } else {
@@ -1451,8 +1759,10 @@ async function handleLoadExam(exam) {
  */
 function handleEditExam(exam) {
     if (elements.editExamDocId) elements.editExamDocId.value = exam.docId;
-    if (elements.editExamName) elements.editExamName.value = exam.name || '';
+    if (elements.editExamName) elements.editExamName.value = exam.name || exam.examName || ''; // Try both properties
     if (elements.editSubjectName) elements.editSubjectName.value = exam.subject || '';
+    if (elements.editExamClass) elements.editExamClass.value = exam.class || '';
+    if (elements.editExamSession) elements.editExamSession.value = exam.session || '';
     if (elements.editExamModal) elements.editExamModal.style.display = 'block';
 }
 
@@ -1571,7 +1881,7 @@ function renderAnalysisCandidates(candidates) {
         // Removed inline styles to rely on CSS
 
         div.innerHTML = `
-            <div style="font-weight: bold; color: var(--heading-color);">${student.name}</div>
+    < div style = "font-weight: bold; color: var(--heading-color);" > ${student.name}</div >
             <div style="color: var(--text-color); opacity: 0.8; font-size: 0.9em;">
                 রোল: ${student.id} | গ্রুপ: ${student.group}
             </div>
@@ -1709,57 +2019,57 @@ function renderAnalysisDetails(student, history) {
     else if (student.group.includes('মানবিক')) groupBadgeClass = 'badge-humanities';
 
     elements.studentDetails.innerHTML = `
-        <div class="analysis-details-card">
-            <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
-                <div>
-                    <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
-                        ${student.name} 
-                        <span style="font-size: 0.8em; opacity: 0.8; font-weight: normal;">(রোল: ${student.id})</span>
-                    </h3>
-                    
-                    <div class="analysis-info-row">
-                        <span class="group-badge ${groupBadgeClass}">
-                            ${student.group.includes('বিজ্ঞান') ? '<i class="fas fa-flask"></i>' :
+    < div class= "analysis-details-card" >
+    <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
+        <div>
+            <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                ${student.name}
+                <span style="font-size: 0.8em; opacity: 0.8; font-weight: normal;">(রোল: ${student.id})</span>
+            </h3>
+
+            <div class="analysis-info-row">
+                <span class="group-badge ${groupBadgeClass}">
+                    ${student.group.includes('বিজ্ঞান') ? '<i class="fas fa-flask"></i>' :
             student.group.includes('ব্যবসায়') ? '<i class="fas fa-chart-line"></i>' :
                 student.group.includes('মানবিক') ? '<i class="fas fa-palette"></i>' :
-                    '<i class="fas fa-users"></i>'} 
-                            &nbsp;${student.group}
-                        </span>
-                        
-                        <div class="analysis-info-item">
-                            <i class="fas fa-layer-group" style="color: var(--secondary);"></i>
-                            <strong>শ্রেণি:</strong> ${student.class}
-                        </div>
-                        
-                        <div class="analysis-info-item">
-                            <i class="fas fa-clipboard-list" style="color: var(--primary);"></i>
-                            <strong>মোট পরীক্ষা:</strong> ${history.length}
-                        </div>
-                    </div>
+                    '<i class="fas fa-users"></i>'}
+                    &nbsp;${student.group}
+                </span>
+
+                <div class="analysis-info-item">
+                    <i class="fas fa-layer-group" style="color: var(--secondary);"></i>
+                    <strong>শ্রেণি:</strong> ${student.class}
                 </div>
-                <div style="text-align: right;">
-                     <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 5px; flex-wrap: wrap;">
-                        <button id="downloadAnalysisBtn" title="ফলাফল ইমেজ হিসেবে ডাউনলোড করুন" style="padding: 4px 10px; font-size: 0.85em; cursor: pointer; border: none; background: var(--primary); color: white; border-radius: 4px; display: flex; align-items: center; gap: 5px; transition: all 0.2s; margin-right: 5px;">
-                            <i class="fas fa-file-image"></i> ফলাফল ডাউনলোড (Image)
-                        </button>
-                        ${prevStudent ? `
+
+                <div class="analysis-info-item">
+                    <i class="fas fa-clipboard-list" style="color: var(--primary);"></i>
+                    <strong>মোট পরীক্ষা:</strong> ${history.length}
+                </div>
+            </div>
+        </div>
+        <div style="text-align: right;">
+            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 5px; flex-wrap: wrap;">
+                <button id="downloadAnalysisBtn" title="ফলাফল ইমেজ হিসেবে ডাউনলোড করুন" style="padding: 4px 10px; font-size: 0.85em; cursor: pointer; border: none; background: var(--primary); color: white; border-radius: 4px; display: flex; align-items: center; gap: 5px; transition: all 0.2s; margin-right: 5px;">
+                    <i class="fas fa-file-image"></i> ফলাফল ডাউনলোড (Image)
+                </button>
+                ${prevStudent ? `
                             <button id="prevStudentBtn" class="nav-btn" title="পূর্ববর্তী শিক্ষার্থী (রোল: ${prevStudent.id})" style="padding: 4px 10px; font-size: 0.85em; cursor: pointer; border: 1px solid var(--border-color); background: var(--card-bg); border-radius: 4px; color: var(--text-color); display: flex; align-items: center; gap: 5px; transition: all 0.2s;">
                                 <i class="fas fa-chevron-left"></i> ${prevStudent.id}
                             </button>
                         ` : ''}
-                        ${nextStudent ? `
+                ${nextStudent ? `
                             <button id="nextStudentBtn" class="nav-btn" title="পরবর্তী শিক্ষার্থী (রোল: ${nextStudent.id})" style="padding: 4px 10px; font-size: 0.85em; cursor: pointer; border: 1px solid var(--border-color); background: var(--card-bg); border-radius: 4px; color: var(--text-color); display: flex; align-items: center; gap: 5px; transition: all 0.2s;">
                                 ${nextStudent.id} <i class="fas fa-chevron-right"></i>
                             </button>
                         ` : ''}
-                        <div style="font-size: 0.9em; opacity: 0.8; margin-left: 8px; border-left: 1px solid var(--border-color); padding-left: 10px;">
-                            সর্বশেষ: ${latest.examName}
-                        </div>
-                     </div>
+                <div style="font-size: 0.9em; opacity: 0.8; margin-left: 8px; border-left: 1px solid var(--border-color); padding-left: 10px;">
+                    সর্বশেষ: ${latest.examName}
                 </div>
             </div>
         </div>
-    `;
+    </div>
+        </div >
+        `;
 
     // Attach Event Listeners
     const downloadBtn = document.getElementById('downloadAnalysisBtn');
@@ -1870,7 +2180,7 @@ function renderInlineCandidates(candidates) {
         const card = document.createElement('div');
         card.className = 'inline-candidate-card';
         card.innerHTML = `
-            <div class="ic-name">${student.name}</div>
+    < div class= "ic-name" > ${student.name}</div >
             <div class="ic-info">রোল: ${student.id} | গ্রুপ: ${student.group}</div>
             <div class="ic-class">শ্রেণি: ${student.class || '—'}</div>
         `;
@@ -1895,7 +2205,7 @@ async function showInlineHistory(student) {
 
     // Show loading
     if (elements.inlineStudentDetails) {
-        elements.inlineStudentDetails.innerHTML = `<div class="inline-search-loading"><i class="fas fa-spinner fa-spin"></i> লোড হচ্ছে...</div>`;
+        elements.inlineStudentDetails.innerHTML = `< div class= "inline-search-loading" > <i class="fas fa-spinner fa-spin"></i> লোড হচ্ছে...</div > `;
     }
 
     try {
@@ -1905,12 +2215,12 @@ async function showInlineHistory(student) {
         if (history.length === 0) {
             if (elements.inlineStudentDetails) {
                 elements.inlineStudentDetails.innerHTML = `
-                    <div class="analysis-details-card">
+    < div class= "analysis-details-card" >
                         <h3>${student.name} (রোল: ${student.id})</h3>
                         <p>গ্রুপ: ${student.group}</p>
                         <p style="color: #e74c3c; margin-top: 8px;">কোনো পরীক্ষার ইতিহাস পাওয়া যায়নি</p>
-                    </div>
-                `;
+                    </div >
+        `;
             }
             return;
         }
@@ -1940,40 +2250,40 @@ async function showInlineHistory(student) {
         if (elements.inlineStudentDetails) {
             // Group badge color helper
             const getGroupBadge = (group) => {
-                if (!group) return `<span class="group-badge group-badge-default">${group || '—'}</span>`;
+                if (!group) return `< span class= "group-badge group-badge-default" > ${group || '—'}</span > `;
                 const g = group.toLowerCase().trim();
-                if (g.includes('বিজ্ঞান')) return `<span class="group-badge group-badge-science"><i class="fas fa-flask"></i> ${group}</span>`;
-                if (g.includes('ব্যবসা')) return `<span class="group-badge group-badge-business"><i class="fas fa-book"></i> ${group}</span>`;
-                if (g.includes('মানবিক')) return `<span class="group-badge group-badge-arts"><i class="fas fa-palette"></i> ${group}</span>`;
-                return `<span class="group-badge group-badge-default">${group}</span>`;
+                if (g.includes('বিজ্ঞান')) return `< span class="group-badge group-badge-science" > <i class="fas fa-flask"></i> ${group}</span > `;
+                if (g.includes('ব্যবসা')) return `< span class="group-badge group-badge-business" > <i class="fas fa-book"></i> ${group}</span > `;
+                if (g.includes('মানবিক')) return `< span class="group-badge group-badge-arts" > <i class="fas fa-palette"></i> ${group}</span > `;
+                return `< span class="group-badge group-badge-default" > ${group}</span > `;
             };
 
             elements.inlineStudentDetails.innerHTML = `
-                <div class="analysis-details-card">
-                    <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 8px;">
-                        <div>
-                            <h3>${student.name} (রোল: ${student.id})</h3>
-                            <p style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">${getGroupBadge(student.group)} <strong>শ্রেণি:</strong> ${student.class || '—'}</p>
-                            <p><strong>মোট পরীক্ষা:</strong> ${history.length}</p>
-                        </div>
-                        <div style="text-align: right;">
-                            <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 5px; flex-wrap: wrap;">
-                                ${prevStudent ? `
+    < div class="analysis-details-card" >
+        <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 8px;">
+            <div>
+                <h3>${student.name} (রোল: ${student.id})</h3>
+                <p style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">${getGroupBadge(student.group)} <strong>শ্রেণি:</strong> ${student.class || '—'}</p>
+                <p><strong>মোট পরীক্ষা:</strong> ${history.length}</p>
+            </div>
+            <div style="text-align: right;">
+                <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 5px; flex-wrap: wrap;">
+                    ${prevStudent ? `
                                     <button id="inlinePrevBtn" class="inline-nav-btn" title="পূর্ববর্তী রোল: ${prevStudent.id} (${prevStudent.name})">
                                         <i class="fas fa-chevron-left"></i> ${prevStudent.id}
                                     </button>
                                 ` : ''}
-                                ${nextStudent ? `
+                    ${nextStudent ? `
                                     <button id="inlineNextBtn" class="inline-nav-btn" title="পরবর্তী রোল: ${nextStudent.id} (${nextStudent.name})">
                                         ${nextStudent.id} <i class="fas fa-chevron-right"></i>
                                     </button>
                                 ` : ''}
-                                <div style="font-size: 0.85em; opacity: 0.7; border-left: 1px solid var(--border-color); padding-left: 10px;">সর্বশেষ: ${latest.examName}</div>
-                            </div>
-                        </div>
-                    </div>
+                    <div style="font-size: 0.85em; opacity: 0.7; border-left: 1px solid var(--border-color); padding-left: 10px;">সর্বশেষ: ${latest.examName}</div>
                 </div>
-            `;
+            </div>
+        </div>
+                </div >
+    `;
 
             // Store nav state for keyboard shortcuts
             state.inlinePrevStudent = prevStudent;
@@ -1995,10 +2305,10 @@ async function showInlineHistory(student) {
         console.error('Inline history error:', error);
         if (elements.inlineStudentDetails) {
             elements.inlineStudentDetails.innerHTML = `
-                <div class="analysis-details-card">
-                    <p style="color: #e74c3c;">ডেটা লোড করতে সমস্যা হয়েছে</p>
-                </div>
-            `;
+    < div class="analysis-details-card" >
+        <p style="color: #e74c3c;">ডেটা লোড করতে সমস্যা হয়েছে</p>
+                </div >
+    `;
         }
     }
 }
@@ -2090,5 +2400,134 @@ async function downloadInlineReport() {
         showNotification('ডাউনলোড করতে সমস্যা হয়েছে', 'error');
     } finally {
         setLoading(false);
+    }
+}
+
+// ==========================================
+// USER MANAGEMENT LOGIC
+// ==========================================
+
+/**
+ * Load User Management Panel
+ */
+async function loadUserManagementPanel() {
+    if (!state.isSuperAdmin) return;
+
+    // Check if Manage Users button exists in Profile Modal, if not add it
+    const profileActions = elements.profileModal.querySelector('.profile-actions');
+    if (profileActions && state.isSuperAdmin && !document.getElementById('manageUsersBtn')) {
+        const btn = document.createElement('button');
+        btn.id = 'manageUsersBtn';
+        btn.className = 'btn-primary';
+        btn.innerHTML = '<i class="fas fa-users-cog"></i> ব্যবহারকারী ব্যবস্থাপনা';
+        btn.style.marginRight = '10px';
+        btn.onclick = () => {
+            elements.profileModal.style.display = 'none';
+            if (elements.userManagementModal) {
+                elements.userManagementModal.style.display = 'block';
+                fetchAndRenderUsers();
+            }
+        };
+        profileActions.insertBefore(btn, profileActions.firstChild);
+    }
+
+    // Direct open call
+    if (elements.userManagementModal) {
+        elements.userManagementModal.style.display = 'block';
+        fetchAndRenderUsers();
+    }
+}
+
+async function fetchAndRenderUsers() {
+    setLoading(true);
+    const users = await getAllUsers();
+    renderUserTable(users);
+    setLoading(false);
+}
+
+function renderUserTable(users) {
+    if (!elements.userListBody) return;
+    elements.userListBody.innerHTML = '';
+
+    // Sort: Super Admin -> Admin -> User
+    const roleOrder = { 'super_admin': 0, 'admin': 1, 'user': 2, 'guest': 3 };
+    users.sort((a, b) => (roleOrder[a.role] || 3) - (roleOrder[b.role] || 3));
+
+    users.forEach(user => {
+        const tr = document.createElement('tr');
+
+        const isMe = (state.currentUser && user.uid === state.currentUser.uid);
+        const roleLabel = (user.role || 'guest').toUpperCase().replace('_', ' ');
+        const date = user.lastLogin && user.lastLogin.toDate ? user.lastLogin.toDate().toLocaleDateString() : '-';
+
+        let actionBtn = '';
+        if (!isMe && user.role !== 'super_admin') {
+            if (user.role === 'admin') {
+                actionBtn = `<button class="action-btn btn-demote" data-uid="${user.uid}" data-role="user" data-name="${user.displayName || 'User'}">Demote to User</button>`;
+            } else {
+                actionBtn = `<button class="action-btn btn-promote" data-uid="${user.uid}" data-role="admin" data-name="${user.displayName || 'User'}">Make Admin</button>`;
+            }
+        } else if (isMe) {
+            actionBtn = '<span style="font-size:0.8em; color:gray;">(You)</span>';
+        } else if (user.role === 'super_admin') {
+            actionBtn = '<span style="font-size:0.8em; color:gray;">(Super Admin)</span>';
+        }
+
+        tr.innerHTML = `
+            <td>
+                <div style="display: flex; align-items: center; gap: 10px;">
+                    <img src="${user.photoURL || 'https://ui-avatars.com/api/?background=random'}" style="width: 32px; height: 32px; border-radius: 50%;">
+                    <div>
+                        <div style="font-weight: 600; font-size: 0.9em;">${user.displayName || 'No Name'}</div>
+                        <div style="font-size: 0.75em; opacity: 0.7;">Last Login: ${date}</div>
+                    </div>
+                </div>
+            </td>
+            <td style="font-size: 0.9em;">${user.email}</td>
+            <td><span class="role-badge role-${user.role || 'guest'}">${roleLabel}</span></td>
+            <td style="text-align: right;">${actionBtn}</td>
+        `;
+        elements.userListBody.appendChild(tr);
+    });
+}
+
+// User Action Handler
+async function handleUserAction(uid, newRole, name) {
+    const actionText = newRole === 'admin' ? 'অ্যাডমিন বানাতে' : 'সাধারণ ইউজার বানাতে';
+    const confirmed = await showConfirm(`আপনি কি নিশ্চিত যে "${name}"-কে ${actionText} চান?`, {
+        confirmText: 'হ্যাঁ, পরিবর্তন করুন',
+        confirmClass: newRole === 'admin' ? 'btn-promote' : 'btn-demote'
+    });
+
+    if (confirmed) {
+        setLoading(true);
+        const success = await updateUserRole(uid, newRole);
+        if (success) {
+            showNotification('রোল পরিবর্তন সফল!');
+            fetchAndRenderUsers();
+        } else {
+            showNotification('রোল পরিবর্তন ব্যর্থ!', 'error');
+        }
+        setLoading(false);
+    }
+}
+
+// Setup User Management Listeners
+function setupUserManagementListeners() {
+    if (elements.closeUserManagementBtn) {
+        elements.closeUserManagementBtn.addEventListener('click', () => {
+            elements.userManagementModal.style.display = 'none';
+        });
+    }
+
+    if (elements.userListBody) {
+        elements.userListBody.addEventListener('click', (e) => {
+            if (e.target.classList.contains('action-btn')) {
+                const uid = e.target.getAttribute('data-uid');
+                const role = e.target.getAttribute('data-role');
+                const name = e.target.getAttribute('data-name');
+                handleUserAction(uid, role, name);
+            }
+        });
     }
 }
