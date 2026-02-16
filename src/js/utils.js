@@ -145,6 +145,14 @@ export function filterStudentData(data, filters) {
             if (grade === 'absent') {
                 return isAbsent(student);
             }
+            // Handle Total Fail (Written < 17, excluding absent)
+            if (grade === 'total-fail') {
+                return !isAbsent(student) && student.written < FAILING_THRESHOLD.written;
+            }
+            // Handle Total Pass (Written >= 17, excluding absent)
+            if (grade === 'total-pass') {
+                return !isAbsent(student) && student.written >= FAILING_THRESHOLD.written;
+            }
             // Normal grade filter
             const gradeInfo = calculateGrade(student.total);
             return gradeInfo.grade === grade;
@@ -163,11 +171,26 @@ export function filterStudentData(data, filters) {
  */
 export function sortStudentData(data, sortBy, order = 'desc') {
     // Roll number sorting
-    if (order === 'roll-asc') {
-        return [...data].sort((a, b) => Number(a.id) - Number(b.id));
-    }
-    if (order === 'roll-desc') {
-        return [...data].sort((a, b) => Number(b.id) - Number(a.id));
+    if (order === 'roll-asc' || order === 'roll-desc') {
+        const groupPriority = {
+            [GROUP_NAMES.science]: 1,
+            [GROUP_NAMES.business]: 2,
+            [GROUP_NAMES.arts]: 3
+        };
+
+        return [...data].sort((a, b) => {
+            const groupA = groupPriority[a.group] || 4;
+            const groupB = groupPriority[b.group] || 4;
+
+            if (groupA !== groupB) {
+                return groupA - groupB; // Always sort groups: Science -> Business -> Humanities
+            }
+
+            // Same group, sort by ID
+            return order === 'roll-asc'
+                ? Number(a.id) - Number(b.id)
+                : Number(b.id) - Number(a.id);
+        });
     }
     return [...data].sort((a, b) => {
         const comparison = b[sortBy] - a[sortBy];

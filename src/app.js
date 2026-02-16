@@ -31,6 +31,7 @@ import {
     getCurrentChart,
     getChartTitle,
     createHistoryChart,
+    downloadHighResChart, // Imported
 } from './js/chartModule.js';
 import {
     renderStats,
@@ -558,7 +559,8 @@ function initEventListeners() {
         elements.downloadChartBtn.addEventListener('click', () => {
             const chart = getCurrentChart();
             if (chart) {
-                exportChartAsImage(elements.chartCanvas);
+                // Use new High Res download function
+                downloadHighResChart('Performance_Chart_HighRes.png');
             } else {
                 showNotification('চার্ট লোড হয়নি', 'error');
             }
@@ -730,10 +732,9 @@ function initEventListeners() {
     if (elements.downloadBtn) {
         elements.downloadBtn.addEventListener('click', async () => {
             if (state.currentView === 'chart') {
-                if (elements.chartCanvas) {
-                    const filename = `${state.currentExamName}-${state.currentChartType}-Analysis.png`;
-                    exportChartAsImage(elements.chartCanvas, filename);
-                }
+                const filename = `${state.currentExamName}-${state.currentChartType}-Analysis.png`;
+                // Use native Chart.js high-res download for vector-like quality (no text blur)
+                downloadHighResChart(filename);
             } else if (state.currentView === 'table') {
                 if (elements.tableView) {
                     setLoading(true);
@@ -741,13 +742,19 @@ function initEventListeners() {
                         const filename = `${state.currentExamName}-Table-Data.png`;
                         // Use html2canvas to capture the table view
                         const canvas = await html2canvas(elements.tableView, {
-                            scale: 3, // High DPI resolution
+                            scale: 4, // Higher resolution
                             backgroundColor: '#ffffff',
                             useCORS: true,
                             logging: false,
+                            windowWidth: elements.tableView.scrollWidth, // Capture full width
+                            windowHeight: elements.tableView.scrollHeight, // Capture full height
                             onclone: (clonedDoc) => {
                                 const clonedTable = clonedDoc.getElementById('tableView');
-                                if (clonedTable) clonedTable.classList.add('capturing-mode');
+                                if (clonedTable) {
+                                    clonedTable.classList.add('capturing-mode');
+                                    clonedTable.style.overflow = 'visible'; // Ensure no scrollbars
+                                    clonedTable.style.maxHeight = 'none';
+                                }
                             }
                         });
 
@@ -1604,7 +1611,7 @@ async function selectStudentForAnalysis(student) {
             const reportContent = document.getElementById('analysisReportContent');
             if (reportContent) reportContent.style.display = 'block';
 
-            showNotification('ডেটা লোড হয়েছে');
+            // showNotification('ডেটা লোড হয়েছে'); // Removed as per user request to rely on spinner
         }
     } catch (error) {
         console.error(error);
@@ -1695,13 +1702,40 @@ function renderAnalysisDetails(student, history) {
     state.currentAnalysisPrevStudent = prevStudent;
     state.currentAnalysisNextStudent = nextStudent;
 
+    // Determine group badge class
+    let groupBadgeClass = 'badge-default';
+    if (student.group.includes('বিজ্ঞান')) groupBadgeClass = 'badge-science';
+    else if (student.group.includes('ব্যবসায়')) groupBadgeClass = 'badge-business';
+    else if (student.group.includes('মানবিক')) groupBadgeClass = 'badge-humanities';
+
     elements.studentDetails.innerHTML = `
         <div class="analysis-details-card">
-            <div style="display: flex; justify-content: space-between; align-items: start;">
+            <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
                 <div>
-                    <h3>${student.name} (রোল: ${student.id})</h3>
-                    <p style="margin: 5px 0;"><strong>গ্রুপ:</strong> ${student.group} | <strong>শ্রেণি:</strong> ${student.class}</p>
-                    <p style="margin: 5px 0;"><strong>মোট পরীক্ষা:</strong> ${history.length}</p>
+                    <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
+                        ${student.name} 
+                        <span style="font-size: 0.8em; opacity: 0.8; font-weight: normal;">(রোল: ${student.id})</span>
+                    </h3>
+                    
+                    <div class="analysis-info-row">
+                        <span class="group-badge ${groupBadgeClass}">
+                            ${student.group.includes('বিজ্ঞান') ? '<i class="fas fa-flask"></i>' :
+            student.group.includes('ব্যবসায়') ? '<i class="fas fa-chart-line"></i>' :
+                student.group.includes('মানবিক') ? '<i class="fas fa-palette"></i>' :
+                    '<i class="fas fa-users"></i>'} 
+                            &nbsp;${student.group}
+                        </span>
+                        
+                        <div class="analysis-info-item">
+                            <i class="fas fa-layer-group" style="color: var(--secondary);"></i>
+                            <strong>শ্রেণি:</strong> ${student.class}
+                        </div>
+                        
+                        <div class="analysis-info-item">
+                            <i class="fas fa-clipboard-list" style="color: var(--primary);"></i>
+                            <strong>মোট পরীক্ষা:</strong> ${history.length}
+                        </div>
+                    </div>
                 </div>
                 <div style="text-align: right;">
                      <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 5px; flex-wrap: wrap;">

@@ -12,6 +12,7 @@ import {
   calculateGroupStatistics,
   getFailedStudents,
   isAbsent,
+  sortStudentData,
 } from './utils.js';
 import { FAILING_THRESHOLD, MAX_CHART_ENTRIES, MAX_TABLE_ENTRIES } from './constants.js';
 
@@ -169,17 +170,8 @@ export function renderTable(tbody, data, options = {}) {
   }
 
   // Sort data
-  let sortedData;
-  if (sortOrder === 'roll-asc') {
-    sortedData = [...data].sort((a, b) => Number(a.id) - Number(b.id));
-  } else if (sortOrder === 'roll-desc') {
-    sortedData = [...data].sort((a, b) => Number(b.id) - Number(a.id));
-  } else {
-    sortedData = [...data].sort((a, b) => {
-      const comparison = b[sortBy] - a[sortBy];
-      return sortOrder === 'desc' ? comparison : -comparison;
-    });
-  }
+  // Sort data using shared utility (supports group priority)
+  let sortedData = sortStudentData(data, sortBy, sortOrder);
 
   // Limit entries for table (use larger limit than chart)
   if (sortedData.length > MAX_TABLE_ENTRIES) {
@@ -200,8 +192,8 @@ export function renderTable(tbody, data, options = {}) {
           <td>${student.group}</td>
           <td>${student.class || '-'}</td>
           <td>${student.session || '-'}</td>
-          <td>${student.written}</td>
-          <td>${student.mcq}</td>
+          <td class="${student.written < FAILING_THRESHOLD.written ? 'text-danger-custom' : ''}">${student.written}</td>
+          <td class="${student.mcq < FAILING_THRESHOLD.mcq ? 'text-danger-custom' : ''}">${student.mcq}</td>
           <td>${student.practical}</td>
           <td><strong>${student.total}</strong></td>
           <td><span class="grade-cell ${getGradeClass(gradeInfo.grade)}">${gradeInfo.grade}</span></td>

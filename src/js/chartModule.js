@@ -7,6 +7,7 @@ import Chart from 'chart.js/auto';
 
 import { CHART_TYPES, MAX_CHART_ENTRIES, FAILING_THRESHOLD } from './constants.js';
 import { getGroupColor, sortStudentData } from './utils.js';
+import { exportChartAsImage } from './dataService.js';
 
 let currentChart = null;
 
@@ -49,6 +50,8 @@ export function createPerformanceChart(canvas, data, options = {}) {
         currentChart = null;
     }
 
+
+
     if (!data || data.length === 0) {
         return null;
     }
@@ -59,10 +62,11 @@ export function createPerformanceChart(canvas, data, options = {}) {
     // Limit to max entries
     const limitedData = sortedData.slice(0, MAX_CHART_ENTRIES);
 
+
     // Prepare chart data
     const chartConfig = CHART_TYPES[chartType];
     const labels = limitedData.map((student) =>
-        `রোল: ${student.id} - ${student.name} (${student.group.replace(' গ্রুপ', '')})`
+        `রোল:${student.id}-${student.name} (${student.group.replace(' গ্রুপ', '')})`
     );
     const values = limitedData.map((student) => student[chartType]);
 
@@ -194,11 +198,18 @@ export function createPerformanceChart(canvas, data, options = {}) {
                         color: textColor,
                     },
                     ticks: {
+                        autoSkip: false, // Force show all labels
                         maxRotation: 45,
-                        minRotation: 45,
-                        color: textColor,
+                        minRotation: 45, // Vertical labels to save space
+                        color: (context) => {
+                            const label = labels[context.index];
+                            if (label && label.includes('বিজ্ঞান')) return '#ef4444'; // Red for Science
+                            if (label && label.includes('ব্যবসায়')) return '#10b981'; // Green for Business
+                            if (label && label.includes('মানবিক')) return '#3b82f6'; // Blue for Humanities
+                            return textColor;
+                        },
                         font: {
-                            size: 11
+                            size: 10 // Smaller font as requested
                         }
                     },
                     grid: {
@@ -528,4 +539,30 @@ export function createHistoryChart(canvas, historyData, options = {}) {
     });
 
     return currentHistoryChart;
+}
+
+/**
+ * Download chart with high resolution (3x)
+ * @param {string} filename - Filename to save as
+ */
+export function downloadHighResChart(filename) {
+    if (!currentChart) return;
+
+    // 1. Save original pixel ratio
+    const originalPixelRatio = currentChart.options.devicePixelRatio || window.devicePixelRatio || 1;
+
+    // 2. Set high resolution (3x)
+    currentChart.options.devicePixelRatio = 3;
+    currentChart.resize();
+    currentChart.update();
+
+    // 3. Export image (using imported helper)
+    setTimeout(() => {
+        exportChartAsImage(currentChart.canvas, filename);
+
+        // 4. Restore original pixel ratio
+        currentChart.options.devicePixelRatio = originalPixelRatio;
+        currentChart.resize();
+        currentChart.update();
+    }, 500);
 }
