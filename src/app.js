@@ -302,13 +302,70 @@ function initElements() {
     elements.userListBody = document.getElementById('userListBody');
 }
 
+
 /**
  * Show/hide loading overlay
+ * @param {boolean} isLoading - Whether to show or hide the loader
+ * @param {string|HTMLElement} targetSelector - Optional selector or element to show loader over. If null, shows global loader.
  */
-function setLoading(isLoading) {
-    state.isLoading = isLoading;
-    if (elements.loadingOverlay) {
-        elements.loadingOverlay.style.display = isLoading ? 'flex' : 'none';
+function setLoading(isLoading, targetSelector = null) {
+    // If no target provided, toggle global state and overlay
+    if (!targetSelector) {
+        state.isLoading = isLoading;
+        if (elements.loadingOverlay) {
+            if (isLoading) {
+                elements.loadingOverlay.classList.remove('fade-out');
+                elements.loadingOverlay.style.display = 'flex';
+            } else {
+                elements.loadingOverlay.classList.add('fade-out');
+                setTimeout(() => {
+                    if (elements.loadingOverlay.classList.contains('fade-out')) {
+                        elements.loadingOverlay.style.display = 'none';
+                        elements.loadingOverlay.classList.remove('fade-out');
+                    }
+                }, 500); // Match CSS animation duration
+            }
+        }
+        return;
+    }
+
+    // Handle localized loading
+    const target = typeof targetSelector === 'string'
+        ? document.querySelector(targetSelector)
+        : targetSelector;
+
+    if (!target) return;
+
+    if (isLoading) {
+        // Create and append overlay
+        // Ensure target is positioned relative so absolute overlay works
+        if (getComputedStyle(target).position === 'static') {
+            target.style.position = 'relative';
+        }
+
+        // Check if overlay already exists
+        if (target.querySelector('.content-loading-overlay')) return;
+
+        const overlay = document.createElement('div');
+        overlay.className = 'content-loading-overlay';
+        overlay.innerHTML = `
+            <div class="loading-spinner spinner-sm">
+                <i class="fas fa-spinner fa-spin"></i>
+                <span>লোড হচ্ছে...</span>
+            </div>
+        `;
+        target.appendChild(overlay);
+    } else {
+        // Remove overlay with fade out
+        const overlay = target.querySelector('.content-loading-overlay');
+        if (overlay) {
+            overlay.classList.add('fade-out');
+            setTimeout(() => {
+                if (overlay.parentNode) {
+                    overlay.remove();
+                }
+            }, 500);
+        }
     }
 }
 
@@ -1363,7 +1420,8 @@ async function handleSaveExam(e) {
 async function fetchAndRenderSavedExams() {
     if (!elements.savedExamsList) return;
 
-    elements.savedExamsList.innerHTML = '<div style="text-align: center; color: var(--text-color); opacity: 0.6; padding: 10px; width: 100%;">লোডিং...</div>';
+    // Use localized loading
+    setLoading(true, elements.savedExamsList);
 
     try {
         const exams = await getSavedExams();
@@ -1372,6 +1430,8 @@ async function fetchAndRenderSavedExams() {
     } catch (error) {
         console.error('Error fetching saved exams:', error);
         elements.savedExamsList.innerHTML = '<div style="text-align: center; color: var(--danger); padding: 10px;">ডেটা লোড করতে সমস্যা হয়েছে।</div>';
+    } finally {
+        setLoading(false, elements.savedExamsList);
     }
 }
 
@@ -1854,13 +1914,16 @@ async function handleAnalysisSearch() {
         return;
     }
 
-    setLoading(true);
     // Hide previous results/charts
-    if (elements.analysisSearchResults) elements.analysisSearchResults.style.display = 'none';
+    if (elements.analysisSearchResults) elements.analysisSearchResults.style.display = 'block'; // Show container for loader
     const reportContent = document.getElementById('analysisReportContent');
     if (reportContent) reportContent.style.display = 'none';
 
     if (elements.studentDetails) elements.studentDetails.innerHTML = '';
+
+    // Localized loading
+    setLoading(true, elements.analysisSearchResults);
+
     // Clear chart
     if (state.historyChartInstance) {
         state.historyChartInstance.destroy();
@@ -1872,7 +1935,9 @@ async function handleAnalysisSearch() {
 
         if (candidates.length === 0) {
             showNotification('কোনো শিক্ষার্থী পাওয়া যায়নি', 'warning');
+            elements.analysisSearchResults.style.display = 'none';
         } else if (candidates.length === 1) {
+            elements.analysisSearchResults.style.display = 'none';
             selectStudentForAnalysis(candidates[0]);
         } else {
             // Multiple candidates
@@ -1881,8 +1946,9 @@ async function handleAnalysisSearch() {
     } catch (error) {
         console.error('Search error:', error);
         showNotification('খুঁজতে সমস্যা হয়েছে', 'error');
+        elements.analysisSearchResults.style.display = 'none';
     } finally {
-        setLoading(false);
+        setLoading(false, elements.analysisSearchResults);
     }
 }
 
@@ -1928,7 +1994,9 @@ function renderAnalysisCandidates(candidates) {
  */
 async function selectStudentForAnalysis(student) {
     state.currentAnalysisStudent = student;
-    setLoading(true);
+
+    // Use studentDetails container for loading
+    setLoading(true, elements.studentDetails);
 
     try {
         const history = await getStudentHistory(student.id, student.group);
@@ -1950,7 +2018,7 @@ async function selectStudentForAnalysis(student) {
         console.error(error);
         showNotification('ডেটা লোড করতে সমস্যা', 'error');
     } finally {
-        setLoading(false);
+        setLoading(false, elements.studentDetails);
     }
 }
 
@@ -2274,12 +2342,16 @@ async function downloadAnalysisReport() {
  * Handle real-time search from toolbar input
  */
 async function handleRealtimeSearch(query) {
+    if (elements.inlineSearchPanel) elements.inlineSearchPanel.style.display = 'block';
+
+    // Localized loading for search panel
+    setLoading(true, elements.inlineSearchCandidates);
+
     try {
         const candidates = await searchAnalyticsCandidates(query);
 
         if (candidates.length === 0) {
             // Show "No results found" instead of hiding
-            if (elements.inlineSearchPanel) elements.inlineSearchPanel.style.display = 'block';
             if (elements.inlineSearchCandidates) {
                 elements.inlineSearchCandidates.style.display = 'block';
                 elements.inlineSearchCandidates.innerHTML = `<div class="inline-search-loading" style="color: var(--text-color); opacity: 0.7;">কোনো ফলাফল পাওয়া যায়নি: "<strong>${query}</strong>"</div>`;
@@ -2304,6 +2376,8 @@ async function handleRealtimeSearch(query) {
         }
     } catch (error) {
         console.error('Inline search error:', error);
+    } finally {
+        setLoading(false, elements.inlineSearchCandidates);
     }
 }
 
