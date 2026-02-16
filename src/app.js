@@ -953,6 +953,7 @@ function initEventListeners() {
  * Initialize application
  */
 async function init() {
+
     // Initialize DOM elements
     initElements();
 
@@ -1048,16 +1049,26 @@ window.openSaveModal = openSaveModal;
 function setupRealtimeSearch() {
     if (!elements.searchInput) return;
 
-    // Remove existing listener if any (to prevent duplicates if re-initialized)
-    // Actually, simple add is fine as init only runs once usually.
-    // But let's be safe against multiple inits if that happens.
+    // Remove existing listener by cloning (keeps the clean slate approach intact)
     const newSearchInput = elements.searchInput.cloneNode(true);
     elements.searchInput.parentNode.replaceChild(newSearchInput, elements.searchInput);
     elements.searchInput = newSearchInput;
 
     elements.searchInput.addEventListener('input', (e) => {
-        state.currentSearchTerm = e.target.value.trim().toLowerCase();
+        const raw = e.target.value;
+        state.currentSearchTerm = raw.toLowerCase();
         updateViews();
+
+        // Debounced inline search for Firestore
+        clearTimeout(state.inlineSearchDebounce);
+        const query = raw.trim();
+        if (!query) {
+            hideInlineSearch();
+            return;
+        }
+        state.inlineSearchDebounce = setTimeout(() => {
+            handleRealtimeSearch(query);
+        }, 300);
     });
 }
 
@@ -1926,7 +1937,7 @@ async function selectStudentForAnalysis(student) {
         if (history.length === 0) {
             showNotification('এই শিক্ষার্থীর পরীক্ষার ইতিহাস পাওয়া যায়নি', 'warning');
         } else {
-            updateAnalysisChart();
+            // updateAnalysisChart(); // Moved inside renderAnalysisDetails to handle subject logic
             renderAnalysisDetails(student, history);
 
             // Show Report Content
@@ -1973,13 +1984,55 @@ function activateAnalysisView(student) {
 /**
  * Update Chart based on controls
  */
-function updateAnalysisChart() {
+/**
+ * Update Chart based on controls
+ */
+function updateAnalysisChart(subject = null) {
     if (!state.currentHistory || state.currentHistory.length === 0) return;
 
     const chartType = elements.analysisType ? elements.analysisType.value : 'total';
     const maxMarks = elements.analysisMaxMarks ? parseInt(elements.analysisMaxMarks.value) : 100;
 
-    const chart = createHistoryChart(elements.historyChart, state.currentHistory, {
+    // If no subject passed, try to get from dropdown or localStorage
+    if (!subject) {
+        const dropdown = document.getElementById('analysisSubjectSelect');
+        if (dropdown) subject = dropdown.value;
+        else subject = localStorage.getItem('selectedAnalysisSubject');
+    }
+
+    // Filter History Logic
+    // 1. Filter by Session (if selected)
+    // 2. Filter by Subject (if selected)
+
+    let filteredHistory = state.currentHistory;
+
+    // Get selected session
+    const sessionDropdown = document.getElementById('analysisSessionSelect');
+    let selectedSession = sessionDropdown ? sessionDropdown.value : localStorage.getItem('selectedAnalysisSession');
+
+    // Filter by Session
+    if (selectedSession && selectedSession !== 'all') {
+        filteredHistory = filteredHistory.filter(h => h.session === selectedSession);
+    } else {
+        // If no specific session selected, default to current student's session if available, else show all
+        if (state.currentAnalysisStudent && state.currentAnalysisStudent.session) {
+            // Optional: strict mode could force current session, but "all" allows comparison
+            // For now, let's respect the dropdown "all" or specific session
+        }
+    }
+
+    // Filter by Subject
+    if (subject && subject !== 'all') {
+        filteredHistory = filteredHistory.filter(h => h.subject === subject);
+    }
+
+    // Destroy previous
+    if (state.historyChartInstance) {
+        state.historyChartInstance.destroy();
+        state.historyChartInstance = null;
+    }
+
+    const chart = createHistoryChart(elements.historyChart, filteredHistory, {
         chartType,
         maxMarks
     });
@@ -2001,6 +2054,31 @@ function renderAnalysisDetails(student, history) {
         if (g.includes('মানবিক')) return 3;
         return 99;
     };
+
+    // Get unique sessions
+    const sessions = [...new Set(history.map(h => h.session))].filter(Boolean).sort();
+
+    // Restore saved session or default to student's current session or latest found
+    let selectedSession = localStorage.getItem('selectedAnalysisSession');
+    if (!sessions.includes(selectedSession)) {
+        selectedSession = student.session && sessions.includes(student.session) ? student.session : (sessions[sessions.length - 1] || '');
+    }
+
+    // Filter history by selected session to get relevant subjects
+    // If "all" or specific session is selected
+    let sessionFilteredHistory = history;
+    if (selectedSession && selectedSession !== 'all') {
+        sessionFilteredHistory = history.filter(h => h.session === selectedSession);
+    }
+
+    // Get unique subjects largely based on the *selected session* context
+    const subjects = [...new Set(sessionFilteredHistory.map(h => h.subject))].filter(Boolean);
+
+    // Restore saved subject from localStorage or default to first
+    let selectedSubject = localStorage.getItem('selectedAnalysisSubject');
+    if (!subjects.includes(selectedSubject) && subjects.length > 0) {
+        selectedSubject = subjects[0];
+    }
 
     // Navigation Logic: Sort by Group Priority then ID (Roll)
     const sortedStudents = [...state.studentData].sort((a, b) => {
@@ -2061,6 +2139,23 @@ function renderAnalysisDetails(student, history) {
         </div>
         <div style="text-align: right;">
             <div style="display: flex; align-items: center; justify-content: flex-end; gap: 8px; margin-bottom: 5px; flex-wrap: wrap;">
+                
+                <!-- Session Select Dropdown -->
+                <div class="session-select-wrapper" style="margin-right: 5px;">
+                    <select id="analysisSessionSelect" class="form-select" style="padding: 4px 8px; font-size: 0.9em; border-radius: 4px;" title="সেশন নির্বাচন করুন">
+                        <option value="all">সকল সেশন</option>
+                        ${sessions.map(s => `<option value="${s}" ${s === selectedSession ? 'selected' : ''}>${s}</option>`).join('')}
+                    </select>
+                </div>
+
+                <!-- Subject Select Dropdown -->
+                <div class="subject-select-wrapper" style="margin-right: 5px;">
+                    <select id="analysisSubjectSelect" class="form-select" style="padding: 4px 8px; font-size: 0.9em; border-radius: 4px;" title="বিষয় নির্বাচন করুন">
+                        <option value="all">সকল বিষয়</option>
+                        ${subjects.map(sub => `<option value="${sub}" ${sub === selectedSubject ? 'selected' : ''}>${sub}</option>`).join('')}
+                    </select>
+                </div>
+
                 <button id="downloadAnalysisBtn" title="ফলাফল ইমেজ হিসেবে ডাউনলোড করুন" style="padding: 4px 10px; font-size: 0.85em; cursor: pointer; border: none; background: var(--primary); color: white; border-radius: 4px; display: flex; align-items: center; gap: 5px; transition: all 0.2s; margin-right: 5px;">
                     <i class="fas fa-file-image"></i> ফলাফল ডাউনলোড (Image)
                 </button>
@@ -2094,6 +2189,34 @@ function renderAnalysisDetails(student, history) {
     if (nextStudent) {
         document.getElementById('nextStudentBtn').addEventListener('click', () => selectStudentForAnalysis(nextStudent));
     }
+
+    // Attach Session Change Listener
+    const sessionSelect = document.getElementById('analysisSessionSelect');
+    if (sessionSelect) {
+        sessionSelect.addEventListener('change', (e) => {
+            const val = e.target.value;
+            localStorage.setItem('selectedAnalysisSession', val);
+            // Re-render details to update subjects list based on new session
+            renderAnalysisDetails(student, history);
+            // Note: renderAnalysisDetails calls updateAnalysisChart internally via its initial call logic logic or we might need to trigger it?
+            // Actually renderAnalysisDetails reconstructs the DOM so we just need to call it.
+            // But wait, renderAnalysisDetails re-renders the dropdowns, so we lose focus?
+            // Better to just update chart OR re-render entire view. Re-rendering view is safer to sync subjects.
+        });
+    }
+
+    // Attach Subject Change Listener
+    const subjectSelect = document.getElementById('analysisSubjectSelect');
+    if (subjectSelect) {
+        subjectSelect.addEventListener('change', (e) => {
+            const val = e.target.value;
+            localStorage.setItem('selectedAnalysisSubject', val);
+            updateAnalysisChart(val);
+        });
+    }
+
+    // Initial Chart Render with Selected Subject & Session
+    updateAnalysisChart(selectedSubject);
 }
 
 /**
@@ -2155,7 +2278,13 @@ async function handleRealtimeSearch(query) {
         const candidates = await searchAnalyticsCandidates(query);
 
         if (candidates.length === 0) {
-            hideInlineSearch();
+            // Show "No results found" instead of hiding
+            if (elements.inlineSearchPanel) elements.inlineSearchPanel.style.display = 'block';
+            if (elements.inlineSearchCandidates) {
+                elements.inlineSearchCandidates.style.display = 'block';
+                elements.inlineSearchCandidates.innerHTML = `<div class="inline-search-loading" style="color: var(--text-color); opacity: 0.7;">কোনো ফলাফল পাওয়া যায়নি: "<strong>${query}</strong>"</div>`;
+            }
+            if (elements.inlineHistorySection) elements.inlineHistorySection.style.display = 'none';
             return;
         }
 
@@ -2222,9 +2351,11 @@ async function showInlineHistory(student) {
 
     try {
         const history = await getStudentHistory(student.id, student.group);
+
+        // Inline Search also needs full history to allow session switching
         state.inlineSearchHistory = history;
 
-        if (history.length === 0) {
+        if (state.inlineSearchHistory.length === 0) {
             if (elements.inlineStudentDetails) {
                 elements.inlineStudentDetails.innerHTML = `
     <div class="analysis-details-card">
@@ -2235,6 +2366,30 @@ async function showInlineHistory(student) {
         `;
             }
             return;
+        }
+
+        // Get unique sessions
+        const sessions = [...new Set(history.map(h => h.session))].filter(Boolean).sort();
+
+        // Restore saved session
+        let selectedSession = localStorage.getItem('selectedAnalysisSession');
+        if (!sessions.includes(selectedSession)) {
+            selectedSession = student.session && sessions.includes(student.session) ? student.session : (sessions[sessions.length - 1] || '');
+        }
+
+        // Filter history by selected session
+        let sessionFilteredHistory = history;
+        if (selectedSession && selectedSession !== 'all') {
+            sessionFilteredHistory = history.filter(h => h.session === selectedSession);
+        }
+
+        // Get unique subjects
+        const subjects = [...new Set(sessionFilteredHistory.map(h => h.subject))].filter(Boolean);
+
+        // Restore saved subject from localStorage or default to first
+        let selectedSubject = localStorage.getItem('selectedAnalysisSubject');
+        if (!subjects.includes(selectedSubject) && subjects.length > 0) {
+            selectedSubject = subjects[0];
         }
 
         // Render details
@@ -2291,6 +2446,22 @@ async function showInlineHistory(student) {
                                     </button>
                                 ` : ''}
                     <div style="font-size: 0.85em; opacity: 0.7; border-left: 1px solid var(--border-color); padding-left: 10px;">সর্বশেষ: ${latest.examName}</div>
+                    
+                     <!-- Session Select Dropdown -->
+                    <div class="session-select-wrapper" style="margin-left: 10px;">
+                        <select id="inlineSessionSelect" class="form-select" style="padding: 2px 6px; font-size: 0.85em; border-radius: 4px;">
+                            <option value="all">সকল সেশন</option>
+                            ${sessions.map(s => `<option value="${s}" ${s === selectedSession ? 'selected' : ''}>${s}</option>`).join('')}
+                        </select>
+                    </div>
+
+                     <!-- Subject Select Dropdown -->
+                    <div class="subject-select-wrapper" style="margin-left: 5px;">
+                        <select id="inlineSubjectSelect" class="form-select" style="padding: 2px 6px; font-size: 0.85em; border-radius: 4px;">
+                            <option value="all">সকল বিষয়</option>
+                            ${subjects.map(sub => `<option value="${sub}" ${sub === selectedSubject ? 'selected' : ''}>${sub}</option>`).join('')}
+                        </select>
+                    </div>
                 </div>
             </div>
         </div>
@@ -2308,10 +2479,30 @@ async function showInlineHistory(student) {
             if (nextStudent) {
                 document.getElementById('inlineNextBtn').addEventListener('click', () => showInlineHistory(nextStudent));
             }
+
+            // Attach Session Change Listener
+            const sessionSelect = document.getElementById('inlineSessionSelect');
+            if (sessionSelect) {
+                sessionSelect.addEventListener('change', (e) => {
+                    const val = e.target.value;
+                    localStorage.setItem('selectedAnalysisSession', val);
+                    showInlineHistory(student); // Re-render to update subjects
+                });
+            }
+
+            // Attach Subject Change Listener
+            const subjectSelect = document.getElementById('inlineSubjectSelect');
+            if (subjectSelect) {
+                subjectSelect.addEventListener('change', (e) => {
+                    const val = e.target.value;
+                    localStorage.setItem('selectedAnalysisSubject', val);
+                    updateInlineChart(val);
+                });
+            }
         }
 
         // Render chart
-        updateInlineChart();
+        updateInlineChart(selectedSubject);
 
     } catch (error) {
         console.error('Inline history error:', error);
@@ -2351,11 +2542,38 @@ function hideInlineSearch() {
 /**
  * Update inline history chart based on controls
  */
-function updateInlineChart() {
+/**
+ * Update inline history chart based on controls and selected subject
+ */
+function updateInlineChart(subject = null) {
     if (!state.inlineSearchHistory || state.inlineSearchHistory.length === 0) return;
 
     const chartType = elements.inlineAnalysisType ? elements.inlineAnalysisType.value : 'total';
     const maxMarks = elements.inlineAnalysisMaxMarks ? parseInt(elements.inlineAnalysisMaxMarks.value) : 100;
+
+    // If no subject passed, try to get from dropdown or localStorage
+    if (!subject) {
+        const dropdown = document.getElementById('inlineSubjectSelect');
+        if (dropdown) subject = dropdown.value;
+        else subject = localStorage.getItem('selectedAnalysisSubject');
+    }
+
+    // Get selected session
+    const sessionDropdown = document.getElementById('inlineSessionSelect');
+    let selectedSession = sessionDropdown ? sessionDropdown.value : localStorage.getItem('selectedAnalysisSession');
+
+    // Filter history based on selected session and subject
+    let filteredHistory = state.inlineSearchHistory;
+
+    // Filter by Session
+    if (selectedSession && selectedSession !== 'all') {
+        filteredHistory = filteredHistory.filter(h => h.session === selectedSession);
+    }
+
+    // Filter by Subject
+    if (subject && subject !== 'all') {
+        filteredHistory = filteredHistory.filter(h => h.subject === subject);
+    }
 
     // Destroy previous
     if (state.inlineHistoryChartInstance) {
@@ -2363,7 +2581,7 @@ function updateInlineChart() {
         state.inlineHistoryChartInstance = null;
     }
 
-    const chart = createHistoryChart(elements.inlineHistoryChart, state.inlineSearchHistory, {
+    const chart = createHistoryChart(elements.inlineHistoryChart, filteredHistory, {
         chartType,
         maxMarks
     });

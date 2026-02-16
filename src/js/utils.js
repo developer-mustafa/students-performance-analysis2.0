@@ -279,3 +279,19 @@ export function showNotification(message) {
         }
     }, 3000);
 }
+
+/**
+ * Convert Bengali digits to English digits
+ * @param {string} str - String containing Bengali digits
+ * @returns {string} - String with English digits
+ */
+export function convertToEnglishDigits(str) {
+    const bengali = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+    let result = str;
+    for (let i = 0; i < bengali.length; i++) {
+        result = result.replace(new RegExp(bengali[i], 'g'), english[i]);
+    }
+    return result;
+}

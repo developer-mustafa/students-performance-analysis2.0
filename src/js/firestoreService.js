@@ -5,6 +5,7 @@
  */
 
 import { db, auth } from './firebase.js';
+import { convertToEnglishDigits } from './utils.js';
 import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 import {
     collection,
@@ -28,7 +29,7 @@ const COLLECTIONS = {
     students: 'students',
     exams: 'exams',
     analytics: 'analytics',
-    analytics: 'analytics',
+
     settings: 'settings',
     users: 'users',
 };
@@ -510,14 +511,7 @@ export async function getStudentHistory(studentId, studentGroup) {
     }
 }
 
-/**
- * Convert Bengali digits to English
- */
-function convertToEnglishDigits(str) {
-    const bn = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
-    const en = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
-    return str.replace(/[০-৯]/g, (c) => en[bn.indexOf(c)]);
-}
+
 
 /**
  * Search for students across all exams for analysis
