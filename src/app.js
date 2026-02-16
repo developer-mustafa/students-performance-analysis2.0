@@ -1881,7 +1881,7 @@ function renderAnalysisCandidates(candidates) {
         // Removed inline styles to rely on CSS
 
         div.innerHTML = `
-    < div style = "font-weight: bold; color: var(--heading-color);" > ${student.name}</div >
+        <div style="font-weight: bold; color: var(--heading-color);">${student.name}</div>
             <div style="color: var(--text-color); opacity: 0.8; font-size: 0.9em;">
                 রোল: ${student.id} | গ্রুপ: ${student.group}
             </div>
@@ -2019,7 +2019,7 @@ function renderAnalysisDetails(student, history) {
     else if (student.group.includes('মানবিক')) groupBadgeClass = 'badge-humanities';
 
     elements.studentDetails.innerHTML = `
-    < div class= "analysis-details-card" >
+    <div class="analysis-details-card">
     <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 10px;">
         <div>
             <h3 style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px;">
@@ -2180,7 +2180,7 @@ function renderInlineCandidates(candidates) {
         const card = document.createElement('div');
         card.className = 'inline-candidate-card';
         card.innerHTML = `
-    < div class= "ic-name" > ${student.name}</div >
+    <div class="ic-name">${student.name}</div>
             <div class="ic-info">রোল: ${student.id} | গ্রুপ: ${student.group}</div>
             <div class="ic-class">শ্রেণি: ${student.class || '—'}</div>
         `;
@@ -2205,7 +2205,7 @@ async function showInlineHistory(student) {
 
     // Show loading
     if (elements.inlineStudentDetails) {
-        elements.inlineStudentDetails.innerHTML = `< div class= "inline-search-loading" > <i class="fas fa-spinner fa-spin"></i> লোড হচ্ছে...</div > `;
+        elements.inlineStudentDetails.innerHTML = `<div class="inline-search-loading"><i class="fas fa-spinner fa-spin"></i> লোড হচ্ছে...</div>`;
     }
 
     try {
@@ -2215,7 +2215,7 @@ async function showInlineHistory(student) {
         if (history.length === 0) {
             if (elements.inlineStudentDetails) {
                 elements.inlineStudentDetails.innerHTML = `
-    < div class= "analysis-details-card" >
+    <div class="analysis-details-card">
                         <h3>${student.name} (রোল: ${student.id})</h3>
                         <p>গ্রুপ: ${student.group}</p>
                         <p style="color: #e74c3c; margin-top: 8px;">কোনো পরীক্ষার ইতিহাস পাওয়া যায়নি</p>
@@ -2250,16 +2250,16 @@ async function showInlineHistory(student) {
         if (elements.inlineStudentDetails) {
             // Group badge color helper
             const getGroupBadge = (group) => {
-                if (!group) return `< span class= "group-badge group-badge-default" > ${group || '—'}</span > `;
+                if (!group) return `<span class="group-badge group-badge-default">${group || '—'}</span>`;
                 const g = group.toLowerCase().trim();
-                if (g.includes('বিজ্ঞান')) return `< span class="group-badge group-badge-science" > <i class="fas fa-flask"></i> ${group}</span > `;
-                if (g.includes('ব্যবসা')) return `< span class="group-badge group-badge-business" > <i class="fas fa-book"></i> ${group}</span > `;
-                if (g.includes('মানবিক')) return `< span class="group-badge group-badge-arts" > <i class="fas fa-palette"></i> ${group}</span > `;
-                return `< span class="group-badge group-badge-default" > ${group}</span > `;
+                if (g.includes('বিজ্ঞান')) return `<span class="group-badge group-badge-science"><i class="fas fa-flask"></i> ${group}</span>`;
+                if (g.includes('ব্যবসা')) return `<span class="group-badge group-badge-business"><i class="fas fa-book"></i> ${group}</span>`;
+                if (g.includes('মানবিক')) return `<span class="group-badge group-badge-arts"><i class="fas fa-palette"></i> ${group}</span>`;
+                return `<span class="group-badge group-badge-default">${group}</span>`;
             };
 
             elements.inlineStudentDetails.innerHTML = `
-    < div class="analysis-details-card" >
+    <div class="analysis-details-card">
         <div style="display: flex; justify-content: space-between; align-items: start; flex-wrap: wrap; gap: 8px;">
             <div>
                 <h3>${student.name} (রোল: ${student.id})</h3>
@@ -2305,7 +2305,7 @@ async function showInlineHistory(student) {
         console.error('Inline history error:', error);
         if (elements.inlineStudentDetails) {
             elements.inlineStudentDetails.innerHTML = `
-    < div class="analysis-details-card" >
+    <div class="analysis-details-card">
         <p style="color: #e74c3c;">ডেটা লোড করতে সমস্যা হয়েছে</p>
                 </div >
     `;
