@@ -243,6 +243,7 @@ function initElements() {
     elements.analysisMaxMarks = document.getElementById('analysisMaxMarks');
     elements.analysisSearchResults = document.getElementById('analysisSearchResults');
     elements.printBtn = document.getElementById('printBtn');
+    elements.toolbarUserMgmtBtn = document.getElementById('toolbarUserMgmtBtn');
 
     // Inline Search UI
     elements.inlineSearchPanel = document.getElementById('inlineSearchPanel');
@@ -935,6 +936,16 @@ function initEventListeners() {
         } catch (e) {
             console.error('Error in initExamManagement:', e);
         }
+
+        // Toolbar User Management Button Listener
+        if (elements.toolbarUserMgmtBtn) {
+            elements.toolbarUserMgmtBtn.addEventListener('click', () => {
+                if (elements.userManagementModal) {
+                    elements.userManagementModal.style.display = 'block';
+                    fetchAndRenderUsers();
+                }
+            });
+        }
     }
 }
 
@@ -1096,10 +1107,20 @@ async function initExamManagement() { // Made async
             state.isAdmin = (role === 'admin' || role === 'super_admin');
             state.isSuperAdmin = (role === 'super_admin');
             console.log(`User logged in: ${user.email} (${role})`);
+
+            // Show toolbar User Management if Super Admin
+            if (elements.toolbarUserMgmtBtn) {
+                elements.toolbarUserMgmtBtn.style.display = state.isSuperAdmin ? 'inline-flex' : 'none';
+            }
         } else {
             state.userRole = 'guest';
             state.isAdmin = false;
             state.isSuperAdmin = false;
+
+            // Hide toolbar User Management if logged out
+            if (elements.toolbarUserMgmtBtn) {
+                elements.toolbarUserMgmtBtn.style.display = 'none';
+            }
         }
 
         const btn = elements.adminToggle;
@@ -1132,15 +1153,6 @@ async function initExamManagement() { // Made async
                 // Open Profile Modal for any logged in user
                 if (elements.profileModal) {
                     elements.profileModal.style.display = 'block';
-                    elements.profileModal.style.display = 'block';
-                    // Load User Management if Super Admin
-                    if (state.isSuperAdmin) {
-                        try {
-                            await loadUserManagementPanel();
-                        } catch (err) {
-                            console.error('User management loading failed:', err);
-                        }
-                    }
                 }
             } else {
                 const result = await loginWithGoogle();
@@ -2413,23 +2425,10 @@ async function downloadInlineReport() {
 async function loadUserManagementPanel() {
     if (!state.isSuperAdmin) return;
 
-    // Check if Manage Users button exists in Profile Modal, if not add it
-    const profileActions = elements.profileModal.querySelector('.profile-actions');
-    if (profileActions && state.isSuperAdmin && !document.getElementById('manageUsersBtn')) {
-        const btn = document.createElement('button');
-        btn.id = 'manageUsersBtn';
-        btn.className = 'btn-primary';
-        btn.innerHTML = '<i class="fas fa-users-cog"></i> ব্যবহারকারী ব্যবস্থাপনা';
-        btn.style.marginRight = '10px';
-        btn.onclick = () => {
-            elements.profileModal.style.display = 'none';
-            if (elements.userManagementModal) {
-                elements.userManagementModal.style.display = 'block';
-                fetchAndRenderUsers();
-            }
-        };
-        profileActions.insertBefore(btn, profileActions.firstChild);
-    }
+    // User management is now mainly handled via the toolbar button for better UX.
+    // If we still want to keep the profile modal entry as a backup, we can, 
+    // but the user requested better placement. 
+    // This function can now just open the modal.
 
     // Direct open call
     if (elements.userManagementModal) {

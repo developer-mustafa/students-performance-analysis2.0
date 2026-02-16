@@ -1792,618 +1792,621 @@ input:focus {
   /* Mobile (≤ 576px) */
   @media (max-width: 576px) {
     .data-management-card .dm-controls {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-      padding: 8px;
-    }
-
-    .dm-btn {
-      width: 100%;
-      justify-content: center;
-      padding: 9px 6px;
-      font-size: 0.78rem;
-    }
-
-    .dm-upload-wrapper {
-      grid-column: span 1;
-      width: 100%;
-      order: 1;
-    }
-
-    .dm-upload-wrapper label {
-      width: 100%;
-      justify-content: center;
-      padding: 9px 6px;
-      font-size: 0.78rem;
-    }
-
-    #downloadTemplateBtn {
-      order: 2;
-    }
-
-    .data-management-card .dropdown {
-      order: 3;
-      width: 100%;
-    }
-
-    .data-management-card .dropdown .dm-btn {
-      width: 100%;
-    }
-
-    #saveAnalysisBtn {
-      order: 4;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding: 10px;
     }
 
     .dm-search {
-      grid-column: 1 / -1;
-      min-width: unset;
-      order: 5;
+      width: 100%;
+      min-width: 100%;
+      order: -1;
     }
 
-    .saved-exams-section {
-      padding: 12px !important;
-      margin-top: 10px !important;
-    }
-
-    .saved-exams-section h3 {
-      font-size: 0.9rem;
-      margin-bottom: 10px !important;
-    }
-  }
-
-  /* Extra small (≤ 380px) — icon-only buttons */
-  @media (max-width: 380px) {
-    .dm-btn-text {
-      display: none;
-    }
-
+    .dm-upload-wrapper,
     .dm-btn {
-      padding: 9px 10px;
-      justify-content: center;
+      width: 100% !important;
+      justify-content: center !important;
+      padding: 10px !important;
     }
 
-    .dm-upload-wrapper label {
-      padding: 9px 10px;
+    /* Stats Grid for Mobile */
+    .stats {
+      display: grid !important;
+      grid-template-columns: 1fr 1fr !important;
+      gap: 10px !important;
+      padding: 0 !important;
+    }
+
+    .stat-card {
+      padding: 12px !important;
+    }
+
+    .stat-value {
+      font-size: 1.1rem !important;
+    }
+
+    /* Table Fixes */
+    .table-container {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+    }
+
+    .data-table {
+      font-size: 0.75rem;
     }
   }
 
-  /* =========================================
+  @media (max-width: 400px) {
+    .stats {
+      grid-template-columns: 1fr !important;
+    }
+  }
+
+  .saved-exams-section {
+    padding: 12px !important;
+    margin-top: 10px !important;
+  }
+
+  .saved-exams-section h3 {
+    font-size: 0.9rem;
+    margin-bottom: 10px !important;
+  }
+}
+
+/* Extra small (≤ 380px) — icon-only buttons */
+@media (max-width: 380px) {
+  .dm-btn-text {
+    display: none;
+  }
+
+  .dm-btn {
+    padding: 9px 10px;
+    justify-content: center;
+  }
+
+  .dm-upload-wrapper label {
+    padding: 9px 10px;
+  }
+}
+
+/* =========================================
    Inline Search Results Panel
    ========================================= */
+.inline-search-panel {
+  border-top: 1px solid var(--border-color);
+  padding: 12px 14px;
+  animation: slideDown 0.25s ease-out;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Candidate Cards Grid */
+.inline-candidates-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 8px;
+  margin-bottom: 10px;
+}
+
+.inline-candidate-card {
+  background: var(--card-bg);
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  padding: 10px 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: var(--card-shadow);
+}
+
+.inline-candidate-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+  border-color: var(--primary);
+}
+
+.inline-candidate-card .ic-name {
+  font-weight: 600;
+  color: var(--heading-color);
+  font-size: 0.95rem;
+  margin-bottom: 2px;
+}
+
+.inline-candidate-card .ic-info {
+  color: var(--text-color);
+  opacity: 0.75;
+  font-size: 0.82rem;
+}
+
+.inline-candidate-card .ic-class {
+  color: var(--text-color);
+  opacity: 0.55;
+  font-size: 0.78rem;
+}
+
+/* History Section */
+.inline-history-section {
+  animation: slideDown 0.25s ease-out;
+}
+
+.inline-report-content {
+  padding: 5px 0;
+}
+
+.inline-chart-controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin: 10px 0;
+}
+
+.inline-chart-controls .form-select {
+  padding: 6px 10px;
+  font-size: 0.82rem;
+  min-width: 110px;
+  width: auto;
+}
+
+.inline-chart-wrapper {
+  position: relative;
+  height: 320px;
+  background: var(--card-bg);
+  border-radius: 8px;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  box-shadow: var(--card-shadow);
+}
+
+/* Inline Analysis Details Card */
+.inline-search-panel .analysis-details-card {
+  padding: 10px;
+  background-color: var(--card-bg);
+  border-radius: 8px;
+  border-left: 4px solid var(--primary);
+  margin-bottom: 10px;
+  box-shadow: var(--card-shadow);
+}
+
+.analysis-details-card h3 {
+  font-size: 1.1rem;
+  margin-bottom: 4px;
+}
+
+.analysis-details-card p {
+  margin: 2px 0 !important;
+  font-size: 0.9rem;
+}
+
+.inline-search-panel .analysis-details-card h3 {
+  font-size: 1rem;
+  color: var(--heading-color);
+  margin: 0 0 4px 0;
+}
+
+.inline-search-panel .analysis-details-card p {
+  margin: 3px 0;
+  font-size: 0.88rem;
+  color: var(--text-color);
+}
+
+/* Inline search loading spinner */
+.inline-search-loading {
+  text-align: center;
+  padding: 15px;
+  color: var(--text-color);
+  opacity: 0.6;
+  font-size: 0.9rem;
+}
+
+/* Group Badge Styles */
+.group-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 0.8em;
+  font-weight: 600;
+  letter-spacing: 0.3px;
+  white-space: nowrap;
+}
+
+.group-badge i {
+  font-size: 0.75em;
+}
+
+.group-badge-science {
+  background: linear-gradient(135deg, #0984e3 0%, #74b9ff 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(9, 132, 227, 0.35);
+}
+
+.group-badge-business {
+  background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(108, 92, 231, 0.35);
+}
+
+.group-badge-arts {
+  background: linear-gradient(135deg, #e17055 0%, #fab1a0 100%);
+  color: #fff;
+  box-shadow: 0 2px 8px rgba(225, 112, 85, 0.35);
+}
+
+.group-badge-default {
+  background: var(--card-bg);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+/* Inline Navigation Buttons (Prev/Next) */
+.inline-nav-btn {
+  padding: 4px 10px;
+  font-size: 0.85em;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  border-radius: 4px;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  transition: all 0.2s ease;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.inline-nav-btn:hover {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
+}
+
+.inline-nav-btn:active {
+  transform: translateY(0);
+}
+
+/* Dark mode */
+.dark-mode .inline-nav-btn {
+  background: rgba(255, 255, 255, 0.08);
+  border-color: rgba(255, 255, 255, 0.15);
+}
+
+.dark-mode .inline-nav-btn:hover {
+  background: var(--primary);
+  border-color: var(--primary);
+}
+
+/* Dark mode inline search */
+.dark-mode .inline-search-panel {
+  border-top-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .inline-candidate-card {
+  background: #2d2d2d;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .inline-candidate-card:hover {
+  border-color: var(--primary);
+}
+
+.dark-mode .inline-chart-wrapper {
+  background: #2d2d2d;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.dark-mode .inline-search-panel .analysis-details-card {
+  background: #2d2d2d;
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+/* Responsive */
+@media (max-width: 576px) {
   .inline-search-panel {
-    border-top: 1px solid var(--border-color);
-    padding: 12px 14px;
-    animation: slideDown 0.25s ease-out;
+    padding: 8px;
   }
 
-  @keyframes slideDown {
-    from {
-      opacity: 0;
-      transform: translateY(-8px);
-    }
-
-    to {
-      opacity: 1;
-      transform: translateY(0);
-    }
-  }
-
-  /* Candidate Cards Grid */
   .inline-candidates-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
-    gap: 8px;
-    margin-bottom: 10px;
-  }
-
-  .inline-candidate-card {
-    background: var(--card-bg);
-    border: 1px solid var(--border-color);
-    border-radius: 8px;
-    padding: 10px 12px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    box-shadow: var(--card-shadow);
-  }
-
-  .inline-candidate-card:hover {
-    transform: translateY(-2px);
-    box-shadow: var(--shadow);
-    border-color: var(--primary);
-  }
-
-  .inline-candidate-card .ic-name {
-    font-weight: 600;
-    color: var(--heading-color);
-    font-size: 0.95rem;
-    margin-bottom: 2px;
-  }
-
-  .inline-candidate-card .ic-info {
-    color: var(--text-color);
-    opacity: 0.75;
-    font-size: 0.82rem;
-  }
-
-  .inline-candidate-card .ic-class {
-    color: var(--text-color);
-    opacity: 0.55;
-    font-size: 0.78rem;
-  }
-
-  /* History Section */
-  .inline-history-section {
-    animation: slideDown 0.25s ease-out;
-  }
-
-  .inline-report-content {
-    padding: 5px 0;
-  }
-
-  .inline-chart-controls {
-    display: flex;
-    gap: 8px;
-    align-items: center;
-    flex-wrap: wrap;
-    margin: 10px 0;
-  }
-
-  .inline-chart-controls .form-select {
-    padding: 6px 10px;
-    font-size: 0.82rem;
-    min-width: 110px;
-    width: auto;
+    grid-template-columns: 1fr 1fr;
+    gap: 6px;
   }
 
   .inline-chart-wrapper {
-    position: relative;
-    height: 320px;
-    background: var(--card-bg);
-    border-radius: 8px;
-    padding: 10px;
-    border: 1px solid var(--border-color);
-    box-shadow: var(--card-shadow);
+    height: 250px;
+    padding: 6px;
   }
 
-  /* Inline Analysis Details Card */
-  .inline-search-panel .analysis-details-card {
-    padding: 10px;
-    background-color: var(--card-bg);
-    border-radius: 8px;
-    border-left: 4px solid var(--primary);
-    margin-bottom: 10px;
-    box-shadow: var(--card-shadow);
+  .inline-chart-controls {
+    gap: 6px;
   }
 
-  .analysis-details-card h3 {
-    font-size: 1.1rem;
-    margin-bottom: 4px;
+  .inline-chart-controls .form-select {
+    min-width: 90px;
+    font-size: 0.78rem;
   }
+}
 
-  .analysis-details-card p {
-    margin: 2px 0 !important;
-    font-size: 0.9rem;
+@media (max-width: 380px) {
+  .inline-candidates-grid {
+    grid-template-columns: 1fr;
   }
+}
 
-  .inline-search-panel .analysis-details-card h3 {
-    font-size: 1rem;
-    color: var(--heading-color);
-    margin: 0 0 4px 0;
-  }
-
-  .inline-search-panel .analysis-details-card p {
-    margin: 3px 0;
-    font-size: 0.88rem;
-    color: var(--text-color);
-  }
-
-  /* Inline search loading spinner */
-  .inline-search-loading {
-    text-align: center;
-    padding: 15px;
-    color: var(--text-color);
-    opacity: 0.6;
-    font-size: 0.9rem;
-  }
-
-  /* Group Badge Styles */
-  .group-badge {
-    display: inline-flex;
-    align-items: center;
-    gap: 5px;
-    padding: 3px 10px;
-    border-radius: 20px;
-    font-size: 0.8em;
-    font-weight: 600;
-    letter-spacing: 0.3px;
-    white-space: nowrap;
-  }
-
-  .group-badge i {
-    font-size: 0.75em;
-  }
-
-  .group-badge-science {
-    background: linear-gradient(135deg, #0984e3 0%, #74b9ff 100%);
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(9, 132, 227, 0.35);
-  }
-
-  .group-badge-business {
-    background: linear-gradient(135deg, #6c5ce7 0%, #a29bfe 100%);
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(108, 92, 231, 0.35);
-  }
-
-  .group-badge-arts {
-    background: linear-gradient(135deg, #e17055 0%, #fab1a0 100%);
-    color: #fff;
-    box-shadow: 0 2px 8px rgba(225, 112, 85, 0.35);
-  }
-
-  .group-badge-default {
-    background: var(--card-bg);
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-  }
-
-  /* Inline Navigation Buttons (Prev/Next) */
-  .inline-nav-btn {
-    padding: 4px 10px;
-    font-size: 0.85em;
-    cursor: pointer;
-    border: 1px solid var(--border-color);
-    background: var(--card-bg);
-    border-radius: 4px;
-    color: var(--text-color);
-    display: flex;
-    align-items: center;
-    gap: 5px;
-    transition: all 0.2s ease;
-    font-weight: 500;
-    white-space: nowrap;
-  }
-
-  .inline-nav-btn:hover {
-    background: var(--primary);
-    color: white;
-    border-color: var(--primary);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(99, 102, 241, 0.3);
-  }
-
-  .inline-nav-btn:active {
-    transform: translateY(0);
-  }
-
-  /* Dark mode */
-  .dark-mode .inline-nav-btn {
-    background: rgba(255, 255, 255, 0.08);
-    border-color: rgba(255, 255, 255, 0.15);
-  }
-
-  .dark-mode .inline-nav-btn:hover {
-    background: var(--primary);
-    border-color: var(--primary);
-  }
-
-  /* Dark mode inline search */
-  .dark-mode .inline-search-panel {
-    border-top-color: rgba(255, 255, 255, 0.1);
-  }
-
-  .dark-mode .inline-candidate-card {
-    background: #2d2d2d;
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-
-  .dark-mode .inline-candidate-card:hover {
-    border-color: var(--primary);
-  }
-
-  .dark-mode .inline-chart-wrapper {
-    background: #2d2d2d;
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-
-  .dark-mode .inline-search-panel .analysis-details-card {
-    background: #2d2d2d;
-    border-color: rgba(255, 255, 255, 0.1);
-  }
-
-  /* Responsive */
-  @media (max-width: 576px) {
-    .inline-search-panel {
-      padding: 8px;
-    }
-
-    .inline-candidates-grid {
-      grid-template-columns: 1fr 1fr;
-      gap: 6px;
-    }
-
-    .inline-chart-wrapper {
-      height: 250px;
-      padding: 6px;
-    }
-
-    .inline-chart-controls {
-      gap: 6px;
-    }
-
-    .inline-chart-controls .form-select {
-      min-width: 90px;
-      font-size: 0.78rem;
-    }
-  }
-
-  @media (max-width: 380px) {
-    .inline-candidates-grid {
-      grid-template-columns: 1fr;
-    }
-  }
-
-  /* =========================================
+/* =========================================
    Admin Toggle Button (Toolbar Style)
    ========================================= */
-  .admin-toggle {
-    background: linear-gradient(135deg, #4285f4, #34a853) !important;
-    color: white !important;
-    border: none !important;
-    transition: all 0.3s ease;
-  }
+.admin-toggle {
+  background: linear-gradient(135deg, #4285f4, #34a853) !important;
+  color: white !important;
+  border: none !important;
+  transition: all 0.3s ease;
+}
 
-  .admin-toggle:hover {
-    background: linear-gradient(135deg, #3367d6, #2d9649) !important;
-    transform: translateY(-1px);
-    box-shadow: 0 3px 10px rgba(66, 133, 244, 0.4);
-  }
+.admin-toggle:hover {
+  background: linear-gradient(135deg, #3367d6, #2d9649) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 3px 10px rgba(66, 133, 244, 0.4);
+}
 
-  .admin-toggle.logged-in {
-    background: linear-gradient(135deg, #2ecc71, #27ae60) !important;
-    box-shadow: 0 2px 8px rgba(46, 204, 113, 0.4);
-  }
+.admin-toggle.logged-in {
+  background: linear-gradient(135deg, #2ecc71, #27ae60) !important;
+  box-shadow: 0 2px 8px rgba(46, 204, 113, 0.4);
+}
 
-  .admin-toggle.logged-in:hover {
-    background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
-    box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
-  }
+.admin-toggle.logged-in:hover {
+  background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+  box-shadow: 0 2px 8px rgba(231, 76, 60, 0.4);
+}
 
-  /* =========================================
+/* =========================================
    Print Styles
    ========================================= */
-  @media print {
-    @page {
-      size: landscape;
-      margin: 1cm;
-    }
+@media print {
+  @page {
+    size: landscape;
+    margin: 1cm;
+  }
 
-    /* Hide non-essential elements */
-    .header-controls,
-    .controls,
-    .view-toggle button,
-    .theme-toggle,
-    .inline-search-wrapper,
-    #adminToggle,
-    .saved-exams-section,
-    .failed-students,
-    .group-stats-card,
-    #historyChart canvas,
-    #saveAnalysisBtn,
-    #downloadTemplateBtn,
-    .json-upload,
-    footer {
-      display: none !important;
-    }
+  /* Hide non-essential elements */
+  .header-controls,
+  .controls,
+  .view-toggle button,
+  .theme-toggle,
+  .inline-search-wrapper,
+  #adminToggle,
+  .saved-exams-section,
+  .failed-students,
+  .group-stats-card,
+  #historyChart canvas,
+  #saveAnalysisBtn,
+  #downloadTemplateBtn,
+  .json-upload,
+  footer {
+    display: none !important;
+  }
 
-    /* Hide the inputs/selects that are not relevant to the printed report */
-    .controls select,
-    .controls input {
-      display: none !important;
-    }
+  /* Hide the inputs/selects that are not relevant to the printed report */
+  .controls select,
+  .controls input {
+    display: none !important;
+  }
 
-    /* Hide Admin/Search/Upload/Download buttons */
-    .header button,
-    .header input,
-    .json-upload,
-    #downloadTemplateBtn,
-    #saveAnalysisBtn,
-    #loadSampleData,
-    #clearData {
-      display: none !important;
-    }
+  /* Hide Admin/Search/Upload/Download buttons */
+  .header button,
+  .header input,
+  .json-upload,
+  #downloadTemplateBtn,
+  #saveAnalysisBtn,
+  #loadSampleData,
+  #clearData {
+    display: none !important;
+  }
 
-    /* Base modal responsiveness */
-    @media (max-width: 480px) {
-      .modal-content {
-        width: 90% !important;
-        margin: 20% auto !important;
-      }
-    }
-
-    /* Make sure the main card takes full width */
-    body,
-    .container,
-    .card {
-      width: 100% !important;
-      max-width: 100% !important;
-      margin: 0 !important;
-      padding: 0 !important;
-      background: white !important;
-      box-shadow: none !important;
-      overflow: visible !important;
-    }
-
-    /* Chart Canvas Size - Ensure it fits */
-    .chart-container {
-      height: 500px !important;
-      /* Fixed height for print */
-      page-break-inside: avoid;
-    }
-
-    canvas {
-      max-width: 100% !important;
-    }
-
-    /* Force light theme colors for print */
-    * {
-      color: #000 !important;
-      background: transparent !important;
-      box-shadow: none !important;
-      text-shadow: none !important;
-    }
-
-    /* Header adjustments */
-    /* Hide Header completely */
-    .header {
-      display: none !important;
-    }
-
-    /* Card Header Adjustments */
-    /* Hide Card Header for strict data print */
-    .card-header {
-      display: none !important;
-    }
-
-    .card-title {
-      font-size: 18pt !important;
-      text-align: center !important;
-    }
-
-    /* View Toggle - Hide buttons */
-    .view-toggle {
-      display: none !important;
-    }
-
-    /* Stats Container - Compact for Print */
-    /* Hide Stats Container */
-    .stats-container {
-      display: none !important;
-    }
-
-    /* Watermark / Footer */
-    /* Watermark / Footer */
-    /* Hide watermark for strict print */
-    body::after {
-      display: none !important;
+  /* Base modal responsiveness */
+  @media (max-width: 480px) {
+    .modal-content {
+      width: 90% !important;
+      margin: 20% auto !important;
     }
   }
 
-  /* Profile Modal Styles */
-  .profile-modal-content {
-    max-width: 350px !important;
-    text-align: center;
-    padding: 40px 25px 30px !important;
-    border-radius: 20px !important;
-    background: var(--card-bg);
-    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
-    position: relative;
+  /* Make sure the main card takes full width */
+  body,
+  .container,
+  .card {
+    width: 100% !important;
+    max-width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+    overflow: visible !important;
   }
 
-  #closeProfileIcon {
-    position: absolute;
-    top: 15px;
-    right: 20px;
-    font-size: 1.5rem;
-    color: var(--text-color);
-    opacity: 0.5;
-    cursor: pointer;
-    transition: opacity 0.2s ease;
+  /* Chart Canvas Size - Ensure it fits */
+  .chart-container {
+    height: 500px !important;
+    /* Fixed height for print */
+    page-break-inside: avoid;
   }
 
-  #closeProfileIcon:hover {
-    opacity: 1;
+  canvas {
+    max-width: 100% !important;
   }
 
-  .profile-header {
-    margin-bottom: 25px;
+  /* Force light theme colors for print */
+  * {
+    color: #000 !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    text-shadow: none !important;
   }
 
-  .profile-pic-container {
-    width: 90px;
-    height: 90px;
-    margin: 0 auto 15px;
-    border-radius: 50%;
-    padding: 4px;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
-    box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
+  /* Header adjustments */
+  /* Hide Header completely */
+  .header {
+    display: none !important;
   }
 
-  .profile-pic-container img {
-    width: 100%;
-    height: 100%;
-    border-radius: 50%;
-    object-fit: cover;
-    border: 3px solid white;
+  /* Card Header Adjustments */
+  /* Hide Card Header for strict data print */
+  .card-header {
+    display: none !important;
   }
 
-  #userName {
-    font-size: 1.4rem;
-    font-weight: 700;
-    color: var(--heading-color);
-    margin-bottom: 5px;
+  .card-title {
+    font-size: 18pt !important;
+    text-align: center !important;
   }
 
-  #userEmail {
-    font-size: 0.9rem;
-    color: var(--text-color);
-    opacity: 0.7;
-    word-break: break-all;
+  /* View Toggle - Hide buttons */
+  .view-toggle {
+    display: none !important;
   }
 
-  .profile-actions {
-    display: flex;
-    justify-content: center;
-    gap: 12px;
-    margin-top: 10px;
+  /* Stats Container - Compact for Print */
+  /* Hide Stats Container */
+  .stats-container {
+    display: none !important;
   }
 
-  .profile-actions button {
-    flex: 1;
-    padding: 10px;
-    border-radius: 10px;
-    font-weight: 600;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 8px;
-    transition: all 0.2s ease;
+  /* Watermark / Footer */
+  /* Watermark / Footer */
+  /* Hide watermark for strict print */
+  body::after {
+    display: none !important;
   }
+}
 
-  #modalLogoutBtn {
-    background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
-    color: white;
-    border: none;
-  }
+/* Profile Modal Styles */
+.profile-modal-content {
+  max-width: 350px !important;
+  text-align: center;
+  padding: 40px 25px 30px !important;
+  border-radius: 20px !important;
+  background: var(--card-bg);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  position: relative;
+}
 
-  #modalLogoutBtn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
-  }
+#closeProfileIcon {
+  position: absolute;
+  top: 15px;
+  right: 20px;
+  font-size: 1.5rem;
+  color: var(--text-color);
+  opacity: 0.5;
+  cursor: pointer;
+  transition: opacity 0.2s ease;
+}
 
-  #closeProfileBtn {
-    background: transparent;
-    color: var(--text-color);
-    border: 1px solid var(--border-color);
-  }
+#closeProfileIcon:hover {
+  opacity: 1;
+}
 
-  #closeProfileBtn:hover {
-    background: rgba(0, 0, 0, 0.05);
-  }
+.profile-header {
+  margin-bottom: 25px;
+}
 
-  .dark-mode .profile-pic-container img {
-    border-color: #1e293b;
-  }
+.profile-pic-container {
+  width: 90px;
+  height: 90px;
+  margin: 0 auto 15px;
+  border-radius: 50%;
+  padding: 4px;
+  background: linear-gradient(135deg, var(--primary) 0%, var(--secondary) 100%);
+  box-shadow: 0 5px 15px rgba(99, 102, 241, 0.3);
+}
 
-  .dark-mode #closeProfileBtn:hover {
-    background: rgba(255, 255, 255, 0.05);
-  }
+.profile-pic-container img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid white;
+}
+
+#userName {
+  font-size: 1.4rem;
+  font-weight: 700;
+  color: var(--heading-color);
+  margin-bottom: 5px;
+}
+
+#userEmail {
+  font-size: 0.9rem;
+  color: var(--text-color);
+  opacity: 0.7;
+  word-break: break-all;
+}
+
+.profile-actions {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 10px;
+}
+
+.profile-actions button {
+  flex: 1;
+  padding: 10px;
+  border-radius: 10px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.2s ease;
+}
+
+#modalLogoutBtn {
+  background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+  color: white;
+  border: none;
+}
+
+#modalLogoutBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+}
+
+#closeProfileBtn {
+  background: transparent;
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+}
+
+#closeProfileBtn:hover {
+  background: rgba(0, 0, 0, 0.05);
+}
+
+.dark-mode .profile-pic-container img {
+  border-color: #1e293b;
+}
+
+.dark-mode #closeProfileBtn:hover {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 /* =========================================
    Image Capture / Download Overrides
    ========================================= */
+
 /* Force clean high-contrast light theme for all exported images */
 .capturing-mode,
 .capturing-mode * {
@@ -2546,4 +2549,38 @@ input:focus {
 .btn-demote {
   background: #fab1a0;
   color: #2d3436;
+}
+
+/* User Management Mobile Responsiveness */
+@media (max-width: 600px) {
+
+  .user-table th,
+  .user-table td {
+    padding: 8px 5px;
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+
+  .user-table th:nth-child(2),
+  .user-table td:nth-child(2) {
+    display: none;
+    /* Hide Email column on very small screens */
+  }
+
+  .user-table td div div:last-child {
+    display: none;
+    /* Hide 'Last Login' date on mobile */
+  }
+
+  .role-badge {
+    padding: 2px 6px;
+    font-size: 0.7rem;
+  }
+
+  .action-btn {
+    padding: 4px 6px;
+    font-size: 0.7rem;
+  }
 }
