@@ -350,10 +350,6 @@
           <input type="text" id="examName" class="form-control" required
             placeholder="উদাহরণ: প্রাক-নির্বাচনী পরীক্ষা ২০২৫">
         </div>
-        <div class="form-group">
-          <label for="examSubject">বিষয় (Subject):</label>
-          <input type="text" id="examSubject" class="form-control" placeholder="উদাহরণ: বাংলা" required>
-        </div>
         <div class="form-row" style="display: flex; gap: 10px;">
           <div class="form-group" style="flex: 1;">
             <label for="examClass">শ্রেণি (Class):</label>
@@ -373,6 +369,12 @@
             <input type="text" id="examSession" class="form-control" placeholder="2025" value="2025">
           </div>
         </div>
+        <div class="form-group">
+          <label for="examSubject">বিষয় (Subject):</label>
+          <select id="examSubject" class="form-control" disabled>
+            <option value="">আগে শ্রেণি সিলেক্ট করুন</option>
+          </select>
+        </div>
         <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">সংরক্ষণ করুন</button>
       </form>
     </div>
@@ -390,10 +392,6 @@
         <div class="form-group">
           <label for="editExamName">পরীক্ষার নাম:</label>
           <input type="text" id="editExamName" class="form-control" required>
-        </div>
-        <div class="form-group">
-          <label for="editSubjectName">বিষয়:</label>
-          <input type="text" id="editSubjectName" class="form-control" required>
         </div>
         <div class="form-row" style="display: flex; gap: 10px;">
           <div class="form-group" style="flex: 1;">
@@ -413,6 +411,12 @@
             <label for="editExamSession">সেশন (Session):</label>
             <input type="text" id="editExamSession" class="form-control" placeholder="2025">
           </div>
+        </div>
+        <div class="form-group">
+          <label for="editSubjectName">বিষয়:</label>
+          <select id="editSubjectName" class="form-control">
+            <option value="">আগে শ্রেণি সিলেক্ট করুন</option>
+          </select>
         </div>
         <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">আপডেট করুন</button>
       </form>
@@ -464,15 +468,76 @@
           </tbody>
         </table>
       </div>
+
+      <!-- New Class Subject Mapping Section -->
+      <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+          <h3><i class="fas fa-list-alt"></i> ক্লাস ও বিষয় ম্যাপিং</h3>
+          <button id="openClassMappingBtn" class="btn-secondary" style="font-size: 0.9em;">
+            <i class="fas fa-edit"></i> ম্যাপিং এডিট করুন
+          </button>
+        </div>
+        <p style="font-size: 0.9em; color: #666;">এখানে ক্লাস অনুযায়ী বিষয়গুলো সেট করুন। এটি এক্সাম সেভ করার সময়
+          ড্রপডাউনে দেখাবে।</p>
+      </div>
     </div>
   </div>
+
+  <!-- Class Subject Mapping Modal -->
+  <div id="classSubjectMappingModal" class="modal">
+    <div class="modal-content" style="max-width: 600px;">
+      <span class="close" id="closeClassMappingBtn">&times;</span>
+      <h2><i class="fas fa-project-diagram"></i> ক্লাস ও বিষয় ম্যাপিং</h2>
+
+      <div class="form-group">
+        <label for="mappingClassSelect">ক্লাস সিলেক্ট করুন:</label>
+        <select id="mappingClassSelect" class="form-control">
+          <option value="6">৬ষ্ঠ শ্রেণি</option>
+          <option value="7">৭ম শ্রেণি</option>
+          <option value="8">৮ম শ্রেণি</option>
+          <option value="9">৯ম শ্রেণি</option>
+          <option value="10">১০ম শ্রেণি</option>
+          <option value="SSC">SSC</option>
+          <option value="HSC">HSC</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>বিষয়সমূহ (Subjects):</label>
+        <div style="display: flex; gap: 10px; margin-bottom: 10px;">
+          <input type="text" id="mappingSubjectInput" class="form-control" placeholder="বিষয় লিখুন (যেমন: Bangla)"
+            style="flex: 1;">
+          <button id="addMappingSubjectBtn" class="btn-primary">
+            <i class="fas fa-plus"></i>
+          </button>
+        </div>
+        <div id="mappingSubjectsContainer"
+          style="display: flex; flex-wrap: wrap; gap: 8px; min-height: 50px; padding: 10px; background: var(--bg-color); border-radius: 4px;">
+          <!-- Subject Tags will appear here -->
+        </div>
+      </div>
+
+      <button id="saveMappingBtn" class="btn-primary" style="width: 100%; margin-top: 15px;">
+        <i class="fas fa-save"></i> সংরক্ষণ করুন
+      </button>
+    </div>
+  </div>
+
 
   <!-- Subject Settings Modal (Modern Landscape Design) -->
   <div id="subjectSettingsModal" class="modal">
     <div class="modal-content landscape-modal">
-      <div class="modal-header">
-        <h2><i class="fas fa-sliders-h"></i> বিষয় কনফিগারেশন</h2>
-        <span class="close" id="closeSubjectSettingsBtn">&times;</span>
+      <div class="modal-header" style="flex-direction: column; align-items: flex-start; gap: 8px;">
+        <div style="display: flex; justify-content: space-between; width: 100%; align-items: center;">
+          <h2><i class="fas fa-sliders-h"></i> বিষয় কনফিগারেশন</h2>
+          <span class="close" id="closeSubjectSettingsBtn">&times;</span>
+        </div>
+        <div
+          style="font-size: 0.85rem; color: var(--text-color); background: rgba(245, 158, 11, 0.15); border-left: 3px solid var(--warning); padding: 8px; border-radius: 4px; width: 100%;">
+          <i class="fas fa-exclamation-triangle" style="color: var(--warning); margin-right: 5px;"></i>
+          এক্সেল ইমপোর্টের সময় <strong>ক্লাস ও বিষয়ের নাম</strong> প্রদত্ত বিষয়ের নামের সাথে ম্যাচ করতে হবে কাস্টম
+          কনফিগারেশনে
+        </div>
       </div>
 
       <div class="landscape-body">
@@ -513,8 +578,14 @@
             <div class="mark-group">
               <label><i class="fas fa-pen"></i> লিখিত (Written)</label>
               <div class="input-row">
-                <input type="number" id="configWrittenMax" class="form-control" placeholder="মোট">
-                <input type="number" id="configWrittenPass" class="form-control" placeholder="পাস">
+                <div class="input-col">
+                  <small>মোট</small>
+                  <input type="number" id="configWrittenMax" class="form-control" placeholder="0">
+                </div>
+                <div class="input-col">
+                  <small>পাস মার্ক</small>
+                  <input type="number" id="configWrittenPass" class="form-control" placeholder="0">
+                </div>
               </div>
             </div>
 
@@ -522,8 +593,14 @@
             <div class="mark-group">
               <label><i class="fas fa-check-square"></i> এমসিকিউ (MCQ)</label>
               <div class="input-row">
-                <input type="number" id="configMcqMax" class="form-control" placeholder="মোট">
-                <input type="number" id="configMcqPass" class="form-control" placeholder="পাস">
+                <div class="input-col">
+                  <small>মোট</small>
+                  <input type="number" id="configMcqMax" class="form-control" placeholder="0">
+                </div>
+                <div class="input-col">
+                  <small>পাস মার্ক</small>
+                  <input type="number" id="configMcqPass" class="form-control" placeholder="0">
+                </div>
               </div>
             </div>
 
@@ -531,8 +608,14 @@
             <div class="mark-group">
               <label><i class="fas fa-flask"></i> ব্যবহারিক (Practical)</label>
               <div class="input-row">
-                <input type="number" id="configPracticalMax" class="form-control" placeholder="মোট">
-                <input type="number" id="configPracticalPass" class="form-control" placeholder="পাস">
+                <div class="input-col">
+                  <small>মোট</small>
+                  <input type="number" id="configPracticalMax" class="form-control" placeholder="0">
+                </div>
+                <div class="input-col">
+                  <small>পাস মার্ক</small>
+                  <input type="number" id="configPracticalPass" class="form-control" placeholder="0">
+                </div>
               </div>
               <div class="checkbox-wrapper">
                 <input type="checkbox" id="configPracticalOptional" class="form-check-input">

@@ -278,9 +278,15 @@ export function toggleTheme(button) {
 export function applyTheme(isDark, button) {
   if (isDark) {
     document.body.classList.add('dark-mode');
-    button.querySelector('i').className = 'fas fa-sun';
+    if (button) {
+      const icon = button.querySelector('i');
+      if (icon) icon.className = 'fas fa-sun';
+    }
   } else {
     document.body.classList.remove('dark-mode');
-    button.querySelector('i').className = 'fas fa-moon';
+    if (button) {
+      const icon = button.querySelector('i');
+      if (icon) icon.className = 'fas fa-moon';
+    }
   }
 }

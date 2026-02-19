@@ -780,3 +780,58 @@ export function subscribeToSubjectConfigs(callback) {
         }
     });
 }
+
+/**
+ * Save Class-Subject Mapping
+ * @param {string} className - Class Name (e.g., '10', 'SSC')
+ * @param {Array<string>} subjects - List of subjects
+ * @returns {Promise<boolean>}
+ */
+export async function saveClassSubjectMapping(className, subjects) {
+    if (!auth.currentUser) return false;
+    try {
+        const settingsRef = doc(db, 'settings', 'class_subject_mappings');
+        await setDoc(settingsRef, {
+            [className]: subjects,
+            updatedAt: new Date()
+        }, { merge: true });
+        return true;
+    } catch (error) {
+        console.error('ক্লাস-সাবজেক্ট ম্যাপিং সেভ করতে সমস্যা:', error);
+        return false;
+    }
+}
+
+/**
+ * Get Class-Subject Mappings
+ * @returns {Promise<Object>}
+ */
+export async function getClassSubjectMappings() {
+    try {
+        const settingsRef = doc(db, 'settings', 'class_subject_mappings');
+        const docSnap = await getDoc(settingsRef);
+        if (docSnap.exists()) {
+            return docSnap.data();
+        }
+        return {};
+    } catch (error) {
+        console.error('ক্লাস-সাবজেক্ট ম্যাপিং লোড করতে সমস্যা:', error);
+        return {};
+    }
+}
+
+/**
+ * Subscribe to Class-Subject Mappings
+ * @param {Function} callback
+ * @returns {Function} unsubscribe
+ */
+export function subscribeToClassSubjectMappings(callback) {
+    const settingsRef = doc(db, 'settings', 'class_subject_mappings');
+    return onSnapshot(settingsRef, (doc) => {
+        if (doc.exists()) {
+            callback(doc.data());
+        } else {
+            callback({});
+        }
+    });
+}

@@ -65,7 +65,10 @@ import {
     onAuthChange,
     syncUserRole, // Imported
     getAllUsers, // Imported
-    updateUserRole
+    updateUserRole,
+    saveClassSubjectMapping, // Imported
+    getClassSubjectMappings, // Imported
+    subscribeToClassSubjectMappings // Imported
 } from './js/firestoreService.js';
 
 // Application State
@@ -73,6 +76,7 @@ const state = {
     studentData: [],
     savedExams: [],
     subjectConfigs: {},
+    classSubjectMapping: {}, // New State for Class-Subject Mapping
     currentGroupFilter: 'all',
     currentGradeFilter: 'all',
     currentSearchTerm: '',
@@ -98,10 +102,11 @@ const state = {
     inlineNextStudent: null,
     analysisSearchDebounce: null,
     currentAnalysisNextStudent: null,
+    editingSubjectKey: null, // Track which subject key is being edited
 
     // Saved Exams Pagination
     savedExamsCurrentPage: 1,
-    savedExamsPerPage: 5,
+    savedExamsPerPage: 6,
     defaultExamId: null,
     currentUser: null
 };
@@ -286,11 +291,23 @@ function initElements() {
     elements.closeEditModal = document.getElementById('closeEditModal');
     elements.editExamForm = document.getElementById('editExamForm');
     elements.editExamDocId = document.getElementById('editExamDocId');
-    elements.editExamName = document.getElementById('editExamName'); // Added
+    elements.editExamName = document.getElementById('editExamName');
     elements.editSubjectName = document.getElementById('editSubjectName');
     elements.editExamClass = document.getElementById('editExamClass');
     elements.editExamSession = document.getElementById('editExamSession');
     elements.closeEditModal = document.getElementById('closeEditModal');
+
+    // Class Subject Mapping UI
+    elements.openClassMappingBtn = document.getElementById('openClassMappingBtn');
+    elements.classSubjectMappingModal = document.getElementById('classSubjectMappingModal');
+    elements.closeClassMappingBtn = document.getElementById('closeClassMappingBtn');
+    elements.mappingClassSelect = document.getElementById('mappingClassSelect');
+    elements.mappingSubjectInput = document.getElementById('mappingSubjectInput');
+    elements.addMappingSubjectBtn = document.getElementById('addMappingSubjectBtn');
+    elements.mappingSubjectsContainer = document.getElementById('mappingSubjectsContainer');
+    elements.saveMappingBtn = document.getElementById('saveMappingBtn');
+    elements.examClass = document.getElementById('examClass'); // Ensure referenced
+    elements.examSubject = document.getElementById('examSubject'); // Ensure referenced
 
     // Confirm Modal
     elements.confirmModal = document.getElementById('confirmModal');
@@ -1668,14 +1685,18 @@ function renderSavedExamsList() {
         card.className = 'exam-card';
         card.style.cssText = `
             border: ${theme.border};
-            border-radius: 8px;
-            padding: 10px 12px;
+            border-radius: 12px;
+            padding: 10px 16px;
             background: ${theme.background};
             box-shadow: ${theme.shadow};
             color: ${theme.color};
             transition: transform 0.15s, box-shadow 0.15s, border-color 0.15s;
             position: relative;
             overflow: hidden;
+            min-height: 125px;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
         `;
 
         if (isDefault) {
@@ -1685,19 +1706,30 @@ function renderSavedExamsList() {
         const isGradient = theme.background.includes('gradient');
 
         card.innerHTML = `
-            <div style="display: flex; align-items: flex-start; gap: 6px; margin-bottom: 4px; position: relative; z-index: 1;">
-                <div style="font-weight: 700; font-size: 0.82em; word-break: break-word; flex: 1; line-height: 1.3;">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; gap: 6px; margin-bottom: 4px; position: relative; z-index: 1;">
+                <div title="${exam.name}" style="font-weight: 700; font-size: 0.88em; word-break: break-word; line-height: 1.3;">
                     ${exam.name}
-                    ${exam.session ? `<span style="font-size: 0.85em; opacity: 0.8; font-weight: normal;">(${exam.session})</span>` : ''}
                 </div>
-                <div style="display: flex; gap: 4px; flex-shrink: 0;">
-                    ${exam.class ? `<span style="background: ${classColor}; color: white; padding: 2px 6px; border-radius: 8px; font-weight: 700; font-size: 0.7em; box-shadow: 0 1px 3px rgba(0,0,0,0.15);">${exam.class}</span>` : ''}
-                    <span style="background: #ffffff; color: #2d3436; padding: 2px 8px; border-radius: 12px; font-weight: 700; font-size: 0.7em; box-shadow: 0 1px 3px rgba(0,0,0,0.15); white-space: nowrap;">${exam.subject}</span>
-                </div>
+                <!-- Class removed from here -->
             </div>
-            <div style="font-size: 0.78em; opacity: 0.8; margin-bottom: 6px; position: relative; z-index: 1;">
+            
+            <div style="margin-bottom: 8px; position: relative; z-index: 1;">
+                 <span title="${exam.subject}" style="background: rgba(255,255,255,0.95); color: #2d3436; padding: 3px 10px; border-radius: 5px; font-weight: 700; font-size: 0.82em; box-shadow: 0 1px 3px rgba(0,0,0,0.1); display: inline-block; word-break: break-word; margin-top: 3px;">
+                    ${exam.subject}
+                 </span>
+            </div>
+
+            <div style="font-size: 0.75em; opacity: 0.85; margin-bottom: 5px; position: relative; z-index: 1;">
                 <i class="far fa-calendar-alt"></i> ${date} &nbsp;|&nbsp; 
-                <i class="fas fa-user-graduate"></i> ${exam.studentCount} জন
+                <i class="fas fa-user-graduate"></i> ${exam.studentCount}
+            </div>
+
+            <div style="margin-bottom: 8px; position: relative; z-index: 1; display: flex; gap: 5px; flex-wrap: wrap;">
+                ${exam.class ? `<span style="background: ${classColor}; color: white; padding: 2px 10px; border-radius: 12px; font-weight: 700; font-size: 0.75em; box-shadow: 0 1px 3px rgba(0,0,0,0.15);">${exam.class}</span>` : ''}
+                ${exam.session ? `
+                <span style="background: #2d3436; color: #f1c40f; padding: 2px 10px; border-radius: 12px; font-size: 0.75em; font-weight: bold; box-shadow: 0 1px 3px rgba(0,0,0,0.15); border: 1px solid #f1c40f;">
+                    ${exam.session}
+                </span>` : ''}
             </div>
             <div style="display: flex; gap: 6px; position: relative; z-index: 1;">
                 <button class="load-exam-btn" style="flex: 1; background: rgba(255,255,255,0.25); color: inherit; border: 1px solid rgba(255,255,255,0.4); padding: 5px 8px; border-radius: 5px; cursor: pointer; backdrop-filter: blur(2px); font-weight: 500; font-size: 0.8em;">
@@ -1963,8 +1995,19 @@ async function handleLoadExam(exam) {
 function handleEditExam(exam) {
     if (elements.editExamDocId) elements.editExamDocId.value = exam.docId;
     if (elements.editExamName) elements.editExamName.value = exam.name || exam.examName || ''; // Try both properties
+
+    // Class First
+    const className = exam.class || '';
+    if (elements.editExamClass) elements.editExamClass.value = className;
+
+    // Populate Subject Dropdown based on Class
+    if (elements.editSubjectName && className) {
+        updateExamSubjectDropdown(className, elements.editSubjectName);
+    }
+
+    // Set Subject Value (Must be after population)
     if (elements.editSubjectName) elements.editSubjectName.value = exam.subject || '';
-    if (elements.editExamClass) elements.editExamClass.value = exam.class || '';
+
     if (elements.editExamSession) elements.editExamSession.value = exam.session || '';
     if (elements.editExamModal) elements.editExamModal.style.display = 'block';
 }
@@ -3017,7 +3060,8 @@ function setupUserManagementListeners() {
 // ==========================================
 
 // Default Protected Subjects (Cannot be deleted)
-const PROTECTED_SUBJECTS = ['ICT', 'Bangla', 'English', 'Math', 'Physics', 'Chemistry', 'Biology'];
+// Default Protected Subjects (Cannot be deleted)
+const PROTECTED_SUBJECTS = [];
 
 // Default Configuration Strategy (Moved to state at top)
 // const DEFAULT_SUBJECT_CONFIG = { ... };
@@ -3029,6 +3073,56 @@ const PROTECTED_SUBJECTS = ['ICT', 'Bangla', 'English', 'Math', 'Physics', 'Chem
  * Initialize Subject Configuration UI (Modern)
  */
 function initSubjectConfigUI() {
+    // FORCE DARK MODE STYLES (JS Injection to bypass CSS issues)
+    const styleId = 'subject-config-dark-mode-fix';
+    if (!document.getElementById(styleId)) {
+        const style = document.createElement('style');
+        style.id = styleId;
+        style.innerHTML = `
+            body.dark-mode #subjectSettingsModal .landscape-modal,
+            body.dark-mode .landscape-modal { background-color: #1e1e1e !important; border: 1px solid #333 !important; color: #e0e0e0 !important; }
+            body.dark-mode #subjectSettingsModal .modal-header,
+            body.dark-mode .modal-header { background-color: #1e1e1e !important; border-bottom: 1px solid #333 !important; }
+            body.dark-mode #subjectSettingsModal .modal-header h2,
+            body.dark-mode .modal-header h2 { color: #fff !important; }
+            body.dark-mode #subjectSettingsModal .close,
+            body.dark-mode .close { color: #fff !important; }
+            body.dark-mode #subjectSettingsModal .config-sidebar, 
+            body.dark-mode .config-sidebar { background-color: #252525 !important; border-right: 1px solid #333 !important; }
+            body.dark-mode #subjectSettingsModal .sidebar-header,
+            body.dark-mode .sidebar-header { background-color: #252525 !important; }
+            body.dark-mode #subjectSettingsModal .sidebar-header h4,
+            body.dark-mode .sidebar-header h4 { color: #fff !important; }
+            body.dark-mode #subjectSettingsModal .sidebar-footer,
+            body.dark-mode .sidebar-footer { background-color: #252525 !important; border-top: 1px solid #333 !important; }
+            body.dark-mode #subjectSettingsModal .config-list-container .config-item,
+            body.dark-mode .config-list-container .config-item { color: #aaa !important; }
+            body.dark-mode #subjectSettingsModal .config-list-container .config-item:hover,
+            body.dark-mode .config-list-container .config-item:hover { background-color: #333 !important; color: #fff !important; }
+            body.dark-mode #subjectSettingsModal .config-list-container .config-item.active,
+            body.dark-mode .config-list-container .config-item.active { background-color: rgba(67, 97, 238, 0.2) !important; color: #fff !important; border: 1px solid #4361ee !important; }
+            body.dark-mode #subjectSettingsModal .config-main, 
+            body.dark-mode .config-main { background-color: #1e1e1e !important; }
+            body.dark-mode #subjectSettingsModal .form-header h3,
+            body.dark-mode .form-header h3 { color: #fff !important; }
+            body.dark-mode #subjectSettingsModal .form-header p,
+            body.dark-mode .form-header p { color: #bbb !important; }
+            body.dark-mode #subjectSettingsModal .mark-group,
+            body.dark-mode .mark-group { background-color: #2d2d2d !important; border: 1px solid #444 !important; }
+            body.dark-mode #subjectSettingsModal .mark-group label, 
+            body.dark-mode .mark-group label { color: #8cb4ff !important; }
+            body.dark-mode #subjectSettingsModal .input-row input,
+            body.dark-mode .input-row input { background-color: #121212 !important; color: #fff !important; border: 1px solid #444 !important; }
+            body.dark-mode #subjectSettingsModal .total-group,
+            body.dark-mode .total-group { background-color: rgba(67, 97, 238, 0.1) !important; border: 1px solid rgba(67, 97, 238, 0.3) !important; }
+            body.dark-mode #subjectSettingsModal .total-group input,
+            body.dark-mode .total-group input { background-color: #121212 !important; color: #fff !important; border: 1px solid #444 !important; }
+            body.dark-mode #subjectSettingsModal .form-actions,
+            body.dark-mode .form-actions { background-color: #1e1e1e !important; border-top: 1px solid #333 !important; }
+        `;
+        document.head.appendChild(style);
+    }
+
     const subjectSettingsBtn = document.getElementById('subjectSettingsBtn');
     const modal = document.getElementById('subjectSettingsModal');
     const closeBtn = document.getElementById('closeSubjectSettingsBtn');
@@ -3083,7 +3177,11 @@ function initSubjectConfigUI() {
 
         // Deselect list items
         document.querySelectorAll('.config-item').forEach(el => el.classList.remove('active'));
+        state.editingSubjectKey = null; // Reset editing key
     };
+
+    // Expose globally for other functions
+    window.resetSubjectConfigForm = resetForm;
 
     if (subjectSettingsBtn && modal) {
         subjectSettingsBtn.addEventListener('click', () => {
@@ -3152,7 +3250,14 @@ function initSubjectConfigUI() {
             try {
                 const success = await saveSubjectConfig(subject, config);
                 if (success) {
+                    // Smart Migration: If editing a different key (e.g. "English (HSC)" -> "English"), delete the old one
+                    if (state.editingSubjectKey && state.editingSubjectKey !== subject) {
+                        console.log(`Migrating config: ${state.editingSubjectKey} -> ${subject}`);
+                        await deleteSubjectConfig(state.editingSubjectKey);
+                    }
+
                     showNotification(`${subject} কনফিগারেশন সেভ হয়েছে!`);
+                    resetForm(); // Reset form and key
                     renderSavedConfigsList(searchInput ? searchInput.value : '');
                 } else {
                     showNotification('সেভ করতে সমস্যা হয়েছে', 'error');
@@ -3221,11 +3326,9 @@ function renderSavedConfigsList(filterText = '') {
     if (state.studentData && state.studentData.length > 0) {
         state.studentData.forEach(s => {
             if (s.subject) {
-                // Generate key with Class and Session if available
+                // Generate key with Class only (Ignore Session)
                 let key = s.subject;
-                if (s.class && s.session) {
-                    key = `${s.subject} (${s.class} - ${s.session})`;
-                } else if (s.class) {
+                if (s.class) {
                     key = `${s.subject} (${s.class})`;
                 }
                 discoveredSubjects.add(key);
@@ -3238,11 +3341,9 @@ function renderSavedConfigsList(filterText = '') {
     if (state.savedExams && state.savedExams.length > 0) {
         state.savedExams.forEach(exam => {
             if (exam.subject) {
-                // Generate key with Class and Session if available
+                // Generate key with Class only (Ignore Session)
                 let key = exam.subject;
-                if (exam.class && exam.session) {
-                    key = `${exam.subject} (${exam.class} - ${exam.session})`;
-                } else if (exam.class) {
+                if (exam.class) {
                     key = `${exam.subject} (${exam.class})`;
                 }
                 savedExamsSubjects.add(key);
@@ -3318,10 +3419,57 @@ function renderSavedConfigsList(filterText = '') {
             ` : ''}
         `;
 
-        // Attach event listener for click (Edit) logic if needed 
-        // But onclick='editSubjectConfig' is already in HTML string.
-        // We should probably rely on DOM element attachment or global function.
-        // editSubjectConfig is global? Yes.
+        // Item Click Handler (Select/Edit)
+        item.addEventListener('click', () => {
+            // Highlight
+            document.querySelectorAll('.config-item').forEach(el => el.classList.remove('active'));
+            item.classList.add('active');
+
+            // Populate Form
+            // Smart Populate: Strip " (Class)" tag for the input
+            let cleanName = sub;
+            const nameMatch = sub.match(/^(.*?)\s*\(/);
+            if (nameMatch) {
+                cleanName = nameMatch[1];
+            }
+
+            document.getElementById('formTitle').innerText = `${cleanName} এডিট করছেন`;
+            const nameInput = document.getElementById('configSubjectName');
+            nameInput.value = cleanName;
+
+            // Set Tracking Key
+            state.editingSubjectKey = sub;
+
+            const getVal = (id, val) => document.getElementById(id).value = val || '';
+
+            getVal('configTotalMax', config.total);
+            getVal('configWrittenMax', config.written);
+            getVal('configWrittenPass', config.writtenPass);
+            getVal('configMcqMax', config.mcq);
+            getVal('configMcqPass', config.mcqPass);
+            getVal('configPracticalMax', config.practical);
+            getVal('configPracticalPass', config.practicalPass);
+            document.getElementById('configPracticalOptional').checked = config.practicalOptional || false;
+
+            // Trigger Calc
+            const total = (parseInt(config.written) || 0) + (parseInt(config.mcq) || 0) + (parseInt(config.practical) || 0);
+            const totalPreview = document.getElementById('calcTotalPreview');
+            if (totalPreview) totalPreview.innerText = `গণনা: ${total}`;
+
+            // Show/Hide Delete Button
+            const deleteBtn = document.getElementById('deleteSubjectBtn');
+            if (deleteBtn) {
+                if (PROTECTED_SUBJECTS.includes(sub)) {
+                    deleteBtn.style.display = 'none';
+                } else if (!isSaved) {
+                    deleteBtn.style.display = 'none';
+                } else {
+                    deleteBtn.style.display = 'inline-block';
+                    deleteBtn.innerText = 'ডিলিট করুন';
+                    deleteBtn.className = 'btn-danger-outline';
+                }
+            }
+        });
 
         // Attach Event Listener for Delete Button
         const delBtn = item.querySelector('.delete-config-btn');
@@ -3344,7 +3492,7 @@ function renderSavedConfigsList(filterText = '') {
                     const success = await deleteSubjectConfig(sub);
                     if (success) {
                         showNotification(`${sub} কনফিগারেশন ডিলিট হয়েছে।`);
-                        resetForm();
+                        if (window.resetSubjectConfigForm) window.resetSubjectConfigForm();
                         renderSavedConfigsList(searchInput ? searchInput.value : '');
                     } else {
                         showNotification('ডিলিট করতে সমস্যা হয়েছে', 'error');
@@ -3360,52 +3508,218 @@ function renderSavedConfigsList(filterText = '') {
 
         container.appendChild(item);
 
-        // Item Click Handler (Select)
-        item.addEventListener('click', () => {
-            // Highlight
-            document.querySelectorAll('.config-item').forEach(el => el.classList.remove('active'));
-            item.classList.add('active');
-
-            // Populate Form
-            document.getElementById('formTitle').innerText = `${sub} এডিট করছেন`;
-            const nameInput = document.getElementById('configSubjectName');
-            nameInput.value = sub;
-            // nameInput.disabled = true; // Optional: Disable renaming key directly to avoid dupes, or allow as copy
-
-            const getVal = (id, val) => document.getElementById(id).value = val || '';
-
-            getVal('configTotalMax', config.total);
-            getVal('configWrittenMax', config.written);
-            getVal('configWrittenPass', config.writtenPass);
-            getVal('configMcqMax', config.mcq);
-            getVal('configMcqPass', config.mcqPass);
-            getVal('configPracticalMax', config.practical);
-            getVal('configPracticalPass', config.practicalPass);
-            document.getElementById('configPracticalOptional').checked = config.practicalOptional || false;
-
-            // Trigger Calc
-            const total = (parseInt(config.written) || 0) + (parseInt(config.mcq) || 0) + (parseInt(config.practical) || 0);
-            const totalPreview = document.getElementById('calcTotalPreview');
-            if (totalPreview) totalPreview.innerText = `গণনা: ${total}`;
-
-            // Show/Hide Delete Button
-            const deleteBtn = document.getElementById('deleteSubjectBtn');
-            if (deleteBtn) {
-                if (PROTECTED_SUBJECTS.includes(sub)) {
-                    // Protected: Disable/Hide
-                    deleteBtn.style.display = 'none';
-                } else if (!isSaved) {
-                    // Not Saved (Default): Hide (Nothing to delete)
-                    deleteBtn.style.display = 'none';
-                } else {
-                    // Saved & Not Protected: Show
-                    deleteBtn.style.display = 'inline-block';
-                    deleteBtn.innerText = 'ডিলিট করুন';
-                    deleteBtn.className = 'btn-danger-outline'; // ensure class
-                }
-            }
-        });
-
-        container.appendChild(item);
     });
 }
+
+/**
+ * Initialize Class-Subject Mapping UI
+ */
+function initClassSubjectMappingUI() {
+    if (!elements.openClassMappingBtn) return;
+
+    // Open Modal
+    elements.openClassMappingBtn.addEventListener('click', () => {
+        elements.classSubjectMappingModal.style.display = 'block';
+        loadMappingForClass(elements.mappingClassSelect.value); // Load initially selected
+    });
+
+    // Close Modal
+    elements.closeClassMappingBtn.addEventListener('click', () => {
+        elements.classSubjectMappingModal.style.display = 'none';
+        state.currentMappingSubjects = []; // Reset temp state
+    });
+
+    // Class Select Change (in Mapping Modal)
+    elements.mappingClassSelect.addEventListener('change', (e) => {
+        loadMappingForClass(e.target.value);
+    });
+
+    // Add Subject Button
+    elements.addMappingSubjectBtn.addEventListener('click', () => {
+        const inputVal = elements.mappingSubjectInput.value;
+        if (!inputVal) return;
+
+        // Support Comma Separated Values
+        const subjects = inputVal.split(',').map(s => s.trim()).filter(s => s.length > 0);
+
+        subjects.forEach(subject => {
+            addSubjectToMappingUI(subject);
+        });
+
+        elements.mappingSubjectInput.value = '';
+    });
+
+    // Save Mapping Button
+    elements.saveMappingBtn.addEventListener('click', async () => {
+        const className = elements.mappingClassSelect.value;
+        // Get all tags
+        const subjects = Array.from(elements.mappingSubjectsContainer.children).map(tag => tag.dataset.subject);
+
+        setLoading(true);
+        const success = await saveClassSubjectMapping(className, subjects);
+        setLoading(false);
+
+        if (success) {
+            showNotification(`ক্লাস ${className} এর বিষয়গুলো সেভ হয়েছে!`);
+            elements.classSubjectMappingModal.style.display = 'none';
+        } else {
+            showNotification('সেভ করতে সমস্যা হয়েছে', 'error');
+        }
+    });
+
+    // --- Save Exam Modal Logic ---
+    if (elements.examClass) {
+        elements.examClass.addEventListener('change', (e) => {
+            updateExamSubjectDropdown(e.target.value, elements.examSubject);
+        });
+    }
+
+    // --- Edit Exam Modal Logic ---
+    if (elements.editExamClass) {
+        elements.editExamClass.addEventListener('change', (e) => {
+            updateExamSubjectDropdown(e.target.value, elements.editSubjectName);
+        });
+    }
+}
+
+let tempMappingSubjects = []; // Temp storage for UI
+
+function loadMappingForClass(className) {
+    elements.mappingSubjectsContainer.innerHTML = '';
+    tempMappingSubjects = [];
+
+    const subjects = state.classSubjectMapping[className] || [];
+    subjects.forEach(sub => addSubjectToMappingUI(sub));
+}
+
+function addSubjectToMappingUI(subject) {
+    // Check dupe
+    if (tempMappingSubjects.includes(subject)) return;
+
+    const tag = document.createElement('div');
+    tag.className = 'subject-tag';
+    // Styles moved to main.css
+    tag.dataset.subject = subject;
+    tag.innerHTML = `
+        <span>${subject}</span>
+        <i class="fas fa-times" style="cursor: pointer; color: #ef4444;"></i>
+    `;
+
+    tag.querySelector('.fa-times').addEventListener('click', () => {
+        tag.remove();
+        tempMappingSubjects = tempMappingSubjects.filter(s => s !== subject);
+    });
+
+    elements.mappingSubjectsContainer.appendChild(tag);
+    tempMappingSubjects.push(subject);
+}
+
+function updateExamSubjectDropdown(className, dropdownElement) {
+    dropdownElement.innerHTML = '';
+
+    if (!className) {
+        dropdownElement.disabled = true;
+        const opt = document.createElement('option');
+        opt.innerText = 'আগে শ্রেণি সিলেক্ট করুন';
+        dropdownElement.appendChild(opt);
+        return;
+    }
+
+    const subjects = state.classSubjectMapping[className] || [];
+
+    if (subjects.length === 0) {
+        dropdownElement.disabled = false;
+        const opt = document.createElement('option');
+        opt.value = "";
+        opt.innerText = "কোন বিষয় পাওয়া যায়নি (ম্যাপিং চেক করুন)";
+        dropdownElement.appendChild(opt);
+        // Maybe allow custom input if no mapping? 
+        // For now strict as requested "Dynamic Subject Mapping"
+    } else {
+        dropdownElement.disabled = false;
+        const defaultOpt = document.createElement('option');
+        defaultOpt.value = "";
+        defaultOpt.innerText = "বিষয় সিলেক্ট করুন";
+        dropdownElement.appendChild(defaultOpt);
+
+        subjects.forEach(sub => {
+            const opt = document.createElement('option');
+            opt.value = sub;
+            opt.innerText = sub;
+            dropdownElement.appendChild(opt);
+        });
+    }
+}
+
+// ==========================================
+// APP INITIALIZATION
+// ==========================================
+
+document.addEventListener('DOMContentLoaded', async () => {
+    // 0. Inject Styles
+    injectDefaultCardStyles();
+    initSubjectConfigUI(); // Inject Dark Mode Styles
+
+    // 1. Initialize UI Elements
+    initElements();
+    setupUserManagementListeners();
+    initClassSubjectMappingUI();
+
+    // 2. Load Theme
+    // 2. Load Theme
+    const savedTheme = await loadThemePreference();
+    if (savedTheme) {
+        applyTheme(savedTheme === 'dark', elements.themeToggle);
+        if (elements.themeToggle) {
+            elements.themeToggle.checked = savedTheme === 'dark';
+            if (elements.themeToggle.nextElementSibling) {
+                elements.themeToggle.nextElementSibling.innerHTML = savedTheme === 'dark' ? '<i class="fas fa-moon"></i>' : '<i class="fas fa-sun"></i>';
+            }
+        }
+    }
+
+    // 3. Load Mappings
+    subscribeToClassSubjectMappings((mappings) => {
+        state.classSubjectMapping = mappings;
+    });
+
+    // 4. Check Auth Status & Initialize Data
+    onAuthChange(async (user) => {
+        if (user) {
+            state.currentUser = user;
+            state.isAdmin = false;
+            state.isSuperAdmin = false;
+
+            // Sync Role
+            const role = await syncUserRole(user);
+            state.userRole = role;
+            state.isAdmin = ['admin', 'super_admin'].includes(role);
+            state.isSuperAdmin = role === 'super_admin';
+
+            // Show UI based on role
+            if (state.isAdmin) {
+                document.body.classList.add('is-admin');
+                if (elements.saveExamModal) elements.saveExamModal.classList.add('admin-mode');
+            } else {
+                document.body.classList.remove('is-admin');
+            }
+
+            // Load Data
+            await loadDataFromStorage();
+            showNotification(`স্বাগতম, ${user.displayName || 'User'}!`);
+        } else {
+            console.log('User Logged Out');
+            state.currentUser = null;
+            state.isAdmin = false;
+            state.isSuperAdmin = false;
+            state.userRole = 'guest';
+            document.body.classList.remove('is-admin');
+
+            // Still load public data?
+            await loadDataFromStorage();
+        }
+    });
+});
+
+
+

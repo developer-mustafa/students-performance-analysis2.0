@@ -95,8 +95,10 @@ body {
    Layout
    ========================================= */
 .container {
-  max-width: 1200px;
+  max-width: 1500px;
   margin: 0 auto;
+  border: 1px solid var(--border-color);
+
 
 }
 
@@ -133,6 +135,7 @@ body {
   box-shadow: var(--card-shadow);
   padding: var(--spacing-lg);
   margin-bottom: var(--spacing-xl);
+  min-width: 300px;
 }
 
 .card-header {
@@ -2773,7 +2776,6 @@ input:focus {
    ========================================== */
 
 /* Landscape Modal Container */
-/* Landscape Modal Container */
 .landscape-modal {
   max-width: 900px !important;
   width: 95%;
@@ -2782,18 +2784,20 @@ input:focus {
   display: flex;
   flex-direction: column;
   height: 85vh;
-  /* Fixed height relative to viewport */
   max-height: 650px;
-  /* Cap height */
+  background-color: var(--container-bg);
+  color: var(--text-color);
+  border-radius: var(--radius-lg);
 }
 
 .modal-header {
   padding: 12px 20px;
-  border-bottom: 1px solid #eee;
+  border-bottom: 1px solid var(--border-color);
   display: flex;
   justify-content: space-between;
   align-items: center;
-  background: #f8f9fa;
+  background: var(--container-bg);
+  color: var(--heading-color);
   flex-shrink: 0;
 }
 
@@ -2803,6 +2807,7 @@ input:focus {
   display: flex;
   align-items: center;
   gap: 10px;
+  color: var(--heading-color);
 }
 
 .landscape-body {
@@ -2810,16 +2815,16 @@ input:focus {
   grid-template-columns: 260px 1fr;
   flex: 1;
   overflow: hidden;
-  /* Internal scrolling */
   min-height: 0;
-  /* Flexbox fix */
   height: auto;
+  background: var(--container-bg);
 }
 
 /* Sidebar (Left) */
 .config-sidebar {
-  background: #fbfbfb;
-  border-right: 1px solid #eee;
+  background: var(--card-bg);
+  /* Use card-bg for sidebar contrast */
+  border-right: 1px solid var(--border-color);
   display: flex;
   flex-direction: column;
   height: 100%;
@@ -2832,16 +2837,17 @@ input:focus {
   justify-content: space-between;
   align-items: center;
   flex-shrink: 0;
+  background: var(--card-bg);
 }
 
 .sidebar-header h4 {
   margin: 0;
   font-size: 0.9rem;
-  color: #333;
+  color: var(--heading-color);
 }
 
 .badge-count {
-  background: #4361ee;
+  background: var(--primary);
   color: white;
   padding: 2px 8px;
   border-radius: 10px;
@@ -2859,10 +2865,10 @@ input:focus {
   width: 100%;
   padding: 8px 10px 8px 30px;
   border-radius: 6px;
-  border: 1px solid #ddd;
-  background: white;
+  border: 1px solid var(--border-color);
+  background: var(--bg-color);
   font-size: 0.85rem;
-  color: #333;
+  color: var(--text-color);
   box-sizing: border-box;
 }
 
@@ -2871,7 +2877,9 @@ input:focus {
   left: 22px;
   top: 50%;
   transform: translateY(-50%) translateY(-5px);
-  color: #888;
+  /* Fix vertical alignment */
+  color: var(--text-color);
+  opacity: 0.7;
   font-size: 0.8rem;
 }
 
@@ -2888,15 +2896,17 @@ input:focus {
   cursor: pointer;
   transition: background 0.2s;
   border: 1px solid transparent;
+  color: var(--text-color);
 }
 
 .config-item:hover {
-  background: rgba(0, 0, 0, 0.03);
+  background: var(--bg-color);
 }
 
 .config-item.active {
-  background: rgba(67, 97, 238, 0.1) !important;
-  border-color: rgba(67, 97, 238, 0.3);
+  background: rgba(67, 97, 238, 0.15) !important;
+  border-color: var(--primary);
+  color: var(--heading-color);
 }
 
 .config-item-title {
@@ -2907,18 +2917,19 @@ input:focus {
 
 .sidebar-footer {
   padding: 12px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border-color);
   flex-shrink: 0;
+  background: var(--card-bg);
 }
 
 /* Main Content (Right) */
 .config-main {
   padding: 20px;
   overflow-y: auto;
-  /* Allow scrolling */
   display: flex;
   flex-direction: column;
   position: relative;
+  background: var(--container-bg);
 }
 
 .form-header {
@@ -2929,12 +2940,14 @@ input:focus {
 .form-header h3 {
   margin: 0 0 4px 0;
   font-size: 1.2rem;
+  color: var(--heading-color);
 }
 
 .form-header p {
   margin: 0;
   font-size: 0.85rem;
   opacity: 0.7;
+  color: var(--text-color);
 }
 
 .form-grid {
@@ -2948,11 +2961,11 @@ input:focus {
 }
 
 .mark-group {
-  background: #fff;
+  background: var(--card-bg);
   padding: 12px;
   border-radius: 8px;
-  border: 1px solid #eee;
-  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
+  border: 1px solid var(--border-color);
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.05);
 }
 
 .mark-group label {
@@ -2962,64 +2975,93 @@ input:focus {
   display: flex;
   align-items: center;
   gap: 6px;
-  color: #4361ee;
+  color: var(--primary);
 }
 
 .input-row {
   display: flex;
-  gap: 8px;
+  gap: 10px;
+}
+
+.input-col {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.input-col small {
+  font-size: 0.75rem;
+  color: var(--text-color);
+  opacity: 0.8;
+  text-align: center;
 }
 
 .input-row input {
-  flex: 1;
+  width: 100%;
   text-align: center;
-  font-size: 0.9rem;
-  padding: 4px;
+  font-size: 0.95rem;
+  padding: 6px;
+  background: var(--bg-color);
+  color: var(--text-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+}
+
+.input-row input:focus {
+  border-color: var(--primary);
+  outline: none;
 }
 
 .checkbox-wrapper {
-  margin-top: 8px;
+  margin-top: 10px;
   display: flex;
   align-items: center;
-  gap: 6px;
-  font-size: 0.8rem;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-color);
 }
 
 .total-group {
   grid-column: 1 / -1;
-  background: rgba(67, 97, 238, 0.05);
+  background: rgba(67, 97, 238, 0.1);
+  /* Slight tint for total */
   display: flex;
   align-items: center;
   justify-content: space-between;
+  border-color: rgba(67, 97, 238, 0.3);
 }
 
 .total-group input {
-  max-width: 100px;
+  max-width: 120px;
   text-align: center;
   font-weight: bold;
   font-size: 1.1rem;
+  background: var(--bg-color);
+  color: var(--heading-color);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  padding: 5px;
 }
 
 .calc-preview {
-  font-size: 0.85rem;
-  font-weight: 500;
-  color: #666;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-color);
 }
 
 .form-actions {
   margin-top: 20px;
   padding-top: 15px;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--border-color);
   display: flex;
   justify-content: flex-end;
   gap: 10px;
-  /* Sticky Footer Implementation */
   position: sticky;
   bottom: 0;
-  background: white;
+  background: var(--container-bg);
   z-index: 5;
   padding-bottom: 5px;
-  /* Extra padding for sticky feel */
 }
 
 .btn-danger-outline {
@@ -3041,36 +3083,320 @@ input:focus {
 /* Mobile Responsive Override */
 @media (max-width: 768px) {
   .landscape-modal {
-    height: 90vh;
-    /* Use more height on mobile */
-    max-height: none;
+    width: 100%;
+    height: 100%;
+    /* Full screen height */
+    max-height: 100vh;
+    border-radius: 0;
+    margin: 0;
   }
 
   .landscape-body {
     grid-template-columns: 1fr;
-    height: auto;
-    overflow-y: hidden;
-    /* Let child containers scroll independently if needed, or better, flip layout */
+    height: 100%;
+    /* Take remaining height */
+    overflow: hidden;
     display: flex;
     flex-direction: column;
   }
 
   .config-sidebar {
-    height: 200px;
-    /* Fixed height for sidebar list on mobile */
+    height: auto;
+    max-height: 35vh;
+    /* Limit sidebar height on mobile */
     border-right: none;
-    border-bottom: 1px solid #eee;
+    border-bottom: 1px solid var(--border-color);
     flex-shrink: 0;
+  }
+
+  .config-list-container {
+    padding: 5px 10px;
   }
 
   .config-main {
     padding: 15px;
     flex: 1;
     overflow-y: auto;
+    /* Scroll form independently */
   }
 
   .form-grid {
     grid-template-columns: 1fr;
+    /* Single column form */
     gap: 12px;
+  }
+
+  /* Adjust header for mobile */
+  .modal-header h2 {
+    font-size: 1rem;
+  }
+
+  .form-actions {
+    padding-bottom: 20px;
+    /* Extra padding for bottom safe area */
+  }
+}
+
+/* ==========================================
+   Dark Mode Explicit Overrides
+   (Global Body Selector + ID Specificity + Important)
+   ========================================== */
+body.dark-mode #subjectSettingsModal .landscape-modal,
+body.dark-mode .landscape-modal {
+  background-color: #1e1e1e !important;
+  color: #e0e0e0 !important;
+  border: 1px solid #333;
+}
+
+body.dark-mode #subjectSettingsModal .modal-header,
+body.dark-mode .modal-header {
+  background-color: #1e1e1e !important;
+  border-bottom-color: #333 !important;
+}
+
+body.dark-mode #subjectSettingsModal .modal-header h2,
+body.dark-mode .modal-header h2,
+body.dark-mode #subjectSettingsModal .close,
+body.dark-mode .close {
+  color: #fff !important;
+}
+
+body.dark-mode #subjectSettingsModal .landscape-body,
+body.dark-mode .landscape-body {
+  background-color: #1e1e1e !important;
+}
+
+body.dark-mode #subjectSettingsModal .config-sidebar,
+body.dark-mode .config-sidebar {
+  background-color: #252525 !important;
+  border-right-color: #333 !important;
+}
+
+body.dark-mode #subjectSettingsModal .sidebar-header,
+body.dark-mode .sidebar-header,
+body.dark-mode #subjectSettingsModal .sidebar-footer,
+body.dark-mode .sidebar-footer {
+  background-color: #252525 !important;
+  border-color: #333 !important;
+}
+
+body.dark-mode #subjectSettingsModal .sidebar-header h4,
+body.dark-mode .sidebar-header h4 {
+  color: #e0e0e0 !important;
+}
+
+body.dark-mode #subjectSettingsModal .search-wrapper input,
+body.dark-mode .search-wrapper input {
+  background-color: #121212 !important;
+  border-color: #444 !important;
+  color: #fff !important;
+}
+
+body.dark-mode #subjectSettingsModal .config-item,
+body.dark-mode .config-item {
+  color: #b0b0b0 !important;
+}
+
+body.dark-mode #subjectSettingsModal .config-item:hover,
+body.dark-mode .config-item:hover {
+  background-color: #333 !important;
+}
+
+body.dark-mode #subjectSettingsModal .config-item.active,
+body.dark-mode .config-item.active {
+  background-color: rgba(67, 97, 238, 0.25) !important;
+  color: #fff !important;
+  border-color: #4361ee !important;
+}
+
+body.dark-mode #subjectSettingsModal .config-main,
+body.dark-mode .config-main {
+  background-color: #1e1e1e !important;
+}
+
+body.dark-mode #subjectSettingsModal .form-header h3,
+body.dark-mode .form-header h3 {
+  color: #fff !important;
+}
+
+body.dark-mode #subjectSettingsModal .form-header p,
+body.dark-mode .form-header p {
+  color: #aaa !important;
+}
+
+body.dark-mode #subjectSettingsModal .mark-group,
+body.dark-mode .mark-group {
+  background-color: #2d2d2d !important;
+  border-color: #444 !important;
+}
+
+body.dark-mode #subjectSettingsModal .mark-group label,
+body.dark-mode .mark-group label {
+  color: #8cb4ff !important;
+}
+
+body.dark-mode #subjectSettingsModal .input-col small,
+body.dark-mode .input-col small {
+  color: #aaa !important;
+}
+
+body.dark-mode #subjectSettingsModal .input-row input,
+body.dark-mode .input-row input {
+  background-color: #121212 !important;
+  border-color: #444 !important;
+  color: #fff !important;
+}
+
+body.dark-mode #subjectSettingsModal .input-row input:focus,
+body.dark-mode .input-row input:focus {
+  border-color: #5a70f0 !important;
+}
+
+body.dark-mode #subjectSettingsModal .checkbox-wrapper,
+body.dark-mode .checkbox-wrapper {
+  color: #ccc !important;
+}
+
+body.dark-mode #subjectSettingsModal .total-group,
+body.dark-mode .total-group {
+  background-color: rgba(67, 97, 238, 0.15) !important;
+  border: 1px solid rgba(67, 97, 238, 0.3) !important;
+}
+
+body.dark-mode #subjectSettingsModal .total-group input,
+body.dark-mode .total-group input {
+  background-color: #121212 !important;
+  color: #fff !important;
+  border-color: #444 !important;
+}
+
+body.dark-mode #subjectSettingsModal .calc-preview,
+body.dark-mode .calc-preview {
+  color: #ccc !important;
+}
+
+body.dark-mode #subjectSettingsModal .form-actions,
+body.dark-mode .form-actions {
+  background-color: #1e1e1e !important;
+  border-top-color: #333 !important;
+}
+
+/* =========================================
+   Class Subject Mapping UI Styles
+   ========================================= */
+
+#classSubjectMappingModal .modal-content {
+  max-width: 600px;
+}
+
+#mappingSubjectsContainer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 10px;
+  min-height: 50px;
+  padding: 10px;
+  border: 1px dashed var(--border-color);
+  border-radius: var(--radius-md);
+  background-color: var(--bg-color);
+  transition: all var(--transition-fast);
+}
+
+.subject-tag {
+  background-color: rgba(67, 97, 238, 0.1);
+  color: var(--primary);
+  padding: 6px 14px;
+  border-radius: 20px;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  border: 1px solid rgba(67, 97, 238, 0.2);
+  user-select: none;
+}
+
+.subject-tag:hover {
+  background-color: var(--primary);
+  color: white;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(67, 97, 238, 0.2);
+}
+
+.subject-tag i {
+  cursor: pointer;
+  background-color: rgba(255, 255, 255, 0.5);
+  border-radius: 50%;
+  padding: 3px;
+  width: 18px;
+  height: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75em;
+  transition: all 0.2s;
+}
+
+.subject-tag:hover i {
+  color: var(--danger);
+  background-color: white;
+}
+
+/* Dark Mode Adjustments */
+body.dark-mode #mappingSubjectsContainer {
+  background-color: #1e1e1e;
+  border-color: #444;
+}
+
+body.dark-mode .subject-tag {
+  background-color: rgba(67, 97, 238, 0.15);
+  color: #aaccff;
+  border-color: rgba(67, 97, 238, 0.3);
+}
+
+body.dark-mode .subject-tag:hover {
+  background-color: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.container {
+  width: 98%;
+  max-width: none;
+  margin: 0 auto;
+  border: 1px solid var(--border-color);
+}
+
+/* Saved Exams Grid - 5 Columns */
+.saved-exams-list {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+  width: 100%;
+}
+
+/* Responsive Grid for Saved Exams */
+@media (max-width: 1600px) {
+  .saved-exams-list {
+    grid-template-columns: repeat(4, 1fr);
+  }
+}
+
+@media (max-width: 1200px) {
+  .saved-exams-list {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (max-width: 900px) {
+  .saved-exams-list {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 600px) {
+  .saved-exams-list {
+    grid-template-columns: 1fr;
   }
 }
