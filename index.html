@@ -443,7 +443,12 @@
   <div id="userManagementModal" class="modal">
     <div class="modal-content" style="max-width: 800px;">
       <span class="close" id="closeUserManagementBtn">&times;</span>
-      <h2><i class="fas fa-users-cog"></i> ব্যবহারকারী ব্যবস্থাপনা</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center;">
+        <h2><i class="fas fa-users-cog"></i> ব্যবহারকারী ব্যবস্থাপনা</h2>
+        <button id="subjectSettingsBtn" class="btn-primary" style="font-size: 0.9em;">
+          <i class="fas fa-cogs"></i> বিষয় সেটিংস
+        </button>
+      </div>
       <div class="user-list-container" style="overflow-x: auto;">
         <table class="user-table" style="width: 100%; border-collapse: collapse; margin-top: 15px;">
           <thead>
@@ -458,6 +463,100 @@
             <!-- User rows injected here -->
           </tbody>
         </table>
+      </div>
+    </div>
+  </div>
+
+  <!-- Subject Settings Modal (Modern Landscape Design) -->
+  <div id="subjectSettingsModal" class="modal">
+    <div class="modal-content landscape-modal">
+      <div class="modal-header">
+        <h2><i class="fas fa-sliders-h"></i> বিষয় কনফিগারেশন</h2>
+        <span class="close" id="closeSubjectSettingsBtn">&times;</span>
+      </div>
+
+      <div class="landscape-body">
+        <!-- Left Side: List of Subjects -->
+        <div class="config-sidebar">
+          <div class="sidebar-header">
+            <h4>সংরক্ষিত বিষয়সমূহ</h4>
+            <span class="badge-count" id="subjectCount">0</span>
+          </div>
+          <div class="search-wrapper">
+            <i class="fas fa-search"></i>
+            <input type="text" id="subjectSearch" placeholder="বিষয় খুঁজুন..." />
+          </div>
+          <div id="savedConfigsList" class="config-list-container">
+            <!-- List Items Injected Here -->
+          </div>
+          <div class="sidebar-footer">
+            <button id="addNewSubjectBtn" class="btn-secondary btn-sm btn-block">
+              <i class="fas fa-plus"></i> নতুন বিষয় যোগ করুন
+            </button>
+          </div>
+        </div>
+
+        <!-- Right Side: Configuration Form -->
+        <div class="config-main">
+          <div class="form-header">
+            <h3 id="formTitle">নতুন কনফিগারেশন</h3>
+            <p>পাস মার্ক এবং মোট নম্বর সেট করুন</p>
+          </div>
+
+          <div class="form-grid">
+            <div class="form-group full-width">
+              <label>বিষয়ের নাম <span class="required">*</span></label>
+              <input type="text" id="configSubjectName" class="form-control" placeholder="যেমন: ICT, Bangla">
+            </div>
+
+            <!-- Written -->
+            <div class="mark-group">
+              <label><i class="fas fa-pen"></i> লিখিত (Written)</label>
+              <div class="input-row">
+                <input type="number" id="configWrittenMax" class="form-control" placeholder="মোট">
+                <input type="number" id="configWrittenPass" class="form-control" placeholder="পাস">
+              </div>
+            </div>
+
+            <!-- MCQ -->
+            <div class="mark-group">
+              <label><i class="fas fa-check-square"></i> এমসিকিউ (MCQ)</label>
+              <div class="input-row">
+                <input type="number" id="configMcqMax" class="form-control" placeholder="মোট">
+                <input type="number" id="configMcqPass" class="form-control" placeholder="পাস">
+              </div>
+            </div>
+
+            <!-- Practical -->
+            <div class="mark-group">
+              <label><i class="fas fa-flask"></i> ব্যবহারিক (Practical)</label>
+              <div class="input-row">
+                <input type="number" id="configPracticalMax" class="form-control" placeholder="মোট">
+                <input type="number" id="configPracticalPass" class="form-control" placeholder="পাস">
+              </div>
+              <div class="checkbox-wrapper">
+                <input type="checkbox" id="configPracticalOptional" class="form-check-input">
+                <label for="configPracticalOptional">ঐচ্ছিক?</label>
+              </div>
+            </div>
+
+            <!-- Total -->
+            <div class="mark-group total-group">
+              <label><i class="fas fa-calculator"></i> সর্বমোট (Total)</label>
+              <input type="number" id="configTotalMax" class="form-control" placeholder="100">
+              <span id="calcTotalPreview" class="calc-preview">গণনা: 0</span>
+            </div>
+          </div>
+
+          <div class="form-actions">
+            <button id="deleteSubjectBtn" class="btn-danger-outline" style="display: none;">
+              <i class="fas fa-trash"></i> ডিলিট
+            </button>
+            <button id="saveSubjectConfigBtn" class="btn-primary">
+              <i class="fas fa-save"></i> সংরক্ষণ করুন
+            </button>
+          </div>
+        </div>
       </div>
     </div>
   </div>

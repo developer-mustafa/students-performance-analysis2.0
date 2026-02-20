@@ -70,42 +70,27 @@ export function createPerformanceChart(canvas, data, options = {}) {
     );
     const values = limitedData.map((student) => student[chartType]);
 
-    // Conditional colors based on score percentage
+    // Dynamic Pass Mark (Default to 33 if not provided)
+    // For specific chart types, caller should provide the correct pass mark
+    const { passMark = 33 } = options;
+
+    // Conditional colors based on score percentage and Pass Mark
     const getScoreColor = (score) => {
-        // 1. Check specific failing thresholds first
-        if (chartType === 'mcq' && score < FAILING_THRESHOLD.mcq) {
-            return { bg: 'rgba(239, 68, 68, 0.8)', border: 'rgb(239, 68, 68)' }; // Red
-        }
-        if (chartType === 'written' && score < FAILING_THRESHOLD.written) {
-            return { bg: 'rgba(239, 68, 68, 0.8)', border: 'rgb(239, 68, 68)' }; // Red
-        }
-        if (chartType === 'total' && score < FAILING_THRESHOLD.total) { // 33 for Total
-            return { bg: 'rgba(239, 68, 68, 0.8)', border: 'rgb(239, 68, 68)' }; // Red
+        // Simple logic: < Pass Mark = Red, >= Pass Mark = Green
+        // We can keep the "Yellow" logic for mid-range if needed, but User emphasized "Pass/Fail".
+
+        if (score < passMark) {
+            return { bg: 'rgba(239, 68, 68, 0.8)', border: 'rgb(239, 68, 68)' }; // Red (Fail)
         }
 
-        // 2. For passing scores, determine color based on quality (if possible)
-        // For MCQ/Written, if passed, we can default to Green or try to map percentage
-        // But since we don't strictly know max marks for MCQ/Written here (it varies),
-        // let's assume if it passed the threshold, it's at least 'Ok'.
+        // Passing Colors
+        // Optional: Differentiate High scores?
+        // For now, let's keep it simple Green for Pass as per request "reflect pass mark data".
 
-        if (chartType === 'mcq' || chartType === 'written') {
-            // Passed the threshold
-            return { bg: 'rgba(34, 197, 94, 0.8)', border: 'rgb(34, 197, 94)' }; // Green
-        }
+        // If it's a percentage based chart (Total), we might want gradients, but for now stick to Pass/Fail distinction.
+        // Wait, for Total, is it 33% or specific mark? options.passMark handles it.
 
-        // 3. Fallback for Total (percentage basis assuming 100 max)
-        const maxScore = 100;
-        const percentage = (score / maxScore) * 100;
-
-        if (percentage < 33) {
-            return { bg: 'rgba(239, 68, 68, 0.8)', border: 'rgb(239, 68, 68)' };
-        } else if (percentage < 50) {
-            return { bg: 'rgba(234, 179, 8, 0.8)', border: 'rgb(234, 179, 8)' }; // Yellow
-        } else if (percentage < 70) {
-            return { bg: 'rgba(245, 158, 11, 0.8)', border: 'rgb(245, 158, 11)' }; // Orange
-        } else {
-            return { bg: 'rgba(34, 197, 94, 0.8)', border: 'rgb(34, 197, 94)' }; // Green
-        }
+        return { bg: 'rgba(34, 197, 94, 0.8)', border: 'rgb(34, 197, 94)' }; // Green (Pass)
     };
 
     const backgroundColor = values.map((score) => getScoreColor(score).bg);
@@ -319,7 +304,7 @@ let currentHistoryChart = null;
  */
 export function createHistoryChart(canvas, historyData, options = {}) {
     setChartTheme();
-    const { chartType = 'total', maxMarks = 100 } = options;
+    const { chartType = 'total', maxMarks = 100, passMark = 33 } = options;
 
     // Destroy existing chart
     if (currentHistoryChart) {
@@ -338,22 +323,14 @@ export function createHistoryChart(canvas, historyData, options = {}) {
         return val !== undefined ? val : 0;
     });
 
-    // Calculate colors based on percentage of maxMarks
-    // Calculate colors based on percentage of maxMarks
+    // Calculate colors based on comparisons with Pass Mark
     const backgroundColors = values.map(val => {
-        const percentage = (val / maxMarks) * 100;
-        // Brighter colors for better visibility (0.85 opacity)
-        if (percentage < 33) return 'rgba(231, 76, 60, 0.85)'; // Red
-        if (percentage < 50) return 'rgba(241, 196, 15, 0.85)'; // Yellow
-        if (percentage < 80) return 'rgba(230, 126, 34, 0.85)'; // Orange
-        return 'rgba(46, 204, 113, 0.85)'; // Green
+        if (val < passMark) return 'rgba(231, 76, 60, 0.85)'; // Red (Fail)
+        return 'rgba(46, 204, 113, 0.85)'; // Green (Pass)
     });
 
     const borderColors = values.map(val => {
-        const percentage = (val / maxMarks) * 100;
-        if (percentage < 33) return 'rgba(192, 57, 43, 1)';
-        if (percentage < 50) return 'rgba(243, 156, 18, 1)';
-        if (percentage < 80) return 'rgba(211, 84, 0, 1)';
+        if (val < passMark) return 'rgba(192, 57, 43, 1)';
         return 'rgba(39, 174, 96, 1)';
     });
 

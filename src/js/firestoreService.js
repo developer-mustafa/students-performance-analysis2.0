@@ -21,7 +21,8 @@ import {
     query,
     orderBy,
     serverTimestamp,
-    limit
+    limit,
+    deleteField
 } from 'firebase/firestore';
 
 // Collection names
@@ -450,6 +451,11 @@ export async function updateSettings(settings) {
  * @param {Function} callback - Callback for settings updates
  * @returns {Function} - Unsubscribe function
  */
+/**
+ * Subscribe to settings changes
+ * @param {Function} callback - Callback for settings updates
+ * @returns {Function} - Unsubscribe function
+ */
 export function subscribeToSettings(callback) {
     const docRef = doc(db, COLLECTIONS.settings, 'config');
 
@@ -463,6 +469,13 @@ export function subscribeToSettings(callback) {
         console.error('সেটিংস সিঙ্ক সমস্যা:', error);
     });
 }
+
+/**
+ * Get subject configurations
+ * @returns {Promise<Object>} - Map of subject configs
+ */
+
+
 /**
  * Get student history across all exams
  * @param {string|number} studentId - Student Roll/ID
@@ -692,4 +705,78 @@ export async function logoutAdmin() {
  */
 export function onAuthChange(callback) {
     return onAuthStateChanged(auth, callback);
+}
+
+/**
+ * Save Subject Configuration
+ * @param {string} subject - Subject Name
+ * @param {Object} config - Configuration object
+ * @returns {Promise<boolean>}
+ */
+export async function saveSubjectConfig(subject, config) {
+    if (!auth.currentUser) return false;
+    try {
+        const settingsRef = doc(db, 'settings', 'subject_configs');
+        await setDoc(settingsRef, {
+            [subject]: config,
+            updatedAt: new Date()
+        }, { merge: true });
+        return true;
+    } catch (error) {
+        console.error('সাবজেক্ট কনফিগ সেভ করতে সমস্যা:', error);
+        return false;
+    }
+}
+
+/**
+ * Delete Subject Configuration
+ * @param {string} subject - Subject Name
+ * @returns {Promise<boolean>}
+ */
+export async function deleteSubjectConfig(subject) {
+    if (!auth.currentUser) return false;
+    try {
+        const settingsRef = doc(db, 'settings', 'subject_configs');
+        await updateDoc(settingsRef, {
+            [subject]: deleteField()
+        });
+        return true;
+    } catch (error) {
+        console.error('সাবজেক্ট কনফিগ ডিলিট করতে সমস্যা:', error);
+        return false;
+    }
+}
+
+/**
+ * Get Subject Configurations
+ * @returns {Promise<Object>}
+ */
+export async function getSubjectConfigs() {
+    try {
+        const settingsRef = doc(db, 'settings', 'subject_configs');
+        const docSnap = await getDoc(settingsRef);
+        if (docSnap.exists()) {
+            return docSnap.data();
+        }
+        return {};
+    } catch (error) {
+        console.error('সাবজেক্ট কনফিগ লোড করতে সমস্যা:', error);
+        return {};
+    }
+}
+
+/**
+ * Subscribe to Subject Configurations
+ * @param {Function} callback
+ * @returns {Function} unsubscribe
+ */
+export function subscribeToSubjectConfigs(callback) {
+    const settingsRef = doc(db, 'settings', 'subject_configs');
+    return onSnapshot(settingsRef, (doc) => {
+        if (doc.exists()) {
+            callback(doc.data());
+        } else {
+            callback({});
+        }
+    });
 }

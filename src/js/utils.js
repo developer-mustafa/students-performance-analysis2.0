@@ -118,10 +118,11 @@ export function getGradeClass(grade) {
  * @param {Object} filters - Filter criteria
  * @returns {Array} - Filtered data
  */
-export function filterStudentData(data, filters) {
+export function filterStudentData(data, filters, options = {}) {
     let filteredData = [...data];
 
     const { group, searchTerm, grade } = filters;
+    const { writtenPass = FAILING_THRESHOLD.written, mcqPass = FAILING_THRESHOLD.mcq } = options;
 
     // Filter by group
     if (group && group !== 'all') {
@@ -145,13 +146,31 @@ export function filterStudentData(data, filters) {
             if (grade === 'absent') {
                 return isAbsent(student);
             }
-            // Handle Total Fail (Written < 17, excluding absent)
+
+            const isWrittenView = options.criteria === 'written';
+            const isMcqView = options.criteria === 'mcq';
+
+            // Handle Total Fail
             if (grade === 'total-fail') {
-                return !isAbsent(student) && student.written < FAILING_THRESHOLD.written;
+                if (isAbsent(student)) return false;
+                const failedWritten = Number(student.written) < writtenPass;
+                const failedMcq = Number(student.mcq) < mcqPass;
+
+                if (isWrittenView) return failedWritten;
+                if (isMcqView) return failedMcq;
+
+                return failedWritten || failedMcq;
             }
-            // Handle Total Pass (Written >= 17, excluding absent)
+            // Handle Total Pass
             if (grade === 'total-pass') {
-                return !isAbsent(student) && student.written >= FAILING_THRESHOLD.written;
+                if (isAbsent(student)) return false;
+                const passedWritten = Number(student.written) >= writtenPass;
+                const passedMcq = Number(student.mcq) >= mcqPass;
+
+                if (isWrittenView) return passedWritten;
+                if (isMcqView) return passedMcq;
+
+                return passedWritten && passedMcq;
             }
             // Normal grade filter
             const gradeInfo = calculateGrade(student.total);
@@ -203,25 +222,28 @@ export function sortStudentData(data, sortBy, order = 'desc') {
  * @param {Array} data - Student data array
  * @returns {Object} - Statistics object
  */
-export function calculateStatistics(data) {
+export function calculateStatistics(data, options = {}) {
+    const { writtenPass = FAILING_THRESHOLD.written, mcqPass = FAILING_THRESHOLD.mcq, totalPass = 33 } = options;
+
     const totalStudents = data.length;
     const absentStudents = data.filter((student) => isAbsent(student)).length;
 
     const failedStudents = data.filter(
-        (student) =>
-            !isAbsent(student) &&
-            (student.written < FAILING_THRESHOLD.written ||
-                calculateGrade(student.total).grade === 'F')
-    ).length;
+        (student) => {
+            if (isAbsent(student)) return false;
 
-    const passedStudents = data.filter(
-        (student) =>
-            !isAbsent(student) &&
-            student.written >= FAILING_THRESHOLD.written &&
-            calculateGrade(student.total).grade !== 'F'
+            // Check based on provided thresholds
+            // If any criteria fails, the student fails
+            const failedWritten = Number(student.written) < writtenPass;
+            const failedMcq = Number(student.mcq) < mcqPass;
+            // const failedTotal = Number(student.total) < totalPass; // Optional check
+
+            return failedWritten || failedMcq;
+        }
     ).length;
 
     const participants = totalStudents - absentStudents;
+    const passedStudents = participants - failedStudents;
 
     return {
         totalStudents,

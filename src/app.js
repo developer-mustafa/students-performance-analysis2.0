@@ -58,15 +58,21 @@ import {
     bulkImportStudents,
     loginWithGoogle,
     logoutAdmin,
+    subscribeToSubjectConfigs,
+    saveSubjectConfig,
+    deleteSubjectConfig,
+    getSubjectConfigs,
     onAuthChange,
     syncUserRole, // Imported
     getAllUsers, // Imported
-    updateUserRole // Imported
+    updateUserRole
 } from './js/firestoreService.js';
 
 // Application State
 const state = {
     studentData: [],
+    savedExams: [],
+    subjectConfigs: {},
     currentGroupFilter: 'all',
     currentGradeFilter: 'all',
     currentSearchTerm: '',
@@ -78,7 +84,6 @@ const state = {
     isLoading: true,
     isInitialized: false, // Track if initial data is loaded
     allowEmptyData: false, // Flag for when user clears data explicitly
-    unsubscribe: null, // For cleanup of Firestore listener
     unsubscribe: null, // For cleanup of Firestore listener
     isAdmin: false, // Admin login status
     isSuperAdmin: false, // Super Admin login status
@@ -96,10 +101,22 @@ const state = {
 
     // Saved Exams Pagination
     savedExamsCurrentPage: 1,
-    savedExamsPerPage: 5, // Changed from 6 to 5
-    defaultExamId: null, // Global default exam ID from Firestore
-    currentUser: null, // Store Firebase user object
+    savedExamsPerPage: 5,
+    defaultExamId: null,
+    currentUser: null
 };
+
+const DEFAULT_SUBJECT_CONFIG = {
+    total: '100',
+    written: '50',
+    writtenPass: '17',
+    mcq: '25',
+    mcqPass: '8',
+    practical: '25',
+    practicalPass: '0',
+    practicalOptional: false
+};
+
 
 // DOM Elements
 const elements = {
@@ -385,11 +402,24 @@ function updateSyncStatus(isOnline) {
  * Get filtered data based on current filters
  */
 function getFilteredData() {
+    let options = {};
+    const subject = state.currentSubject;
+    if (subject) {
+        const config = state.subjectConfigs[subject] || DEFAULT_SUBJECT_CONFIG;
+        if (config) {
+            options = {
+                writtenPass: parseInt(config.writtenPass) || 17,
+                mcqPass: parseInt(config.mcqPass) || 8,
+                criteria: state.currentChartType // Pass current view criteria
+            };
+        }
+    }
+
     return filterStudentData(state.studentData, {
         group: state.currentGroupFilter,
         searchTerm: state.currentSearchTerm,
         grade: state.currentGradeFilter,
-    });
+    }, options);
 }
 
 /**
@@ -400,14 +430,52 @@ function updateViews() {
 
     const filteredData = getFilteredData();
 
+    // Calculate Pass Mark based on Config
+    let passMark = 33;
+    let writtenPass = 17;
+    let mcqPass = 8;
+    let totalPass = 33;
+
+    const subject = state.currentSubject; // Use current subject
+
+    if (subject) {
+        const config = state.subjectConfigs[subject] || DEFAULT_SUBJECT_CONFIG;
+        if (config) {
+            writtenPass = parseInt(config.writtenPass) || 17;
+            mcqPass = parseInt(config.mcqPass) || 8;
+            totalPass = Math.ceil((parseInt(config.total) || 100) * 0.33);
+
+            if (state.currentChartType === 'total') {
+                const total = parseInt(config.total) || 100;
+                passMark = Math.ceil(total * 0.33);
+            } else if (state.currentChartType === 'written') {
+                passMark = writtenPass;
+            } else if (state.currentChartType === 'mcq') {
+                passMark = mcqPass;
+            } else if (state.currentChartType === 'practical') {
+                passMark = parseInt(config.practicalPass) || 0;
+            }
+        }
+    }
+
     // Update stats
-    renderStats(elements.statsContainer, filteredData);
+    renderStats(elements.statsContainer, filteredData, {
+        writtenPass,
+        mcqPass,
+        totalPass
+    });
 
     // Update group stats (always use full data)
     renderGroupStats(elements.groupStatsContainer, state.studentData);
 
-    // Update failed students
-    renderFailedStudents(elements.failedStudentsContainer, filteredData);
+
+
+    // Update failed students (Pass dynamic thresholds)
+    renderFailedStudents(elements.failedStudentsContainer, filteredData, {
+        writtenPass,
+        mcqPass,
+        totalPass
+    });
 
     // Update chart title (Dynamic)
     elements.chartTitle.textContent = getChartTitle(state.currentChartType, state.currentExamName, state.currentSubject);
@@ -421,13 +489,16 @@ function updateViews() {
             group: state.currentGroupFilter !== 'all' ? state.currentGroupFilter : null,
             grade: state.currentGradeFilter !== 'all' ? state.currentGradeFilter : null,
             examName: state.currentExamName,
+            passMark: passMark, // Pass the calculated pass mark
             onBarClick: activateAnalysisView // Pass the callback
         });
     } else if (state.currentView === 'table') {
         renderTable(elements.tableBody, filteredData, {
             sortBy: state.currentChartType,
             sortOrder: state.currentSortOrder,
-            onRowClick: activateAnalysisView // Pass the callback
+            onRowClick: activateAnalysisView, // Pass the callback
+            writtenPass,
+            mcqPass
         });
     }
 
@@ -576,10 +647,10 @@ function initEventListeners() {
 
     // Update chart on option change
     if (elements.analysisType) {
-        elements.analysisType.addEventListener('change', updateAnalysisChart);
+        elements.analysisType.addEventListener('change', () => updateAnalysisChart());
     }
     if (elements.analysisMaxMarks) {
-        elements.analysisMaxMarks.addEventListener('change', updateAnalysisChart);
+        elements.analysisMaxMarks.addEventListener('change', () => updateAnalysisChart());
     }
 
     // Real-time Analysis Search
@@ -1042,6 +1113,10 @@ async function init() {
 
         // Initialize event listeners
         initEventListeners();
+
+        // Initialize Subject Configs
+        initSubjectConfigs();
+        initSubjectConfigUI();
 
         // Initial render
         updateViews();
@@ -2055,43 +2130,99 @@ function activateAnalysisView(student) {
 /**
  * Update Chart based on controls
  */
-function updateAnalysisChart(subject = null) {
+
+// Add this to init() function later
+function initSubjectConfigs() {
+    // Only subscribe if user is logged in? Actually subject configs might be public if we want defaults? 
+    // But usually configs are global settings. Let's assume public read for now or handled by security rules.
+    subscribeToSubjectConfigs((configs) => {
+        state.subjectConfigs = configs;
+
+        // Always render config list if modal is open
+        if (document.getElementById('subjectSettingsModal').style.display === 'flex') {
+            renderSavedConfigsList();
+        }
+
+        // If analysis view is active, update specific chart
+        if (state.currentView === 'analysis') {
+            updateAnalysisChart();
+        } else {
+            // Otherwise update main dashboard
+            updateViews();
+        }
+    });
+}
+// Trigger initSubjectConfigs in init()
+// For now, let's inject the logic here or ensure it's called.
+// Since I can't easily inject into init() without viewing it again, 
+// I'll make updateAnalysisChart robust enough to default if config is missing, 
+// and add the subscription to the bottom of the file or via a separate injection.
+
+/**
+ * Update Chart based on controls
+ */
+function updateAnalysisChart(subjectOverride = null) {
     if (!state.currentHistory || state.currentHistory.length === 0) return;
 
     const chartType = elements.analysisType ? elements.analysisType.value : 'total';
-    const maxMarks = elements.analysisMaxMarks ? parseInt(elements.analysisMaxMarks.value) : 100;
+    // Default max marks from dropdown (user manual override)
+    let maxMarks = elements.analysisMaxMarks ? parseInt(elements.analysisMaxMarks.value) : 100;
+    let passMark = 33; // Default Total Pass
 
-    // If no subject passed, try to get from dropdown or localStorage
+    // Determine Subject
+    // Priority: Argument > Dropdown > LocalStorage > Default
+    let subject = subjectOverride;
     if (!subject) {
         const dropdown = document.getElementById('analysisSubjectSelect');
         if (dropdown) subject = dropdown.value;
         else subject = localStorage.getItem('selectedAnalysisSubject');
     }
 
-    // Filter History Logic
-    // 1. Filter by Session (if selected)
-    // 2. Filter by Subject (if selected)
-
+    // Determine Filtered History
     let filteredHistory = state.currentHistory;
-
-    // Get selected session
     const sessionDropdown = document.getElementById('analysisSessionSelect');
     let selectedSession = sessionDropdown ? sessionDropdown.value : localStorage.getItem('selectedAnalysisSession');
 
-    // Filter by Session
     if (selectedSession && selectedSession !== 'all') {
         filteredHistory = filteredHistory.filter(h => h.session === selectedSession);
-    } else {
-        // If no specific session selected, default to current student's session if available, else show all
-        if (state.currentAnalysisStudent && state.currentAnalysisStudent.session) {
-            // Optional: strict mode could force current session, but "all" allows comparison
-            // For now, let's respect the dropdown "all" or specific session
-        }
     }
 
-    // Filter by Subject
     if (subject && subject !== 'all') {
         filteredHistory = filteredHistory.filter(h => h.subject === subject);
+
+        // --- Subject Scaling Logic ---
+        // 1. Check if we have a config for this specific subject
+        const normalizedSubject = subject.trim();
+        // Use Saved Config OR Default
+        const config = state.subjectConfigs[normalizedSubject] || DEFAULT_SUBJECT_CONFIG;
+
+        // 2. Determine Max Marks & Pass Marks based on type and config
+        if (config) {
+            if (chartType === 'total') {
+                maxMarks = parseInt(config.total) || 100;
+                // Total Pass Mark isn't explicitly in config usually, but could be derived?
+                // User didn't ask for Total Pass Config, but said "Total Marks 100".
+                // Defaulting to 33% of Total or standard 33.
+                passMark = Math.ceil(maxMarks * 0.33);
+            }
+            else if (chartType === 'written') {
+                maxMarks = parseInt(config.written) || 50;
+                passMark = parseInt(config.writtenPass) || 17;
+            }
+            else if (chartType === 'mcq') {
+                maxMarks = parseInt(config.mcq) || 25;
+                passMark = parseInt(config.mcqPass) || 8;
+            }
+            else if (chartType === 'practical') {
+                maxMarks = parseInt(config.practical) || 25;
+                passMark = parseInt(config.practicalPass) || 8; // Optional
+            }
+
+            // Sync Dropdown
+            if (elements.analysisMaxMarks) {
+                elements.analysisMaxMarks.value = maxMarks;
+            }
+        }
     }
 
     // Destroy previous
@@ -2102,7 +2233,8 @@ function updateAnalysisChart(subject = null) {
 
     const chart = createHistoryChart(elements.historyChart, filteredHistory, {
         chartType,
-        maxMarks
+        maxMarks,
+        passMark // Pass the calculated pass mark
     });
     state.historyChartInstance = chart;
 }
@@ -2821,4 +2953,333 @@ function setupUserManagementListeners() {
             }
         });
     }
+}
+
+// ==========================================
+// SUBJECT CONFIGURATION UI LOGIC
+// ==========================================
+
+// Default Protected Subjects (Cannot be deleted)
+const PROTECTED_SUBJECTS = ['ICT', 'Bangla', 'English', 'Math', 'Physics', 'Chemistry', 'Biology'];
+
+// Default Configuration Strategy (Moved to state at top)
+// const DEFAULT_SUBJECT_CONFIG = { ... };
+
+// Default Configuration Strategy (Moved to state at top)
+// const DEFAULT_SUBJECT_CONFIG = { ... };
+
+/**
+ * Initialize Subject Configuration UI (Modern)
+ */
+function initSubjectConfigUI() {
+    const subjectSettingsBtn = document.getElementById('subjectSettingsBtn');
+    const modal = document.getElementById('subjectSettingsModal');
+    const closeBtn = document.getElementById('closeSubjectSettingsBtn');
+    const saveBtn = document.getElementById('saveSubjectConfigBtn');
+    const deleteBtn = document.getElementById('deleteSubjectBtn');
+    const addNewBtn = document.getElementById('addNewSubjectBtn');
+    const searchInput = document.getElementById('subjectSearch');
+    const subjectNameInput = document.getElementById('configSubjectName');
+    const formTitle = document.getElementById('formTitle');
+
+    // Config Inputs
+    const inputs = {
+        total: document.getElementById('configTotalMax'),
+        written: document.getElementById('configWrittenMax'),
+        writtenPass: document.getElementById('configWrittenPass'),
+        mcq: document.getElementById('configMcqMax'),
+        mcqPass: document.getElementById('configMcqPass'),
+        practical: document.getElementById('configPracticalMax'),
+        practicalPass: document.getElementById('configPracticalPass'),
+        practicalOptional: document.getElementById('configPracticalOptional')
+    };
+
+    const totalPreview = document.getElementById('calcTotalPreview');
+
+    // Helper: Auto Calculate Total
+    const calculateTotal = () => {
+        const w = parseInt(inputs.written.value) || 0;
+        const m = parseInt(inputs.mcq.value) || 0;
+        const p = parseInt(inputs.practical.value) || 0;
+        const total = w + m + p;
+        if (totalPreview) totalPreview.innerText = `গণনা: ${total}`;
+        return total;
+    };
+
+    // Attach listeners for auto-calculation
+    ['written', 'mcq', 'practical'].forEach(key => {
+        if (inputs[key]) inputs[key].addEventListener('input', calculateTotal);
+    });
+
+    // Reset Form
+    const resetForm = () => {
+        subjectNameInput.value = '';
+        subjectNameInput.disabled = false;
+        formTitle.innerText = 'নতুন কনফিগারেশন';
+        deleteBtn.style.display = 'none'; // Hide delete for new
+
+        Object.values(inputs).forEach(input => {
+            if (input.type === 'checkbox') input.checked = false;
+            else input.value = '';
+        });
+        if (totalPreview) totalPreview.innerText = 'গণনা: 0';
+
+        // Deselect list items
+        document.querySelectorAll('.config-item').forEach(el => el.classList.remove('active'));
+    };
+
+    if (subjectSettingsBtn && modal) {
+        subjectSettingsBtn.addEventListener('click', () => {
+            modal.style.display = 'block';
+            resetForm();
+            renderSavedConfigsList();
+        });
+    }
+
+    if (closeBtn && modal) {
+        closeBtn.addEventListener('click', () => {
+            modal.style.display = 'none';
+        });
+    }
+
+    if (addNewBtn) {
+        addNewBtn.addEventListener('click', resetForm);
+    }
+
+    // Search Filter
+    if (searchInput) {
+        searchInput.addEventListener('input', (e) => {
+            renderSavedConfigsList(e.target.value);
+        });
+    }
+
+    // Close on click outside
+    window.addEventListener('click', (e) => {
+        if (e.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+
+    // Save Config
+    if (saveBtn) {
+        saveBtn.addEventListener('click', async () => {
+            const subject = subjectNameInput.value.trim();
+            if (!subject) {
+                showNotification('বিষয়ের নাম লিখুন!', 'warning');
+                return;
+            }
+
+            const calcTotal = calculateTotal();
+            const setTotal = parseInt(inputs.total.value) || 100;
+
+            if (calcTotal > 100) {
+                showNotification('সর্বমোট মার্ক ১০০ এর বেশি হতে পারে না!', 'error');
+                return;
+            }
+
+            const config = {
+                total: setTotal.toString(),
+                written: inputs.written.value.trim() || '0',
+                writtenPass: inputs.writtenPass.value.trim() || '0',
+                mcq: inputs.mcq.value.trim() || '0',
+                mcqPass: inputs.mcqPass.value.trim() || '0',
+                practical: inputs.practical.value.trim() || '0',
+                practicalPass: inputs.practicalPass.value.trim() || '0',
+                practicalOptional: inputs.practicalOptional.checked
+            };
+
+            setLoading(true);
+            try {
+                const success = await saveSubjectConfig(subject, config);
+                if (success) {
+                    showNotification(`${subject} কনফিগারেশন সেভ হয়েছে!`);
+                    renderSavedConfigsList(searchInput ? searchInput.value : '');
+                } else {
+                    showNotification('সেভ করতে সমস্যা হয়েছে', 'error');
+                }
+            } catch (error) {
+                console.error(error);
+                showNotification('ত্রুটি: ' + error.message, 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
+    }
+
+    // Delete Config
+    if (deleteBtn) {
+        deleteBtn.addEventListener('click', async () => {
+            const subject = subjectNameInput.value.trim();
+            if (!subject) return;
+
+            // Protection Check
+            if (PROTECTED_SUBJECTS.includes(subject)) {
+                showNotification(`'${subject}' একটি সংরক্ষিত বিষয়। এটি ডিলিট করা যাবে না।`, 'warning');
+                return;
+            }
+
+            if (!confirm(`আপনি কি নিশ্চিত যে '${subject}' এর কনফিগারেশন ডিলিট করতে চান?`)) {
+                return;
+            }
+
+            setLoading(true);
+            try {
+                const success = await deleteSubjectConfig(subject);
+                if (success) {
+                    showNotification(`${subject} কনফিগারেশন ডিলিট হয়েছে।`);
+                    // Reset to Default or Remove
+                    // If subject exists in exam data, it will reappear as Auto-detected (Default)
+                    resetForm();
+                    renderSavedConfigsList(searchInput ? searchInput.value : '');
+                } else {
+                    showNotification('ডিলিট করতে সমস্যা হয়েছে', 'error');
+                }
+            } catch (error) {
+                console.error(error);
+                showNotification('ত্রুটি: ' + error.message, 'error');
+            } finally {
+                setLoading(false);
+            }
+        });
+    }
+}
+
+/**
+ * Render Saved Configs List (Modern)
+ * merges saved configs with auto-discovered subjects from studentData
+ */
+function renderSavedConfigsList(filterText = '') {
+    const container = document.getElementById('savedConfigsList');
+    const countBadge = document.getElementById('subjectCount');
+    if (!container) return;
+
+    // 1. Get Saved Subjects
+    const savedSubjects = Object.keys(state.subjectConfigs).filter(key => key !== 'updatedAt');
+
+    // 2. Discover Subjects from current Exam Data
+    const discoveredSubjects = new Set();
+    if (state.studentData && state.studentData.length > 0) {
+        state.studentData.forEach(s => {
+            if (s.subject) discoveredSubjects.add(s.subject);
+        });
+    }
+
+    // 3. Discover Subjects from Saved Exams
+    const savedExamsSubjects = new Set();
+    if (state.savedExams && state.savedExams.length > 0) {
+        state.savedExams.forEach(exam => {
+            if (exam.subject) savedExamsSubjects.add(exam.subject);
+        });
+    }
+
+    // 4. Merge Unique
+    const allSubjects = new Set([...savedSubjects, ...discoveredSubjects, ...savedExamsSubjects]);
+    let sortedSubjects = Array.from(allSubjects).sort();
+
+    if (filterText) {
+        const lowerFilter = filterText.toLowerCase();
+        sortedSubjects = sortedSubjects.filter(sub => sub.toLowerCase().includes(lowerFilter));
+    }
+
+    if (countBadge) countBadge.innerText = sortedSubjects.length;
+
+    if (sortedSubjects.length === 0) {
+        container.innerHTML = '<div style="opacity: 0.6; padding: 15px; text-align: center; font-size: 0.9em;">কোনো বিষয় পাওয়া যায়নি।</div>';
+        return;
+    }
+
+    container.innerHTML = '';
+
+    sortedSubjects.forEach(sub => {
+        // Determine Config: Saved > Default
+        const isSaved = state.subjectConfigs.hasOwnProperty(sub);
+        const config = isSaved ? state.subjectConfigs[sub] : DEFAULT_SUBJECT_CONFIG;
+
+        // Allowed to delete ANY saved config (Revert to default)
+        // User requested to be able to delete config for any subject except default (which isn't saved anyway)
+        const canDelete = isSaved;
+
+        const item = document.createElement('div');
+        item.className = 'config-item fade-in';
+        item.style.cssText = `
+            display: flex; 
+            justify-content: space-between; 
+            align-items: center; 
+            padding: 10px; 
+            border-bottom: 1px solid var(--border-color);
+            background: ${isSaved ? 'var(--bg-secondary)' : 'transparent'};
+        `;
+
+        item.innerHTML = `
+            <div style="flex: 1; cursor: pointer;">
+                <div style="font-weight: 600; display: flex; align-items: center; gap: 8px;">
+                    ${sub}
+                    ${!isSaved ? '<i class="fas fa-magic" style="font-size: 0.8em; color: var(--info);" title="স্বয়ংক্রিয়ভাবে শনাক্ত করা হয়েছে (ডিফল্ট)"></i>' : ''}
+                </div>
+                <div style="font-size: 0.8em; opacity: 0.7;">
+                    Total: ${config.total} | Wr: ${config.written} (${config.writtenPass || '-'}) | MCQ: ${config.mcq} (${config.mcqPass || '-'})
+                </div>
+            </div>
+            ${canDelete ? `
+            <button class="btn-icon delete-config-btn" data-subject="${sub}" title="কনফিগারেশন ডিলিট করুন (ডিফল্টে ফিরুন)">
+                <i class="fas fa-trash-alt" style="color: var(--danger);"></i>
+            </button>
+            ` : ''}
+        `;
+
+        // Attach event listener for click (Edit) logic if needed 
+        // But onclick='editSubjectConfig' is already in HTML string.
+        // We should probably rely on DOM element attachment or global function.
+        // editSubjectConfig is global? Yes.
+
+        container.appendChild(item);
+
+        // Item Click Handler (Select)
+        item.addEventListener('click', () => {
+            // Highlight
+            document.querySelectorAll('.config-item').forEach(el => el.classList.remove('active'));
+            item.classList.add('active');
+
+            // Populate Form
+            document.getElementById('formTitle').innerText = `${sub} এডিট করছেন`;
+            const nameInput = document.getElementById('configSubjectName');
+            nameInput.value = sub;
+            // nameInput.disabled = true; // Optional: Disable renaming key directly to avoid dupes, or allow as copy
+
+            const getVal = (id, val) => document.getElementById(id).value = val || '';
+
+            getVal('configTotalMax', config.total);
+            getVal('configWrittenMax', config.written);
+            getVal('configWrittenPass', config.writtenPass);
+            getVal('configMcqMax', config.mcq);
+            getVal('configMcqPass', config.mcqPass);
+            getVal('configPracticalMax', config.practical);
+            getVal('configPracticalPass', config.practicalPass);
+            document.getElementById('configPracticalOptional').checked = config.practicalOptional || false;
+
+            // Trigger Calc
+            const total = (parseInt(config.written) || 0) + (parseInt(config.mcq) || 0) + (parseInt(config.practical) || 0);
+            const totalPreview = document.getElementById('calcTotalPreview');
+            if (totalPreview) totalPreview.innerText = `গণনা: ${total}`;
+
+            // Show/Hide Delete Button
+            const deleteBtn = document.getElementById('deleteSubjectBtn');
+            if (deleteBtn) {
+                if (PROTECTED_SUBJECTS.includes(sub)) {
+                    // Protected: Disable/Hide
+                    deleteBtn.style.display = 'none';
+                } else if (!isSaved) {
+                    // Not Saved (Default): Hide (Nothing to delete)
+                    deleteBtn.style.display = 'none';
+                } else {
+                    // Saved & Not Protected: Show
+                    deleteBtn.style.display = 'inline-block';
+                    deleteBtn.innerText = 'ডিলিট করুন';
+                    deleteBtn.className = 'btn-danger-outline'; // ensure class
+                }
+            }
+        });
+
+        container.appendChild(item);
+    });
 }

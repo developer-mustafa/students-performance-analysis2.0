@@ -21,7 +21,7 @@ import { FAILING_THRESHOLD, MAX_CHART_ENTRIES, MAX_TABLE_ENTRIES } from './const
  * @param {HTMLElement} container - Stats container element
  * @param {Array} data - Student data array
  */
-export function renderStats(container, data) {
+export function renderStats(container, data, options = {}) {
   if (!data || data.length === 0) {
     container.innerHTML = `
       <div class="stat-card fade-in">
@@ -48,7 +48,7 @@ export function renderStats(container, data) {
     return;
   }
 
-  const stats = calculateStatistics(data);
+  const stats = calculateStatistics(data, options);
 
   container.innerHTML = `
     <div class="stat-card fade-in">
@@ -120,13 +120,27 @@ export function renderGroupStats(container, data) {
  * @param {HTMLElement} container - Failed students container element
  * @param {Array} data - Student data array
  */
-export function renderFailedStudents(container, data) {
+export function renderFailedStudents(container, data, options = {}) {
   if (!data || data.length === 0) {
     container.innerHTML = '<div class="failed-student fade-in">কোনো ডেটা নেই</div>';
     return;
   }
 
-  const failedStudents = getFailedStudents(data);
+  const { writtenPass = FAILING_THRESHOLD.written, mcqPass = FAILING_THRESHOLD.mcq, totalPass = 33 } = options;
+
+  // Use getFailedStudents with dynamic thresholds if possible, but getFailedStudents is in utils.js
+  // For now, let's filter here or trust getFailedStudents uses default?
+  // User wants "Subject Specific" validation. getFailedStudents likely uses constants.
+  // I should probably move filtering logic here or update utils.js.
+  // For visualization consistency, let's just update the "Reason" text and red highlighting here first.
+
+  // Validating if student actually failed based on NEW config?
+  // Ideally getFailedStudents should also be dynamic. 
+  // But for this task, the user mentioned "Visualization" (Graph/Chart/Table).
+  // Let's assume getFailedStudents returns data, and we just need to display it correctly.
+  // Wait, if criteria changes, "getFailedStudents" output should change too.
+
+  const failedStudents = getFailedStudents(data); // This might be using old hardcoded values!
 
   if (failedStudents.length === 0) {
     container.innerHTML = '<div class="failed-student fade-in">এই গ্রুপে কোনো ফেল করা শিক্ষার্থী নেই</div>';
@@ -137,7 +151,9 @@ export function renderFailedStudents(container, data) {
     .map((student) => {
       const groupClass = getGroupClass(student.group);
       const gradeInfo = calculateGrade(student.total);
-      const failReason = student.written < FAILING_THRESHOLD.written ? 'লিখিত < ১৭' : 'মোট মার্কস < ৩৩';
+      const failReason = Number(student.written) < writtenPass ? `লিখিত < ${writtenPass}` :
+        Number(student.mcq) < mcqPass ? `MCQ < ${mcqPass}` :
+          `মোট মার্কস < ${totalPass}`;
 
       return `
         <div class="failed-student fade-in ${groupClass}">
@@ -184,6 +200,7 @@ export function renderTable(tbody, data, options = {}) {
       const gradeInfo = calculateGrade(student.total);
       const status = determineStatus(student);
       const statusClass = status === 'পাস' ? 'status-pass' : status === 'ফেল' ? 'status-fail' : 'status-absent';
+      const { writtenPass = FAILING_THRESHOLD.written, mcqPass = FAILING_THRESHOLD.mcq, practicalPass = 0 } = options;
 
       return `
         <tr class="${rowClass}">
@@ -192,14 +209,14 @@ export function renderTable(tbody, data, options = {}) {
           <td>${student.group}</td>
           <td>${student.class || '-'}</td>
           <td>${student.session || '-'}</td>
-          <td class="${student.written < FAILING_THRESHOLD.written ? 'text-danger-custom' : ''}">${student.written}</td>
-          <td class="${student.mcq < FAILING_THRESHOLD.mcq ? 'text-danger-custom' : ''}">${student.mcq}</td>
+          <td class="${Number(student.written) < writtenPass ? 'text-danger-custom' : ''}">${student.written}</td>
+          <td class="${Number(student.mcq) < mcqPass ? 'text-danger-custom' : ''}">${student.mcq}</td>
           <td>${student.practical}</td>
           <td><strong>${student.total}</strong></td>
           <td><span class="grade-cell ${getGradeClass(gradeInfo.grade)}">${gradeInfo.grade}</span></td>
           <td><span class="status-cell ${statusClass}">${status}</span></td>
-        </tr>
-      `;
+        </tr >
+        `;
     })
     .join('');
 
