@@ -401,11 +401,47 @@ function updateSyncStatus(isOnline) {
 /**
  * Get filtered data based on current filters
  */
+/**
+ * Get Subject Config with Class/Session Fallback
+ */
+function getSubjectConfig(subject, className, session) {
+    if (!subject) return DEFAULT_SUBJECT_CONFIG;
+
+    // 1. Try Specific: Subject (Class - Session)
+    if (className && session) {
+        const sessionKey = `${subject} (${className} - ${session})`;
+        if (state.subjectConfigs[sessionKey]) return state.subjectConfigs[sessionKey];
+    }
+
+    // 2. Try Class Specific: Subject (Class)
+    if (className) {
+        const classKey = `${subject} (${className})`;
+        if (state.subjectConfigs[classKey]) return state.subjectConfigs[classKey];
+    }
+
+    // 3. Fallback: Generic Subject
+    return state.subjectConfigs[subject] || DEFAULT_SUBJECT_CONFIG;
+}
+
+/**
+ * Get filtered data based on current filters
+ */
 function getFilteredData() {
     let options = {};
     const subject = state.currentSubject;
+
     if (subject) {
-        const config = state.subjectConfigs[subject] || DEFAULT_SUBJECT_CONFIG;
+        // Determine class and session from current data
+        let currentClass = null;
+        let currentSession = null;
+
+        if (state.studentData.length > 0) {
+            currentClass = state.studentData[0].class;
+            currentSession = state.studentData[0].session;
+        }
+
+        const config = getSubjectConfig(subject, currentClass, currentSession);
+
         if (config) {
             options = {
                 writtenPass: parseInt(config.writtenPass) || 17,
@@ -421,6 +457,7 @@ function getFilteredData() {
         grade: state.currentGradeFilter,
     }, options);
 }
+
 
 /**
  * Update all views
@@ -439,7 +476,15 @@ function updateViews() {
     const subject = state.currentSubject; // Use current subject
 
     if (subject) {
-        const config = state.subjectConfigs[subject] || DEFAULT_SUBJECT_CONFIG;
+        let currentClass = null;
+        let currentSession = null;
+
+        if (state.studentData.length > 0) {
+            currentClass = state.studentData[0].class;
+            currentSession = state.studentData[0].session;
+        }
+
+        const config = getSubjectConfig(subject, currentClass, currentSession);
         if (config) {
             writtenPass = parseInt(config.writtenPass) || 17;
             mcqPass = parseInt(config.mcqPass) || 8;
@@ -2193,8 +2238,20 @@ function updateAnalysisChart(subjectOverride = null) {
         // --- Subject Scaling Logic ---
         // 1. Check if we have a config for this specific subject
         const normalizedSubject = subject.trim();
+
+        // Determine class and session context for config lookup
+        let currentClass = state.currentAnalysisStudent ? state.currentAnalysisStudent.class : null;
+        let currentSession = state.currentAnalysisStudent ? state.currentAnalysisStudent.session : null;
+
+        // detailed history items usually have class, but let's rely on student current class or history tail
+        if (filteredHistory && filteredHistory.length > 0) {
+            const latest = filteredHistory[filteredHistory.length - 1];
+            if (latest.class) currentClass = latest.class;
+            if (latest.session) currentSession = latest.session;
+        }
+
         // Use Saved Config OR Default
-        const config = state.subjectConfigs[normalizedSubject] || DEFAULT_SUBJECT_CONFIG;
+        const config = getSubjectConfig(normalizedSubject, currentClass, currentSession);
 
         // 2. Determine Max Marks & Pass Marks based on type and config
         if (config) {
@@ -3031,6 +3088,7 @@ function initSubjectConfigUI() {
     if (subjectSettingsBtn && modal) {
         subjectSettingsBtn.addEventListener('click', () => {
             modal.style.display = 'block';
+            document.body.style.overflow = 'hidden'; // Lock Body Scroll
             resetForm();
             renderSavedConfigsList();
         });
@@ -3039,6 +3097,7 @@ function initSubjectConfigUI() {
     if (closeBtn && modal) {
         closeBtn.addEventListener('click', () => {
             modal.style.display = 'none';
+            document.body.style.overflow = ''; // Unlock Body Scroll
         });
     }
 
@@ -3057,6 +3116,7 @@ function initSubjectConfigUI() {
     window.addEventListener('click', (e) => {
         if (e.target === modal) {
             modal.style.display = 'none';
+            document.body.style.overflow = ''; // Unlock Body Scroll
         }
     });
 
@@ -3160,7 +3220,16 @@ function renderSavedConfigsList(filterText = '') {
     const discoveredSubjects = new Set();
     if (state.studentData && state.studentData.length > 0) {
         state.studentData.forEach(s => {
-            if (s.subject) discoveredSubjects.add(s.subject);
+            if (s.subject) {
+                // Generate key with Class and Session if available
+                let key = s.subject;
+                if (s.class && s.session) {
+                    key = `${s.subject} (${s.class} - ${s.session})`;
+                } else if (s.class) {
+                    key = `${s.subject} (${s.class})`;
+                }
+                discoveredSubjects.add(key);
+            }
         });
     }
 
@@ -3168,11 +3237,22 @@ function renderSavedConfigsList(filterText = '') {
     const savedExamsSubjects = new Set();
     if (state.savedExams && state.savedExams.length > 0) {
         state.savedExams.forEach(exam => {
-            if (exam.subject) savedExamsSubjects.add(exam.subject);
+            if (exam.subject) {
+                // Generate key with Class and Session if available
+                let key = exam.subject;
+                if (exam.class && exam.session) {
+                    key = `${exam.subject} (${exam.class} - ${exam.session})`;
+                } else if (exam.class) {
+                    key = `${exam.subject} (${exam.class})`;
+                }
+                savedExamsSubjects.add(key);
+            }
         });
     }
 
     // 4. Merge Unique
+    // Note: savedSubjects already contains keys. If migrated, they might be just "Bangla".
+    // If new, they will be "Bangla (10)".
     const allSubjects = new Set([...savedSubjects, ...discoveredSubjects, ...savedExamsSubjects]);
     let sortedSubjects = Array.from(allSubjects).sort();
 
@@ -3196,8 +3276,18 @@ function renderSavedConfigsList(filterText = '') {
         const config = isSaved ? state.subjectConfigs[sub] : DEFAULT_SUBJECT_CONFIG;
 
         // Allowed to delete ANY saved config (Revert to default)
-        // User requested to be able to delete config for any subject except default (which isn't saved anyway)
         const canDelete = isSaved;
+
+        // Parse Key for Display
+        // Key Format: "Subject (Class - Session)" or "Subject (Class)" or "Subject"
+        let displayName = sub;
+        let displayMeta = '';
+
+        const match = sub.match(/^(.*?)\s*\((.*?)\)$/);
+        if (match) {
+            displayName = match[1];
+            displayMeta = match[2];
+        }
 
         const item = document.createElement('div');
         item.className = 'config-item fade-in';
@@ -3212,11 +3302,12 @@ function renderSavedConfigsList(filterText = '') {
 
         item.innerHTML = `
             <div style="flex: 1; cursor: pointer;">
-                <div style="font-weight: 600; display: flex; align-items: center; gap: 8px;">
-                    ${sub}
+                <div style="font-weight: 600; display: flex; align-items: center; gap: 8px; flex-wrap: wrap;">
+                    ${displayName}
+                    ${displayMeta ? `<span style="background: var(--primary); color: white; padding: 2px 6px; border-radius: 4px; font-size: 0.7em; font-weight: normal;">${displayMeta}</span>` : ''}
                     ${!isSaved ? '<i class="fas fa-magic" style="font-size: 0.8em; color: var(--info);" title="স্বয়ংক্রিয়ভাবে শনাক্ত করা হয়েছে (ডিফল্ট)"></i>' : ''}
                 </div>
-                <div style="font-size: 0.8em; opacity: 0.7;">
+                <div style="font-size: 0.8em; opacity: 0.7; margin-top: 4px;">
                     Total: ${config.total} | Wr: ${config.written} (${config.writtenPass || '-'}) | MCQ: ${config.mcq} (${config.mcqPass || '-'})
                 </div>
             </div>
@@ -3231,6 +3322,41 @@ function renderSavedConfigsList(filterText = '') {
         // But onclick='editSubjectConfig' is already in HTML string.
         // We should probably rely on DOM element attachment or global function.
         // editSubjectConfig is global? Yes.
+
+        // Attach Event Listener for Delete Button
+        const delBtn = item.querySelector('.delete-config-btn');
+        if (delBtn) {
+            delBtn.addEventListener('click', async (e) => {
+                e.stopPropagation(); // Prevent selecting the item
+
+                // Protection Check
+                if (PROTECTED_SUBJECTS.includes(sub)) {
+                    showNotification(`'${sub}' একটি সংরক্ষিত বিষয়। এটি ডিলিট করা যাবে না।`, 'warning');
+                    return;
+                }
+
+                if (!confirm(`আপনি কি নিশ্চিত যে '${sub}' এর কনফিগারেশন ডিলিট করতে চান?`)) {
+                    return;
+                }
+
+                setLoading(true);
+                try {
+                    const success = await deleteSubjectConfig(sub);
+                    if (success) {
+                        showNotification(`${sub} কনফিগারেশন ডিলিট হয়েছে।`);
+                        resetForm();
+                        renderSavedConfigsList(searchInput ? searchInput.value : '');
+                    } else {
+                        showNotification('ডিলিট করতে সমস্যা হয়েছে', 'error');
+                    }
+                } catch (error) {
+                    console.error(error);
+                    showNotification('ত্রুটি: ' + error.message, 'error');
+                } finally {
+                    setLoading(false);
+                }
+            });
+        }
 
         container.appendChild(item);
 

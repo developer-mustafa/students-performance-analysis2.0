@@ -2483,6 +2483,27 @@ input:focus {
 }
 
 /* User Management Styles */
+.user-list-container {
+  max-height: 60vh;
+  /* Dynamic height based on viewport */
+  overflow-y: auto;
+  /* Enable vertical scrolling */
+  border: 1px solid #dfe6e9;
+  /* Optional border */
+  border-radius: 6px;
+}
+
+/* Sticky Header for User Table */
+.user-table thead th {
+  position: sticky;
+  top: 0;
+  background: #f1f2f6;
+  z-index: 1;
+  /* Ensure header stays above rows */
+  box-shadow: 0 2px 2px -1px rgba(0, 0, 0, 0.1);
+  /* Subtle shadow for depth */
+}
+
 .user-table th,
 .user-table td {
   border-bottom: 1px solid #dfe6e9;
@@ -2752,6 +2773,7 @@ input:focus {
    ========================================== */
 
 /* Landscape Modal Container */
+/* Landscape Modal Container */
 .landscape-modal {
   max-width: 900px !important;
   width: 95%;
@@ -2759,21 +2781,25 @@ input:focus {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  max-height: 90vh;
+  height: 85vh;
+  /* Fixed height relative to viewport */
+  max-height: 650px;
+  /* Cap height */
 }
 
 .modal-header {
-  padding: 15px 20px;
+  padding: 12px 20px;
   border-bottom: 1px solid #eee;
   display: flex;
   justify-content: space-between;
   align-items: center;
   background: #f8f9fa;
+  flex-shrink: 0;
 }
 
 .modal-header h2 {
   margin: 0;
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   display: flex;
   align-items: center;
   gap: 10px;
@@ -2781,9 +2807,13 @@ input:focus {
 
 .landscape-body {
   display: grid;
-  grid-template-columns: 280px 1fr;
-  height: 600px;
+  grid-template-columns: 260px 1fr;
+  flex: 1;
   overflow: hidden;
+  /* Internal scrolling */
+  min-height: 0;
+  /* Flexbox fix */
+  height: auto;
 }
 
 /* Sidebar (Left) */
@@ -2793,18 +2823,20 @@ input:focus {
   display: flex;
   flex-direction: column;
   height: 100%;
+  overflow: hidden;
 }
 
 .sidebar-header {
-  padding: 15px;
+  padding: 12px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
 }
 
 .sidebar-header h4 {
   margin: 0;
-  font-size: 0.95rem;
+  font-size: 0.9rem;
   color: #333;
 }
 
@@ -2817,9 +2849,10 @@ input:focus {
 }
 
 .search-wrapper {
-  padding: 0 15px 10px;
+  padding: 0 12px 10px;
   position: relative;
   box-sizing: border-box;
+  flex-shrink: 0;
 }
 
 .search-wrapper input {
@@ -2835,7 +2868,7 @@ input:focus {
 
 .search-wrapper i {
   position: absolute;
-  left: 25px;
+  left: 22px;
   top: 50%;
   transform: translateY(-50%) translateY(-5px);
   color: #888;
@@ -2849,7 +2882,7 @@ input:focus {
 }
 
 .config-item {
-  padding: 10px;
+  padding: 8px 10px;
   border-radius: 6px;
   margin-bottom: 5px;
   cursor: pointer;
@@ -2862,55 +2895,52 @@ input:focus {
 }
 
 .config-item.active {
-  background: rgba(67, 97, 238, 0.1);
+  background: rgba(67, 97, 238, 0.1) !important;
   border-color: rgba(67, 97, 238, 0.3);
 }
 
 .config-item-title {
   font-weight: 600;
-  font-size: 0.9rem;
-  display: block;
-}
-
-.config-item-subtitle {
-  font-size: 0.75rem;
-  opacity: 0.7;
-  margin-top: 2px;
+  font-size: 0.85rem;
   display: block;
 }
 
 .sidebar-footer {
-  padding: 15px;
+  padding: 12px;
   border-top: 1px solid #eee;
+  flex-shrink: 0;
 }
 
 /* Main Content (Right) */
 .config-main {
-  padding: 25px;
+  padding: 20px;
   overflow-y: auto;
+  /* Allow scrolling */
   display: flex;
   flex-direction: column;
+  position: relative;
 }
 
 .form-header {
-  margin-bottom: 20px;
+  margin-bottom: 15px;
+  flex-shrink: 0;
 }
 
 .form-header h3 {
-  margin: 0 0 5px 0;
-  font-size: 1.4rem;
+  margin: 0 0 4px 0;
+  font-size: 1.2rem;
 }
 
 .form-header p {
   margin: 0;
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   opacity: 0.7;
 }
 
 .form-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 20px;
+  gap: 15px;
 }
 
 .full-width {
@@ -2919,16 +2949,16 @@ input:focus {
 
 .mark-group {
   background: #fff;
-  padding: 15px;
+  padding: 12px;
   border-radius: 8px;
   border: 1px solid #eee;
   box-shadow: 0 2px 5px rgba(0, 0, 0, 0.02);
 }
 
 .mark-group label {
-  font-size: 0.85rem;
+  font-size: 0.8rem;
   font-weight: 600;
-  margin-bottom: 10px;
+  margin-bottom: 8px;
   display: flex;
   align-items: center;
   gap: 6px;
@@ -2937,20 +2967,22 @@ input:focus {
 
 .input-row {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .input-row input {
   flex: 1;
   text-align: center;
+  font-size: 0.9rem;
+  padding: 4px;
 }
 
 .checkbox-wrapper {
-  margin-top: 10px;
+  margin-top: 8px;
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 0.85rem;
+  gap: 6px;
+  font-size: 0.8rem;
 }
 
 .total-group {
@@ -2962,35 +2994,43 @@ input:focus {
 }
 
 .total-group input {
-  max-width: 120px;
+  max-width: 100px;
   text-align: center;
   font-weight: bold;
   font-size: 1.1rem;
 }
 
 .calc-preview {
-  font-size: 0.9rem;
+  font-size: 0.85rem;
   font-weight: 500;
   color: #666;
 }
 
 .form-actions {
-  margin-top: auto;
-  padding-top: 20px;
+  margin-top: 20px;
+  padding-top: 15px;
   border-top: 1px solid #eee;
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+  /* Sticky Footer Implementation */
+  position: sticky;
+  bottom: 0;
+  background: white;
+  z-index: 5;
+  padding-bottom: 5px;
+  /* Extra padding for sticky feel */
 }
 
 .btn-danger-outline {
   background: transparent;
   border: 1px solid #ef4444;
   color: #ef4444;
-  padding: 8px 15px;
+  padding: 6px 12px;
   border-radius: 6px;
   cursor: pointer;
   transition: all 0.2s;
+  font-size: 0.85rem;
 }
 
 .btn-danger-outline:hover {
@@ -3000,24 +3040,37 @@ input:focus {
 
 /* Mobile Responsive Override */
 @media (max-width: 768px) {
+  .landscape-modal {
+    height: 90vh;
+    /* Use more height on mobile */
+    max-height: none;
+  }
+
   .landscape-body {
     grid-template-columns: 1fr;
     height: auto;
-    max-height: 80vh;
-    overflow-y: auto;
+    overflow-y: hidden;
+    /* Let child containers scroll independently if needed, or better, flip layout */
+    display: flex;
+    flex-direction: column;
   }
 
   .config-sidebar {
-    height: 250px;
+    height: 200px;
+    /* Fixed height for sidebar list on mobile */
     border-right: none;
     border-bottom: 1px solid #eee;
+    flex-shrink: 0;
   }
 
   .config-main {
     padding: 15px;
+    flex: 1;
+    overflow-y: auto;
   }
 
   .form-grid {
     grid-template-columns: 1fr;
+    gap: 12px;
   }
 }
