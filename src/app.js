@@ -414,8 +414,20 @@ function initEventListeners() {
         elements.reportDropdownMenu?.classList.toggle('show');
     });
 
-    document.addEventListener('click', () => {
+    document.addEventListener('click', (e) => {
         elements.reportDropdownMenu?.classList.remove('show');
+        if (e.target?.classList.contains('modal')) {
+            e.target.classList.remove('active');
+        }
+    });
+
+    // Developer Contact Modal
+    elements.contactDevBtn?.addEventListener('click', () => {
+        if (elements.contactModal) elements.contactModal.classList.add('active');
+    });
+
+    elements.closeContactModal?.addEventListener('click', () => {
+        if (elements.contactModal) elements.contactModal.classList.remove('active');
     });
 
     // Downloads
@@ -537,7 +549,7 @@ function initEventListeners() {
     // Auth
     elements.adminToggle?.addEventListener('click', async () => {
         if (state.currentUser) {
-            elements.profileModal.style.display = 'block';
+            elements.profileModal.classList.add('active');
         } else {
             await handleLogin();
         }
@@ -545,12 +557,12 @@ function initEventListeners() {
 
     elements.modalLogoutBtn?.addEventListener('click', async () => {
         await handleLogout();
-        elements.profileModal.style.display = 'none';
+        elements.profileModal.classList.remove('active');
         updateProfileUI(null, false, false, 'guest');
     });
 
-    elements.closeProfileBtn?.addEventListener('click', () => elements.profileModal.style.display = 'none');
-    elements.closeProfileIcon?.addEventListener('click', () => elements.profileModal.style.display = 'none');
+    elements.closeProfileBtn?.addEventListener('click', () => elements.profileModal.classList.remove('active'));
+    elements.closeProfileIcon?.addEventListener('click', () => elements.profileModal.classList.remove('active'));
 
     // Analysis View Navigation
     elements.prevRollBtn?.addEventListener('click', () => navigateRoll(-1));

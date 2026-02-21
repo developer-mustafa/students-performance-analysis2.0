@@ -129,7 +129,10 @@ export const elements = {
     deleteSubjectBtn: null,
     saveSubjectConfigBtn: null,
     subjectCount: null,
-    resetFiltersBtn: null
+    resetFiltersBtn: null,
+    contactDevBtn: null,
+    contactModal: null,
+    closeContactModal: null
 };
 
 export function updateProfileUI(user, isAdmin, isSuperAdmin, role) {
@@ -308,6 +311,9 @@ export function initDOMReferences() {
     elements.saveSubjectConfigBtn = document.getElementById('saveSubjectConfigBtn');
     elements.subjectCount = document.getElementById('subjectCount');
     elements.resetFiltersBtn = document.getElementById('resetFiltersBtn');
+    elements.contactDevBtn = document.getElementById('contactDevBtn');
+    elements.contactModal = document.getElementById('contactModal');
+    elements.closeContactModal = document.getElementById('closeContactModal');
 }
 
 export function setLoading(isLoading, targetSelector = null) {

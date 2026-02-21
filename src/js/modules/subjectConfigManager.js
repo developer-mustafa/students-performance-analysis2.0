@@ -49,7 +49,7 @@ export function initSubjectConfigManager() {
 
     // Close Button
     elements.closeSubjectSettingsBtn?.addEventListener('click', () => {
-        elements.subjectSettingsModal.style.display = 'none';
+        elements.subjectSettingsModal.classList.remove('active');
     });
 
     // Real-time subscription

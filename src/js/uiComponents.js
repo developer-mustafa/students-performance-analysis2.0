@@ -15,7 +15,7 @@ import {
   sortStudentData,
   formatDateBengali,
 } from './utils.js';
-import { FAILING_THRESHOLD, MAX_CHART_ENTRIES, MAX_TABLE_ENTRIES } from './constants.js';
+import { FAILING_THRESHOLD, MAX_CHART_ENTRIES, MAX_TABLE_ENTRIES, GROUP_NAMES } from './constants.js';
 
 /**
  * Render statistics cards
@@ -166,6 +166,10 @@ export function renderGroupStats(container, data, options = {}) {
               <span class="v-label">পরীক্ষার্থী</span>
               <span class="v-value">${globalStats.participants}</span>
            </div>
+           <div class="vibrant-meta-pill success">
+              <span class="v-label">মোট পাস</span>
+              <span class="v-value">${globalStats.passedStudents}</span>
+           </div>
         </div>
       </div>
 
@@ -278,8 +282,6 @@ export function renderFailedStudents(container, data, options = {}) {
     metaElement.innerHTML = `
       <span class="meta-item"><i class="fas fa-graduation-cap"></i> শ্রেণি: ${firstStudent.class || 'N/A'}</span>
       <span class="meta-item"><i class="fas fa-calendar-alt"></i> সেশন: ${firstStudent.session || 'N/A'}</span>
-      <span class="meta-item"><i class="fas fa-layer-group"></i> বিভাগ: ${groups}</span>
-      <span class="meta-item count-badge danger"><i class="fas fa-user-times"></i> ফেল: ${failedStudents.length} জন</span>
     `;
   }
 
@@ -309,17 +311,17 @@ export function renderFailedStudents(container, data, options = {}) {
           ? `MCQ: ${student.mcq} < ${mcqPass}`
           : `মোট মার্কস < ${totalPass}`;
 
-      const groupColorClass = student.group === 'বিজ্ঞান গ্রুপ' ? 'grp-science' :
-        student.group === 'ব্যবসায় গ্রুপ' ? 'grp-business' : 'grp-arts';
-      const groupShort = student.group === 'বিজ্ঞান গ্রুপ' ? 'বিজ্ঞান' :
-        student.group === 'ব্যবসায় গ্রুপ' ? 'ব্যবসায়' : 'মানবিক';
+      const groupColorClass = student.group === GROUP_NAMES.science ? 'grp-science' :
+        student.group === GROUP_NAMES.business ? 'grp-business' : 'grp-arts';
+      const groupShort = student.group === GROUP_NAMES.science ? 'বিজ্ঞান' :
+        student.group === GROUP_NAMES.business ? 'ব্যবসায়' : 'মানবিক';
 
       return `
         <div class="refined-readable-card ${groupColorClass}" data-group="${student.group}">
           <div class="card-left-content">
             <div class="student-header-mini">
-              <div class="avatar-box ${student.group === 'বিজ্ঞান গ্রুপ' ? 'bg-blue-soft text-blue-main' :
-          student.group === 'ব্যবসায় গ্রুপ' ? 'bg-green-soft text-green-main' : 'bg-purple-soft text-purple-main'
+              <div class="avatar-box ${student.group === GROUP_NAMES.science ? 'bg-blue-soft text-blue-main' :
+          student.group === GROUP_NAMES.business ? 'bg-green-soft text-green-main' : 'bg-purple-soft text-purple-main'
         }">
                 <i class="fas fa-user-graduate"></i>
               </div>
@@ -344,8 +346,8 @@ export function renderFailedStudents(container, data, options = {}) {
             </div>
           </div>
 
-          <div class="card-right-stats ${student.group === 'বিজ্ঞান গ্রুপ' ? 'border-blue' :
-          student.group === 'ব্যবসায় গ্রুপ' ? 'border-green' : 'border-purple'
+          <div class="card-right-stats ${student.group === GROUP_NAMES.science ? 'border-blue' :
+          student.group === GROUP_NAMES.business ? 'border-green' : 'border-purple'
         }">
             <div class="total-big">
               <span class="label">মোট</span>
