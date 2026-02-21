@@ -259,14 +259,14 @@ export function calculateStatistics(data, options = {}) {
  * @param {Array} data - Student data array
  * @returns {Array} - Array of group statistics
  */
-export function calculateGroupStatistics(data) {
+export function calculateGroupStatistics(data, options = {}) {
     const groups = [...new Set(data.map((student) => student.group))];
 
     return groups.map((group) => {
         const groupStudents = data.filter((student) => student.group === group);
         return {
             group,
-            ...calculateStatistics(groupStudents),
+            ...calculateStatistics(groupStudents, options),
         };
     });
 }
@@ -276,11 +276,13 @@ export function calculateGroupStatistics(data) {
  * @param {Array} data - Student data array
  * @returns {Array} - Failed students array
  */
-export function getFailedStudents(data) {
+export function getFailedStudents(data, options = {}) {
+    const { writtenPass = FAILING_THRESHOLD.written, mcqPass = FAILING_THRESHOLD.mcq } = options;
     return data.filter(
         (student) =>
             !isAbsent(student) &&
-            (student.written < FAILING_THRESHOLD.written ||
+            (Number(student.written) < writtenPass ||
+                Number(student.mcq) < mcqPass ||
                 calculateGrade(student.total).grade === 'F')
     );
 }
@@ -316,4 +318,48 @@ export function convertToEnglishDigits(str) {
         result = result.replace(new RegExp(bengali[i], 'g'), english[i]);
     }
     return result;
+}
+/**
+ * Convert numbers to Bengali digits
+ * @param {number|string} num - Number or string containing digits
+ * @returns {string} - String with Bengali digits
+ */
+export function convertToBengaliDigits(num) {
+    const bengali = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+
+    let str = num.toString();
+    for (let i = 0; i < english.length; i++) {
+        str = str.replace(new RegExp(english[i], 'g'), bengali[i]);
+    }
+    return str;
+}
+
+/**
+ * Format a date object into a Bengali string
+ * Format: ২০ ফেব্রুয়ারী ২০২৬, ৭:২০ am
+ * @param {Date} date - Date object to format
+ * @returns {string} - Formatted Bengali date string
+ */
+export function formatDateBengali(date) {
+    if (!(date instanceof Date) || isNaN(date)) return '';
+
+    const day = convertToBengaliDigits(date.getDate());
+    const year = convertToBengaliDigits(date.getFullYear());
+
+    const months = [
+        'জানুয়ারী', 'ফেব্রুয়ারী', 'মার্চ', 'এপ্রিল', 'মে', 'জুন',
+        'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'
+    ];
+    const month = months[date.getMonth()];
+
+    let hours = date.getHours();
+    const ampm = hours >= 12 ? 'pm' : 'am';
+    hours = hours % 12;
+    hours = hours ? hours : 12; // the hour '0' should be '12'
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+
+    const timeStr = `${convertToBengaliDigits(hours)}:${convertToBengaliDigits(minutes)} ${ampm}`;
+
+    return `${day} ${month} ${year}, ${timeStr}`;
 }

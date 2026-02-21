@@ -76,7 +76,7 @@
         </div>
 
         <!-- Save Analysis Button -->
-        <button id="saveAnalysisBtn" onclick="openSaveModal()" class="dm-btn dm-save">
+        <button id="saveAnalysisBtn" class="dm-btn dm-save">
           <i class="fas fa-save"></i> <span class="dm-btn-text">সেভ</span>
         </button>
 
@@ -84,6 +84,7 @@
         <div class="dm-search">
           <i class="fas fa-search dm-search-icon"></i>
           <input type="text" id="searchInput" placeholder="নাম বা রোল দিয়ে সার্চ..." />
+          <div id="globalSearchResults" class="search-results-grid" style="display: none;"></div>
         </div>
 
         <!-- Admin Login Button -->
@@ -103,7 +104,6 @@
       <div id="inlineSearchPanel" class="inline-search-panel" style="display: none;">
         <!-- Candidate Cards (when multiple matches) -->
         <div id="inlineSearchCandidates" class="inline-candidates-grid" style="display: none;"></div>
-
         <!-- Student History Section (after selection) -->
         <div id="inlineHistorySection" class="inline-history-section" style="display: none;">
           <div id="inlineReportContent" class="inline-report-content">
@@ -137,9 +137,17 @@
       <!-- Saved Exams List (Collapsible) -->
       <div id="savedExamsSection" class="saved-exams-section">
         <div id="savedExamsToggle" class="section-toggle-header">
-          <h3 class="section-title">
-            <i class="fas fa-history"></i> সংরক্ষিত ফলাফল (Saved Database)
-          </h3>
+          <div class="title-with-filters">
+            <h3 class="section-title">
+              <i class="fas fa-history"></i> সংরক্ষিত ফলাফল (Saved Database)
+            </h3>
+            <div id="savedExamsFilterBar" class="saved-exams-filter-bar admin-only">
+              <span id="savedExamsCount" class="exams-count-badge">মোট: ০টি এক্সাম</span>
+              <div id="savedExamsClassFilters" class="class-filter-container">
+                <!-- ক্লাস ফিল্টারসমূহ এখানে দেখা যাবে -->
+              </div>
+            </div>
+          </div>
           <i class="fas fa-chevron-up toggle-icon" id="savedExamsIcon"></i>
         </div>
         <div id="savedExamsCollapse" class="collapse-container">
@@ -276,28 +284,67 @@
       <!-- Student Analysis View -->
       <div class="analysis-container" id="analysisView" style="display: none;">
         <div class="analysis-controls">
-          <input type="text" id="analysisStudentId" placeholder="নাম বা রোল নম্বর দিয়ে খুঁজুন..." class="form-control">
+          <div class="analysis-search-wrapper">
+            <input type="text" id="analysisStudentId" placeholder="নাম বা রোল নম্বর দিয়ে খুঁজুন..."
+              class="form-control">
+            <div id="analysisSearchResults" class="search-results-grid" style="display: none;"></div>
+          </div>
 
-          <select id="analysisType" class="form-select" style="min-width: 150px;">
+          <select id="analysisType" class="form-select analysis-type-select">
             <option value="total">মোট নম্বর (Total)</option>
             <option value="written">লিখিত (Written)</option>
             <option value="mcq">এমসিকিউ (MCQ)</option>
             <option value="practical">ব্যবহারিক (Practical)</option>
           </select>
 
-          <select id="analysisMaxMarks" class="form-select" style="min-width: 130px;">
-            <option value="100">সেট মার্কস: ১০০</option>
-            <option value="75">সেট মার্কস: ৭৫</option>
-            <option value="70">সেট মার্কস: ৭০</option>
-            <option value="50">সেট মার্কস: ৫০</option>
-            <option value="30">সেট মার্কস: ৩০</option>
-            <option value="25">সেট মার্কস: ২৫</option>
+          <select id="analysisMaxMarks" class="form-select analysis-marks-select">
+            <option value="100">মার্কস: ১০০</option>
+            <option value="75">মার্কস: ৭৫</option>
+            <option value="70">মার্কস: ৭০</option>
+            <option value="50">মার্কস: ৫০</option>
+            <option value="30">মার্কস: ৩০</option>
+            <option value="25">মার্কস: ২৫</option>
           </select>
+          <button class="settings-btn" title="সেটিংস"><i class="fas fa-cog"></i></button>
         </div>
 
-        <!-- Report Container (Target for Capture) - Now inside analysisView and hidden by default -->
-        <div id="analysisReportContent" class="analysis-report-wrapper" style="padding: 10px; display: none;">
-          <div id="studentDetails" class="student-details-container"></div>
+        <!-- Report Container -->
+        <div id="analysisReportContent" class="analysis-report-wrapper" style="display: none;">
+          <!-- Top Section: Header with info and controls -->
+          <div class="report-header-container">
+            <div id="studentDetails" class="student-details-section"></div>
+
+            <div class="report-toolbar">
+              <select id="analysisSessionSelect" class="form-select sm" style="max-width: 140px;">
+                <option value="all">সকল সেশন</option>
+              </select>
+
+              <select id="analysisSubjectSelect" class="form-select sm" style="max-width: 180px;">
+                <option value="all">সকল বিষয়</option>
+              </select>
+
+              <button id="downloadAnalysisImage" class="btn btn-primary btn-sm" title="ছবি হিসেবে ডাউনলোড করুন"
+                style="white-space: nowrap; flex-shrink: 0;">
+                <i class="fas fa-image"></i> ডাউনলোড
+              </button>
+
+              <div class="analysis-nav-controls">
+                <button id="prevRollBtn" class="nav-btn sm" title="পূর্ববর্তী রোল">
+                  <i class="fas fa-chevron-left"></i> <span id="prevRollNum"></span>
+                </button>
+                <div class="current-roll-display">
+                  <span id="currentRollNum"></span>
+                </div>
+                <button id="nextRollBtn" class="nav-btn sm" title="পরবর্তী রোল">
+                  <span id="nextRollNum"></span> <i class="fas fa-chevron-right"></i>
+                </button>
+              </div>
+
+              <div class="latest-exam-badge">
+                <i class="fas fa-history"></i> সর্বশেষ: <span id="latestExamLabel">N/A</span>
+              </div>
+            </div>
+          </div>
           <div class="analysis-chart-container analysis-card" style="margin-top: 20px;">
             <canvas id="historyChart"></canvas>
           </div>
@@ -314,7 +361,10 @@
   <!-- Failed Students Section -->
   <div class="card failed-students">
     <div class="card-header">
-      <h2 class="card-title">ফেল করা শিক্ষার্থী (লিখিত &lt; ১৭)</h2>
+      <div class="header-main">
+        <h2 class="card-title">ফেল করা শিক্ষার্থী (লিখিত &lt; ১৭)</h2>
+        <div id="failedHeaderMeta" class="header-meta"></div>
+      </div>
       <button class="view-btn" id="downloadFailedBtn"
         style="background: var(--success); color: white; border: none; font-size: 0.8rem; padding: 4px 10px;">
         <i class="fas fa-download"></i> ইমেজ ডাউনলোড
@@ -328,7 +378,10 @@
   <!-- Group Statistics Section -->
   <div class="card">
     <div class="card-header">
-      <h2 class="card-title">গ্রুপভিত্তিক পাস/ফেল পরিসংখ্যান</h2>
+      <div class="header-main">
+        <h2 class="card-title">গ্রুপভিত্তিক পাস/ফেল পরিসংখ্যান</h2>
+        <div id="groupStatsHeaderMeta" class="header-meta"></div>
+      </div>
       <button class="view-btn" id="downloadGroupStatsBtn"
         style="background: var(--success); color: white; border: none; font-size: 0.8rem; padding: 4px 10px;">
         <i class="fas fa-download"></i> ইমেজ ডাউনলোড

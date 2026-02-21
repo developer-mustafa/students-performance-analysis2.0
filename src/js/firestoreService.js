@@ -531,12 +531,38 @@ export async function getStudentHistory(studentId, studentGroup) {
  * @param {string} query - Search query (Name or ID)
  * @returns {Promise<Array>} - Array of unique student candidates {id, name, group, class}
  */
-export async function searchAnalyticsCandidates(query) {
-    if (!query) return [];
+export async function searchAnalyticsCandidates(query, sessionFilter) {
+    const hasQuery = query && query.trim().length > 0;
+    if (!hasQuery && !sessionFilter) return [];
 
     try {
         const exams = await getSavedExams();
         const candidates = new Map(); // Use Map to dedup by "ID_Group"
+
+        // Normalize sessionFilter if provided
+        const normSession = sessionFilter ? String(sessionFilter).trim().toLowerCase() : null;
+
+        if (!hasQuery && normSession) {
+            // Fetch ALL students for this session
+            exams.forEach(exam => {
+                const examSession = exam.session ? String(exam.session).trim().toLowerCase() : '';
+                if (examSession === normSession && exam.studentData && Array.isArray(exam.studentData)) {
+                    exam.studentData.forEach(s => {
+                        const uniqueKey = `${s.id}_${s.group}`;
+                        if (!candidates.has(uniqueKey)) {
+                            candidates.set(uniqueKey, {
+                                id: s.id,
+                                name: s.name,
+                                group: s.group,
+                                class: s.class,
+                                session: s.session
+                            });
+                        }
+                    });
+                }
+            });
+            return Array.from(candidates.values());
+        }
 
         // Normalize query: Convert Bengali to English digits
         const normalizedQuery = convertToEnglishDigits(query.trim());
@@ -560,6 +586,14 @@ export async function searchAnalyticsCandidates(query) {
                         // Fuzzy search for Name
                         if (s.name && s.name.toLowerCase().includes(lowerQuery)) {
                             match = true;
+                        }
+                    }
+
+                    // If sessionFilter is provided, enforce it
+                    if (match && normSession) {
+                        const studentSession = s.session ? String(s.session).trim().toLowerCase() : '';
+                        if (studentSession !== normSession) {
+                            match = false;
                         }
                     }
 

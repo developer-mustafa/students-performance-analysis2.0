@@ -5,6 +5,7 @@
  */
 
 import * as XLSX from 'xlsx';
+import html2canvas from 'html2canvas';
 import { STORAGE_KEYS } from './constants.js';
 import { showNotification } from './utils.js';
 import defaultStudentData from '../data/students.json';
@@ -418,29 +419,97 @@ function parseExcelRow(row, columnMap, rowIndex) {
  * @param {string} filename - Export filename
  */
 export function exportChartAsImage(canvas, filename = 'পারফর্ম্যান্স-চার্ট.png') {
-    // Get current theme colors
-    const style = getComputedStyle(document.body);
-    const isDarkMode = document.body.classList.contains('dark-mode');
-    const bgColor = style.getPropertyValue('--container-bg').trim() || (isDarkMode ? '#1e1e1e' : '#ffffff');
+    if (!canvas || canvas.width === 0 || canvas.height === 0) {
+        showNotification('চার্টটি দৃশ্যমান নয় অথবা ক্যালকুলেট করা সম্ভব হচ্ছে না', 'error');
+        return;
+    }
 
-    // Create a temporary canvas with background
-    const tempCanvas = document.createElement('canvas');
-    tempCanvas.width = canvas.width;
-    tempCanvas.height = canvas.height;
-    const ctx = tempCanvas.getContext('2d');
+    try {
+        // Get current theme colors
+        const style = getComputedStyle(document.body);
+        const isDarkMode = document.body.classList.contains('dark-mode');
+        const bgColor = style.getPropertyValue('--container-bg').trim() || (isDarkMode ? '#1e1e1e' : '#ffffff');
 
-    // Fill with theme background color
-    ctx.fillStyle = bgColor;
-    ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
+        // Create a temporary canvas with background
+        const tempCanvas = document.createElement('canvas');
+        tempCanvas.width = canvas.width;
+        tempCanvas.height = canvas.height;
+        const ctx = tempCanvas.getContext('2d');
 
-    // Draw the chart on top
-    ctx.drawImage(canvas, 0, 0);
+        // Fill with theme background color
+        ctx.fillStyle = bgColor;
+        ctx.fillRect(0, 0, tempCanvas.width, tempCanvas.height);
 
-    // Export the composite image
-    const link = document.createElement('a');
-    link.download = filename;
-    link.href = tempCanvas.toDataURL('image/png');
-    link.click();
+        // Draw the chart on top
+        ctx.drawImage(canvas, 0, 0);
+
+        // Export the composite image
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = tempCanvas.toDataURL('image/png');
+        link.click();
+    } catch (error) {
+        console.error('Chart export error:', error);
+        showNotification('এক্সপোর্ট করতে সমস্যা হয়েছে', 'error');
+    }
+}
+
+/**
+ * Capture an HTML element and download as image
+ * @param {HTMLElement} element - Element to capture
+ * @param {string} filename - Filename for the image
+ */
+export async function captureElementAsImage(element, filename = 'capture.png') {
+    if (!element) return;
+
+    try {
+        const isDark = document.body.classList.contains('dark-mode');
+
+        // Add class to body to disable unwanted styles for capture
+        document.body.classList.add('capturing-image');
+
+        // Wait for any active animations to stop
+        await new Promise(r => setTimeout(r, 200));
+
+        const style = getComputedStyle(document.body);
+        let bgColor = style.getPropertyValue('--container-bg').trim() || (isDark ? '#1a1a1a' : '#ffffff');
+
+        if (bgColor === 'transparent' || !bgColor) {
+            bgColor = isDark ? '#1a1a1a' : '#ffffff';
+        }
+
+        const canvas = await html2canvas(element, {
+            backgroundColor: bgColor,
+            scale: 4, // Higher resolution for crystal clear text
+            useCORS: true,
+            logging: false,
+            allowTaint: true,
+            onclone: (clonedDoc) => {
+                const clonedBody = clonedDoc.body;
+                clonedBody.classList.add('capturing-image');
+
+                // Final check to remove animations in clone
+                const target = clonedDoc.getElementById(element.id);
+                if (target) {
+                    target.style.animation = 'none';
+                    target.style.transition = 'none';
+                    target.style.padding = '25px';
+                }
+            }
+        });
+
+        const link = document.createElement('a');
+        link.download = filename;
+        link.href = canvas.toDataURL('image/png', 1.0);
+        link.click();
+
+        // Cleanup
+        document.body.classList.remove('capturing-image');
+    } catch (error) {
+        console.error('Capture error:', error);
+        document.body.classList.remove('capturing-image');
+        showNotification('ইমেজ তৈরি করতে সমস্যা হয়েছে', 'error');
+    }
 }
 
 /**
@@ -567,17 +636,18 @@ export function downloadDemoTemplate() {
  * @param {Array} students - Array of student objects
  * @param {string} filename - Filename for the excel file
  */
-export function exportStudentDataAsExcel(students, filename = 'students_data.xlsx') {
+export function exportStudentDataAsExcel(students, filename = 'students_data.xlsx', subject = '') {
     if (!students || students.length === 0) {
         showNotification('কোনো ডেটা নেই', 'error');
         return;
     }
 
     // Format data for Excel
-    const dataToExport = students.map(student => ({
+    const dataToExport = students.map((student, index) => ({
+        'ক্রমিক নং (SL)': index + 1,
         'রোল (Roll)': student.id,
         'নাম (Name)': student.name,
-        'লগইন আইডি': student.loginId || '-', // Optional if you have it
+        'বিষয় (Subject)': subject || '-',
         'গ্রুপ (Group)': student.group,
         'শ্রেণি (Class)': student.class || '-',
         'সেশন (Session)': student.session || '-',
@@ -585,7 +655,7 @@ export function exportStudentDataAsExcel(students, filename = 'students_data.xls
         'এমসিকিউ (MCQ)': student.mcq,
         'ব্যবহারিক (Practical)': student.practical,
         'মোট (Total)': student.total,
-        'GPA': calculateGPA(student.total), // Helper needed or calculate inline
+        'GPA': calculateGPA(student.total),
         'গ্রেড (Grade)': calculateGrade(student.total)
     }));
 
@@ -593,9 +663,10 @@ export function exportStudentDataAsExcel(students, filename = 'students_data.xls
 
     // Auto-width for columns
     const wscols = [
+        { wch: 10 }, // SL
         { wch: 10 }, // Roll
         { wch: 25 }, // Name
-        { wch: 15 }, // Login ID
+        { wch: 20 }, // Subject
         { wch: 15 }, // Group
         { wch: 10 }, // Class
         { wch: 15 }, // Session

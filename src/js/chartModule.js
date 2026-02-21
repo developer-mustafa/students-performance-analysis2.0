@@ -6,7 +6,7 @@
 import Chart from 'chart.js/auto';
 
 import { CHART_TYPES, MAX_CHART_ENTRIES, FAILING_THRESHOLD } from './constants.js';
-import { getGroupColor, sortStudentData } from './utils.js';
+import { getGroupColor, sortStudentData, showNotification } from './utils.js';
 import { exportChartAsImage } from './dataService.js';
 
 let currentChart = null;
@@ -214,9 +214,13 @@ export function createPerformanceChart(canvas, data, options = {}) {
                     callbacks: {
                         afterLabel: function (context) {
                             const student = limitedData[context.dataIndex];
+                            const { writtenPass = FAILING_THRESHOLD.written, mcqPass = FAILING_THRESHOLD.mcq } = options;
                             let tooltipText = `গ্রুপ: ${student.group}`;
-                            if (chartType === 'written' && student.written < 17) {
-                                tooltipText += '\n❌ ফেল (লিখিত < ১৭)';
+                            if (chartType === 'written' && Number(student.written) < writtenPass) {
+                                tooltipText += `\n❌ ফেল (লিখিত < ${writtenPass})`;
+                            }
+                            if (chartType === 'mcq' && Number(student.mcq) < mcqPass) {
+                                tooltipText += `\n❌ ফেল (MCQ < ${mcqPass})`;
                             }
                             return tooltipText;
                         },
@@ -325,13 +329,13 @@ export function createHistoryChart(canvas, historyData, options = {}) {
 
     // Calculate colors based on comparisons with Pass Mark
     const backgroundColors = values.map(val => {
-        if (val < passMark) return 'rgba(231, 76, 60, 0.85)'; // Red (Fail)
-        return 'rgba(46, 204, 113, 0.85)'; // Green (Pass)
+        if (val < passMark) return 'rgba(239, 68, 68, 0.7)'; // Red (Fail)
+        return 'rgba(16, 185, 129, 0.7)'; // Modern Emerald Green (Pass)
     });
 
     const borderColors = values.map(val => {
-        if (val < passMark) return 'rgba(192, 57, 43, 1)';
-        return 'rgba(39, 174, 96, 1)';
+        if (val < passMark) return 'rgb(239, 68, 68)';
+        return 'rgb(16, 185, 129)';
     });
 
     const ctx = canvas.getContext('2d');
@@ -367,7 +371,7 @@ export function createHistoryChart(canvas, historyData, options = {}) {
                 const meta = chart.getDatasetMeta(i);
                 meta.data.forEach((bar, index) => {
                     const value = dataset.data[index];
-                    if (value === 0) return;
+                    if (value === 0 && dataset.data.length > 1) return;
 
                     const bnValue = String(value).replace(/\d/g, d => '০১২৩৪৫৬৭৮৯'[d]);
                     let labelText = bnValue;
@@ -384,21 +388,13 @@ export function createHistoryChart(canvas, historyData, options = {}) {
                     ctx.save();
                     ctx.textAlign = 'center';
                     ctx.textBaseline = 'bottom';
-                    ctx.font = 'bold 20px "SolaimanLipi", sans-serif';
+                    ctx.font = 'bold 16px "SolaimanLipi", "Inter", sans-serif';
                     ctx.fillStyle = labelColor;
 
-                    // Shadow for better readability in both modes
-                    if (isDark) {
-                        ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
-                        ctx.shadowBlur = 4;
-                        ctx.shadowOffsetX = 1;
-                        ctx.shadowOffsetY = 1;
-                    } else {
-                        ctx.shadowColor = 'rgba(255, 255, 255, 0.8)';
-                        ctx.shadowBlur = 3;
-                        ctx.shadowOffsetX = 0;
-                        ctx.shadowOffsetY = 0;
-                    }
+                    // Subtle shadow for better pop on dark backgrounds
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                    ctx.shadowBlur = 4;
+                    ctx.shadowOffsetY = 2;
 
                     ctx.fillText(labelText, bar.x, bar.y - 8);
                     ctx.restore();
@@ -409,7 +405,7 @@ export function createHistoryChart(canvas, historyData, options = {}) {
 
     const isDarkMode = document.body.classList.contains('dark-mode');
     const textColor = isDarkMode ? '#ffffff' : '#1f2937';
-    const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.15)' : 'rgba(0, 0, 0, 0.1)';
+    const gridColor = isDarkMode ? 'rgba(255, 255, 255, 0.1)' : 'rgba(0, 0, 0, 0.05)';
 
     currentHistoryChart = new Chart(ctx, {
         type: 'bar',
@@ -420,11 +416,10 @@ export function createHistoryChart(canvas, historyData, options = {}) {
                 data: values,
                 backgroundColor: backgroundColors,
                 borderColor: borderColors,
-                borderWidth: 1,
-                fill: true,
-                barPercentage: 0.6,
-                borderRadius: 4, // Rounded corners for modern look
-                borderSkipped: false, // All corners rounded
+                borderWidth: 1.5,
+                barPercentage: 0.5, // Slimmer bars like in image
+                borderRadius: 6,
+                borderSkipped: false,
             }]
         },
         plugins: [dataLabelsPlugin],
@@ -433,7 +428,7 @@ export function createHistoryChart(canvas, historyData, options = {}) {
             maintainAspectRatio: false,
             layout: {
                 padding: {
-                    top: 30
+                    top: 40 // More space for labels
                 }
             },
             plugins: {
@@ -523,23 +518,41 @@ export function createHistoryChart(canvas, historyData, options = {}) {
  * @param {string} filename - Filename to save as
  */
 export function downloadHighResChart(filename) {
-    if (!currentChart) return;
+    if (!currentChart || !currentChart.canvas) return;
+    const { canvas } = currentChart;
+
+    if (canvas.width === 0 || canvas.height === 0) {
+        showNotification('চার্টটি দৃশ্যমান নয় অথবা ক্যালকুলেট করা সম্ভব হচ্ছে না', 'error');
+        return;
+    }
 
     // 1. Save original pixel ratio
     const originalPixelRatio = currentChart.options.devicePixelRatio || window.devicePixelRatio || 1;
 
-    // 2. Set high resolution (3x)
-    currentChart.options.devicePixelRatio = 3;
-    currentChart.resize();
-    currentChart.update();
+    try {
+        // 2. Set high resolution (3x)
+        currentChart.options.devicePixelRatio = 3;
+        currentChart.resize();
+        currentChart.update();
 
-    // 3. Export image (using imported helper)
-    setTimeout(() => {
-        exportChartAsImage(currentChart.canvas, filename);
+        // 3. Export image (using imported helper)
+        setTimeout(() => {
+            if (currentChart && currentChart.canvas && currentChart.canvas.width > 0) {
+                exportChartAsImage(currentChart.canvas, filename);
+            }
 
-        // 4. Restore original pixel ratio
+            // 4. Restore original pixel ratio
+            if (currentChart) {
+                currentChart.options.devicePixelRatio = originalPixelRatio;
+                currentChart.resize();
+                currentChart.update();
+            }
+        }, 500);
+    } catch (error) {
+        console.error('High-res export failed:', error);
+        // Restore if failed
         currentChart.options.devicePixelRatio = originalPixelRatio;
         currentChart.resize();
         currentChart.update();
-    }, 500);
+    }
 }
