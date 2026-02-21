@@ -216,6 +216,7 @@ function updateViews() {
             chartType: state.currentChartType,
             sortOrder: state.currentSortOrder,
             examName: state.currentExamName,
+            subject: state.currentSubject,
             passMark: chartPassMark,
             writtenPass: subjectOptions.writtenPass,
             mcqPass: subjectOptions.mcqPass,
@@ -460,7 +461,9 @@ function initEventListeners() {
             examName: state.currentExamName,
             subjectName: state.currentSubject,
             groupFilter: state.currentGroupFilter,
-            gradeFilter: state.currentGradeFilter
+            gradeFilter: state.currentGradeFilter,
+            sortBy: state.currentChartType,
+            sortOrder: state.currentSortOrder
         });
     });
     elements.downloadFailedBtn?.addEventListener('click', () => {
@@ -921,6 +924,17 @@ function refreshAnalysisChart() {
         filteredHistory = filteredHistory.filter(h => h.subject === subjectFilter);
     }
 
+    // Get pass mark from config for the current subject if available
+    let passMark = (elements.analysisMaxMarks?.value || 100) * 0.33;
+    const chartType = elements.analysisType?.value || 'total';
+    const currentSub = state.currentAnalyzedStudent?.subject || state.currentSubject;
+    const config = state.subjectConfigs[currentSub] || {};
+
+    if (chartType === 'total' && config.total) passMark = Number(config.total) * 0.33;
+    else if (chartType === 'written' && config.writtenPass) passMark = Number(config.writtenPass);
+    else if (chartType === 'mcq' && config.mcqPass) passMark = Number(config.mcqPass);
+    else if (chartType === 'practical' && config.practicalPass) passMark = Number(config.practicalPass);
+
     const reportContent = document.getElementById('analysisReportContent');
     if (filteredHistory.length > 0) {
         // SHOW CONTENT FIRST so canvas has dimensions
@@ -928,10 +942,9 @@ function refreshAnalysisChart() {
 
         setTimeout(() => {
             initializeHistoryChart(elements.historyChart, filteredHistory, {
-                chartType: elements.analysisType?.value || 'total',
+                chartType: chartType,
                 maxMarks: elements.analysisMaxMarks?.value || 100,
-                // Pass mark is also derived from config if needed, default to 33%
-                passMark: (elements.analysisMaxMarks?.value || 100) * 0.33
+                passMark: passMark
             });
         }, 50);
     }

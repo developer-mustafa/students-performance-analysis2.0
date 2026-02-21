@@ -523,8 +523,26 @@ export function printAllStudents(data, options = {}) {
   if (gradeFilter && gradeFilter !== 'সব গ্রেড') filterParts.push(`গ্রেড: ${gradeFilter}`);
   const filterLine = filterParts.length > 0 ? filterParts.join(' | ') : '';
 
-  // Sort by total descending
-  const sorted = [...data].sort((a, b) => Number(b.total) - Number(a.total));
+  // Dynamic sorting based on filter panel
+  const sortBy = options.sortBy || 'total';
+  const sortOrder = options.sortOrder || 'desc';
+  const sortLabels = { 'total': 'মোট স্কোর', 'written': 'লিখিত', 'mcq': 'MCQ', 'practical': 'প্র্যাকটিক্যাল' };
+  const orderLabels = { 'desc': 'সর্বোচ্চ → সর্বনিম্ন', 'asc': 'সর্বনিম্ন → সর্বোচ্চ', 'roll-asc': 'রোল: ছোট → বড়', 'roll-desc': 'রোল: বড় → ছোট' };
+
+  const sorted = [...data].sort((a, b) => {
+    if (sortOrder === 'roll-asc' || sortOrder === 'roll-desc') {
+      // First sort by group (বিজ্ঞান → ব্যবসায় → মানবিক)
+      const groupCompare = (a.group || '').localeCompare(b.group || '', 'bn');
+      if (groupCompare !== 0) return groupCompare;
+      // Then by roll within each group
+      const rollA = parseInt(a.roll || a.id) || 0;
+      const rollB = parseInt(b.roll || b.id) || 0;
+      return sortOrder === 'roll-asc' ? rollA - rollB : rollB - rollA;
+    }
+    const valA = Number(a[sortBy]) || 0;
+    const valB = Number(b[sortBy]) || 0;
+    return sortOrder === 'asc' ? valA - valB : valB - valA;
+  });
 
   const totalStudents = sorted.length;
   const participants = sorted.filter(s => Number(s.written) > 0 || Number(s.mcq) > 0).length;
@@ -532,10 +550,17 @@ export function printAllStudents(data, options = {}) {
   const passedCount = participants - failedStudents.length;
   const passRate = participants > 0 ? ((passedCount / participants) * 100).toFixed(1) : 0;
 
-  // Grade distribution
+  // Grade distribution (exclude absent students)
   const gradeDist = {};
+  let absentCount = 0;
   sorted.forEach(s => {
-    const g = calculateGrade(s.total).grade;
+    if (Number(s.written) === 0 && Number(s.mcq) === 0) {
+      absentCount++;
+      return;
+    }
+    // If CQ or MCQ below pass mark → F grade
+    const isFailed = Number(s.written) < writtenPass || Number(s.mcq) < mcqPass;
+    const g = isFailed ? 'F' : calculateGrade(s.total).grade;
     gradeDist[g] = (gradeDist[g] || 0) + 1;
   });
   const gradeColors = { 'A+': '#10b981', 'A': '#22c55e', 'A-': '#84cc16', 'B': '#3b82f6', 'C': '#f59e0b', 'D': '#f97316', 'F': '#ef4444' };
@@ -546,7 +571,10 @@ export function printAllStudents(data, options = {}) {
       <span class="gb-grade" style="color: ${color};">${g}</span>
       <span class="gb-count" style="background: ${color};">${count}</span>
     </div>`;
-  }).join('');
+  }).join('') + (absentCount > 0 ? `<div class="grade-box" style="border-color: #94a3b8;">
+      <span class="gb-grade" style="color: #94a3b8;">অনু.</span>
+      <span class="gb-count" style="background: #94a3b8;">${absentCount}</span>
+    </div>` : '');
 
   const tableRows = sorted.map((s, i) => {
     const gradeInfo = calculateGrade(s.total);
@@ -554,11 +582,15 @@ export function printAllStudents(data, options = {}) {
     const isAbsent = Number(s.written) === 0 && Number(s.mcq) === 0;
     const status = isAbsent ? 'অনুপস্থিত' : isFailed ? 'ফেল' : 'পাস';
     const statusClass = isAbsent ? 'status-absent' : isFailed ? 'status-fail' : 'status-pass';
-    return `<tr class="${isFailed ? 'row-fail' : ''}">
+    const groupColorClass = (s.group || '').includes('বিজ্ঞান') ? 'grp-science' :
+      (s.group || '').includes('ব্যবসায়') ? 'grp-business' : 'grp-arts';
+    const rowGroupClass = (s.group || '').includes('বিজ্ঞান') ? 'row-science' :
+      (s.group || '').includes('ব্যবসায়') ? 'row-business' : 'row-arts';
+    return `<tr class="${rowGroupClass} ${isFailed ? 'row-fail' : ''}">
       <td>${i + 1}</td>
       <td>${s.roll || s.id}</td>
       <td class="name-cell">${s.name}</td>
-      <td>${s.group || '-'}</td>
+      <td><span class="grp-cell ${groupColorClass}">${s.group || '-'}</span></td>
       <td>${s.written}</td>
       <td>${s.mcq}</td>
       <td>${s.practical}</td>
@@ -617,6 +649,14 @@ export function printAllStudents(data, options = {}) {
     .status-fail { color: #e74c3c; font-weight: 800; }
     .status-absent { color: #95a5a6; font-weight: 700; }
 
+    .grp-cell { font-weight: 700; font-size: 8.5px; padding: 2px 6px; border-radius: 4px; color: white; white-space: nowrap; display: inline-block; }
+    .grp-science { background: #6366f1; }
+    .grp-business { background: #f59e0b; }
+    .grp-arts { background: #f43f5e; }
+    tr.row-science { border-left: 3px solid #6366f1; }
+    tr.row-business { border-left: 3px solid #f59e0b; }
+    tr.row-arts { border-left: 3px solid #f43f5e; }
+
     .filter-info { text-align: center; font-size: 9px; color: #e74c3c; font-weight: 700; margin-bottom: 8px; }
     .filter-tag { display: inline-block; background: #fff3cd; color: #856404; padding: 2px 8px; border-radius: 4px; font-size: 9px; margin: 0 2px; border: 1px solid #ffc107; }
 
@@ -632,6 +672,7 @@ export function printAllStudents(data, options = {}) {
       <span class="header-badge">📅 সেশন: ${session}</span>
     </div>
     ${filterLine ? `<div class="filter-info">🔍 ফিল্টার: ${filterParts.map(f => `<span class="filter-tag">${f}</span>`).join(' ')}</div>` : ''}
+    <div class="filter-info">📊 সাজানো: <span class="filter-tag">${sortLabels[sortBy] || sortBy} — ${orderLabels[sortOrder] || sortOrder}</span></div>
   </div>
 
   <div class="summary-grid">
@@ -1068,7 +1109,9 @@ export function renderStudentHistory(container, history, studentInfo) {
 
   container.innerHTML = `
         <div class="student-info-main">
-            <h3>${studentInfo.name} <span class="roll-number-label">(রোল: ${studentInfo.id})</span></h3>
+            <div class="student-header-top">
+                <h3>${studentInfo.name} <span class="roll-number-label">(রোল: ${studentInfo.id})</span></h3>
+            </div>
             <div class="student-meta-badges">
                 <span class="badge badge-session" style="--session-color: ${sessionColor}">
                     <i class="fas fa-calendar-alt"></i> সেশন: ${studentInfo.session || 'N/A'}

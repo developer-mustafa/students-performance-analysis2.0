@@ -113,13 +113,22 @@ export function createPerformanceChart(canvas, data, options = {}) {
 
     // Prepend Exam Name
     if (examName) {
-        datasetLabel += `${examName} - `;
+        datasetLabel += `${examName}`;
     }
 
-    datasetLabel += chartConfig.label;
-    if (subject && chartType === 'total') {
-        datasetLabel += ` - ${subject}`; // e.g. "Total Score - Bangla"
+    // Add subject name
+    if (subject) {
+        datasetLabel += ` - ${subject}`;
     }
+
+    // Add class and session from data
+    const firstStudent = data[0];
+    if (firstStudent) {
+        if (firstStudent.class) datasetLabel += ` | শ্রেণি: ${firstStudent.class}`;
+        if (firstStudent.session) datasetLabel += ` | সেশন: ${firstStudent.session}`;
+    }
+
+    datasetLabel += ` — ${chartConfig.label} (গ্রাফে দেখাচ্ছে)`;
 
     // Append Filter Info to Title
     if (group) {
@@ -130,7 +139,7 @@ export function createPerformanceChart(canvas, data, options = {}) {
     }
 
     // Append count
-    datasetLabel += ` - ${values.length} জন`;
+    datasetLabel += ` - শিক্ষার্থী সংখ্যা: ${values.length} জন`;
 
     currentChart = new Chart(ctx, {
         type: 'bar',
