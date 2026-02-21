@@ -31,7 +31,7 @@ import { showNotification, filterStudentData, sortStudentData, calculateStatisti
 import { FAILING_THRESHOLD } from './js/constants.js';
 import {
     applyTheme,
-    renderStats, renderGroupStats, renderFailedStudents, renderTable, toggleTheme,
+    renderStats, renderGroupStats, renderFailedStudents, printFailedStudents, printAllStudents, renderTable, toggleTheme,
     renderSavedExamsList, renderStudentHistory, renderCandidateResults
 } from './js/uiComponents.js';
 import {
@@ -179,7 +179,9 @@ function updateViews() {
     renderStats(elements.statsContainer, filteredData, subjectOptions);
     renderGroupStats(elements.groupStatsContainer, state.studentData, {
         ...subjectOptions,
-        metaElement: elements.groupStatsHeaderMeta
+        metaElement: elements.groupStatsHeaderMeta,
+        examName: state.currentExamName,
+        subjectName: state.currentSubject
     });
     renderFailedStudents(elements.failedStudentsContainer, filteredData, {
         ...subjectOptions,
@@ -384,6 +386,10 @@ function initEventListeners() {
             });
         }
 
+        // Reset Chart Section Collapse
+        if (elements.chartSectionCollapse) elements.chartSectionCollapse.style.display = 'block';
+        if (elements.chartSectionIcon) elements.chartSectionIcon.style.transform = 'rotate(0deg)';
+
         updateViews();
     });
 
@@ -431,8 +437,92 @@ function initEventListeners() {
             }
         }
     });
-    elements.printBtn?.addEventListener('click', () => window.print());
-    elements.downloadFailedBtn?.addEventListener('click', () => captureElementAsImage(elements.failedStudentsContainer, `failed-students-${state.currentExamName}.png`));
+    elements.printBtn?.addEventListener('click', () => {
+        const normalizeBn = (str) => str ? str.replace(/ী/g, 'ি').replace(/ূ/g, 'ু').replace(/ৈ/g, 'ে').replace(/ৌ/g, 'ো').toLowerCase().trim() : '';
+        let subjectConfig = state.subjectConfigs[state.currentSubject];
+        if (!subjectConfig) {
+            const normalizedCurrent = normalizeBn(state.currentSubject);
+            const matchedKey = Object.keys(state.subjectConfigs)
+                .find(key => key !== 'updatedAt' && normalizeBn(key) === normalizedCurrent);
+            subjectConfig = matchedKey ? state.subjectConfigs[matchedKey] : {};
+        }
+        const subjectOptions = {
+            writtenPass: Number(subjectConfig.writtenPass) || FAILING_THRESHOLD.written,
+            mcqPass: Number(subjectConfig.mcqPass) || FAILING_THRESHOLD.mcq,
+            totalPass: Number(subjectConfig.total) * 0.33 || FAILING_THRESHOLD.total,
+        };
+        printAllStudents(filterStudentData(state.studentData, {
+            group: state.currentGroupFilter,
+            grade: state.currentGradeFilter,
+            searchTerm: state.currentSearchTerm
+        }, subjectOptions), {
+            ...subjectOptions,
+            examName: state.currentExamName,
+            subjectName: state.currentSubject,
+            groupFilter: state.currentGroupFilter,
+            gradeFilter: state.currentGradeFilter
+        });
+    });
+    elements.downloadFailedBtn?.addEventListener('click', () => {
+        const section = document.querySelector('.card.failed-students');
+        if (section) {
+            captureElementAsImage(section, `failed-students-${state.currentExamName}.png`);
+        }
+    });
+
+    // Print Failed Students
+    document.getElementById('printFailedBtn')?.addEventListener('click', () => {
+        const normalizeBn = (str) => str ? str.replace(/ী/g, 'ি').replace(/ূ/g, 'ু').replace(/ৈ/g, 'ে').replace(/ৌ/g, 'ো').toLowerCase().trim() : '';
+        let subjectConfig = state.subjectConfigs[state.currentSubject];
+        if (!subjectConfig) {
+            const normalizedCurrent = normalizeBn(state.currentSubject);
+            const matchedKey = Object.keys(state.subjectConfigs)
+                .find(key => key !== 'updatedAt' && normalizeBn(key) === normalizedCurrent);
+            subjectConfig = matchedKey ? state.subjectConfigs[matchedKey] : {};
+        }
+        const subjectOptions = {
+            writtenPass: Number(subjectConfig.writtenPass) || FAILING_THRESHOLD.written,
+            mcqPass: Number(subjectConfig.mcqPass) || FAILING_THRESHOLD.mcq,
+            totalPass: Number(subjectConfig.total) * 0.33 || FAILING_THRESHOLD.total,
+        };
+        printFailedStudents(filterStudentData(state.studentData, {
+            group: state.currentGroupFilter,
+            grade: state.currentGradeFilter,
+            searchTerm: state.currentSearchTerm
+        }, subjectOptions), {
+            ...subjectOptions,
+            examName: state.currentExamName,
+            subjectName: state.currentSubject
+        });
+    });
+
+    // Group Toggle Filters for Failed Students
+    const toggleContainer = document.getElementById('failedGroupToggles');
+    if (toggleContainer) {
+        toggleContainer.querySelectorAll('.group-toggle-chip input[type="checkbox"]').forEach(cb => {
+            cb.addEventListener('change', () => {
+                const chip = cb.closest('.group-toggle-chip');
+                if (cb.checked) {
+                    chip.classList.add('active');
+                } else {
+                    chip.classList.remove('active');
+                }
+                // Get all active groups
+                const activeGroups = [...toggleContainer.querySelectorAll('.group-toggle-chip.active')]
+                    .map(c => c.dataset.group);
+                // Show/hide cards
+                const cards = document.querySelectorAll('#failedStudentsContainer .refined-readable-card');
+                cards.forEach(card => {
+                    if (activeGroups.includes(card.dataset.group)) {
+                        card.classList.remove('group-hidden');
+                    } else {
+                        card.classList.add('group-hidden');
+                    }
+                });
+            });
+        });
+    }
+
     elements.downloadGroupStatsBtn?.addEventListener('click', () => captureElementAsImage(elements.groupStatsContainer, `group-stats-${state.currentExamName}.png`));
 
     // Inline Analysis Download
@@ -691,9 +781,22 @@ function initEventListeners() {
         }
     });
 
+    elements.chartSectionToggle?.addEventListener('click', () => {
+        const isCollapsed = elements.chartSectionCollapse.style.display === 'none';
+        elements.chartSectionCollapse.style.display = isCollapsed ? 'block' : 'none';
+
+        // Rotate icon: 0deg (up) when expanded, 180deg (down) when collapsed
+        if (elements.chartSectionIcon) {
+            elements.chartSectionIcon.style.transform = isCollapsed ? 'rotate(0deg)' : 'rotate(180deg)';
+        }
+    });
+
     // Ensure it starts visible but properly styled
     if (elements.savedExamsCollapse) {
         elements.savedExamsCollapse.style.display = 'block';
+    }
+    if (elements.chartSectionCollapse) {
+        elements.chartSectionCollapse.style.display = 'block';
     }
 }
 

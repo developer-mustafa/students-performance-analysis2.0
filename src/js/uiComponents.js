@@ -102,34 +102,146 @@ export function renderGroupStats(container, data, options = {}) {
     `;
   }
 
-  container.innerHTML = groupStats
+  // Calculate Global Grade Distribution
+  const globalStats = calculateStatistics(data, options);
+  const globalGrades = globalStats.gradeDistribution || {};
+  const { examName = 'N/A', subjectName = 'N/A' } = options;
+  const firstStudent = data[0] || {};
+  const className = firstStudent.class || 'N/A';
+  const sessionName = firstStudent.session || 'N/A';
+
+  // Calculate Pass Rate Percentage
+  const overallPassRate = globalStats.participants > 0
+    ? Math.round((globalStats.passedStudents / globalStats.participants) * 100)
+    : 0;
+
+  // Simple Circular Progress SVG logic
+  const radius = 30;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (overallPassRate / 100) * circumference;
+
+  let html = `
+    <!-- Global Grade Summary Section - Premium Vibrant Design -->
+    <div class="vibrant-performance-card fade-in">
+      <div class="vibrant-header-row">
+        <div class="vibrant-title-group">
+          <div class="vibrant-icon-wrapper">
+             <i class="fas fa-chart-pie"></i>
+          </div>
+          <div class="vibrant-text-info">
+            <h3 class="vibrant-main-title">সার্বিক গ্রেড পরিসংখ্যান</h3>
+            <p class="vibrant-subtitle">সকল গ্রুপ ও শিক্ষার্থীর সম্মিলিত ফলাফল</p>
+          </div>
+        </div>
+        
+        <!-- NEW: Exam & Subject Info + Circular Pass Rate -->
+        <div class="vibrant-center-details">
+           <div class="vcd-labels">
+              <div class="vcd-top-badges">
+                <span class="vcd-badge cls">শ্রেণি: ${className}</span>
+                <span class="vcd-badge ses">সেশন: ${sessionName}</span>
+              </div>
+              <span class="vcd-exam">${examName}</span>
+              <span class="vcd-subject">${subjectName}</span>
+           </div>
+           <div class="vcd-progress-container">
+              <svg class="vcd-svg" width="70" height="70">
+                <circle class="vcd-circle-bg" cx="35" cy="35" r="${radius}" />
+                <circle class="vcd-circle-fill" cx="35" cy="35" r="${radius}" 
+                  style="stroke-dasharray: ${circumference}; stroke-dashoffset: ${offset};" />
+              </svg>
+              <div class="vcd-progress-text">
+                 <span class="vcd-p-val">${overallPassRate}%</span>
+                 <span class="vcd-p-label">পাস</span>
+              </div>
+           </div>
+        </div>
+
+        <div class="vibrant-meta-pills">
+           <div class="vibrant-meta-pill">
+              <span class="v-label">মোট শিক্ষার্থী</span>
+              <span class="v-value">${globalStats.totalStudents}</span>
+           </div>
+           <div class="vibrant-meta-pill highlight">
+              <span class="v-label">পরীক্ষার্থী</span>
+              <span class="v-value">${globalStats.participants}</span>
+           </div>
+        </div>
+      </div>
+
+      <div class="vibrant-grade-grid">
+        ${['A+', 'A', 'A-', 'B', 'C', 'D', 'F'].map(grade => {
+    const count = globalGrades[grade] || 0;
+    const gradeClass = grade === 'A+' ? 'a-plus' : grade === 'A-' ? 'a-minus' : grade.toLowerCase();
+    return `
+            <div class="vibrant-grade-item g-${gradeClass}">
+              <div class="g-circle">
+                <span class="g-letter">${grade}</span>
+              </div>
+              <div class="g-info">
+                <span class="g-count">${count}</span>
+                <span class="g-label">জন</span>
+              </div>
+            </div>
+          `;
+  }).join('')}
+      </div>
+    </div>
+
+    <!-- Group Statistics Grid - Professional Compact -->
+    <div class="professional-group-grid">
+  `;
+
+  html += groupStats
     .map((stat) => {
       const groupClass = getGroupClass(stat.group);
 
+      // Calculate Pass Rate
+      const passRate = stat.participants > 0 ? Math.round((stat.passedStudents / stat.participants) * 100) : 0;
+      // Fixed Business Contrast: Using a darker Orange/Gold instead of pale yellow
+      const passColor = passRate >= 80 ? '#00b894' : passRate >= 50 ? '#f39c12' : '#ff7675';
+
       return `
-        <div class="group-stat-card fade-in ${groupClass}">
-          <div class="group-stat-header">
-            <span class="group-name"><i class="fas fa-folder"></i> ${stat.group}</span>
-            <span class="group-total">মোট: ${stat.totalStudents}</span>
-          </div>
-          <div class="group-stat-info">
-             <div class="info-item"><span>অনুপস্থিত:</span> <strong>${stat.absentStudents}</strong></div>
-             <div class="info-item"><span>পরীক্ষার্থী:</span> <strong>${stat.participants}</strong></div>
-          </div>
-          <div class="pass-fail-stats">
-            <div class="pass-count">
-              <div class="stat-value">${stat.passedStudents}</div>
-              <div class="stat-label">পাস করেছে</div>
+        <div class="professional-group-card ${groupClass} fade-in">
+          <div class="pg-header">
+            <div class="pg-title">
+              <i class="fas fa-users-rectangle"></i>
+              <span>${stat.group}</span>
             </div>
-            <div class="fail-count">
-              <div class="stat-value">${stat.failedStudents}</div>
-              <div class="stat-label">ফেল করেছে</div>
+            <div class="pg-rate-badge" style="background: ${passColor}15; color: ${passColor}">
+               পাস হার: ${passRate}%
             </div>
+          </div>
+          
+          <div class="pg-stats-row">
+            <div class="pg-stat-item">
+              <span class="psi-label">মোট</span>
+              <span class="psi-value">${stat.totalStudents}</span>
+            </div>
+            <div class="pg-stat-item participants">
+              <span class="psi-label">পরীক্ষার্থী</span>
+              <span class="psi-value">${stat.participants}</span>
+            </div>
+            <div class="pg-stat-item passed">
+              <span class="psi-label">পাস</span>
+              <span class="psi-value">${stat.passedStudents}</span>
+            </div>
+            <div class="pg-stat-item failed">
+              <span class="psi-label">ফেল</span>
+              <span class="psi-value">${stat.failedStudents}</span>
+            </div>
+          </div>
+          
+          <div class="pg-progress-bar">
+            <div class="pg-progress-fill" style="width: ${passRate}%; background: ${passColor}"></div>
           </div>
         </div>
       `;
     })
     .join('');
+
+  html += '</div>';
+  container.innerHTML = html;
 }
 
 
@@ -153,6 +265,12 @@ export function renderFailedStudents(container, data, options = {}) {
     return (parseInt(a.roll || a.id) || 0) - (parseInt(b.roll || b.id) || 0);
   });
 
+  // Dynamic Title Update
+  const cardTitle = container.closest('.failed-students')?.querySelector('.card-title');
+  if (cardTitle && data.length > 0) {
+    cardTitle.innerHTML = `<i class="fas fa-user-slash"></i> ফেল করা শিক্ষার্থী (${data[0].class || 'HSC'})`;
+  }
+
   // Update meta if exists
   if (metaElement) {
     const firstStudent = data[0];
@@ -160,8 +278,8 @@ export function renderFailedStudents(container, data, options = {}) {
     metaElement.innerHTML = `
       <span class="meta-item"><i class="fas fa-graduation-cap"></i> শ্রেণি: ${firstStudent.class || 'N/A'}</span>
       <span class="meta-item"><i class="fas fa-calendar-alt"></i> সেশন: ${firstStudent.session || 'N/A'}</span>
-      <span class="meta-item"><i class="fas fa-users"></i> বিভাগ: ${groups}</span>
-      <span class="meta-item count-badge danger"><i class="fas fa-exclamation-triangle"></i> মোট ফেল: ${failedStudents.length} জন</span>
+      <span class="meta-item"><i class="fas fa-layer-group"></i> বিভাগ: ${groups}</span>
+      <span class="meta-item count-badge danger"><i class="fas fa-user-times"></i> ফেল: ${failedStudents.length} জন</span>
     `;
   }
 
@@ -186,87 +304,394 @@ export function renderFailedStudents(container, data, options = {}) {
     .map(student => {
       const gradeInfo = calculateGrade(student.total);
       const failReason = Number(student.written) < writtenPass
-        ? `লিখিত < ${writtenPass}`
+        ? `লিখিত: ${student.written} < ${writtenPass}`
         : Number(student.mcq) < mcqPass
-        ? `MCQ < ${mcqPass}`
-        : `মোট মার্কস < ${totalPass}`;
+          ? `MCQ: ${student.mcq} < ${mcqPass}`
+          : `মোট মার্কস < ${totalPass}`;
+
+      const groupColorClass = student.group === 'বিজ্ঞান গ্রুপ' ? 'grp-science' :
+        student.group === 'ব্যবসায় গ্রুপ' ? 'grp-business' : 'grp-arts';
+      const groupShort = student.group === 'বিজ্ঞান গ্রুপ' ? 'বিজ্ঞান' :
+        student.group === 'ব্যবসায় গ্রুপ' ? 'ব্যবসায়' : 'মানবিক';
 
       return `
-        <div class="failed-student bg-white dark:bg-gray-900 rounded-2xl 
-                    border border-gray-200 dark:border-gray-700
-                    shadow-sm hover:shadow-xl 
-                    hover:-translate-y-1
-                    transition-all duration-300
-                    p-5 flex flex-col gap-4
-                    border-l-4 
-                    ${
-                      student.group === 'বিজ্ঞান গ্রুপ'
-                        ? 'border-l-blue-500'
-                        : student.group === 'ব্যবসায় গ্রুপ'
-                        ? 'border-l-green-500'
-                        : 'border-l-purple-500'
-                    }">
-
-          <!-- Header -->
-          <div class="flex items-center justify-between">
-            <div class="flex items-center gap-3">
-              <div class="w-10 h-10 rounded-xl bg-gray-100 dark:bg-gray-800 flex items-center justify-center font-bold ${
-                student.group === 'বিজ্ঞান গ্রুপ'
-                  ? 'text-blue-600 dark:text-blue-400'
-                  : student.group === 'ব্যবসায় গ্রুপ'
-                  ? 'text-green-600 dark:text-green-400'
-                  : 'text-purple-600 dark:text-purple-400'
-              }">
-                ${student.name ? student.name.charAt(0) : 'S'}
+        <div class="refined-readable-card ${groupColorClass}" data-group="${student.group}">
+          <div class="card-left-content">
+            <div class="student-header-mini">
+              <div class="avatar-box ${student.group === 'বিজ্ঞান গ্রুপ' ? 'bg-blue-soft text-blue-main' :
+          student.group === 'ব্যবসায় গ্রুপ' ? 'bg-green-soft text-green-main' : 'bg-purple-soft text-purple-main'
+        }">
+                <i class="fas fa-user-graduate"></i>
               </div>
-              <div class="min-w-0">
-                <p class="font-bold text-gray-800 dark:text-white truncate">${student.name}</p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">রোল ${student.roll || student.id}</p>
+              <div class="identity-info">
+                <div class="name-row">
+                  <div class="name-main">${student.name}</div>
+                </div>
+                <div class="roll-sub-text">রোল: ${student.roll || student.id} | <span class="group-color-badge ${groupColorClass}">${groupShort} গ্রুপ</span></div>
               </div>
             </div>
-            <span class="text-xs px-3 py-1 rounded-full ${
-              student.group === 'বিজ্ঞান গ্রুপ'
-                ? 'bg-blue-100 text-blue-600 dark:bg-blue-900/40 dark:text-blue-300'
-                : student.group === 'ব্যবসায় গ্রুপ'
-                ? 'bg-green-100 text-green-600 dark:bg-green-900/40 dark:text-green-300'
-                : 'bg-purple-100 text-purple-600 dark:bg-purple-900/40 dark:text-purple-300'
-            }">${student.group}</span>
-          </div>
+            
+            <div class="marks-row-under">
+              <div class="mark-item"><span>লিখিত:</span> <strong>${student.written}</strong></div>
+              <div class="mark-item"><span>MCQ:</span> <strong>${student.mcq}</strong></div>
+              <div class="mark-item"><span>ব্যবহারিক:</span> <strong>${student.practical}</strong></div>
+            </div>
 
-          <!-- Stats -->
-          <div class="grid grid-cols-2 sm:grid-cols-3 gap-3 text-center text-sm">
-            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg py-2">
-              <p class="text-gray-500 dark:text-gray-400 text-xs">লিখিত</p>
-              <p class="font-semibold text-gray-800 dark:text-white">${student.written}</p>
-            </div>
-            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg py-2">
-              <p class="text-gray-500 dark:text-gray-400 text-xs">এমসিকিউ</p>
-              <p class="font-semibold text-gray-800 dark:text-white">${student.mcq}</p>
-            </div>
-            <div class="bg-gray-50 dark:bg-gray-800 rounded-lg py-2">
-              <p class="text-gray-500 dark:text-gray-400 text-xs">প্র্যাকটিক্যাল</p>
-              <p class="font-semibold text-gray-800 dark:text-white">${student.practical}</p>
-            </div>
-            <div class="bg-yellow-50 dark:bg-yellow-900/30 rounded-lg py-2">
-              <p class="text-yellow-600 dark:text-yellow-400 text-xs">মোট</p>
-              <p class="font-bold text-yellow-700 dark:text-yellow-300">${student.total}</p>
-            </div>
-            <div class="bg-red-50 dark:bg-red-900/30 rounded-lg py-2 col-span-2 sm:col-span-1">
-              <p class="text-red-600 dark:text-red-400 text-xs">গ্রেড</p>
-              <p class="font-bold text-red-700 dark:text-red-300">${gradeInfo.grade}</p>
+            <div class="fail-pill-ribbon">
+              ${Number(student.written) < writtenPass ? '<i class="fas fa-pen-nib"></i>' :
+          Number(student.mcq) < mcqPass ? '<i class="fas fa-check-double"></i>' :
+            '<i class="fas fa-calculator"></i>'} ${failReason}
             </div>
           </div>
 
-          <!-- Fail Reason -->
-          <div class="flex items-center gap-2 bg-red-100 dark:bg-red-900/40 text-red-600 dark:text-red-400 text-sm px-3 py-2 rounded-lg">
-            <span class="w-2 h-2 bg-red-500 rounded-full"></span>
-            ফেল কারণ: <span class="font-medium">${failReason}</span>
+          <div class="card-right-stats ${student.group === 'বিজ্ঞান গ্রুপ' ? 'border-blue' :
+          student.group === 'ব্যবসায় গ্রুপ' ? 'border-green' : 'border-purple'
+        }">
+            <div class="total-big">
+              <span class="label">মোট</span>
+              <span class="value">${student.total}</span>
+            </div>
+            <div class="grade-big">
+              <span class="label">গ্রেড</span>
+              <span class="value">${gradeInfo.grade}</span>
+            </div>
+            <span class="badg-fail">ফেল</span>
           </div>
-
         </div>
       `;
     })
     .join('');
+
+  // Update group toggle chip counts
+  const groupCounts = {};
+  failedStudents.forEach(s => {
+    groupCounts[s.group] = (groupCounts[s.group] || 0) + 1;
+  });
+  document.querySelectorAll('.chip-count[data-count-group]').forEach(el => {
+    el.textContent = groupCounts[el.dataset.countGroup] || 0;
+  });
+}
+
+
+/**
+ * Print failed students as A4 document with header info and table
+ */
+export function printFailedStudents(data, options = {}) {
+  if (!data || data.length === 0) return;
+
+  const { writtenPass = FAILING_THRESHOLD.written, mcqPass = FAILING_THRESHOLD.mcq, totalPass = 33 } = options;
+  const failedStudents = getFailedStudents(data, options);
+
+  failedStudents.sort((a, b) => {
+    const groupCompare = (a.group || '').localeCompare(b.group || '', 'bn');
+    if (groupCompare !== 0) return groupCompare;
+    return (parseInt(a.roll || a.id) || 0) - (parseInt(b.roll || b.id) || 0);
+  });
+
+  const first = data[0] || {};
+  const examName = options.examName || 'N/A';
+  const subjectName = options.subjectName || 'N/A';
+  const className = first.class || 'N/A';
+  const session = first.session || 'N/A';
+  const totalStudents = data.length;
+  const participants = data.filter(s => Number(s.written) > 0 || Number(s.mcq) > 0).length;
+  const passedCount = participants - failedStudents.length;
+
+  const groupCounts = {};
+  failedStudents.forEach(s => { groupCounts[s.group] = (groupCounts[s.group] || 0) + 1; });
+  const groupSummary = Object.entries(groupCounts).map(([g, c]) => `${g}: ${c} জন`).join(' | ');
+
+  const tableRows = failedStudents.map((s, i) => {
+    const failReason = Number(s.written) < writtenPass ? 'CQ ফেল'
+      : Number(s.mcq) < mcqPass ? 'MCQ ফেল' : 'মোট ফেল';
+    return `<tr>
+      <td>${i + 1}</td>
+      <td>${s.roll || s.id}</td>
+      <td class="name-cell">${s.name}</td>
+      <td>${s.group || '-'}</td>
+      <td>${s.written}</td>
+      <td>${s.mcq}</td>
+      <td>${s.practical}</td>
+      <td><strong>${s.total}</strong></td>
+      <td class="status-fail">${failReason}</td>
+    </tr>`;
+  }).join('');
+
+  const printHTML = `<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <title>ফেল করা শিক্ষার্থী - ${examName}</title>
+  <style>
+    @page { size: A4; margin: 15mm 12mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; color: #1a1a2e; font-size: 11px; line-height: 1.4; }
+    .print-header { text-align: center; border-bottom: 3px double #1a1a2e; padding-bottom: 10px; margin-bottom: 12px; }
+    .print-header h1 { font-size: 18px; font-weight: 900; margin-bottom: 4px; }
+    .print-header .sub { font-size: 12px; color: #555; }
+    .info-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 6px 16px; margin-bottom: 12px; padding: 8px 12px; background: #f8f9fa; border-radius: 6px; border: 1px solid #dee2e6; }
+    .info-item { font-size: 11px; }
+    .info-item .label { font-weight: 700; color: #555; }
+    .info-item .val { font-weight: 800; color: #1a1a2e; }
+    .stats-row { display: flex; gap: 12px; margin-bottom: 12px; justify-content: center; }
+    .stat-box { padding: 6px 16px; border-radius: 6px; text-align: center; font-size: 11px; font-weight: 700; border: 1px solid #dee2e6; }
+    .stat-box.total-box { background: #e8f4fd; color: #0c5460; }
+    .stat-box.pass-box { background: #d4edda; color: #155724; }
+    .stat-box.fail-box { background: #f8d7da; color: #721c24; }
+    .group-summary { text-align: center; font-size: 10px; color: #666; margin-bottom: 10px; }
+    table { width: 100%; border-collapse: collapse; font-size: 10.5px; }
+    th { background: #1a1a2e; color: white; padding: 6px 4px; text-align: center; font-weight: 700; font-size: 10px; }
+    td { padding: 5px 4px; text-align: center; border-bottom: 1px solid #dee2e6; }
+    tr:nth-child(even) { background: #f8f9fa; }
+    .name-cell { text-align: left; font-weight: 600; max-width: 140px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .status-fail { color: #dc3545; font-weight: 800; font-size: 9.5px; }
+    .print-footer { margin-top: 15px; text-align: center; font-size: 9px; color: #999; border-top: 1px solid #dee2e6; padding-top: 6px; }
+  </style>
+</head>
+<body>
+  <div class="print-header">
+    <h1>ফেল করা শিক্ষার্থীদের তালিকা</h1>
+    <div class="sub">${examName} — ${subjectName}</div>
+  </div>
+
+  <div class="info-grid">
+    <div class="info-item"><span class="label">শ্রেণি:</span> <span class="val">${className}</span></div>
+    <div class="info-item"><span class="label">সেশন:</span> <span class="val">${session}</span></div>
+    <div class="info-item"><span class="label">মোট শিক্ষার্থী:</span> <span class="val">${totalStudents} জন</span></div>
+    <div class="info-item"><span class="label">পরীক্ষার্থী:</span> <span class="val">${participants} জন</span></div>
+    <div class="info-item"><span class="label">পাস মার্ক (CQ):</span> <span class="val">${writtenPass}</span></div>
+    <div class="info-item"><span class="label">পাস মার্ক (MCQ):</span> <span class="val">${mcqPass}</span></div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-box total-box">পরীক্ষার্থী: <strong>${participants}</strong> জন</div>
+    <div class="stat-box pass-box">পাস: <strong>${passedCount}</strong> জন</div>
+    <div class="stat-box fail-box">ফেল: <strong>${failedStudents.length}</strong> জন</div>
+  </div>
+
+  <div class="group-summary">বিভাগভিত্তিক ফেল: ${groupSummary}</div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ক্র.নং</th>
+        <th>রোল</th>
+        <th style="text-align:left">নাম</th>
+        <th>বিভাগ</th>
+        <th>CQ</th>
+        <th>MCQ</th>
+        <th>Practical</th>
+        <th>Total</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>${tableRows}</tbody>
+  </table>
+
+  <div class="print-footer">
+    Generated from Students Performance Analysis — ${new Date().toLocaleDateString('bn-BD')}
+  </div>
+
+  <script>window.onload = () => { window.print(); }</script>
+</body>
+</html>`;
+
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(printHTML);
+  printWindow.document.close();
+}
+
+
+/**
+ * Print ALL students as A4 document with dynamic header, summary, and full table
+ */
+export function printAllStudents(data, options = {}) {
+  if (!data || data.length === 0) return;
+
+  const { writtenPass = FAILING_THRESHOLD.written, mcqPass = FAILING_THRESHOLD.mcq, totalPass = 33 } = options;
+  const examName = options.examName || 'N/A';
+  const subjectName = options.subjectName || 'N/A';
+  const groupFilter = options.groupFilter || 'সব গ্রুপ';
+  const gradeFilter = options.gradeFilter || 'সব গ্রেড';
+  const first = data[0] || {};
+  const className = first.class || 'N/A';
+  const session = first.session || 'N/A';
+
+  // Build filter info for header
+  const filterParts = [];
+  if (groupFilter && groupFilter !== 'সব গ্রুপ') filterParts.push(`বিভাগ: ${groupFilter}`);
+  if (gradeFilter && gradeFilter !== 'সব গ্রেড') filterParts.push(`গ্রেড: ${gradeFilter}`);
+  const filterLine = filterParts.length > 0 ? filterParts.join(' | ') : '';
+
+  // Sort by total descending
+  const sorted = [...data].sort((a, b) => Number(b.total) - Number(a.total));
+
+  const totalStudents = sorted.length;
+  const participants = sorted.filter(s => Number(s.written) > 0 || Number(s.mcq) > 0).length;
+  const failedStudents = getFailedStudents(sorted, options);
+  const passedCount = participants - failedStudents.length;
+  const passRate = participants > 0 ? ((passedCount / participants) * 100).toFixed(1) : 0;
+
+  // Grade distribution
+  const gradeDist = {};
+  sorted.forEach(s => {
+    const g = calculateGrade(s.total).grade;
+    gradeDist[g] = (gradeDist[g] || 0) + 1;
+  });
+  const gradeColors = { 'A+': '#10b981', 'A': '#22c55e', 'A-': '#84cc16', 'B': '#3b82f6', 'C': '#f59e0b', 'D': '#f97316', 'F': '#ef4444' };
+  const gradeBoxes = ['A+', 'A', 'A-', 'B', 'C', 'D', 'F'].map(g => {
+    const count = gradeDist[g] || 0;
+    const color = gradeColors[g];
+    return `<div class="grade-box" style="border-color: ${color};">
+      <span class="gb-grade" style="color: ${color};">${g}</span>
+      <span class="gb-count" style="background: ${color};">${count}</span>
+    </div>`;
+  }).join('');
+
+  const tableRows = sorted.map((s, i) => {
+    const gradeInfo = calculateGrade(s.total);
+    const isFailed = Number(s.written) < writtenPass || Number(s.mcq) < mcqPass;
+    const isAbsent = Number(s.written) === 0 && Number(s.mcq) === 0;
+    const status = isAbsent ? 'অনুপস্থিত' : isFailed ? 'ফেল' : 'পাস';
+    const statusClass = isAbsent ? 'status-absent' : isFailed ? 'status-fail' : 'status-pass';
+    return `<tr class="${isFailed ? 'row-fail' : ''}">
+      <td>${i + 1}</td>
+      <td>${s.roll || s.id}</td>
+      <td class="name-cell">${s.name}</td>
+      <td>${s.group || '-'}</td>
+      <td>${s.written}</td>
+      <td>${s.mcq}</td>
+      <td>${s.practical}</td>
+      <td><strong>${s.total}</strong></td>
+      <td>${gradeInfo.point.toFixed(2)}</td>
+      <td>${gradeInfo.grade}</td>
+      <td class="${statusClass}">${status}</td>
+    </tr>`;
+  }).join('');
+
+  const printHTML = `<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <title>${examName} - ফলাফল</title>
+  <style>
+    @page { size: A4; margin: 12mm 10mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: 'Segoe UI', Tahoma, sans-serif; color: #1a1a2e; font-size: 10px; line-height: 1.3; }
+
+    .print-header { text-align: center; border-bottom: 3px double #1a1a2e; padding-bottom: 8px; margin-bottom: 10px; }
+    .print-header h1 { font-size: 16px; font-weight: 900; margin-bottom: 2px; }
+    .print-header .sub { font-size: 11px; color: #555; margin-bottom: 4px; }
+    .header-badges { display: flex; justify-content: center; gap: 10px; flex-wrap: wrap; }
+    .header-badge { padding: 3px 12px; border-radius: 4px; font-size: 10px; font-weight: 700; background: #f0f0f0; border: 1px solid #ccc; }
+
+    .summary-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; margin-bottom: 10px; }
+    .summary-item { text-align: center; padding: 6px 4px; border-radius: 6px; border: 1px solid #dee2e6; }
+    .summary-item .s-label { font-size: 8px; font-weight: 700; color: #777; text-transform: uppercase; display: block; }
+    .summary-item .s-value { font-size: 14px; font-weight: 900; display: block; }
+    .summary-item.total-box { background: #e8f4fd; }
+    .summary-item.total-box .s-value { color: #0c5460; }
+    .summary-item.exam-box { background: #fff3cd; }
+    .summary-item.exam-box .s-value { color: #856404; }
+    .summary-item.pass-box { background: #d4edda; }
+    .summary-item.pass-box .s-value { color: #155724; }
+    .summary-item.fail-box { background: #f8d7da; }
+    .summary-item.fail-box .s-value { color: #721c24; }
+    .summary-item.rate-box { background: #e2e3f1; }
+    .summary-item.rate-box .s-value { color: #383d6e; }
+
+    .grade-section { margin-bottom: 10px; }
+    .grade-section-title { text-align: center; font-size: 9px; color: #888; font-weight: 700; margin-bottom: 4px; text-transform: uppercase; letter-spacing: 1px; }
+    .grade-boxes { display: flex; justify-content: center; gap: 6px; }
+    .grade-box { display: flex; flex-direction: column; align-items: center; border: 2px solid #ccc; border-radius: 8px; min-width: 44px; overflow: hidden; background: white; }
+    .gb-grade { font-size: 13px; font-weight: 900; padding: 4px 0 2px; }
+    .gb-count { display: block; width: 100%; text-align: center; color: white; font-size: 11px; font-weight: 800; padding: 2px 0; }
+
+    table { width: 100%; border-collapse: collapse; font-size: 9.5px; }
+    th { background: #1a1a2e; color: white; padding: 5px 3px; text-align: center; font-weight: 700; font-size: 8.5px; text-transform: uppercase; }
+    td { padding: 4px 3px; text-align: center; border-bottom: 1px solid #e9ecef; }
+    tr:nth-child(even) { background: #f8f9fa; }
+    .row-fail { background: #fff5f5 !important; }
+    .name-cell { text-align: left; font-weight: 600; }
+    .status-pass { color: #27ae60; font-weight: 800; }
+    .status-fail { color: #e74c3c; font-weight: 800; }
+    .status-absent { color: #95a5a6; font-weight: 700; }
+
+    .filter-info { text-align: center; font-size: 9px; color: #e74c3c; font-weight: 700; margin-bottom: 8px; }
+    .filter-tag { display: inline-block; background: #fff3cd; color: #856404; padding: 2px 8px; border-radius: 4px; font-size: 9px; margin: 0 2px; border: 1px solid #ffc107; }
+
+    .print-footer { margin-top: 10px; text-align: center; font-size: 8px; color: #aaa; border-top: 1px solid #dee2e6; padding-top: 4px; }
+  </style>
+</head>
+<body>
+  <div class="print-header">
+    <h1>${examName}</h1>
+    <div class="sub">${subjectName}</div>
+    <div class="header-badges">
+      <span class="header-badge">📚 শ্রেণি: ${className}</span>
+      <span class="header-badge">📅 সেশন: ${session}</span>
+    </div>
+    ${filterLine ? `<div class="filter-info">🔍 ফিল্টার: ${filterParts.map(f => `<span class="filter-tag">${f}</span>`).join(' ')}</div>` : ''}
+  </div>
+
+  <div class="summary-grid">
+    <div class="summary-item total-box">
+      <span class="s-label">মোট শিক্ষার্থী</span>
+      <span class="s-value">${totalStudents}</span>
+    </div>
+    <div class="summary-item exam-box">
+      <span class="s-label">পরীক্ষার্থী</span>
+      <span class="s-value">${participants}</span>
+    </div>
+    <div class="summary-item pass-box">
+      <span class="s-label">পাস</span>
+      <span class="s-value">${passedCount}</span>
+    </div>
+    <div class="summary-item fail-box">
+      <span class="s-label">ফেল</span>
+      <span class="s-value">${failedStudents.length}</span>
+    </div>
+    <div class="summary-item rate-box">
+      <span class="s-label">পাসের হার</span>
+      <span class="s-value">${passRate}%</span>
+    </div>
+  </div>
+
+  <div class="grade-section">
+    <div class="grade-section-title">গ্রেড বিন্যাস</div>
+    <div class="grade-boxes">${gradeBoxes}</div>
+  </div>
+
+  <table>
+    <thead>
+      <tr>
+        <th>ক্র.নং</th>
+        <th>রোল</th>
+        <th style="text-align:left">নাম</th>
+        <th>বিভাগ</th>
+        <th>CQ</th>
+        <th>MCQ</th>
+        <th>Practical</th>
+        <th>Total</th>
+        <th>GPA</th>
+        <th>Grade</th>
+        <th>Status</th>
+      </tr>
+    </thead>
+    <tbody>${tableRows}</tbody>
+  </table>
+
+  <div class="print-footer">
+    Students Performance Analysis — ${new Date().toLocaleDateString('bn-BD')}
+  </div>
+
+  <script>window.onload = () => { window.print(); }<\/script>
+</body>
+</html>`;
+
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(printHTML);
+  printWindow.document.close();
 }
 
 

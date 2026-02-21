@@ -97,6 +97,9 @@ export const elements = {
     savedExamsPagination: null,
     savedExamsClassFilters: null,
     savedExamsCount: null,
+    chartSectionToggle: null,
+    chartSectionCollapse: null,
+    chartSectionIcon: null,
     profileModal: null,
     userName: null,
     userEmail: null,
@@ -275,6 +278,11 @@ export function initDOMReferences() {
     elements.savedExamsPagination = document.getElementById('savedExamsPagination');
     elements.savedExamsClassFilters = document.getElementById('savedExamsClassFilters');
     elements.savedExamsCount = document.getElementById('savedExamsCount');
+
+    // Chart Section Collapse
+    elements.chartSectionToggle = document.getElementById('chartSectionToggle');
+    elements.chartSectionCollapse = document.getElementById('chartSectionCollapse');
+    elements.chartSectionIcon = document.getElementById('chartSectionIcon');
 
     // User Management
     elements.userManagementModal = document.getElementById('userManagementModal');

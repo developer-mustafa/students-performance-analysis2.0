@@ -229,8 +229,11 @@
 
     <!-- Main Chart Section -->
     <div class="card">
-      <div class="card-header">
+      <div class="section-toggle-header" id="chartSectionToggle">
         <h2 class="card-title" id="chartTitle">মোট স্কোর র‌্যাঙ্কিং</h2>
+        <i class="fas fa-chevron-up toggle-icon" id="chartSectionIcon"></i>
+      </div>
+      <div id="chartSectionCollapse" class="collapse-container">
         <div class="view-toggle">
           <button class="view-btn" id="downloadBtn"
             style="background: var(--success); color: white; border: none; margin-right: 10px;">
@@ -253,107 +256,104 @@
             এনালাইসিস
           </div>
         </div>
-      </div>
-      <div class="chart-container horizontal-chart" id="chartView">
-        <canvas id="performanceChart"></canvas>
-      </div>
-      <div class="table-container" id="tableView" style="display: none">
-        <table class="data-table" id="performanceTable">
-          <thead>
-            <tr>
-              <th>রোল</th>
-              <th>নাম</th>
-              <th>গ্রুপ</th>
-              <th>শ্রেণি</th>
-              <th>সেশন</th>
-              <th>লিখিত</th>
-              <th>এমসিকিউ</th>
-              <th>প্র্যাকটিক্যাল</th>
-              <th>মোট</th>
-              <th>গ্রেড</th>
-              <th>স্ট্যাটাস</th>
-            </tr>
-          </thead>
-          <tbody id="tableBody">
-            <!-- Table data will be rendered here -->
-          </tbody>
-        </table>
-      </div>
-
-
-      <!-- Student Analysis View -->
-      <div class="analysis-container" id="analysisView" style="display: none;">
-        <div class="analysis-controls">
-          <div class="analysis-search-wrapper">
-            <input type="text" id="analysisStudentId" placeholder="নাম বা রোল নম্বর দিয়ে খুঁজুন..."
-              class="form-control">
-            <div id="analysisSearchResults" class="search-results-grid" style="display: none;"></div>
-          </div>
-
-          <select id="analysisType" class="form-select analysis-type-select">
-            <option value="total">মোট নম্বর (Total)</option>
-            <option value="written">লিখিত (Written)</option>
-            <option value="mcq">এমসিকিউ (MCQ)</option>
-            <option value="practical">ব্যবহারিক (Practical)</option>
-          </select>
-
-          <select id="analysisMaxMarks" class="form-select analysis-marks-select">
-            <option value="100">মার্কস: ১০০</option>
-            <option value="75">মার্কস: ৭৫</option>
-            <option value="70">মার্কস: ৭০</option>
-            <option value="50">মার্কস: ৫০</option>
-            <option value="30">মার্কস: ৩০</option>
-            <option value="25">মার্কস: ২৫</option>
-          </select>
-          <button class="settings-btn" title="সেটিংস"><i class="fas fa-cog"></i></button>
+        <div class="chart-container horizontal-chart" id="chartView">
+          <canvas id="performanceChart"></canvas>
+        </div>
+        <div class="table-container" id="tableView" style="display: none">
+          <table class="data-table" id="performanceTable">
+            <thead>
+              <tr>
+                <th>রোল</th>
+                <th>নাম</th>
+                <th>গ্রুপ</th>
+                <th>শ্রেণি</th>
+                <th>সেশন</th>
+                <th>লিখিত</th>
+                <th>এমসিকিউ</th>
+                <th>প্র্যাকটিক্যাল</th>
+                <th>মোট</th>
+                <th>গ্রেড</th>
+                <th>স্ট্যাটাস</th>
+              </tr>
+            </thead>
+            <tbody id="tableBody">
+              <!-- Table data will be rendered here -->
+            </tbody>
+          </table>
         </div>
 
-        <!-- Report Container -->
-        <div id="analysisReportContent" class="analysis-report-wrapper" style="display: none;">
-          <!-- Top Section: Header with info and controls -->
-          <div class="report-header-container">
-            <div id="studentDetails" class="student-details-section"></div>
 
-            <div class="report-toolbar">
-              <select id="analysisSessionSelect" class="form-select sm" style="max-width: 140px;">
-                <option value="all">সকল সেশন</option>
-              </select>
+        <!-- Student Analysis View -->
+        <div class="analysis-container" id="analysisView" style="display: none;">
+          <div class="analysis-controls">
+            <div class="analysis-search-wrapper">
+              <input type="text" id="analysisStudentId" placeholder="নাম বা রোল নম্বর দিয়ে খুঁজুন..."
+                class="form-control">
+              <div id="analysisSearchResults" class="search-results-grid" style="display: none;"></div>
+            </div>
 
-              <select id="analysisSubjectSelect" class="form-select sm" style="max-width: 180px;">
-                <option value="all">সকল বিষয়</option>
-              </select>
+            <select id="analysisType" class="form-select analysis-type-select">
+              <option value="total">মোট নম্বর (Total)</option>
+              <option value="written">লিখিত (Written)</option>
+              <option value="mcq">এমসিকিউ (MCQ)</option>
+              <option value="practical">ব্যবহারিক (Practical)</option>
+            </select>
 
-              <button id="downloadAnalysisImage" class="btn btn-primary btn-sm" title="ছবি হিসেবে ডাউনলোড করুন"
-                style="white-space: nowrap; flex-shrink: 0;">
-                <i class="fas fa-image"></i> ডাউনলোড
-              </button>
+            <select id="analysisMaxMarks" class="form-select analysis-marks-select">
+              <option value="100">মার্কস: ১০০</option>
+              <option value="75">মার্কস: ৭৫</option>
+              <option value="70">মার্কস: ৭০</option>
+              <option value="50">মার্কস: ৫০</option>
+              <option value="30">মার্কস: ৩০</option>
+              <option value="25">মার্কস: ২৫</option>
+            </select>
+            <button class="settings-btn" title="সেটিংস"><i class="fas fa-cog"></i></button>
+          </div>
 
-              <div class="analysis-nav-controls">
-                <button id="prevRollBtn" class="nav-btn sm" title="পূর্ববর্তী রোল">
-                  <i class="fas fa-chevron-left"></i> <span id="prevRollNum"></span>
+          <!-- Report Container -->
+          <div id="analysisReportContent" class="analysis-report-wrapper" style="display: none;">
+            <!-- Top Section: Header with info and controls -->
+            <div class="report-header-container">
+              <div id="studentDetails" class="student-details-section"></div>
+
+              <div class="report-toolbar">
+                <select id="analysisSessionSelect" class="form-select sm" style="max-width: 140px;">
+                  <option value="all">সকল সেশন</option>
+                </select>
+
+                <select id="analysisSubjectSelect" class="form-select sm" style="max-width: 180px;">
+                  <option value="all">সকল বিষয়</option>
+                </select>
+
+                <button id="downloadAnalysisImage" class="btn btn-primary btn-sm" title="ছবি হিসেবে ডাউনলোড করুন"
+                  style="white-space: nowrap; flex-shrink: 0;">
+                  <i class="fas fa-image"></i> ডাউনলোড
                 </button>
-                <div class="current-roll-display">
-                  <span id="currentRollNum"></span>
+
+                <div class="analysis-nav-controls">
+                  <button id="prevRollBtn" class="nav-btn sm" title="পূর্ববর্তী রোল">
+                    <i class="fas fa-chevron-left"></i> <span id="prevRollNum"></span>
+                  </button>
+                  <div class="current-roll-display">
+                    <span id="currentRollNum"></span>
+                  </div>
+                  <button id="nextRollBtn" class="nav-btn sm" title="পরবর্তী রোল">
+                    <span id="nextRollNum"></span> <i class="fas fa-chevron-right"></i>
+                  </button>
                 </div>
-                <button id="nextRollBtn" class="nav-btn sm" title="পরবর্তী রোল">
-                  <span id="nextRollNum"></span> <i class="fas fa-chevron-right"></i>
-                </button>
-              </div>
 
-              <div class="latest-exam-badge">
-                <i class="fas fa-history"></i> সর্বশেষ: <span id="latestExamLabel">N/A</span>
+                <div class="latest-exam-badge">
+                  <i class="fas fa-history"></i> সর্বশেষ: <span id="latestExamLabel">N/A</span>
+                </div>
               </div>
             </div>
-          </div>
-          <div class="analysis-chart-container analysis-card" style="margin-top: 20px;">
-            <canvas id="historyChart"></canvas>
+            <div class="analysis-chart-container analysis-card" style="margin-top: 20px;">
+              <canvas id="historyChart"></canvas>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- Search Results (for multiple matches) -->
-      <div id="analysisSearchResults" class="search-results-grid" style="display: none;">
-        <!-- Candidates will be injected here -->
+        <!-- Search Results (for multiple matches) -->
       </div>
     </div>
   </div>
@@ -365,9 +365,27 @@
         <h2 class="card-title">ফেল করা শিক্ষার্থী (লিখিত &lt; ১৭)</h2>
         <div id="failedHeaderMeta" class="header-meta"></div>
       </div>
+      <div class="failed-group-toggles" id="failedGroupToggles">
+        <label class="group-toggle-chip science active" data-group="বিজ্ঞান গ্রুপ">
+          <input type="checkbox" checked> <span class="chip-dot"></span> বিজ্ঞান
+          <span class="chip-count" data-count-group="বিজ্ঞান গ্রুপ">0</span>
+        </label>
+        <label class="group-toggle-chip business active" data-group="ব্যবসায় গ্রুপ">
+          <input type="checkbox" checked> <span class="chip-dot"></span> ব্যবসায়
+          <span class="chip-count" data-count-group="ব্যবসায় গ্রুপ">0</span>
+        </label>
+        <label class="group-toggle-chip arts active" data-group="মানবিক গ্রুপ">
+          <input type="checkbox" checked> <span class="chip-dot"></span> মানবিক
+          <span class="chip-count" data-count-group="মানবিক গ্রুপ">0</span>
+        </label>
+      </div>
+      <button class="view-btn" id="printFailedBtn"
+        style="background: #6366f1; color: white; border: none; font-size: 0.8rem; padding: 4px 10px; margin-right: 6px;">
+        <i class="fas fa-print"></i> প্রিন্ট
+      </button>
       <button class="view-btn" id="downloadFailedBtn"
         style="background: var(--success); color: white; border: none; font-size: 0.8rem; padding: 4px 10px;">
-        <i class="fas fa-download"></i> ইমেজ ডাউনলোড
+        <i class="fas fa-download"></i> ডাউনলোড
       </button>
     </div>
     <div class="failed-list" id="failedStudentsContainer">
@@ -384,7 +402,7 @@
       </div>
       <button class="view-btn" id="downloadGroupStatsBtn"
         style="background: var(--success); color: white; border: none; font-size: 0.8rem; padding: 4px 10px;">
-        <i class="fas fa-download"></i> ইমেজ ডাউনলোড
+        <i class="fas fa-download"></i> ডাউনলোড
       </button>
     </div>
     <div class="group-stats-grid" id="groupStatsContainer">

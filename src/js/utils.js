@@ -245,12 +245,36 @@ export function calculateStatistics(data, options = {}) {
     const participants = totalStudents - absentStudents;
     const passedStudents = participants - failedStudents;
 
+    // Grade Distribution
+    const gradeDistribution = {
+        'A+': 0, 'A': 0, 'A-': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0
+    };
+
+    data.forEach(student => {
+        if (!isAbsent(student)) {
+            // Check if student failed based on marks OR final grade
+            const failedWritten = Number(student.written) < writtenPass;
+            const failedMcq = Number(student.mcq) < mcqPass;
+            const gradeInfo = calculateGrade(student.total);
+
+            if (failedWritten || failedMcq || gradeInfo.grade === 'F') {
+                gradeDistribution['F']++;
+            } else {
+                if (gradeDistribution[gradeInfo.grade] !== undefined) {
+                    gradeDistribution[gradeInfo.grade]++;
+                }
+            }
+        }
+        // Absent students are handled separately in 'absentStudents' count.
+    });
+
     return {
         totalStudents,
         absentStudents,
         failedStudents,
         passedStudents,
         participants,
+        gradeDistribution
     };
 }
 
