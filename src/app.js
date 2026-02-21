@@ -274,7 +274,7 @@ function renderSavedExams() {
 
             elements.editExamClass.value = exam.class || '';
             elements.editExamSession.value = exam.session || '';
-            elements.editExamModal.style.display = 'block';
+            elements.editExamModal.classList.add('active');
         },
         onDelete: async (exam) => {
             if (confirm('আপনি কি নিশ্চিত যে আপনি এই পরীক্ষাটি মুছতে চান?')) {
@@ -711,7 +711,7 @@ function initEventListeners() {
             elements.examSubject.disabled = true;
         }
 
-        elements.saveExamModal.style.display = 'block';
+        elements.saveExamModal.classList.add('active');
     });
 
     elements.saveExamForm?.addEventListener('submit', async (e) => {
@@ -725,7 +725,7 @@ function initEventListeners() {
         };
         const success = await handleSaveExam(examData);
         if (success) {
-            elements.saveExamModal.style.display = 'none';
+            elements.saveExamModal.classList.remove('active');
             await fetchExams();
             renderSavedExams();
         }
@@ -743,14 +743,14 @@ function initEventListeners() {
         };
         const success = await updateExamDetails(docId, updates);
         if (success) {
-            elements.editExamModal.style.display = 'none';
+            elements.editExamModal.classList.remove('active');
             await fetchExams();
             renderSavedExams();
         }
     });
 
-    elements.closeModalBtn?.addEventListener('click', () => elements.saveExamModal.style.display = 'none');
-    elements.closeEditModal?.addEventListener('click', () => elements.editExamModal.style.display = 'none');
+    elements.closeModalBtn?.addEventListener('click', () => elements.saveExamModal.classList.remove('active'));
+    elements.closeEditModal?.addEventListener('click', () => elements.editExamModal.classList.remove('active'));
 
     // Modal Class Selection Listeners
     elements.examClass?.addEventListener('change', (e) => {
@@ -763,26 +763,26 @@ function initEventListeners() {
 
     // Class Mapping
     elements.openClassMappingBtn?.addEventListener('click', () => {
-        elements.classSubjectMappingModal.style.display = 'block';
+        elements.classSubjectMappingModal.classList.add('active');
     });
 
     elements.closeClassMappingBtn?.addEventListener('click', () => {
-        elements.classSubjectMappingModal.style.display = 'none';
+        elements.classSubjectMappingModal.classList.remove('active');
     });
 
     // User Management
     elements.toolbarUserMgmtBtn?.addEventListener('click', () => {
         handleUserManagement();
-        elements.userManagementModal.style.display = 'block';
+        elements.userManagementModal.classList.add('active');
     });
 
     elements.closeUserManagementBtn?.addEventListener('click', () => {
-        elements.userManagementModal.style.display = 'none';
+        elements.userManagementModal.classList.remove('active');
     });
 
     // Subject Settings (inside User Management)
     elements.subjectSettingsBtn?.addEventListener('click', () => {
-        elements.subjectSettingsModal.style.display = 'block';
+        elements.subjectSettingsModal.classList.add('active');
     });
 
     // Saved Exams Section Toggle
