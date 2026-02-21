@@ -503,6 +503,8 @@ export async function getStudentHistory(studentId, studentGroup) {
                     history.push({
                         examName: exam.name,
                         subject: exam.subject,
+                        session: exam.session || 'N/A',
+                        class: exam.class || 'N/A',
                         date: exam.createdAt, // Timestamp
                         ...student
                     });
@@ -531,22 +533,29 @@ export async function getStudentHistory(studentId, studentGroup) {
  * @param {string} query - Search query (Name or ID)
  * @returns {Promise<Array>} - Array of unique student candidates {id, name, group, class}
  */
-export async function searchAnalyticsCandidates(query, sessionFilter) {
+export async function searchAnalyticsCandidates(query, sessionFilter, classFilter) {
     const hasQuery = query && query.trim().length > 0;
-    if (!hasQuery && !sessionFilter) return [];
+    if (!hasQuery && !sessionFilter && !classFilter) return [];
 
     try {
         const exams = await getSavedExams();
         const candidates = new Map(); // Use Map to dedup by "ID_Group"
 
-        // Normalize sessionFilter if provided
+        // Normalize filters if provided
         const normSession = sessionFilter ? String(sessionFilter).trim().toLowerCase() : null;
+        const normClass = classFilter ? String(classFilter).trim().toLowerCase() : null;
 
-        if (!hasQuery && normSession) {
-            // Fetch ALL students for this session
+        if (!hasQuery && (normSession || normClass)) {
+            // Fetch ALL students matching the provided filters
             exams.forEach(exam => {
                 const examSession = exam.session ? String(exam.session).trim().toLowerCase() : '';
-                if (examSession === normSession && exam.studentData && Array.isArray(exam.studentData)) {
+                const examClass = exam.class ? String(exam.class).trim().toLowerCase() : '';
+
+                let filterMatch = true;
+                if (normSession && examSession !== normSession) filterMatch = false;
+                if (normClass && examClass !== normClass) filterMatch = false;
+
+                if (filterMatch && exam.studentData && Array.isArray(exam.studentData)) {
                     exam.studentData.forEach(s => {
                         const uniqueKey = `${s.id}_${s.group}`;
                         if (!candidates.has(uniqueKey)) {
@@ -569,7 +578,6 @@ export async function searchAnalyticsCandidates(query, sessionFilter) {
         const lowerQuery = query.toLowerCase();
 
         // Determine if search is by Roll (Numeric) or Name (Text)
-        // If normalizedQuery is a valid number, treat as Roll Search (Exact Match)
         const isRollSearch = /^\d+$/.test(normalizedQuery);
 
         exams.forEach(exam => {
@@ -578,22 +586,24 @@ export async function searchAnalyticsCandidates(query, sessionFilter) {
                     let match = false;
 
                     if (isRollSearch) {
-                        // EXACT MATCH for Roll
                         if (String(s.id) === normalizedQuery) {
                             match = true;
                         }
                     } else {
-                        // Fuzzy search for Name
                         if (s.name && s.name.toLowerCase().includes(lowerQuery)) {
                             match = true;
                         }
                     }
 
-                    // If sessionFilter is provided, enforce it
-                    if (match && normSession) {
-                        const studentSession = s.session ? String(s.session).trim().toLowerCase() : '';
-                        if (studentSession !== normSession) {
-                            match = false;
+                    // Enforce filters if provided
+                    if (match) {
+                        if (normSession) {
+                            const studentSession = s.session ? String(s.session).trim().toLowerCase() : '';
+                            if (studentSession !== normSession) match = false;
+                        }
+                        if (match && normClass) {
+                            const studentClass = s.class ? String(s.class).trim().toLowerCase() : '';
+                            if (studentClass !== normClass) match = false;
                         }
                     }
 

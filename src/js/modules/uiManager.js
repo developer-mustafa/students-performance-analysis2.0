@@ -54,8 +54,9 @@ export const elements = {
     nextRollNum: null,
     analysisSessionSelect: null,
     analysisSubjectSelect: null,
+    analysisExamSelect: null,
+    analysisContextInfo: null,
     downloadAnalysisImage: null,
-    latestExamLabel: null,
     toolbarUserMgmtBtn: null,
     inlineSearchPanel: null,
     inlineSearchCandidates: null,
@@ -132,7 +133,11 @@ export const elements = {
     resetFiltersBtn: null,
     contactDevBtn: null,
     contactModal: null,
-    closeContactModal: null
+    closeContactModal: null,
+    loadExamConfirmModal: null,
+    loadExamConfirmName: null,
+    loadExamConfirmBtn: null,
+    loadExamCancelBtn: null
 };
 
 export function updateProfileUI(user, isAdmin, isSuperAdmin, role) {
@@ -218,6 +223,11 @@ export function initDOMReferences() {
     elements.analysisType = document.getElementById('analysisType');
     elements.analysisMaxMarks = document.getElementById('analysisMaxMarks');
     elements.analysisSearchResults = document.getElementById('analysisSearchResults');
+    elements.analysisSessionSelect = document.getElementById('analysisSessionSelect');
+    elements.analysisSubjectSelect = document.getElementById('analysisSubjectSelect');
+    elements.analysisExamSelect = document.getElementById('analysisExamSelect');
+    elements.analysisContextInfo = document.getElementById('analysisContextInfo');
+    elements.downloadAnalysisImage = document.getElementById('downloadAnalysisImage');
     elements.printBtn = document.getElementById('printBtn');
     elements.prevRollBtn = document.getElementById('prevRollBtn');
     elements.nextRollBtn = document.getElementById('nextRollBtn');
@@ -314,6 +324,10 @@ export function initDOMReferences() {
     elements.contactDevBtn = document.getElementById('contactDevBtn');
     elements.contactModal = document.getElementById('contactModal');
     elements.closeContactModal = document.getElementById('closeContactModal');
+    elements.loadExamConfirmModal = document.getElementById('loadExamConfirmModal');
+    elements.loadExamConfirmName = document.getElementById('loadExamConfirmName');
+    elements.loadExamConfirmBtn = document.getElementById('loadExamConfirmBtn');
+    elements.loadExamCancelBtn = document.getElementById('loadExamCancelBtn');
 }
 
 export function setLoading(isLoading, targetSelector = null) {

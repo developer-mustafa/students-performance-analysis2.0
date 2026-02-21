@@ -480,10 +480,12 @@ export async function captureElementAsImage(element, filename = 'capture.png') {
 
         const canvas = await html2canvas(element, {
             backgroundColor: bgColor,
-            scale: 4, // Higher resolution for crystal clear text
+            scale: 3, // Scale 2 is more stable for alignment than Scale 4
             useCORS: true,
             logging: false,
             allowTaint: true,
+            windowWidth: 1920, // Stable viewport for consistent rendering
+            windowHeight: 1080,
             onclone: (clonedDoc) => {
                 const clonedBody = clonedDoc.body;
                 clonedBody.classList.add('capturing-image');

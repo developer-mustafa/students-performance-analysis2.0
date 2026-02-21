@@ -2,6 +2,7 @@
  * UI Components Module - Handles all DOM rendering
  * @module uiComponents
  */
+import { state } from './modules/state.js';
 
 import {
   calculateGrade,
@@ -89,15 +90,16 @@ export function renderGroupStats(container, data, options = {}) {
   }
 
   const groupStats = calculateGroupStatistics(data, options);
+  const firstStudent = data[0] || {};
 
   // Update Header Meta
+  const { examName, subjectName } = options;
   if (metaElement) {
-    const firstStudent = data[0];
-    const groups = [...new Set(data.map(s => s.group))].join(', ');
     metaElement.innerHTML = `
       <span class="meta-item"><i class="fas fa-graduation-cap"></i> শ্রেণি: ${firstStudent.class || 'N/A'}</span>
       <span class="meta-item"><i class="fas fa-calendar-alt"></i> সেশন: ${firstStudent.session || 'N/A'}</span>
-      <span class="meta-item"><i class="fas fa-users"></i> বিভাগ: ${groups}</span>
+      ${examName ? `<span class="meta-item"><i class="fas fa-book"></i> ${examName}</span>` : ''}
+      ${subjectName ? `<span class="meta-item"><i class="fas fa-book-open"></i> ${subjectName}</span>` : ''}
       <span class="meta-item count-badge"><i class="fas fa-check-circle"></i> মোট: ${data.length} জন</span>
     `;
   }
@@ -105,8 +107,6 @@ export function renderGroupStats(container, data, options = {}) {
   // Calculate Global Grade Distribution
   const globalStats = calculateStatistics(data, options);
   const globalGrades = globalStats.gradeDistribution || {};
-  const { examName = 'N/A', subjectName = 'N/A' } = options;
-  const firstStudent = data[0] || {};
   const className = firstStudent.class || 'N/A';
   const sessionName = firstStudent.session || 'N/A';
 
@@ -278,10 +278,12 @@ export function renderFailedStudents(container, data, options = {}) {
   // Update meta if exists
   if (metaElement) {
     const firstStudent = data[0];
-    const groups = [...new Set(data.map(s => s.group))].join(', ');
+    const { examName, subjectName } = options;
     metaElement.innerHTML = `
       <span class="meta-item"><i class="fas fa-graduation-cap"></i> শ্রেণি: ${firstStudent.class || 'N/A'}</span>
       <span class="meta-item"><i class="fas fa-calendar-alt"></i> সেশন: ${firstStudent.session || 'N/A'}</span>
+      ${examName ? `<span class="meta-item"><i class="fas fa-book"></i> ${examName}</span>` : ''}
+      ${subjectName ? `<span class="meta-item"><i class="fas fa-book-open"></i> ${subjectName}</span>` : ''}
     `;
   }
 
@@ -920,6 +922,8 @@ export function renderSavedExamsList(container, exams, options = {}) {
 
     const stats = dynamicStats;
     const isCurrent = exam.docId === currentExamId;
+    const manuallyLoadedId = localStorage.getItem('loadedExamId');
+    const isActiveLoad = exam.docId === manuallyLoadedId;
 
     // Calculate pass percentage
     const participants = stats.participants || 0;
@@ -948,7 +952,7 @@ export function renderSavedExamsList(container, exams, options = {}) {
     const sessionStyle = getSessionStyle(exam.session);
 
     return `
-            <div class="exam-card ${isCurrent ? 'active' : ''}" data-id="${exam.docId}">
+            <div class="exam-card ${isCurrent ? 'active' : ''} ${isActiveLoad ? 'is-active-load' : ''}" data-id="${exam.docId}">
                 <div class="exam-card-header-compact">
                     <div class="card-meta">
                         <div class="meta-badges">
@@ -995,7 +999,7 @@ export function renderSavedExamsList(container, exams, options = {}) {
                 </div>
 
                 <div class="exam-card-actions-compact">
-                    <button class="card-btn-min load-btn" title="লোড করুন"><i class="fas fa-eye"></i> ভিউ</button>
+                    <button class="card-btn-min load-btn ${isActiveLoad ? 'is-active' : ''}" title=" এক্সাম লোড.."><i class="fas fa-eye"></i> ${isActiveLoad ? 'আন-লোডেড' : (state.currentUser ? 'লোড করুন' : 'এই ফলাফল দেখতে ক্লিক করুন')} </button>
                     <label class="pin-toggle admin-only" title="ডিফল্ট হিসেবে সেট করুন">
                         <input type="checkbox" class="pin-checkbox" ${exam.docId === defaultExamId ? 'checked' : ''}>
                         <span class="pin-slider"></span>
@@ -1111,22 +1115,35 @@ export function renderStudentHistory(container, history, studentInfo) {
 
   container.innerHTML = `
         <div class="student-info-main">
-            <div class="student-header-top">
-                <h3>${studentInfo.name} <span class="roll-number-label">(রোল: ${studentInfo.id})</span></h3>
+            <!-- Row 1: Name & Roll -->
+            <div class="student-name-block">
+                <h3 class="student-name">${studentInfo.name}</h3>
+                <span class="roll-badge">রোল: ${studentInfo.id}</span>
             </div>
-            <div class="student-meta-badges">
-                <span class="badge badge-session" style="--session-color: ${sessionColor}">
-                    <i class="fas fa-calendar-alt"></i> সেশন: ${studentInfo.session || 'N/A'}
-                </span>
-                <span class="badge badge-group ${groupClass}">
-                    ${getIconForGroup(studentInfo.group)} ${studentInfo.group}
-                </span>
-                <span class="badge badge-class">
-                    <i class="fas fa-graduation-cap"></i> শ্রেণি: ${studentInfo.class || 'HSC'}
-                </span>
-                <span class="badge badge-exam-count">
-                    <i class="fas fa-chart-line"></i> মোট পরীক্ষা: ${history.length}
-                </span>
+            
+            <!-- Row 2: Metadata & Context Info -->
+            <div class="student-meta-row">
+                <div class="student-meta-block">
+                    <span class="badge badge-session" style="--session-color: ${sessionColor}">
+                        <i class="fas fa-calendar-alt"></i> ${studentInfo.session || 'N/A'}
+                    </span>
+                    <span class="badge badge-group ${groupClass}">
+                        ${getIconForGroup(studentInfo.group)} ${studentInfo.group}
+                    </span>
+                    <span class="badge badge-class">
+                        <i class="fas fa-graduation-cap"></i> ${studentInfo.class || 'HSC'}
+                    </span>
+                    <span class="badge badge-exam-count">
+                        <i class="fas fa-chart-line"></i> ${history.filter(h =>
+    (!studentInfo.session || h.session === studentInfo.session) &&
+    (!studentInfo.class || h.class === studentInfo.class)
+  ).length
+    } পরীক্ষা
+                    </span>
+                    
+                    <!-- Dynamic Context Info (Now inline with badges) -->
+                    <span id="analysisContextInfo" class="analysis-context-info"></span>
+                </div>
             </div>
         </div>
     `;
@@ -1167,7 +1184,7 @@ export function renderCandidateResults(container, candidates, onSelect) {
   container.style.display = 'grid';
   container.className = 'search-results-grid'; // Ensure class is correct
 
-  container.innerHTML = candidates.map(c => {
+  container.innerHTML = `<button class="search-close-btn" aria-label="বন্ধ করুন">&times;</button>` + candidates.map(c => {
     const groupClass = getGroupClass(c.group);
     return `
         <div class="candidate-card ${groupClass}" data-id="${c.id}" data-group="${c.group}">
@@ -1185,6 +1202,13 @@ export function renderCandidateResults(container, candidates, onSelect) {
         </div>
     `;
   }).join('');
+
+  // Close button handler
+  container.querySelector('.search-close-btn')?.addEventListener('click', () => {
+    container.style.display = 'none';
+    const searchInput = document.getElementById('searchInput');
+    if (searchInput) searchInput.value = '';
+  });
 
   container.querySelectorAll('.candidate-card').forEach(item => {
     item.addEventListener('click', () => {

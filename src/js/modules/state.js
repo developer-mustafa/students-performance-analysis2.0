@@ -48,6 +48,7 @@ export const state = {
     savedExamsClassFilter: 'all',
     defaultExamId: null,
     currentExamSession: null,
+    currentExamClass: null,
     currentSessionStudents: [], // Store all students for current session for navigation
     currentUser: null
 };

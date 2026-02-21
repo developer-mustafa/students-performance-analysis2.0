@@ -74,9 +74,9 @@ export async function handleHistorySearch(studentId, group) {
     }
 }
 
-export async function handleCandidateSearch(query, session) {
+export async function handleCandidateSearch(query, session, className) {
     try {
-        return await searchAnalyticsCandidates(query, session);
+        return await searchAnalyticsCandidates(query, session, className);
     } catch (error) {
         console.error('Candidate search error:', error);
         return [];

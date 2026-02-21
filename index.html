@@ -286,8 +286,6 @@
             </tbody>
           </table>
         </div>
-
-
         <!-- Student Analysis View -->
         <div class="analysis-container" id="analysisView" style="display: none;">
           <div class="analysis-controls">
@@ -319,7 +317,9 @@
           <div id="analysisReportContent" class="analysis-report-wrapper" style="display: none;">
             <!-- Top Section: Header with info and controls -->
             <div class="report-header-container">
-              <div id="studentDetails" class="student-details-section"></div>
+              <div class="student-info-section">
+                <div id="studentDetails" class="student-details-section"></div>
+              </div>
 
               <div class="report-toolbar">
                 <select id="analysisSessionSelect" class="form-select sm" style="max-width: 140px;">
@@ -328,6 +328,10 @@
 
                 <select id="analysisSubjectSelect" class="form-select sm" style="max-width: 180px;">
                   <option value="all">সকল বিষয়</option>
+                </select>
+
+                <select id="analysisExamSelect" class="form-select sm" style="max-width: 200px;">
+                  <option value="all">সকল পরীক্ষা</option>
                 </select>
 
                 <button id="downloadAnalysisImage" class="btn btn-primary btn-sm" title="ছবি হিসেবে ডাউনলোড করুন"
@@ -345,10 +349,6 @@
                   <button id="nextRollBtn" class="nav-btn sm" title="পরবর্তী রোল">
                     <span id="nextRollNum"></span> <i class="fas fa-chevron-right"></i>
                   </button>
-                </div>
-
-                <div class="latest-exam-badge">
-                  <i class="fas fa-history"></i> সর্বশেষ: <span id="latestExamLabel">N/A</span>
                 </div>
               </div>
             </div>
@@ -370,28 +370,32 @@
         <h2 class="card-title">ফেল করা শিক্ষার্থী (লিখিত &lt; ১৭)</h2>
         <div id="failedHeaderMeta" class="header-meta"></div>
       </div>
-      <div class="failed-group-toggles" id="failedGroupToggles">
-        <label class="group-toggle-chip science active" data-group="বিজ্ঞান গ্রুপ">
-          <input type="checkbox" checked> <span class="chip-dot"></span> বিজ্ঞান
-          <span class="chip-count" data-count-group="বিজ্ঞান গ্রুপ">0</span>
-        </label>
-        <label class="group-toggle-chip business active" data-group="ব্যবসায় গ্রুপ">
-          <input type="checkbox" checked> <span class="chip-dot"></span> ব্যবসায়
-          <span class="chip-count" data-count-group="ব্যবসায় গ্রুপ">0</span>
-        </label>
-        <label class="group-toggle-chip arts active" data-group="মানবিক গ্রুপ">
-          <input type="checkbox" checked> <span class="chip-dot"></span> মানবিক
-          <span class="chip-count" data-count-group="মানবিক গ্রুপ">0</span>
-        </label>
+      <div class="header-actions-group">
+        <div class="failed-group-toggles" id="failedGroupToggles">
+          <label class="group-toggle-chip science active" data-group="বিজ্ঞান গ্রুপ">
+            <input type="checkbox" checked> <span class="chip-dot"></span> বিজ্ঞান
+            <span class="chip-count" data-count-group="বিজ্ঞান গ্রুপ">0</span>
+          </label>
+          <label class="group-toggle-chip business active" data-group="ব্যবসায় গ্রুপ">
+            <input type="checkbox" checked> <span class="chip-dot"></span> ব্যবসায়
+            <span class="chip-count" data-count-group="ব্যবসায় গ্রুপ">0</span>
+          </label>
+          <label class="group-toggle-chip arts active" data-group="মানবিক গ্রুপ">
+            <input type="checkbox" checked> <span class="chip-dot"></span> মানবিক
+            <span class="chip-count" data-count-group="মানবিক গ্রুপ">0</span>
+          </label>
+        </div>
+        <div class="action-buttons-group">
+          <button class="view-btn" id="printFailedBtn"
+            style="background: #6366f1; color: white; border: none; font-size: 0.8rem; padding: 4px 10px;">
+            <i class="fas fa-print"></i> প্রিন্ট
+          </button>
+          <button class="view-btn" id="downloadFailedBtn"
+            style="background: var(--success); color: white; border: none; font-size: 0.8rem; padding: 4px 10px;">
+            <i class="fas fa-download"></i> ডাউনলোড
+          </button>
+        </div>
       </div>
-      <button class="view-btn" id="printFailedBtn"
-        style="background: #6366f1; color: white; border: none; font-size: 0.8rem; padding: 4px 10px; margin-right: 6px;">
-        <i class="fas fa-print"></i> প্রিন্ট
-      </button>
-      <button class="view-btn" id="downloadFailedBtn"
-        style="background: var(--success); color: white; border: none; font-size: 0.8rem; padding: 4px 10px;">
-        <i class="fas fa-download"></i> ডাউনলোড
-      </button>
     </div>
     <div class="failed-list" id="failedStudentsContainer">
       <!-- Failed students will be rendered here -->
@@ -405,10 +409,14 @@
         <h2 class="card-title">গ্রুপভিত্তিক পাস/ফেল পরিসংখ্যান</h2>
         <div id="groupStatsHeaderMeta" class="header-meta"></div>
       </div>
-      <button class="view-btn" id="downloadGroupStatsBtn"
-        style="background: var(--success); color: white; border: none; font-size: 0.8rem; padding: 4px 10px;">
-        <i class="fas fa-download"></i> ডাউনলোড
-      </button>
+      <div class="header-actions-group">
+        <div class="action-buttons-group">
+          <button class="view-btn" id="downloadGroupStatsBtn"
+            style="background: var(--success); color: white; border: none; font-size: 0.8rem; padding: 4px 10px;">
+            <i class="fas fa-download"></i> ডাউনলোড
+          </button>
+        </div>
+      </div>
     </div>
     <div class="group-stats-grid" id="groupStatsContainer">
       <!-- Group statistics will be rendered here -->
@@ -716,6 +724,24 @@
             </button>
           </div>
         </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Exam Load Confirmation Modal -->
+  <div id="loadExamConfirmModal" class="modal">
+    <div class="modal-content load-confirm-modal-content">
+      <div class="load-confirm-icon">
+        <i class="fas fa-book-open"></i>
+      </div>
+      <h2 id="loadExamConfirmTitle" class="load-confirm-title">এক্সাম লোড করবেন?</h2>
+      <p id="loadExamConfirmName" class="load-confirm-exam-name"></p>
+      <p id="loadExamConfirmDesc" class="load-confirm-desc">এই পরীক্ষার সকল ডেটা লোড হবে এবং ড্যাশবোর্ডে প্রদর্শিত হবে।
+      </p>
+      <div class="load-confirm-actions">
+        <button id="loadExamCancelBtn" class="btn-secondary"><i class="fas fa-times"></i> বাতিল</button>
+        <button id="loadExamConfirmBtn" class="btn-primary-gradient"><i class="fas fa-check-circle"></i> <span
+            id="loadExamConfirmBtnText">হ্যাঁ, লোড করুন</span></button>
       </div>
     </div>
   </div>

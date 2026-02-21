@@ -16,13 +16,18 @@ let currentChart = null;
  */
 function setChartTheme() {
     const isDark = document.body.classList.contains('dark-mode');
-    const textColor = isDark ? '#ffffff' : '#1f2937';
-    const gridColor = isDark ? 'rgba(255, 255, 255, 0.18)' : 'rgba(0, 0, 0, 0.12)';
+    // Use true black for best contrast in light mode, pure white for dark
+    const textColor = isDark ? '#ffffff' : '#000000';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)';
 
     Chart.defaults.color = textColor;
     Chart.defaults.borderColor = gridColor;
-    Chart.defaults.scale.grid.color = gridColor;
-    Chart.defaults.scale.ticks.color = textColor;
+    if (Chart.defaults.scale && Chart.defaults.scale.grid) {
+        Chart.defaults.scale.grid.color = gridColor;
+    }
+    if (Chart.defaults.scale && Chart.defaults.scale.ticks) {
+        Chart.defaults.scale.ticks.color = textColor;
+    }
 }
 
 /**
