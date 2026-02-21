@@ -147,6 +147,8 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
+  gap: 10px;
   margin-bottom: var(--spacing-lg);
   padding-bottom: var(--spacing-md);
   border-bottom: 1px solid var(--border-color);
@@ -1086,6 +1088,25 @@ input:focus {
   /* Prevent horizontal overflow */
   body {
     overflow-x: hidden;
+  }
+
+  .card.failed-students .card-header {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 12px;
+  }
+
+  .card.failed-students .card-header .header-main {
+    margin-bottom: 4px;
+  }
+
+  .card.failed-students .view-btn {
+    width: 100%;
+    margin-right: 0 !important;
+    margin-bottom: 4px;
+    justify-content: center;
+    padding: 8px;
+    font-size: 0.85rem;
   }
 
   .container-fluid {
@@ -5909,6 +5930,7 @@ body:not(.is-admin) .admin-only {
 /* ===== Group Toggle Chip Filters ===== */
 .failed-group-toggles {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   align-items: center;
 }
