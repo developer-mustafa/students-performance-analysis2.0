@@ -1507,9 +1507,10 @@ input:focus {
 }
 
 .load-btn.is-active {
-  background: linear-gradient(135deg, #00b894, #00d2d3) !important;
+  background: linear-gradient(135deg, #059669, #10b981) !important;
   color: white !important;
-  box-shadow: 0 4px 12px rgba(0, 184, 148, 0.3) !important;
+  box-shadow: 0 4px 15px rgba(16, 185, 129, 0.4) !important;
+  transform: translateY(-1px);
 }
 
 .load-btn.is-active i {
@@ -4087,23 +4088,40 @@ body.dark-mode .subject-tag:hover {
 
 .card-btn-min {
   flex: 1;
-  height: 28px;
-  font-size: 0.75rem;
-  font-weight: 600;
-  border-radius: 6px;
+  height: 38px;
+  font-size: 0.85rem;
+  font-weight: 700;
+  border-radius: 10px;
   border: none;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  transition: all 0.2s;
+  gap: 8px;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  letter-spacing: 0.3px;
+}
+
+.card-btn-min:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.15);
+}
+
+.card-btn-min:active {
+  transform: translateY(-1px);
 }
 
 .card-btn-min.load-btn {
-  background: var(--primary);
+  background: linear-gradient(135deg, #4361ee, #7209b7);
   color: white;
-  flex: 2;
+  flex: 2.5;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.card-btn-min.load-btn:hover {
+  background: linear-gradient(135deg, #3f37c9, #560bad);
+  box-shadow: 0 8px 20px rgba(67, 97, 238, 0.35);
 }
 
 .card-btn-min.edit-btn {
@@ -4783,14 +4801,20 @@ body:not(.is-admin) .admin-only {
   font-weight: 700;
 }
 
-.roll-badge {
-  background: var(--primary);
-  color: white;
-  padding: 1px 12px;
-  border-radius: 99px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  box-shadow: 0 2px 6px rgba(var(--primary-rgb), 0.25);
+.student-info-main .roll-badge {
+  background: linear-gradient(135deg, #4361ee, #7209b7);
+  color: white !important;
+  padding: 6px 20px;
+  border-radius: 12px;
+  font-size: 1.4rem;
+  font-weight: 900;
+  box-shadow: 0 4px 15px rgba(67, 97, 238, 0.4);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  letter-spacing: 0.5px;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  margin-left: 10px;
 }
 
 .student-meta-block {
@@ -4873,54 +4897,87 @@ body:not(.is-admin) .admin-only {
   border-radius: 8px;
 }
 
+/* Navigation Controls in Analysis */
 .analysis-nav-controls {
   display: flex;
   align-items: center;
-  border-radius: 6px;
+  background: var(--container-bg);
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(var(--text-color-rgb), 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .nav-btn.sm {
   background: var(--card-bg);
   border: none;
   color: var(--text-color);
-  width: 32px;
-  height: 32px;
+  width: 42px;
+  height: 40px;
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  font-size: 0.85rem;
+  font-size: 1.1rem;
+  font-weight: 700;
   transition: all 0.2s;
+  opacity: 1;
 }
 
-.nav-btn.sm:hover {
-  background: rgba(var(--primary-rgb), 0.1);
-  color: var(--primary);
+.nav-btn.sm:hover:not(:disabled) {
+  background: var(--primary);
+  color: white;
+}
+
+.nav-btn.sm:disabled {
+  opacity: 0.3;
+  cursor: not-allowed;
+}
+
+/* Forced High-Contrast for Light Mode Navigation */
+body:not(.dark-mode) .analysis-nav-controls {
+  border-color: #94a3b8 !important;
+  background: #f1f5f9 !important;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.12) !important;
+}
+
+body:not(.dark-mode) .nav-btn.sm {
+  color: #0f172a !important;
+  background: #ffffff !important;
+}
+
+body:not(.dark-mode) .nav-btn.sm i {
+  color: #0f172a !important;
+}
+
+body:not(.dark-mode) .nav-btn.sm:hover:not(:disabled) {
+  background: #e2e8f0 !important;
+}
+
+body:not(.dark-mode) .current-roll-display {
+  background: #1e293b !important;
+  color: #ffffff !important;
+  border-left: 1px solid #475569 !important;
+  border-right: 1px solid #475569 !important;
 }
 
 .current-roll-display {
   background: var(--primary);
-  color: white;
-  padding: 0 12px;
-  height: 32px;
+  color: white !important;
+  padding: 0 16px;
+  height: 40px;
   display: flex;
   align-items: center;
-  font-weight: 700;
-  font-size: 0.9rem;
+  justify-content: center;
+  font-weight: 800;
+  font-size: 1.2rem;
+  min-width: 50px;
+  border-left: 1px solid rgba(255, 255, 255, 0.2);
+  border-right: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-.roll-badge {
-  background: var(--primary);
-  color: white;
-  padding: 2px 12px;
-  border-radius: 99px;
-  font-size: 0.85rem;
-  font-weight: 600;
-  box-shadow: 0 2px 6px rgba(var(--primary-rgb), 0.3);
-}
+/* Remove old small roll-badge */
+/* Specified via .student-info-main .roll-badge above */
 
 .latest-exam-badge {
   font-size: 0.75rem;
@@ -5232,11 +5289,7 @@ body:not(.is-admin) .admin-only {
   max-width: 140px;
 }
 
-.roll-badge {
-  font-size: 0.75rem;
-  color: var(--text-color);
-  opacity: 0.6;
-}
+/* Consolidated with main badge */
 
 .group-tag-minimal {
   font-size: 0.7rem;
@@ -7047,17 +7100,25 @@ body:not(.is-admin) .admin-only {
 .nav-btn {
   display: inline-flex;
   align-items: center;
-  gap: 4px;
-  padding: 6px 12px;
-  border: 1px solid var(--border-color);
-  border-radius: 8px;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: 2px solid var(--border-color);
+  border-radius: 10px;
   background: var(--card-bg);
   color: var(--text-color);
   cursor: pointer;
-  font-size: 0.82rem;
-  font-weight: 600;
-  transition: all 0.2s ease;
+  font-size: 0.9rem;
+  font-weight: 700;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   white-space: nowrap;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+body:not(.dark-mode) .nav-btn {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #334155;
 }
 
 .nav-btn:hover:not(:disabled) {

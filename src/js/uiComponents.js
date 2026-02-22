@@ -925,6 +925,9 @@ export function renderSavedExamsList(container, exams, options = {}) {
     const manuallyLoadedId = localStorage.getItem('loadedExamId');
     const isActiveLoad = exam.docId === manuallyLoadedId;
 
+    // Logic to hide "Load" button permanently for default exams (for non-admins)
+    const shouldHideLoadBtn = !state.isAdmin && exam.docId === defaultExamId;
+
     // Calculate pass percentage
     const participants = stats.participants || 0;
     const passed = stats.passedStudents || 0;
@@ -999,7 +1002,7 @@ export function renderSavedExamsList(container, exams, options = {}) {
                 </div>
 
                 <div class="exam-card-actions-compact">
-                    <button class="card-btn-min load-btn ${isActiveLoad ? 'is-active' : ''}" title=" এক্সাম লোড.."><i class="fas fa-eye"></i> ${isActiveLoad ? 'আন-লোডেড' : (state.currentUser ? 'লোড করুন' : 'এই ফলাফল দেখতে ক্লিক করুন')} </button>
+                    <button class="card-btn-min load-btn ${isActiveLoad ? 'is-active' : ''}" title=" এক্সাম লোড.." ${shouldHideLoadBtn ? 'style="display: none"' : ''}><i class="fas fa-eye"></i> ${isActiveLoad ? 'আন-লোডেড' : (state.currentUser ? 'লোড করুন' : 'এই পরীক্ষার ফলাফল দেখতে ক্লিক করুন')} </button>
                     <label class="pin-toggle admin-only" title="ডিফল্ট হিসেবে সেট করুন">
                         <input type="checkbox" class="pin-checkbox" ${exam.docId === defaultExamId ? 'checked' : ''}>
                         <span class="pin-slider"></span>

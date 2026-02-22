@@ -16,18 +16,38 @@ let currentChart = null;
  */
 function setChartTheme() {
     const isDark = document.body.classList.contains('dark-mode');
-    // Use true black for best contrast in light mode, pure white for dark
     const textColor = isDark ? '#ffffff' : '#000000';
-    const gridColor = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.15)';
+    const gridColor = isDark ? 'rgba(255, 255, 255, 0.2)' : 'rgba(0, 0, 0, 0.2)';
 
     Chart.defaults.color = textColor;
     Chart.defaults.borderColor = gridColor;
+
+    // Explicitly set default fonts to bold
+    Chart.defaults.font = {
+        weight: 'bold',
+        family: '"SolaimanLipi", "Inter", sans-serif',
+        size: 13
+    };
+
     if (Chart.defaults.scale && Chart.defaults.scale.grid) {
         Chart.defaults.scale.grid.color = gridColor;
+        Chart.defaults.scale.grid.lineWidth = 1;
     }
+
     if (Chart.defaults.scale && Chart.defaults.scale.ticks) {
         Chart.defaults.scale.ticks.color = textColor;
+        Chart.defaults.scale.ticks.font = {
+            weight: 'bold',
+            size: 12
+        };
     }
+
+    // Global legend boldness
+    Chart.defaults.plugins.legend.labels.font = {
+        weight: 'bold',
+        size: 14
+    };
+    Chart.defaults.plugins.legend.labels.color = textColor;
 }
 
 /**
@@ -256,7 +276,7 @@ export function createPerformanceChart(canvas, data, options = {}) {
                         if (value === null || value === undefined) return;
 
                         ctx.save();
-                        ctx.font = 'bold 11px Arial';
+                        ctx.font = 'bold 13px "SolaimanLipi", "Inter", sans-serif';
                         ctx.fillStyle = labelColor;
                         ctx.textAlign = 'center';
                         ctx.textBaseline = 'bottom';
