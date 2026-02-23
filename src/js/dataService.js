@@ -372,27 +372,45 @@ function parseExcelRow(row, columnMap, rowIndex) {
         console.log(`Row ${rowIndex}: Excel group "${row[columnMap.group]}" -> "${group}"`);
     }
 
-    // Get scores - handle absent/blank/text values
+    // Get scores - handle absent/blank/text values (Preserve null for empty)
     const parseScore = (value) => {
-        if (value === null || value === undefined || value === '') return 0;
+        if (value === null || value === undefined || value === '') return null;
         if (typeof value === 'string') {
             const lowerVal = value.toLowerCase().trim();
-            if (lowerVal === 'absent' || lowerVal === 'অনুপস্থিত' || lowerVal === '') return 0;
+            if (lowerVal === 'absent' || lowerVal === 'অনুপস্থিত' || lowerVal === '') return null;
+            // Convert Bengali digits if necessary (handled by parseFloat usually but good to be safe)
+            const cleaned = lowerVal.replace(/[,]/g, '');
+            const num = parseFloat(cleaned);
+            return isNaN(num) ? null : num;
         }
         const num = parseFloat(value);
-        return isNaN(num) ? 0 : num;
+        return isNaN(num) ? null : num;
     };
 
-    const written = columnMap.written >= 0 ? parseScore(row[columnMap.written]) : 0;
-    const mcq = columnMap.mcq >= 0 ? parseScore(row[columnMap.mcq]) : 0;
-    const practical = columnMap.practical >= 0 ? parseScore(row[columnMap.practical]) : 0;
+    const written = columnMap.written >= 0 ? parseScore(row[columnMap.written]) : null;
+    const mcq = columnMap.mcq >= 0 ? parseScore(row[columnMap.mcq]) : null;
+    const practical = columnMap.practical >= 0 ? parseScore(row[columnMap.practical]) : null;
 
     // Calculate total or use from Excel
-    let total = written + mcq + practical;
-    if (columnMap.total >= 0 && row[columnMap.total]) {
+    let total = (written || 0) + (mcq || 0) + (practical || 0);
+
+    // If all core score components were literally empty/null, student is likely absent
+    // We'll set total to null unless the Excel Total column has a non-zero value
+    if (written === null && mcq === null && practical === null) {
+        total = null;
+    }
+
+    if (columnMap.total >= 0 && row[columnMap.total] !== undefined && row[columnMap.total] !== null) {
         const excelTotal = parseFloat(row[columnMap.total]);
         if (!isNaN(excelTotal)) {
-            total = excelTotal;
+            // Only override with Excel total if it's non-zero or if components aren't all null
+            // This prevents a '0' in the Excel Total column from marking an absent student as present
+            if (excelTotal !== 0 || total !== null) {
+                total = excelTotal;
+            }
+        } else if (String(row[columnMap.total]).trim() === '' && total === 0) {
+            // If total column itself is explicitly blank and others are also blank/zero
+            total = null;
         }
     }
 

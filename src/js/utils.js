@@ -11,11 +11,11 @@ import { GRADING_SYSTEM, FAILING_THRESHOLD, CHART_COLORS, GROUP_NAMES } from './
  * @returns {boolean} - True if value indicates absence
  */
 export function isValueAbsent(value) {
-    if (value === null || value === undefined || value === '') return true;
-    if (typeof value === 'number' && value === 0) return true;
+    if (value === null || value === undefined) return true;
+    if (value === '') return true;
     if (typeof value === 'string') {
         const lowerVal = value.toLowerCase().trim();
-        if (lowerVal === '0' || lowerVal === 'absent' || lowerVal === 'অনুপস্থিত' || lowerVal === '') {
+        if (lowerVal === 'absent' || lowerVal === 'অনুপস্থিত') {
             return true;
         }
     }
@@ -30,11 +30,22 @@ export function isValueAbsent(value) {
  * @returns {boolean} - True if student is absent
  */
 export function isAbsent(student) {
-    // Primary check: Written marks
-    if (isValueAbsent(student.written)) {
-        // If written is absent, check if other marks are also absent/zero
-        return isValueAbsent(student.mcq) && isValueAbsent(student.practical);
+    // A student is considered absent if all individual score components are absent (null/blank)
+    // We treat 0 as present for components, but if all components are null, 
+    // we consider the student absent even if total is 0 (often used as a placeholder).
+    const writtenAbsent = isValueAbsent(student.written);
+    const mcqAbsent = isValueAbsent(student.mcq);
+    const practicalAbsent = isValueAbsent(student.practical);
+
+    if (writtenAbsent && mcqAbsent && practicalAbsent) {
+        // If all components are absent, check total
+        const totalValue = student.total;
+        // If total is also 0 or null, it's definitely absent
+        if (totalValue === 0 || isValueAbsent(totalValue)) {
+            return true;
+        }
     }
+
     return false;
 }
 
@@ -60,17 +71,41 @@ export function calculateGrade(total) {
  * @param {Object} student - Student data object
  * @returns {string} - Status string
  */
-export function determineStatus(student) {
+export function determineStatus(student, options = {}) {
     if (isAbsent(student)) {
         return 'অনুপস্থিত';
     }
 
-    if (student.written < FAILING_THRESHOLD.written) {
+    const {
+        writtenPass = FAILING_THRESHOLD.written,
+        mcqPass = FAILING_THRESHOLD.mcq
+    } = options;
+
+    const written = student.written === null ? null : Number(student.written);
+    const mcq = student.mcq === null ? null : Number(student.mcq);
+    const practical = student.practical === null ? null : Number(student.practical);
+
+    // Custom Logic 1: CQ-Only Subject
+    // Criteria: MCQ and Practical are literally empty/null in Excel
+    const isCQOnly = written !== null && mcq === null && (practical === null);
+
+    if (isCQOnly) {
+        // For CQ-only subjects, pass mark is strictly 33
+        return (written || 0) >= 33 ? 'পাস' : 'ফেল';
+    }
+
+    // Custom Logic 2: Standard/Custom Component Subject
+    // A student must pass BOTH Written and MCQ components if they exist
+    // Note: If a component is 0 (not null), it's treated as a score of 0
+    const writtenScore = written || 0;
+    const mcqScore = mcq || 0;
+
+    if (writtenScore < writtenPass || mcqScore < mcqPass) {
         return 'ফেল';
     }
 
-    const gradeInfo = calculateGrade(student.total);
-    if (gradeInfo.grade === 'F') {
+    // If custom totalPass is provided, check it, otherwise pass if components pass
+    if (options.totalPass && (student.total || (writtenScore + mcqScore + (practical || 0))) < options.totalPass) {
         return 'ফেল';
     }
 
@@ -223,23 +258,11 @@ export function sortStudentData(data, sortBy, order = 'desc') {
  * @returns {Object} - Statistics object
  */
 export function calculateStatistics(data, options = {}) {
-    const { writtenPass = FAILING_THRESHOLD.written, mcqPass = FAILING_THRESHOLD.mcq, totalPass = 33 } = options;
-
     const totalStudents = data.length;
     const absentStudents = data.filter((student) => isAbsent(student)).length;
 
     const failedStudents = data.filter(
-        (student) => {
-            if (isAbsent(student)) return false;
-
-            // Check based on provided thresholds
-            // If any criteria fails, the student fails
-            const failedWritten = Number(student.written) < writtenPass;
-            const failedMcq = Number(student.mcq) < mcqPass;
-            // const failedTotal = Number(student.total) < totalPass; // Optional check
-
-            return failedWritten || failedMcq;
-        }
+        (student) => determineStatus(student, options) === 'ফেল'
     ).length;
 
     const participants = totalStudents - absentStudents;
@@ -252,20 +275,18 @@ export function calculateStatistics(data, options = {}) {
 
     data.forEach(student => {
         if (!isAbsent(student)) {
-            // Check if student failed based on marks OR final grade
-            const failedWritten = Number(student.written) < writtenPass;
-            const failedMcq = Number(student.mcq) < mcqPass;
-            const gradeInfo = calculateGrade(student.total);
-
-            if (failedWritten || failedMcq || gradeInfo.grade === 'F') {
+            const status = determineStatus(student, options);
+            if (status === 'ফেল') {
                 gradeDistribution['F']++;
             } else {
+                const gradeInfo = calculateGrade(student.total);
                 if (gradeDistribution[gradeInfo.grade] !== undefined) {
                     gradeDistribution[gradeInfo.grade]++;
+                } else {
+                    gradeDistribution['F']++; // Fallback
                 }
             }
         }
-        // Absent students are handled separately in 'absentStudents' count.
     });
 
     return {
@@ -301,13 +322,8 @@ export function calculateGroupStatistics(data, options = {}) {
  * @returns {Array} - Failed students array
  */
 export function getFailedStudents(data, options = {}) {
-    const { writtenPass = FAILING_THRESHOLD.written, mcqPass = FAILING_THRESHOLD.mcq } = options;
     return data.filter(
-        (student) =>
-            !isAbsent(student) &&
-            (Number(student.written) < writtenPass ||
-                Number(student.mcq) < mcqPass ||
-                calculateGrade(student.total).grade === 'F')
+        (student) => determineStatus(student, options) === 'ফেল'
     );
 }
 

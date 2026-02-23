@@ -366,35 +366,41 @@
   <!-- Failed Students Section -->
   <div class="card failed-students">
     <div class="card-header">
-      <div class="header-main">
-        <h2 class="card-title">ফেল করা শিক্ষার্থী (লিখিত &lt; ১৭)</h2>
+      <div class="header-main-unified">
+        <div class="header-top-row">
+          <div class="header-title-group">
+            <h2 class="card-title">ফেল করা শিক্ষার্থী (HSC)</h2>
+          </div>
+
+          <div class="header-center-actions">
+            <div class="action-buttons-group">
+              <button class="view-btn btn-premium-print" id="printFailedBtn">
+                <i class="fas fa-print"></i> প্রিন্ট
+              </button>
+              <button class="view-btn btn-premium-download" id="downloadFailedBtn">
+                <i class="fas fa-download"></i> ডাউনলোড
+              </button>
+            </div>
+          </div>
+
+          <div class="header-right-toggles">
+            <div class="failed-group-toggles" id="failedGroupToggles">
+              <label class="group-toggle-chip science active" data-group="বিজ্ঞান গ্রুপ">
+                <input type="checkbox" checked> <span class="chip-dot"></span> বিজ্ঞান
+                <span class="chip-count" data-count-group="বিজ্ঞান গ্রুপ">0</span>
+              </label>
+              <label class="group-toggle-chip business active" data-group="ব্যবসায় গ্রুপ">
+                <input type="checkbox" checked> <span class="chip-dot"></span> ব্যবসায়
+                <span class="chip-count" data-count-group="ব্যবসায় গ্রুপ">0</span>
+              </label>
+              <label class="group-toggle-chip arts active" data-group="মানবিক গ্রুপ">
+                <input type="checkbox" checked> <span class="chip-dot"></span> মানবিক
+                <span class="chip-count" data-count-group="মানবিক গ্রুপ">0</span>
+              </label>
+            </div>
+          </div>
+        </div>
         <div id="failedHeaderMeta" class="header-meta"></div>
-      </div>
-      <div class="header-actions-group">
-        <div class="failed-group-toggles" id="failedGroupToggles">
-          <label class="group-toggle-chip science active" data-group="বিজ্ঞান গ্রুপ">
-            <input type="checkbox" checked> <span class="chip-dot"></span> বিজ্ঞান
-            <span class="chip-count" data-count-group="বিজ্ঞান গ্রুপ">0</span>
-          </label>
-          <label class="group-toggle-chip business active" data-group="ব্যবসায় গ্রুপ">
-            <input type="checkbox" checked> <span class="chip-dot"></span> ব্যবসায়
-            <span class="chip-count" data-count-group="ব্যবসায় গ্রুপ">0</span>
-          </label>
-          <label class="group-toggle-chip arts active" data-group="মানবিক গ্রুপ">
-            <input type="checkbox" checked> <span class="chip-dot"></span> মানবিক
-            <span class="chip-count" data-count-group="মানবিক গ্রুপ">0</span>
-          </label>
-        </div>
-        <div class="action-buttons-group">
-          <button class="view-btn" id="printFailedBtn"
-            style="background: #6366f1; color: white; border: none; font-size: 0.8rem; padding: 4px 10px;">
-            <i class="fas fa-print"></i> প্রিন্ট
-          </button>
-          <button class="view-btn" id="downloadFailedBtn"
-            style="background: var(--success); color: white; border: none; font-size: 0.8rem; padding: 4px 10px;">
-            <i class="fas fa-download"></i> ডাউনলোড
-          </button>
-        </div>
       </div>
     </div>
     <div class="failed-list" id="failedStudentsContainer">
@@ -405,23 +411,14 @@
   <!-- Group Statistics Section -->
   <div class="card">
     <div class="card-header">
-      <div class="header-main">
+      <div class="header-main-unified">
         <h2 class="card-title">গ্রুপভিত্তিক পাস/ফেল পরিসংখ্যান</h2>
         <div id="groupStatsHeaderMeta" class="header-meta"></div>
-      </div>
-      <div class="header-actions-group">
-        <div class="action-buttons-group">
-          <button class="view-btn" id="downloadGroupStatsBtn"
-            style="background: var(--success); color: white; border: none; font-size: 0.8rem; padding: 4px 10px;">
-            <i class="fas fa-download"></i> ডাউনলোড
-          </button>
-        </div>
       </div>
     </div>
     <div class="group-stats-grid" id="groupStatsContainer">
       <!-- Group statistics will be rendered here -->
     </div>
-  </div>
   </div>
   <!-- Save Exam Modal -->
   <div id="saveExamModal" class="modal">

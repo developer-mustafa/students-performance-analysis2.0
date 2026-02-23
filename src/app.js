@@ -208,7 +208,7 @@ function updateViews() {
         subjectName: state.currentSubject
     });
 
-    elements.chartTitle.textContent = getChartTitle(state.currentChartType, state.currentExamName, state.currentSubject);
+    elements.chartTitle.innerHTML = getChartTitle(state.currentChartType, state.currentExamName, state.currentSubject);
 
     // Toggle view visibility
     if (elements.chartView) elements.chartView.style.display = state.currentView === 'chart' ? 'block' : 'none';

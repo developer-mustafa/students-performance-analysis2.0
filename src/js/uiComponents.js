@@ -17,6 +17,7 @@ import {
   formatDateBengali,
 } from './utils.js';
 import { FAILING_THRESHOLD, MAX_CHART_ENTRIES, MAX_TABLE_ENTRIES, GROUP_NAMES } from './constants.js';
+import { captureElementAsImage } from './dataService.js';
 
 /**
  * Render statistics cards
@@ -96,12 +97,29 @@ export function renderGroupStats(container, data, options = {}) {
   const { examName, subjectName } = options;
   if (metaElement) {
     metaElement.innerHTML = `
-      <span class="meta-item"><i class="fas fa-graduation-cap"></i> শ্রেণি: ${firstStudent.class || 'N/A'}</span>
-      <span class="meta-item"><i class="fas fa-calendar-alt"></i> সেশন: ${firstStudent.session || 'N/A'}</span>
-      ${examName ? `<span class="meta-item"><i class="fas fa-book"></i> ${examName}</span>` : ''}
-      ${subjectName ? `<span class="meta-item"><i class="fas fa-book-open"></i> ${subjectName}</span>` : ''}
-      <span class="meta-item count-badge"><i class="fas fa-check-circle"></i> মোট: ${data.length} জন</span>
+      <div style="display: flex; align-items: center; justify-content: space-between; width: 100%; flex-wrap: wrap; gap: 10px;">
+        <div class="meta-items-group" style="display: flex; gap: 8px; flex-wrap: wrap;">
+          <span class="meta-item"><i class="fas fa-graduation-cap"></i> শ্রেণি: ${firstStudent.class || 'N/A'}</span>
+          <span class="meta-item"><i class="fas fa-calendar-alt"></i> সেশন: ${firstStudent.session || 'N/A'}</span>
+          ${examName ? `<span class="meta-item"><i class="fas fa-book"></i> ${examName}</span>` : ''}
+          ${subjectName ? `<span class="meta-item"><i class="fas fa-book-open"></i> ${subjectName}</span>` : ''}
+        </div>
+        <button class="view-btn btn-premium-download" id="downloadGroupStatsBtn" style="margin: 0; padding: 6px 14px; font-size: 0.85rem;">
+          <i class="fas fa-download"></i> ডাউনলোড
+        </button>
+      </div>
     `;
+
+    // Re-attach event listener as the element is re-created
+    const newBtn = document.getElementById('downloadGroupStatsBtn');
+    if (newBtn) {
+      newBtn.addEventListener('click', () => {
+        const statsGrid = document.getElementById('groupStatsContainer');
+        if (statsGrid) {
+          captureElementAsImage(statsGrid, `group-stats-${examName || 'report'}.png`);
+        }
+      });
+    }
   }
 
   // Calculate Global Grade Distribution
@@ -280,10 +298,12 @@ export function renderFailedStudents(container, data, options = {}) {
     const firstStudent = data[0];
     const { examName, subjectName } = options;
     metaElement.innerHTML = `
-      <span class="meta-item"><i class="fas fa-graduation-cap"></i> শ্রেণি: ${firstStudent.class || 'N/A'}</span>
-      <span class="meta-item"><i class="fas fa-calendar-alt"></i> সেশন: ${firstStudent.session || 'N/A'}</span>
-      ${examName ? `<span class="meta-item"><i class="fas fa-book"></i> ${examName}</span>` : ''}
-      ${subjectName ? `<span class="meta-item"><i class="fas fa-book-open"></i> ${subjectName}</span>` : ''}
+      <div class="context-meta-bar compact-1-line">
+        <span class="meta-item"><i class="fas fa-graduation-cap"></i> শ্রেণি: ${firstStudent.class || 'N/A'}</span>
+        <span class="meta-item"><i class="fas fa-calendar-alt"></i> সেশন: ${firstStudent.session || 'N/A'}</span>
+        ${examName ? `<span class="meta-item"><i class="fas fa-book"></i> ${examName}</span>` : ''}
+        ${subjectName ? `<span class="meta-item"><i class="fas fa-book-open"></i> ${subjectName}</span>` : ''}
+      </div>
     `;
   }
 
@@ -549,22 +569,22 @@ export function printAllStudents(data, options = {}) {
   });
 
   const totalStudents = sorted.length;
-  const participants = sorted.filter(s => Number(s.written) > 0 || Number(s.mcq) > 0).length;
+  const stats = calculateStatistics(sorted, options);
+  const participants = stats.participants;
   const failedStudents = getFailedStudents(sorted, options);
-  const passedCount = participants - failedStudents.length;
+  const passedCount = stats.passedStudents;
   const passRate = participants > 0 ? ((passedCount / participants) * 100).toFixed(1) : 0;
 
   // Grade distribution (exclude absent students)
   const gradeDist = {};
   let absentCount = 0;
   sorted.forEach(s => {
-    if (Number(s.written) === 0 && Number(s.mcq) === 0) {
+    if (isAbsent(s)) {
       absentCount++;
       return;
     }
-    // If CQ or MCQ below pass mark → F grade
-    const isFailed = Number(s.written) < writtenPass || Number(s.mcq) < mcqPass;
-    const g = isFailed ? 'F' : calculateGrade(s.total).grade;
+    const status = determineStatus(s, options);
+    const g = status === 'ফেল' ? 'F' : calculateGrade(s.total).grade;
     gradeDist[g] = (gradeDist[g] || 0) + 1;
   });
   const gradeColors = { 'A+': '#10b981', 'A': '#22c55e', 'A-': '#84cc16', 'B': '#3b82f6', 'C': '#f59e0b', 'D': '#f97316', 'F': '#ef4444' };
@@ -582,10 +602,10 @@ export function printAllStudents(data, options = {}) {
 
   const tableRows = sorted.map((s, i) => {
     const gradeInfo = calculateGrade(s.total);
-    const isFailed = Number(s.written) < writtenPass || Number(s.mcq) < mcqPass;
-    const isAbsent = Number(s.written) === 0 && Number(s.mcq) === 0;
-    const status = isAbsent ? 'অনুপস্থিত' : isFailed ? 'ফেল' : 'পাস';
-    const statusClass = isAbsent ? 'status-absent' : isFailed ? 'status-fail' : 'status-pass';
+    const status = determineStatus(s, options);
+    const isFailed = status === 'ফেল';
+    const isAbs = status === 'অনুপস্থিত';
+    const statusClass = isAbs ? 'status-absent' : isFailed ? 'status-fail' : 'status-pass';
     const groupColorClass = (s.group || '').includes('বিজ্ঞান') ? 'grp-science' :
       (s.group || '').includes('ব্যবসায়') ? 'grp-business' : 'grp-arts';
     const rowGroupClass = (s.group || '').includes('বিজ্ঞান') ? 'row-science' :
@@ -767,7 +787,7 @@ export function renderTable(tbody, data, options = {}) {
     .map((student) => {
       const rowClass = getGroupClass(student.group);
       const gradeInfo = calculateGrade(student.total);
-      const status = determineStatus(student);
+      const status = determineStatus(student, options);
       const statusClass = status === 'পাস' ? 'status-pass' : status === 'ফেল' ? 'status-fail' : 'status-absent';
       const { writtenPass = FAILING_THRESHOLD.written, mcqPass = FAILING_THRESHOLD.mcq, practicalPass = 0 } = options;
 
@@ -1002,7 +1022,7 @@ export function renderSavedExamsList(container, exams, options = {}) {
                 </div>
 
                 <div class="exam-card-actions-compact">
-                    <button class="card-btn-min load-btn ${isActiveLoad ? 'is-active' : ''}" title=" এক্সাম লোড.." ${shouldHideLoadBtn ? 'style="display: none"' : ''}><i class="fas fa-eye"></i> ${isActiveLoad ? 'আন-লোডেড' : (state.currentUser ? 'লোড করুন' : 'এই পরীক্ষার ফলাফল দেখতে ক্লিক করুন')} </button>
+                    <button class="card-btn-min load-btn ${isActiveLoad ? 'is-active' : ''}" title=" এক্সাম লোড.." ${shouldHideLoadBtn ? 'style="display: none"' : ''}><i class="fas fa-eye"></i> ${isActiveLoad ? 'আন-লোড' : (state.currentUser ? 'লোড করুন' : 'এই পরীক্ষার ফলাফল দেখতে ক্লিক করুন')} </button>
                     <label class="pin-toggle admin-only" title="ডিফল্ট হিসেবে সেট করুন">
                         <input type="checkbox" class="pin-checkbox" ${exam.docId === defaultExamId ? 'checked' : ''}>
                         <span class="pin-slider"></span>

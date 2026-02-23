@@ -325,11 +325,11 @@ export function updateChartOnResize() {
  */
 export function getChartTitle(chartType, examName, subject = null) {
     const baseTitle = CHART_TYPES[chartType]?.title || CHART_TYPES.total.title;
-    let title = `${baseTitle} - ${examName || 'exam '}`;
+    let subtitle = ` - ${examName || 'exam '}`;
     if (subject) {
-        title += ` (${subject})`;
+        subtitle += ` (${subject})`;
     }
-    return title;
+    return `${baseTitle}<span class="chart-subtitle">${subtitle}</span>`;
 }
 
 let currentHistoryChart = null;
