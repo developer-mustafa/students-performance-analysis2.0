@@ -98,7 +98,7 @@
         </button>
 
         <!-- User Management Button (Super Admin only) -->
-        <button id="toolbarUserMgmtBtn" class="dm-btn dm-report"
+        <button id="toolbarUserMgmtBtn" class="dm-btn dm-report super-admin-only"
           style="display: none; background: #6c5ce7; color: white; border: none;">
           <i class="fas fa-users-cog"></i> <span class="dm-btn-text">ব্যবহারকারী</span>
         </button>
@@ -541,7 +541,7 @@
       <span class="close" id="closeUserManagementBtn">&times;</span>
       <div style="display: flex; justify-content: space-between; align-items: center;">
         <h2><i class="fas fa-users-cog"></i> ব্যবহারকারী ব্যবস্থাপনা</h2>
-        <button id="subjectSettingsBtn" class="btn-primary" style="font-size: 0.9em;">
+        <button id="subjectSettingsBtn" class="btn-primary admin-only" style="font-size: 0.9em;">
           <i class="fas fa-cogs"></i> বিষয় সেটিংস
         </button>
       </div>
@@ -565,7 +565,7 @@
       <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
           <h3><i class="fas fa-list-alt"></i> ক্লাস ও বিষয় ম্যাপিং</h3>
-          <button id="openClassMappingBtn" class="btn-secondary" style="font-size: 0.9em;">
+          <button id="openClassMappingBtn" class="btn-secondary admin-only" style="font-size: 0.9em;">
             <i class="fas fa-edit"></i> ম্যাপিং এডিট করুন
           </button>
         </div>
@@ -724,7 +724,7 @@
           </div>
 
           <div class="form-actions">
-            <button id="deleteSubjectBtn" class="btn-danger-outline" style="display: none;">
+            <button id="deleteSubjectBtn" class="btn-danger-outline super-admin-only" style="display: none;">
               <i class="fas fa-trash"></i> ডিলিট
             </button>
             <button id="saveSubjectConfigBtn" class="btn-primary">
@@ -764,7 +764,7 @@
       <p id="confirmMessage">আপনি কি নিশ্চিত যে আপনি এটি মুছে ফেলতে চান?</p>
       <div class="confirm-modal-actions">
         <button id="confirmCancelBtn" class="btn-secondary">না, থাক</button>
-        <button id="confirmDeleteBtn" class="btn-danger">হ্যাঁ, মুছে ফেলুন</button>
+        <button id="confirmDeleteBtn" class="btn-danger super-admin-only">হ্যাঁ, মুছে ফেলুন</button>
       </div>
     </div>
   </div>

@@ -137,7 +137,8 @@ function loadConfigIntoForm(subject, config) {
     elements.configPracticalOptional.checked = !!config.practicalOptional;
     elements.configTotalMax.value = config.total || '';
 
-    elements.deleteSubjectBtn.style.display = 'block';
+    const canDelete = state.isSuperAdmin;
+    elements.deleteSubjectBtn.style.display = canDelete ? 'block' : 'none';
     elements.formTitle.innerText = `এডিট: ${subject}`;
 
     // Highlight active item in list

@@ -170,6 +170,12 @@ export function updateProfileUI(user, isAdmin, isSuperAdmin, role) {
         document.body.classList.remove('is-admin');
         if (elements.saveExamModal) elements.saveExamModal.classList.remove('admin-mode');
     }
+
+    if (isSuperAdmin) {
+        document.body.classList.add('is-super-admin');
+    } else {
+        document.body.classList.remove('is-super-admin');
+    }
 }
 
 export function initDOMReferences() {

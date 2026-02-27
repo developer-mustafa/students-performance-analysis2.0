@@ -450,6 +450,7 @@ export function printFailedStudents(data, options = {}) {
   const statsData = options.fullData || data;
   const overallStats = calculateStatistics(statsData, options);
   const groupStats = calculateGroupStatistics(statsData, options);
+  const overallPassRate = overallStats.participants > 0 ? Math.round((overallStats.passedStudents / overallStats.participants) * 100) : 0;
 
   // Dynamic Filters HTML
   const filterChips = [];
@@ -458,6 +459,12 @@ export function printFailedStudents(data, options = {}) {
   }
   if (options.gradeFilter && options.gradeFilter !== 'সব গ্রেড') {
     filterChips.push(`<span class="f-chip">গ্রেড: ${options.gradeFilter}</span>`);
+  }
+  if (options.statusFilter && options.statusFilter !== 'সব শিক্ষার্থী') {
+    filterChips.push(`<span class="f-chip">অবস্থা: ${options.statusFilter}</span>`);
+  }
+  if (options.searchTerm && options.searchTerm.trim() !== '') {
+    filterChips.push(`<span class="f-chip">সার্চ: ${options.searchTerm}</span>`);
   }
   const filtersHTML = filterChips.length > 0 ? `<div class="f-row">🔍 ফিল্টার: ${filterChips.join('')}</div>` : '';
 
@@ -484,9 +491,9 @@ export function printFailedStudents(data, options = {}) {
       <td>${convertToBengaliDigits(i + 1)}</td>
       <td>${convertToBengaliDigits(s.roll || s.id)}</td>
       <td class="name-td">${s.name}</td>
-      <td>${s.group || '-'}</td>
-      <td>${convertToBengaliDigits(s.written || 0)}</td>
-      <td>${convertToBengaliDigits(s.mcq || 0)}</td>
+      <td class="${getGroupClass(s.group)}">${s.group || '-'}</td>
+      <td ${Number(s.written) < writtenPass ? 'style="color: #ef4444; font-weight: bold;"' : ''}>${convertToBengaliDigits(s.written || 0)}</td>
+      <td ${Number(s.mcq) < mcqPass ? 'style="color: #ef4444; font-weight: bold;"' : ''}>${convertToBengaliDigits(s.mcq || 0)}</td>
       <td>${convertToBengaliDigits(s.practical || 0)}</td>
       <td><strong>${convertToBengaliDigits(s.total || 0)}</strong></td>
       <td class="s-fail">${Number(s.written) < writtenPass ? 'CQ ফেল' : Number(s.mcq) < mcqPass ? 'MCQ ফেল' : 'মোট ফেল'}</td>
@@ -496,15 +503,15 @@ export function printFailedStudents(data, options = {}) {
 <html lang="bn">
 <head>
   <meta charset="UTF-8">
-  <title>ফেল - ${examName}</title>
+  <title> </title>
   <style>
     @page { size: A4; margin: 10mm; }
     * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust: exact; }
     body { font-family: 'Segoe UI', system-ui, sans-serif; color: #1e293b; font-size: 10px; line-height: 1.3; }
     
-    .h { text-align: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1.5px solid #0f172a; }
-    .h h1 { font-size: 18px; font-weight: 800; color: #0f172a; }
-    .h .sub { font-size: 12px; color: #475569; font-weight: 600; margin-top: 1px; }
+    .h { text-align: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid #0f172a; }
+    .h h1 { font-size: 20px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .h .sub { font-size: 13px; color: #334155; font-weight: 700; background: #f1f5f9; display: inline-block; padding: 2px 15px; border-radius: 20px; border: 1px solid #e2e8f0; }
 
     .top-bar { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; padding: 5px 12px; border-radius: 6px; margin-bottom: 10px; }
     .top-item { display: flex; gap: 6px; font-size: 10px; }
@@ -515,9 +522,19 @@ export function printFailedStudents(data, options = {}) {
     .f-row { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 8px; background: #fffbeb; border: 1px solid #fef3c7; padding: 4px; border-radius: 6px; font-size: 9px; font-weight: 700; color: #92400e; }
     .f-chip { background: #fbbf24; color: #78350f; padding: 1px 8px; border-radius: 4px; border: 1px solid #f59e0b; }
 
-    .dash { display: grid; grid-template-columns: 1fr 240px; gap: 10px; margin-bottom: 10px; }
+    .dash { display: grid; grid-template-columns: 1fr 280px; gap: 10px; margin-bottom: 10px; }
     .section { border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; background: white; }
-    .st { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; margin-bottom: 8px; display: flex; justify-content: center; }
+    .st { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .overall-pass-badge { background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); color: white; padding: 4px 15px; border-radius: 8px; font-size: 11px; font-weight: 900; letter-spacing: 0.5px; box-shadow: 0 3px 10px rgba(22, 163, 74, 0.4); border: 1.5px solid #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    
+    .pass-dashboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
+    .grp-progress-item { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px; }
+    .grp-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 10px; font-weight: 800; }
+    .progress-bar { height: 7px; background: #f1f5f9; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; }
+    .progress-fill { height: 100%; border-radius: 10px; }
+    .fill-science { background: #6366f1; }
+    .fill-business { background: #f59e0b; }
+    .fill-arts { background: #f43f5e; }
     
     /* Grade Box Split Design */
     .grade-grid { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
@@ -534,13 +551,15 @@ export function printFailedStudents(data, options = {}) {
     .gb-D { border-color: #f97316; } .gb-D .gb-top { color: #f97316; } .gb-D .gb-btm { background: #f97316; }
     .gb-F { border-color: #ef4444; } .gb-F .gb-top { color: #ef4444; } .gb-F .gb-btm { background: #ef4444; }
 
-    .sum-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; height: calc(100% - 20px); align-items: center; }
-    .s-boxInner { text-align: center; padding: 6px; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; }
-    .s-boxInner.t { background: #eff6ff; color: #1e40af; }
-    .s-boxInner.p { background: #f0fdf4; color: #166534; }
-    .s-boxInner.f { background: #fef2f2; color: #991b1b; }
-    .sn { font-size: 8px; font-weight: 700; opacity: 0.8; margin-top: 2px; }
-    .sv { font-size: 16px; font-weight: 900; }
+    .sum-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; height: calc(100% - 20px); align-items: center; }
+    .s-boxInner { text-align: center; padding: 5px 2px; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; border: 1px solid transparent; }
+    .s-boxInner.tot { background: #f8fafc; color: #475569; border-color: #e2e8f0; }
+    .s-boxInner.t { background: #eff6ff; color: #1e40af; border-color: #dbeafe; }
+    .s-boxInner.p { background: #f0fdf4; color: #166534; border-color: #dcfce7; }
+    .s-boxInner.f { background: #fef2f2; color: #991b1b; border-color: #fee2e2; }
+    .s-boxInner.a { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
+    .sn { font-size: 8px; font-weight: 700; opacity: 0.8; margin-top: 1px; }
+    .sv { font-size: 14px; font-weight: 900; }
 
     .group-row { display: flex; gap: 8px; margin-bottom: 10px; }
     .g-card { flex: 1; border: 1px solid #e2e8f0; padding: 6px; border-radius: 6px; display: flex; flex-direction: column; align-items: center; text-align: center; background: white; }
@@ -553,6 +572,11 @@ export function printFailedStudents(data, options = {}) {
     tr:nth-child(even) { background: #f8fafc; }
     .name-td { text-align: left; font-weight: 600; padding-left: 8px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     .s-fail { color: #ef4444; font-weight: 800; font-size: 8.5px; }
+
+    /* Dynamic Group Colors */
+    .science-group { background: #ecfeff !important; color: #0891b2 !important; font-weight: 700; }
+    .business-group { background: #fffbeb !important; color: #b45309 !important; font-weight: 700; }
+    .arts-group { background: #fdf2f8 !important; color: #be185d !important; font-weight: 700; }
     
     /* Persistent Footer Logic */
     .ftr { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1.5px solid #e2e8f0; padding: 10px 0; text-align: center; }
@@ -589,10 +613,26 @@ export function printFailedStudents(data, options = {}) {
     <div class="section">
       <div class="st">সারসংক্ষেপ</div>
       <div class="sum-grid">
+        <div class="s-boxInner tot"><div class="sv">${convertToBengaliDigits(overallStats.totalStudents)}</div><div class="sn">মোট শিক্ষার্থী</div></div>
         <div class="s-boxInner t"><div class="sv">${convertToBengaliDigits(overallStats.participants)}</div><div class="sn">পরীক্ষার্থী</div></div>
         <div class="s-boxInner p"><div class="sv">${convertToBengaliDigits(overallStats.passedStudents)}</div><div class="sn">পাস</div></div>
         <div class="s-boxInner f"><div class="sv">${convertToBengaliDigits(overallStats.failedStudents)}</div><div class="sn">ফেল</div></div>
+        <div class="s-boxInner a"><div class="sv">${convertToBengaliDigits(overallStats.absentStudents)}</div><div class="sn">অনুপস্থিত</div></div>
       </div>
+    </div>
+  </div>
+
+  <div class="section" style="margin-bottom: 10px;">
+    <div class="st"><span>বিভাগ ভিত্তিক পাশের হার</span> <span class="overall-pass-badge">মোট পাশের হার: ${convertToBengaliDigits(overallPassRate)}%</span></div>
+    <div class="pass-dashboard">
+      ${groupStats.map(gs => {
+    const rate = gs.participants > 0 ? Math.round((gs.passedStudents / gs.participants) * 100) : 0;
+    const gClass = gs.group.includes('বিজ্ঞান') ? 'fill-science' : gs.group.includes('ব্যবসায়') ? 'fill-business' : 'fill-arts';
+    return `<div class="grp-progress-item">
+          <div class="grp-info"><span>${gs.group}</span> <span>${convertToBengaliDigits(rate)}%</span></div>
+          <div class="progress-bar"><div class="progress-fill ${gClass}" style="width: ${rate}%"></div></div>
+        </div>`;
+  }).join('')}
     </div>
   </div>
 
@@ -615,7 +655,7 @@ export function printFailedStudents(data, options = {}) {
     <tbody>${tableRows}</tbody>
     <tfoot>
       <tr>
-        <td colspan="9" style="border: none; padding: 0; height: 45px;"></td>
+        <td colspan="9" style="border: none; padding: 0; height: 65px;"></td>
       </tr>
     </tfoot>
   </table>
@@ -624,6 +664,7 @@ export function printFailedStudents(data, options = {}) {
   <div class="ftr">
     <div class="ftr-dev">সফটওয়্যার নির্মাতা: মোস্তফা রাহমান, সিনিয়র সফটওয়্যার ইন্জিনিয়্যার, ইস্তাম্বুল, তুরস্ক</div>
     <div class="ftr-contact">যোগাযোগ: ০১৮৪০-৬৪৩৯৪৬ <span class="ftr-soft">অটোমেটেড এক্সাম এনালিষ্ট সফটওয়্যার</span></div>
+    <div class="ftr-contact" style="margin-top: 2px; color: #3b82f6; font-weight: 700;">${window.location.host}</div>
   </div>
 
   <script>window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 500); }</script>
@@ -651,14 +692,20 @@ export function printAllStudents(data, options = {}) {
 
   const statsData = options.fullData || data;
   const overallStats = calculateStatistics(statsData, options);
+  const groupStats = calculateGroupStatistics(statsData, options);
+  const overallPassRate = overallStats.participants > 0 ? Math.round((overallStats.passedStudents / overallStats.participants) * 100) : 0;
 
   // Dynamic Filters HTML
   const filterChips = [];
-  if (options.groupFilter && options.groupFilter !== 'সব গ্রুপ') {
-    filterChips.push(`<span class="f-chip">বিভাগ: ${options.groupFilter}</span>`);
-  }
+
   if (options.gradeFilter && options.gradeFilter !== 'সব গ্রেড') {
     filterChips.push(`<span class="f-chip">গ্রেড: ${options.gradeFilter}</span>`);
+  }
+  if (options.statusFilter && options.statusFilter !== 'সব শিক্ষার্থী') {
+    filterChips.push(`<span class="f-chip">অবস্থা: ${options.statusFilter}</span>`);
+  }
+  if (options.searchTerm && options.searchTerm.trim() !== '') {
+    filterChips.push(`<span class="f-chip">সার্চ: ${options.searchTerm}</span>`);
   }
   const filtersHTML = filterChips.length > 0 ? `<div class="f-row">🔍 ফিল্টার: ${filterChips.join('')}</div>` : '';
 
@@ -698,9 +745,9 @@ export function printAllStudents(data, options = {}) {
       <td>${convertToBengaliDigits(i + 1)}</td>
       <td>${convertToBengaliDigits(s.roll || s.id)}</td>
       <td class="name-td">${s.name}</td>
-      <td><span class="grp-cell ${groupColorClass}">${s.group || '-'}</span></td>
-      <td>${convertToBengaliDigits(s.written || 0)}</td>
-      <td>${convertToBengaliDigits(s.mcq || 0)}</td>
+      <td class="${getGroupClass(s.group)}">${s.group || '-'}</td>
+      <td ${Number(s.written) < writtenPass ? 'style="color: #ef4444; font-weight: bold;"' : ''}>${convertToBengaliDigits(s.written || 0)}</td>
+      <td ${Number(s.mcq) < mcqPass ? 'style="color: #ef4444; font-weight: bold;"' : ''}>${convertToBengaliDigits(s.mcq || 0)}</td>
       <td>${convertToBengaliDigits(s.practical || 0)}</td>
       <td><strong>${convertToBengaliDigits(s.total || 0)}</strong></td>
       <td>${convertToBengaliDigits(gradeInfo.point.toFixed(2))}</td>
@@ -713,15 +760,15 @@ export function printAllStudents(data, options = {}) {
 <html lang="bn">
 <head>
   <meta charset="UTF-8">
-  <title>${examName} - ফলাফল</title>
+  <title> </title>
   <style>
     @page { size: A4; margin: 10mm; }
     * { margin:0; padding:0; box-sizing:border-box; -webkit-print-color-adjust: exact; }
     body { font-family: 'Segoe UI', system-ui, sans-serif; color: #1e293b; font-size: 10px; line-height: 1.3; }
     
-    .h { text-align: center; margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1.5px solid #0f172a; }
-    .h h1 { font-size: 18px; font-weight: 800; color: #0f172a; }
-    .h .sub { font-size: 12px; color: #475569; font-weight: 600; margin-top: 1px; }
+    .h { text-align: center; margin-bottom: 12px; padding-bottom: 10px; border-bottom: 2px solid #0f172a; }
+    .h h1 { font-size: 20px; font-weight: 900; color: #0f172a; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 2px; }
+    .h .sub { font-size: 13px; color: #334155; font-weight: 700; background: #f1f5f9; display: inline-block; padding: 2px 15px; border-radius: 20px; border: 1px solid #e2e8f0; }
 
     .top-bar { display: flex; justify-content: space-between; align-items: center; background: #f8fafc; border: 1px solid #e2e8f0; padding: 5px 12px; border-radius: 6px; margin-bottom: 10px; }
     .top-item { display: flex; gap: 6px; font-size: 10px; }
@@ -729,9 +776,21 @@ export function printAllStudents(data, options = {}) {
     .val { color: #0f172a; font-weight: 800; }
     .pm-box { background: #fff7ed; padding: 1px 10px; border-radius: 4px; border: 1px solid #fed7aa; color: #9a3412; }
 
-    .dash { display: grid; grid-template-columns: 1fr 240px; gap: 10px; margin-bottom: 10px; }
+    .dash { display: grid; grid-template-columns: 1fr 280px; gap: 10px; margin-bottom: 10px; }
     .section { border: 1px solid #e2e8f0; border-radius: 8px; padding: 8px; background: white; }
-    .st { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; padding-bottom: 4px; margin-bottom: 8px; display: flex; justify-content: center; }
+    .st { font-size: 9px; font-weight: 800; color: #64748b; text-transform: uppercase; border-bottom: 1px solid #f1f5f9; padding-bottom: 6px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+    .overall-pass-badge { background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); color: white; padding: 4px 15px; border-radius: 8px; font-size: 11px; font-weight: 900; letter-spacing: 0.5px; box-shadow: 0 3px 10px rgba(22, 163, 74, 0.4); border: 1.5px solid #ffffff; text-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+    
+
+    .pass-dashboard { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 10px; }
+    .grp-progress-item { background: white; border: 1px solid #e2e8f0; border-radius: 8px; padding: 6px 12px; }
+    .grp-info { display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px; font-size: 10px; font-weight: 800; }
+    .progress-bar { height: 7px; background: #f1f5f9; border-radius: 10px; overflow: hidden; border: 1px solid #e2e8f0; }
+    .progress-fill { height: 100%; border-radius: 10px; }
+    .fill-science { background: #6366f1; }
+    .fill-business { background: #f59e0b; }
+    .fill-arts { background: #f43f5e; }
+
     
     .grade-grid { display: flex; justify-content: center; flex-wrap: wrap; gap: 6px; }
     .grade-box { width: 52px; border: 1.5px solid #e2e8f0; border-radius: 10px; overflow: hidden; text-align: center; }
@@ -746,13 +805,15 @@ export function printAllStudents(data, options = {}) {
     .gb-D { border-color: #f97316; } .gb-D .gb-top { color: #f97316; } .gb-D .gb-btm { background: #f97316; }
     .gb-F { border-color: #ef4444; } .gb-F .gb-top { color: #ef4444; } .gb-F .gb-btm { background: #ef4444; }
 
-    .sum-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4px; height: calc(100% - 20px); align-items: center; }
-    .s-boxInner { text-align: center; padding: 6px; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; }
-    .s-boxInner.t { background: #eff6ff; color: #1e40af; }
-    .s-boxInner.p { background: #f0fdf4; color: #166534; }
-    .s-boxInner.f { background: #fef2f2; color: #991b1b; }
-    .sn { font-size: 8px; font-weight: 700; opacity: 0.8; margin-top: 2px; }
-    .sv { font-size: 16px; font-weight: 900; }
+    .sum-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 4px; height: calc(100% - 20px); align-items: center; }
+    .s-boxInner { text-align: center; padding: 5px 2px; border-radius: 6px; display: flex; flex-direction: column; justify-content: center; border: 1px solid transparent; }
+    .s-boxInner.tot { background: #f8fafc; color: #475569; border-color: #e2e8f0; }
+    .s-boxInner.t { background: #eff6ff; color: #1e40af; border-color: #dbeafe; }
+    .s-boxInner.p { background: #f0fdf4; color: #166534; border-color: #dcfce7; }
+    .s-boxInner.f { background: #fef2f2; color: #991b1b; border-color: #fee2e2; }
+    .s-boxInner.a { background: #f1f5f9; color: #64748b; border-color: #e2e8f0; }
+    .sn { font-size: 8px; font-weight: 700; opacity: 0.8; margin-top: 1px; }
+    .sv { font-size: 14px; font-weight: 900; }
 
     table { width: 100%; border-collapse: collapse; border: 1px solid #e2e8f0; margin-top: 5px; }
     th { background: #f1f5f9; color: #334155; padding: 7px 4px; font-size: 9px; font-weight: 800; border: 1px solid #e2e8f0; border-bottom: 2px solid #cbd5e1; }
@@ -760,10 +821,10 @@ export function printAllStudents(data, options = {}) {
     tr:nth-child(even) { background: #f8fafc; }
     .name-td { text-align: left; font-weight: 600; padding-left: 8px; max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
     
-    .grp-cell { font-weight: 700; font-size: 8px; padding: 1px 5px; border-radius: 3px; color: white; white-space: nowrap; }
-    .grp-science { background: #6366f1; }
-    .grp-business { background: #f59e0b; }
-    .grp-arts { background: #f43f5e; }
+    /* Dynamic Group Colors */
+    .science-group { background: #ecfeff !important; color: #0891b2 !important; font-weight: 700; }
+    .business-group { background: #fffbeb !important; color: #b45309 !important; font-weight: 700; }
+    .arts-group { background: #fdf2f8 !important; color: #be185d !important; font-weight: 700; }
 
     .s-pass { color: #27ae60; font-weight: 800; }
     .s-fail { color: #ef4444; font-weight: 800; }
@@ -803,10 +864,26 @@ export function printAllStudents(data, options = {}) {
     <div class="section">
       <div class="st">সারসংক্ষেপ</div>
       <div class="sum-grid">
+        <div class="s-boxInner tot"><div class="sv">${convertToBengaliDigits(overallStats.totalStudents)}</div><div class="sn">মোট শিক্ষার্থী</div></div>
         <div class="s-boxInner t"><div class="sv">${convertToBengaliDigits(overallStats.participants)}</div><div class="sn">পরীক্ষার্থী</div></div>
         <div class="s-boxInner p"><div class="sv">${convertToBengaliDigits(overallStats.passedStudents)}</div><div class="sn">পাস</div></div>
         <div class="s-boxInner f"><div class="sv">${convertToBengaliDigits(overallStats.failedStudents)}</div><div class="sn">ফেল</div></div>
+        <div class="s-boxInner a"><div class="sv">${convertToBengaliDigits(overallStats.absentStudents)}</div><div class="sn">অনুপস্থিত</div></div>
       </div>
+    </div>
+  </div>
+
+  <div class="section" style="margin-bottom: 10px;">
+    <div class="st"><span>বিভাগ ভিত্তিক পাশের হার</span> <span class="overall-pass-badge">মোট পাশের হার: ${convertToBengaliDigits(overallPassRate)}%</span></div>
+    <div class="pass-dashboard">
+      ${groupStats.map(gs => {
+    const rate = gs.participants > 0 ? Math.round((gs.passedStudents / gs.participants) * 100) : 0;
+    const gClass = gs.group.includes('বিজ্ঞান') ? 'fill-science' : gs.group.includes('ব্যবসায়') ? 'fill-business' : 'fill-arts';
+    return `<div class="grp-progress-item">
+          <div class="grp-info"><span>${gs.group}</span> <span>${convertToBengaliDigits(rate)}%</span></div>
+          <div class="progress-bar"><div class="progress-fill ${gClass}" style="width: ${rate}%"></div></div>
+        </div>`;
+  }).join('')}
     </div>
   </div>
 
@@ -829,7 +906,7 @@ export function printAllStudents(data, options = {}) {
     <tbody>${tableRows}</tbody>
     <tfoot>
       <tr>
-        <td colspan="11" style="border: none; padding: 0; height: 45px;"></td>
+        <td colspan="11" style="border: none; padding: 0; height: 65px;"></td>
       </tr>
     </tfoot>
   </table>
@@ -837,6 +914,7 @@ export function printAllStudents(data, options = {}) {
   <div class="ftr">
     <div class="ftr-dev">সফটওয়্যার নির্মাতা: মোস্তফা রাহমান, সিনিয়র সফটওয়্যার ইন্জিনিয়্যার, ইস্তাম্বুল, তুরস্ক</div>
     <div class="ftr-contact">যোগাযোগ: ০১৮৪০-৬৪৩৯৪৬ <span class="ftr-soft">অটোমেটেড এক্সাম এনালিষ্ট সফটওয়্যার</span></div>
+    <div class="ftr-contact" style="margin-top: 2px; color: #3b82f6; font-weight: 700;">${window.location.host}</div>
   </div>
 
   <script>window.onload = () => { setTimeout(() => { window.print(); window.close(); }, 500); }</script>
@@ -1125,12 +1203,12 @@ export function renderSavedExamsList(container, exams, options = {}) {
 
                 <div class="exam-card-actions-compact">
                     <button class="card-btn-min load-btn ${isActiveLoad ? 'is-active' : ''}" title=" এক্সাম লোড.." ${shouldHideLoadBtn ? 'style="display: none"' : ''}><i class="fas fa-eye"></i> ${isActiveLoad ? 'আন-লোড' : (state.currentUser ? 'লোড করুন' : 'এই পরীক্ষার ফলাফল দেখতে ক্লিক করুন')} </button>
-                    <label class="pin-toggle admin-only" title="ডিফল্ট হিসেবে সেট করুন">
+                    <label class="pin-toggle super-admin-only" title="ডিফল্ট হিসেবে সেট করুন">
                         <input type="checkbox" class="pin-checkbox" ${exam.docId === defaultExamId ? 'checked' : ''}>
                         <span class="pin-slider"></span>
                     </label>
                     <button class="card-btn-min edit-btn admin-only" title="এডিট"><i class="fas fa-edit"></i></button>
-                    <button class="card-btn-min delete-btn admin-only" title="মুছুন"><i class="fas fa-trash"></i></button>
+                    <button class="card-btn-min delete-btn super-admin-only" title="মুছুন"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
         `;
