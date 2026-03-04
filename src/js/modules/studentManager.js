@@ -4,7 +4,7 @@
  * @module studentManager
  */
 
-import { getSavedExams, generateStudentDocId, deleteStudent, deleteFilteredStudents, updateExam } from '../firestoreService.js';
+import { getSavedExams, generateStudentDocId, deleteStudent, deleteFilteredStudents } from '../firestoreService.js';
 import { state } from './state.js';
 import { showNotification, convertToEnglishDigits, normalizeText } from '../utils.js';
 import { showConfirmModal } from './uiManager.js';
@@ -206,41 +206,7 @@ function renderStudentTable() {
                 const success = await deleteStudent(student.docId);
                 if (success) {
                     showNotification('শিক্ষার্থী সফলভাবে মোছা হয়েছে');
-
-                    // Also remove student from all saved exams' studentData
-                    try {
-                        const exams = await getSavedExams();
-                        const studentKey = generateStudentDocId(student);
-
-                        for (const exam of exams) {
-                            if (!exam.studentData || !Array.isArray(exam.studentData)) continue;
-
-                            const originalLen = exam.studentData.length;
-                            const filtered = exam.studentData.filter(s => {
-                                const key = generateStudentDocId({
-                                    id: s.id,
-                                    group: s.group,
-                                    class: exam.class || s.class,
-                                    session: exam.session || s.session
-                                });
-                                return key !== studentKey;
-                            });
-
-                            if (filtered.length < originalLen) {
-                                await updateExam(exam.docId, {
-                                    studentData: filtered,
-                                    studentCount: filtered.length
-                                });
-                                console.log(`[StudentManager] Removed student from exam: ${exam.name} (${originalLen} → ${filtered.length})`);
-                            }
-                        }
-                    } catch (err) {
-                        console.warn('[StudentManager] Could not sync exams after delete:', err);
-                    }
-
-                    // Refresh student list and exam cards
                     await loadStudents();
-                    window.dispatchEvent(new CustomEvent('examDataUpdated'));
                 } else {
                     showNotification('মুছতে সমস্যা হয়েছে', 'error');
                 }
@@ -443,61 +409,10 @@ export async function initStudentManager() {
 }
 
 /**
- * Sync exam studentData with current students collection.
- * Removes students from exams that no longer exist in the students collection.
- * Runs once per session to fix stale data.
- */
-let _syncDone = false;
-export async function syncExamsWithStudents(currentStudents) {
-    if (_syncDone) return;
-    _syncDone = true;
-
-    try {
-        const exams = await getSavedExams();
-        // Build a Set of all valid student keys from current students collection
-        const validKeys = new Set(currentStudents.map(s => generateStudentDocId(s)));
-        let anyUpdated = false;
-
-        for (const exam of exams) {
-            if (!exam.studentData || !Array.isArray(exam.studentData)) continue;
-
-            const originalLen = exam.studentData.length;
-            const filtered = exam.studentData.filter(s => {
-                const key = generateStudentDocId({
-                    id: s.id,
-                    group: s.group,
-                    class: exam.class || s.class,
-                    session: exam.session || s.session
-                });
-                return validKeys.has(key);
-            });
-
-            if (filtered.length < originalLen) {
-                await updateExam(exam.docId, {
-                    studentData: filtered,
-                    studentCount: filtered.length
-                });
-                console.log(`[Sync] Cleaned exam "${exam.name}": ${originalLen} → ${filtered.length} students`);
-                anyUpdated = true;
-            }
-        }
-
-        if (anyUpdated) {
-            window.dispatchEvent(new CustomEvent('examDataUpdated'));
-        }
-    } catch (err) {
-        console.warn('[Sync] Could not sync exams with students:', err);
-    }
-}
-
-/**
  * Load and display students on the page
  */
 export async function loadStudents() {
     allStudentsFromExams = await collectStudents();
     populateFilters();
     applyFilters();
-
-    // Sync exam data with current students (runs once per session)
-    syncExamsWithStudents(allStudentsFromExams);
 }
