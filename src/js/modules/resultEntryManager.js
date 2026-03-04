@@ -678,6 +678,9 @@ async function saveMarks() {
 
                 // Update info bar
                 showExamInfo(currentExamDoc, currentExamDoc.studentData.length, false);
+
+                // Notify dashboard to refresh exam cards
+                window.dispatchEvent(new CustomEvent('examDataUpdated'));
             } else {
                 showNotification('পরীক্ষা তৈরি করতে সমস্যা হয়েছে', 'error');
             }
@@ -705,6 +708,9 @@ async function saveMarks() {
 
                 // Clear draft
                 clearDraft(currentExamDoc.class, currentExamDoc.session, currentExamDoc.subject, currentExamDoc.name);
+
+                // Notify dashboard to refresh exam cards
+                window.dispatchEvent(new CustomEvent('examDataUpdated'));
             } else {
                 showNotification('মার্কস সংরক্ষণ করতে সমস্যা হয়েছে', 'error');
             }

@@ -168,19 +168,27 @@ export function updateNavVisibility() {
     }
 
     // Role-based element visibility via classes (Bulletproof)
+    // For non-page elements: use page-hidden class
+    // For page containers: do NOT touch display here — let navigateTo() handle it
     document.querySelectorAll('.super-admin-only').forEach(el => {
-        if (role !== 'super_admin') {
+        const isPageContainer = el.id && Object.values(NEW_PAGE_IDS).includes(el.id);
+        if (isPageContainer) {
+            // Always hide page containers here; navigateTo() will show the correct one
+            el.style.display = 'none';
+        } else if (role !== 'super_admin') {
             el.classList.add('page-hidden');
-        } else if (!el.id || !Object.values(NEW_PAGE_IDS).includes(el.id) || el.id === NEW_PAGE_IDS[currentPage]) {
-            // Only remove hidden if it's NOT a page container OR it IS the current page
+        } else {
             el.classList.remove('page-hidden');
         }
     });
 
     document.querySelectorAll('.admin-only').forEach(el => {
-        if (role !== 'admin' && role !== 'super_admin') {
+        const isPageContainer = el.id && Object.values(NEW_PAGE_IDS).includes(el.id);
+        if (isPageContainer) {
+            el.style.display = 'none';
+        } else if (role !== 'admin' && role !== 'super_admin') {
             el.classList.add('page-hidden');
-        } else if (!el.id || !Object.values(NEW_PAGE_IDS).includes(el.id) || el.id === NEW_PAGE_IDS[currentPage]) {
+        } else {
             el.classList.remove('page-hidden');
         }
     });

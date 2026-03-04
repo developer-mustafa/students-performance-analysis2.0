@@ -49,7 +49,7 @@ import { initClassMappingManager, populateSubjectDropdown } from './js/modules/c
 import { initPageRouter, updateNavVisibility } from './js/modules/pageRouter.js';
 import { initTeacherAssignmentUI, loadTeacherAssignmentData } from './js/modules/teacherAssignmentManager.js';
 import { initAccessRequestUI, loadAccessRequests, initAccessRequestNotifications } from './js/modules/accessRequestManager.js';
-import { initStudentManager, loadStudents } from './js/modules/studentManager.js';
+import { initStudentManager, loadStudents, syncExamsWithStudents } from './js/modules/studentManager.js';
 import { initResultEntryManager, populateREDropdowns } from './js/modules/resultEntryManager.js';
 import { initMarksheetManager, populateMSDropdowns } from './js/modules/marksheetManager.js';
 
@@ -236,8 +236,30 @@ async function init() {
         initResultEntryManager();
         initMarksheetManager();
 
+        // Listen for exam data updates from Result Entry
+        window.addEventListener('examDataUpdated', async () => {
+            console.log('[App] Exam data updated — refreshing exam cards...');
+            await fetchExams();
+            renderSavedExams();
+
+            // If the currently loaded exam was updated, refresh dashboard views too
+            const loadedExamId = localStorage.getItem('loadedExamId');
+            if (loadedExamId) {
+                const updatedExam = state.savedExams.find(e => e.docId === loadedExamId);
+                if (updatedExam) {
+                    state.studentData = updatedExam.studentData || [];
+                    updateViews();
+                }
+            }
+        });
+
         updateViews();
         renderSavedExams();
+
+        // Sync exam student data with current students collection (runs once)
+        const { getAllStudents } = await import('./js/firestoreService.js');
+        const allStudents = await getAllStudents();
+        syncExamsWithStudents(allStudents);
     } catch (error) {
         console.error('Init failed:', error);
         showNotification('অ্যাপ্লিকেশন শুরু করতে সমস্যা হয়েছে', 'error');
