@@ -9,7 +9,7 @@ import { getAuth } from 'firebase/auth';
 import { getAnalytics } from 'firebase/analytics';
 
 // Firebase configuration
-const firebaseConfig = {
+export const firebaseConfig = {
     apiKey: "AIzaSyB-_EMg5Xx8OkkWYhH4gSOt09ejK2kmLrg",
     authDomain: "todo-181b6.firebaseapp.com",
     projectId: "todo-181b6",

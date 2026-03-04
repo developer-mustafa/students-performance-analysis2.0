@@ -33,6 +33,12 @@ import { setLoading } from './uiManager.js';
 
 export async function deleteExam(docId) {
     setLoading(true);
+    if (state.userRole !== 'super_admin') {
+        showNotification('শুধুমাত্র সুপার এডমিন পরীক্ষার ফলাফল মুছতে পারেন', 'error');
+        setLoading(false);
+        return false;
+    }
+
     try {
         const success = await firestoreDeleteExam(docId);
         if (success) {
@@ -50,6 +56,21 @@ export async function deleteExam(docId) {
 
 export async function updateExamDetails(docId, updates) {
     setLoading(true);
+    // Role restriction for Admin
+    if (state.userRole === 'admin') {
+        const exams = await getSavedExams();
+        const exam = exams.find(e => e.docId === docId);
+        if (exam && exam.createdBy !== state.currentUser?.uid) {
+            showNotification('আপনি শুধুমাত্র আপনার নিজের আপলোড করা রেজাল্ট এডিট করতে পারবেন', 'error');
+            setLoading(false);
+            return false;
+        }
+    } else if (state.userRole === 'teacher') {
+        showNotification('আপনার এই পেইজে এডিট করার অনুমতি নেই', 'error');
+        setLoading(false);
+        return false;
+    }
+
     try {
         const success = await firestoreUpdateExam(docId, updates);
         if (success) {
@@ -136,6 +157,12 @@ export async function clearAllData() {
 }
 
 export async function onFileUpload(event, callback) {
+    // Role restriction for upload
+    if (state.userRole === 'teacher') {
+        showNotification('শিক্ষকদের ফাইল আপলোড করার অনুমতি নেই', 'error');
+        return;
+    }
+
     const file = event.target.files[0];
     if (!file) return;
 
@@ -205,6 +232,7 @@ export async function handleSaveExam(examData) {
         const statsOptions = {
             writtenPass: (subjectConfig.writtenPass !== undefined && subjectConfig.writtenPass !== '') ? Number(subjectConfig.writtenPass) : undefined,
             mcqPass: (subjectConfig.mcqPass !== undefined && subjectConfig.mcqPass !== '') ? Number(subjectConfig.mcqPass) : undefined,
+            practicalPass: (subjectConfig.practicalPass !== undefined && subjectConfig.practicalPass !== '') ? Number(subjectConfig.practicalPass) : 0,
             totalPass: (subjectConfig.total !== undefined && subjectConfig.total !== '') ? Number(subjectConfig.total) * 0.33 : 33
         };
 

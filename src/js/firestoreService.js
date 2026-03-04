@@ -4,9 +4,10 @@
  * @module firestoreService
  */
 
-import { db, auth } from './firebase.js';
-import { convertToEnglishDigits } from './utils.js';
-import { GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
+import { db, auth, firebaseConfig } from './firebase.js';
+import { convertToEnglishDigits, normalizeText } from './utils.js';
+import { initializeApp, deleteApp } from 'firebase/app';
+import { getAuth, GoogleAuthProvider, signInWithPopup, signOut, onAuthStateChanged, signInWithEmailAndPassword, createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import {
     collection,
     doc,
@@ -19,6 +20,7 @@ import {
     writeBatch,
     onSnapshot,
     query,
+    where,
     orderBy,
     serverTimestamp,
     limit,
@@ -33,6 +35,8 @@ const COLLECTIONS = {
 
     settings: 'settings',
     users: 'users',
+    access_requests: 'access_requests',
+    teacher_assignments: 'teacher_assignments'
 };
 
 // Memory cache for expensive read operations
@@ -87,18 +91,31 @@ export async function getStudent(docId) {
 }
 
 /**
+ * Generate a consistent, unique, and searchable student document ID
+ * Preserves Bengali characters while removing symbols/spaces
+ * @param {Object} student - Student data {id, group, class, session}
+ * @returns {string} - Generated ID
+ */
+export function generateStudentDocId(student) {
+    const sId = convertToEnglishDigits(String(student.id || '').trim());
+    const sGrp = normalizeText(student.group || '');
+    const sCls = normalizeText(student.class || '');
+    const sSess = convertToEnglishDigits(String(student.session || '').trim());
+
+    // Remove only special characters, preserve alphanumeric and Bengali Unicode range
+    const clean = (str) => str.replace(/[^\w\d\u0980-\u09FF]/g, '_');
+
+    return `STUDENT_${clean(sId)}_${clean(sGrp)}_${clean(sCls)}_${clean(sSess)}`.toUpperCase();
+}
+
+/**
  * Add a new student
  * @param {Object} studentData - Student data object
  * @returns {Promise<string|null>} - New document ID or null
  */
 export async function addStudent(studentData) {
     try {
-        // Generate deterministic ID
-        const safeId = String(studentData.id || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
-        const safeGroup = String(studentData.group || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
-        const safeClass = String(studentData.class || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
-        const safeSession = String(studentData.session || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
-        const docId = `STUDENT_${safeId}_${safeGroup}_${safeClass}_${safeSession}`.toUpperCase();
+        const docId = generateStudentDocId(studentData);
 
         const docRef = doc(db, COLLECTIONS.students, docId);
         await setDoc(docRef, {
@@ -157,44 +174,18 @@ export async function deleteStudent(docId) {
  * @returns {Promise<boolean>} - Success status
  */
 export async function bulkImportStudents(studentsArray) {
-    const BATCH_SIZE = 400; // Firestore batch limit is 500, use 400 for safety
+    const BATCH_SIZE = 400; // Firestore batch limit is 500
 
     try {
         console.log(`Starting bulk import of ${studentsArray.length} students...`);
 
-        // First, delete all existing students in batches
-        const existingStudents = await getAllStudents();
-        console.log(`Deleting ${existingStudents.length} existing students...`);
-
-        // Delete in batches
-        for (let i = 0; i < existingStudents.length; i += BATCH_SIZE) {
-            const batch = writeBatch(db);
-            const chunk = existingStudents.slice(i, i + BATCH_SIZE);
-
-            for (const student of chunk) {
-                const docRef = doc(db, COLLECTIONS.students, student.docId);
-                batch.delete(docRef);
-            }
-
-            await batch.commit();
-            console.log(`Deleted batch ${Math.floor(i / BATCH_SIZE) + 1}`);
-        }
-
-        // Add new students in batches
-        console.log(`Adding ${studentsArray.length} new students in batches...`);
-
+        // Add/Update students in batches (Upsert Strategy)
         for (let i = 0; i < studentsArray.length; i += BATCH_SIZE) {
             const batch = writeBatch(db);
             const chunk = studentsArray.slice(i, i + BATCH_SIZE);
 
             for (const student of chunk) {
-                // Generate deterministic ID
-                const safeId = String(student.id || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
-                const safeGroup = String(student.group || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
-                const safeClass = String(student.class || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
-                const safeSession = String(student.session || '').trim().replace(/[^a-zA-Z0-9]/g, '_');
-                // Use a consistent prefix to ensure ID validity and uniqueness scope
-                const docId = `STUDENT_${safeId}_${safeGroup}_${safeClass}_${safeSession}`.toUpperCase();
+                const docId = generateStudentDocId(student);
 
                 const newDocRef = doc(db, COLLECTIONS.students, docId);
                 batch.set(newDocRef, {
@@ -235,6 +226,45 @@ export async function deleteAllStudents() {
         return true;
     } catch (error) {
         console.error('সব শিক্ষার্থী মুছতে সমস্যা:', error);
+        return false;
+    }
+}
+
+/**
+ * Delete filtered students (Bulk Delete)
+ * @param {string} classVal - Class name
+ * @param {string} sessionVal - Session name
+ * @returns {Promise<boolean>} - Success status
+ */
+export async function deleteFilteredStudents(classVal, sessionVal) {
+    try {
+        const students = await getAllStudents();
+        const batch = writeBatch(db);
+        let count = 0;
+
+        const normClass = classVal === 'all' ? 'all' : normalizeText(classVal);
+        const normSession = sessionVal === 'all' ? 'all' : convertToEnglishDigits(String(sessionVal || '').trim());
+
+        students.forEach(student => {
+            const sCls = normalizeText(student.class || '');
+            const sSess = convertToEnglishDigits(String(student.session || '').trim());
+
+            const classMatch = (normClass === 'all' || sCls === normClass);
+            const sessionMatch = (normSession === 'all' || sSess === normSession);
+
+            if (classMatch && sessionMatch) {
+                const docRef = doc(db, COLLECTIONS.students, student.docId);
+                batch.delete(docRef);
+                count++;
+            }
+        });
+
+        if (count > 0) {
+            await batch.commit();
+        }
+        return true;
+    } catch (error) {
+        console.error('ফিল্টার করা শিক্ষার্থী মুছতে সমস্যা:', error);
         return false;
     }
 }
@@ -679,6 +709,200 @@ export async function loginWithGoogle() {
 }
 
 /**
+ * Login with Email and Password
+ * @param {string} email 
+ * @param {string} password 
+ */
+export async function loginWithEmail(email, password) {
+    try {
+        const result = await signInWithEmailAndPassword(auth, email, password);
+        const role = await syncUserRole(result.user);
+        const userWithRole = { ...result.user, role };
+        return { success: true, user: userWithRole };
+    } catch (error) {
+        console.error('ইমেইল লগইন ত্রুটি:', error);
+        return { success: false, error: error.code };
+    }
+}
+
+/**
+ * Create a new teacher account (Super Admin only)
+ * @param {Object} userData - { email, password, name, phone, role }
+ */
+export async function createTeacherAccount(userData) {
+    let secondaryApp;
+    try {
+        // Initialize a secondary app so we don't log out the admin
+        secondaryApp = initializeApp(firebaseConfig, "SecondaryApp_" + Date.now());
+        const secondaryAuth = getAuth(secondaryApp);
+
+        // Create user in secondary Auth
+        const userCredential = await createUserWithEmailAndPassword(secondaryAuth, userData.email, userData.password);
+        const user = userCredential.user;
+
+        // Update profile
+        await updateProfile(user, { displayName: userData.name });
+
+        // Sign out to absolutely ensure no session lingers
+        await signOut(secondaryAuth);
+
+        // Delete the secondary app
+        await deleteApp(secondaryApp);
+
+        // Create user doc in Firestore
+        const userRef = doc(db, COLLECTIONS.users, user.uid);
+        await setDoc(userRef, {
+            uid: user.uid,
+            email: userData.email,
+            displayName: userData.name,
+            phone: userData.phone || '',
+            role: userData.role || 'teacher',
+            tempPassword: userData.password, // Store for admin reference
+            createdAt: serverTimestamp(),
+            lastLogin: null
+        });
+
+        // Add to teacher_assignments if provided (though handled in teacherAssignmentManager)
+        return { success: true, uid: user.uid };
+    } catch (error) {
+        console.error('শিক্ষক অ্যাকাউন্ট তৈরি করতে সমস্যা:', error);
+        // Ensure app gets deleted even if error occurs
+        if (secondaryApp) {
+            try { await deleteApp(secondaryApp); } catch (e) { }
+        }
+        return { success: false, error: error.code };
+    }
+}
+/**
+ * Update a teacher's password (Super Admin only)
+ * @param {string} uid - User ID
+ * @param {string} email - User Email
+ * @param {string} currentPassword - Current Password stored in Firestore
+ * @param {string} newPassword - New Password
+ */
+export async function updateTeacherPassword(uid, email, currentPassword, newPassword) {
+    let secondaryApp;
+    try {
+        secondaryApp = initializeApp(firebaseConfig, "SecondaryApp_" + Date.now());
+        const secondaryAuth = getAuth(secondaryApp);
+
+        // Sign in as the user in the secondary app
+        const userCredential = await signInWithEmailAndPassword(secondaryAuth, email, currentPassword);
+
+        // Use the proper auth updatePassword method
+        const { updatePassword } = await import('firebase/auth');
+        await updatePassword(userCredential.user, newPassword);
+
+        // Sign out and cleanup
+        await signOut(secondaryAuth);
+        await deleteApp(secondaryApp);
+
+        // Update Firestore document
+        const userRef = doc(db, COLLECTIONS.users, uid);
+        await updateDoc(userRef, {
+            tempPassword: newPassword,
+            updatedAt: serverTimestamp()
+        });
+
+        return { success: true };
+    } catch (error) {
+        console.error('পাসওয়ার্ড আপডেট করতে সমস্যা:', error);
+        if (secondaryApp) {
+            try { await deleteApp(secondaryApp); } catch (e) { }
+        }
+        return { success: false, error: error.code };
+    }
+}
+
+/**
+ * Submit an access request
+ */
+export async function submitAccessRequest(data) {
+    try {
+        const ref = collection(db, COLLECTIONS.access_requests);
+        await addDoc(ref, {
+            ...data,
+            status: 'pending',
+            createdAt: serverTimestamp()
+        });
+        return true;
+    } catch (error) {
+        console.error('এক্সেস রিকোয়েস্ট পাঠাতে সমস্যা:', error);
+        return false;
+    }
+}
+
+
+/**
+ * Get all access requests (Super Admin only)
+ * @returns {Promise<Array>}
+ */
+export async function getAccessRequests() {
+    try {
+        const ref = collection(db, COLLECTIONS.access_requests);
+        const q = query(ref, orderBy('createdAt', 'desc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(d => ({ docId: d.id, ...d.data() }));
+    } catch (error) {
+        console.error('Error loading access requests:', error);
+        return [];
+    }
+}
+
+/**
+ * Update access request status
+ */
+export async function updateAccessRequestStatus(docId, status, role) {
+    try {
+        const reqRef = doc(db, COLLECTIONS.access_requests, docId);
+        await updateDoc(reqRef, {
+            status,
+            reviewedAt: serverTimestamp(),
+            reviewedBy: auth.currentUser?.uid || 'unknown',
+            assignedRole: role || null
+        });
+        return true;
+    } catch (error) {
+        console.error('Error updating access request:', error);
+        return false;
+    }
+}
+
+/**
+ * Delete an access request
+ */
+export async function deleteAccessRequest(docId) {
+    try {
+        await deleteDoc(doc(db, COLLECTIONS.access_requests, docId));
+        return true;
+    } catch (error) {
+        console.error('Error deleting access request:', error);
+        return false;
+    }
+}
+
+/**
+ * Subscribe to pending access requests count (Super Admin only)
+ * @param {Function} callback - Called with the count of pending requests
+ * @returns {Function} - Unsubscribe function
+ */
+export function subscribeToPendingAccessRequests(callback) {
+    try {
+        const ref = collection(db, COLLECTIONS.access_requests);
+        const q = query(ref, where('status', '==', 'pending'));
+        return onSnapshot(q, (snapshot) => {
+            callback(snapshot.size);
+        }, (error) => {
+            console.error('Error subscribing to access requests:', error);
+        });
+    } catch (error) {
+        console.error('Error setting up access request subscription:', error);
+        return () => { };
+    }
+}
+
+
+/**
  * Logout admin
  * @returns {Promise<boolean>}
  */
@@ -699,7 +923,25 @@ export async function syncUserRole(user) {
         if (userSnap.exists()) {
             // Update last login
             await updateDoc(userRef, { lastLogin: serverTimestamp() });
-            return userSnap.data().role;
+            let role = userSnap.data().role;
+
+            // Auto-detect teacher role: if user role is 'user' but has teacher_assignments, upgrade to 'teacher'
+            if (role === 'user') {
+                try {
+                    const taRef = collection(db, COLLECTIONS.teacher_assignments);
+                    const taSnapshot = await getDocs(taRef);
+                    const hasAssignment = taSnapshot.docs.some(d => d.data().uid === user.uid);
+                    if (hasAssignment) {
+                        role = 'teacher';
+                        await updateDoc(userRef, { role: 'teacher' });
+                        console.log(`Auto-upgraded ${user.email} role to 'teacher' (has assignments)`);
+                    }
+                } catch (taErr) {
+                    console.warn('Could not check teacher assignments:', taErr);
+                }
+            }
+
+            return role;
         }
 
         // Check if this is the first user (by checking if collection is empty)
@@ -766,6 +1008,100 @@ export async function logoutAdmin() {
     } catch (error) {
         console.error('লগআউট ত্রুটি:', error);
         return false;
+    }
+}
+
+/**
+ * Delete teacher document from Firestore (Soft delete / Deactivation)
+ * @param {string} uid - User ID
+ * @returns {Promise<boolean>}
+ */
+export async function deleteTeacherFromFirestore(uid) {
+    try {
+        const userRef = doc(db, COLLECTIONS.users, uid);
+        await deleteDoc(userRef);
+        return true;
+    } catch (error) {
+        console.error('টিচার ডিলিট করতে সমস্যা:', error);
+        return false;
+    }
+}
+
+/**
+ * Get global login permission status
+ * @returns {Promise<boolean>} - true if login is enabled, false if disabled
+ */
+export async function getLoginPermission() {
+    try {
+        const settingsRef = doc(db, 'settings', 'global');
+        const snap = await getDoc(settingsRef);
+        if (snap.exists() && snap.data().loginEnabled === false) {
+            return false;
+        }
+        return true; // Default: login enabled
+    } catch (error) {
+        console.error('লগইন পারমিশন চেক করতে সমস্যা:', error);
+        return true; // Default: allow login on error
+    }
+}
+
+/**
+ * Set global login permission (Super Admin only)
+ * @param {boolean} enabled - true to enable, false to disable
+ * @returns {Promise<boolean>}
+ */
+export async function setLoginPermission(enabled) {
+    try {
+        const settingsRef = doc(db, 'settings', 'global');
+        await setDoc(settingsRef, {
+            loginEnabled: enabled,
+            updatedAt: serverTimestamp(),
+            updatedBy: auth.currentUser?.uid || 'unknown'
+        }, { merge: true });
+        return true;
+    } catch (error) {
+        console.error('লগইন পারমিশন সেট করতে সমস্যা:', error);
+        return false;
+    }
+}
+
+/**
+ * Enable/disable login for a specific user
+ * @param {string} uid - User UID
+ * @param {boolean} disabled - true to disable login, false to enable
+ * @returns {Promise<boolean>}
+ */
+export async function setUserLoginDisabled(uid, disabled) {
+    try {
+        const userRef = doc(db, 'users', uid);
+        await setDoc(userRef, {
+            loginDisabled: disabled,
+            loginStatusUpdatedAt: serverTimestamp(),
+            loginStatusUpdatedBy: auth.currentUser?.uid || 'unknown'
+        }, { merge: true });
+        return true;
+    } catch (error) {
+        console.error('ইউজার লগইন স্ট্যাটাস সেট করতে সমস্যা:', error);
+        return false;
+    }
+}
+
+/**
+ * Check if a specific user's login is disabled
+ * @param {string} uid - User UID
+ * @returns {Promise<boolean>} - true if login is disabled
+ */
+export async function getUserLoginStatus(uid) {
+    try {
+        const userRef = doc(db, 'users', uid);
+        const snap = await getDoc(userRef);
+        if (snap.exists() && snap.data().loginDisabled === true) {
+            return true; // login IS disabled
+        }
+        return false; // login is allowed
+    } catch (error) {
+        console.error('ইউজার লগইন স্ট্যাটাস চেক করতে সমস্যা:', error);
+        return false; // default: allow
     }
 }
 

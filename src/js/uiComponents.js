@@ -356,9 +356,9 @@ export function renderFailedStudents(container, data, options = {}) {
   container.innerHTML = paginatedStudents
     .map(student => {
       const gradeInfo = calculateGrade(student.total);
-      const failReason = (student.written !== null && Number(student.written) < writtenPass)
+      const failReason = (writtenPass > 0 && student.written !== null && Number(student.written) < writtenPass)
         ? `লিখিত: ${student.written} < ${writtenPass}`
-        : (student.mcq !== null && Number(student.mcq) < mcqPass)
+        : (mcqPass > 0 && student.mcq !== null && Number(student.mcq) < mcqPass)
           ? `MCQ: ${student.mcq} < ${mcqPass}`
           : `মোট মার্কস < ${totalPass}`;
 
@@ -391,8 +391,8 @@ export function renderFailedStudents(container, data, options = {}) {
             </div>
 
             <div class="fail-pill-ribbon">
-              ${(student.written !== null && Number(student.written) < writtenPass) ? '<i class="fas fa-pen-nib"></i>' :
-          (student.mcq !== null && Number(student.mcq) < mcqPass) ? '<i class="fas fa-check-double"></i>' :
+              ${(writtenPass > 0 && student.written !== null && Number(student.written) < writtenPass) ? '<i class="fas fa-pen-nib"></i>' :
+          (mcqPass > 0 && student.mcq !== null && Number(student.mcq) < mcqPass) ? '<i class="fas fa-check-double"></i>' :
             '<i class="fas fa-calculator"></i>'} ${failReason}
             </div>
           </div>
@@ -492,11 +492,11 @@ export function printFailedStudents(data, options = {}) {
       <td>${convertToBengaliDigits(s.roll || s.id)}</td>
       <td class="name-td">${s.name}</td>
       <td class="${getGroupClass(s.group)}">${s.group || '-'}</td>
-      <td ${(s.written !== null && Number(s.written) < writtenPass) ? 'style="color: #ef4444; font-weight: bold;"' : ''}>${convertToBengaliDigits(s.written !== null ? s.written : '-')}</td>
-      <td ${(s.mcq !== null && Number(s.mcq) < mcqPass) ? 'style="color: #ef4444; font-weight: bold;"' : ''}>${convertToBengaliDigits(s.mcq !== null ? s.mcq : '-')}</td>
+      <td ${(writtenPass > 0 && s.written !== null && Number(s.written) < writtenPass) ? 'style="color: #ef4444; font-weight: bold;"' : ''}>${convertToBengaliDigits(s.written !== null ? s.written : '-')}</td>
+      <td ${(mcqPass > 0 && s.mcq !== null && Number(s.mcq) < mcqPass) ? 'style="color: #ef4444; font-weight: bold;"' : ''}>${convertToBengaliDigits(s.mcq !== null ? s.mcq : '-')}</td>
       <td>${convertToBengaliDigits(s.practical !== null ? s.practical : '-')}</td>
       <td><strong>${convertToBengaliDigits(s.total || 0)}</strong></td>
-      <td class="s-fail">${(s.written !== null && Number(s.written) < writtenPass) ? 'CQ ফেল' : (s.mcq !== null && Number(s.mcq) < mcqPass) ? 'MCQ ফেল' : 'মোট ফেল'}</td>
+      <td class="s-fail">${(writtenPass > 0 && s.written !== null && Number(s.written) < writtenPass) ? 'CQ ফেল' : (mcqPass > 0 && s.mcq !== null && Number(s.mcq) < mcqPass) ? 'MCQ ফেল' : 'মোট ফেল'}</td>
     </tr>`).join('');
 
   const printHTML = `<!DOCTYPE html>
@@ -746,8 +746,8 @@ export function printAllStudents(data, options = {}) {
       <td>${convertToBengaliDigits(s.roll || s.id)}</td>
       <td class="name-td">${s.name}</td>
       <td class="${getGroupClass(s.group)}">${s.group || '-'}</td>
-      <td ${(s.written !== null && Number(s.written) < writtenPass) ? 'style="color: #ef4444; font-weight: bold;"' : ''}>${convertToBengaliDigits(s.written !== null ? s.written : '-')}</td>
-      <td ${(s.mcq !== null && Number(s.mcq) < mcqPass) ? 'style="color: #ef4444; font-weight: bold;"' : ''}>${convertToBengaliDigits(s.mcq !== null ? s.mcq : '-')}</td>
+      <td ${(writtenPass > 0 && s.written !== null && Number(s.written) < writtenPass) ? 'style="color: #ef4444; font-weight: bold;"' : ''}>${convertToBengaliDigits(s.written !== null ? s.written : '-')}</td>
+      <td ${(mcqPass > 0 && s.mcq !== null && Number(s.mcq) < mcqPass) ? 'style="color: #ef4444; font-weight: bold;"' : ''}>${convertToBengaliDigits(s.mcq !== null ? s.mcq : '-')}</td>
       <td>${convertToBengaliDigits(s.practical !== null ? s.practical : '-')}</td>
       <td><strong>${convertToBengaliDigits(s.total !== null ? s.total : 0)}</strong></td>
       <td>${convertToBengaliDigits(gradeInfo.point.toFixed(2))}</td>
@@ -965,8 +965,8 @@ export function renderTable(tbody, data, options = {}) {
           <td>${student.group}</td>
           <td>${student.class || '-'}</td>
           <td>${student.session || '-'}</td>
-          <td class="${(student.written !== null && Number(student.written) < writtenPass) ? 'text-danger-custom' : ''}">${student.written !== null ? student.written : '-'}</td>
-          <td class="${(student.mcq !== null && Number(student.mcq) < mcqPass) ? 'text-danger-custom' : ''}">${student.mcq !== null ? student.mcq : '-'}</td>
+          <td class="${(writtenPass > 0 && student.written !== null && Number(student.written) < writtenPass) ? 'text-danger-custom' : ''}">${student.written !== null ? student.written : '-'}</td>
+          <td class="${(mcqPass > 0 && student.mcq !== null && Number(student.mcq) < mcqPass) ? 'text-danger-custom' : ''}">${student.mcq !== null ? student.mcq : '-'}</td>
           <td>${student.practical !== null ? student.practical : '-'}</td>
           <td><strong>${student.total !== null ? student.total : '-'}</strong></td>
           <td><span class="grade-cell ${getGradeClass(gradeInfo.grade)}">${gradeInfo.grade}</span></td>
@@ -1130,8 +1130,9 @@ export function renderSavedExamsList(container, exams, options = {}) {
     const config = (subjectConfigs && subjectConfigs[exam.subject]) || {};
     const dynamicStats = (exam.studentData && exam.studentData.length > 0)
       ? calculateStatistics(exam.studentData, {
-        writtenPass: Number(config.writtenPass) || undefined,
-        mcqPass: Number(config.mcqPass) || undefined
+        writtenPass: (config.writtenPass !== undefined && config.writtenPass !== '') ? Number(config.writtenPass) : undefined,
+        mcqPass: (config.mcqPass !== undefined && config.mcqPass !== '') ? Number(config.mcqPass) : undefined,
+        practicalPass: (config.practicalPass !== undefined && config.practicalPass !== '') ? Number(config.practicalPass) : 0
       })
       : (exam.stats || {});
 

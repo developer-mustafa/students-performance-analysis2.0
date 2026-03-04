@@ -7,7 +7,7 @@
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
 import { STORAGE_KEYS } from './constants.js';
-import { showNotification } from './utils.js';
+import { showNotification, convertToEnglishDigits, normalizeText } from './utils.js';
 import defaultStudentData from '../data/students.json';
 import {
     getAllStudents,
@@ -175,9 +175,10 @@ function handleJSONUpload(file) {
  * @returns {Promise<Array>} - Student data array
  */
 async function handleExcelUpload(file) {
-    // Dynamically import xlsx library
+    // Dynamically import xlsx and generateStudentDocId
     const XLSXModule = await import('xlsx');
     const XLSX = XLSXModule.default || XLSXModule;
+    const { generateStudentDocId } = await import('./firestoreService.js');
 
     console.log('XLSX library loaded:', !!XLSX);
 
@@ -228,14 +229,13 @@ async function handleExcelUpload(file) {
                 }
 
 
-                // Deduplicate students by composite key (Roll + Name + Group + Class + Session)
-                // Use a Map to keep the last occurrence of each unique student profile
+                // Deduplicate students by composite key (Roll + Group + Class + Session)
+                // Use generateStudentDocId for consistency across the system
                 const studentMap = new Map();
 
                 students.forEach(student => {
                     if (student.id) {
-                        // Create unique key based on all identity fields including subject
-                        const key = `${student.id}_${student.name}_${student.group}_${student.class || ''}_${student.session || ''}_${student.subject || ''}`;
+                        const key = generateStudentDocId(student);
                         studentMap.set(key, student);
                     }
                 });
@@ -338,8 +338,9 @@ function detectColumns(headers) {
  */
 function parseExcelRow(row, columnMap, rowIndex) {
     // Get roll/id first (we may need it for name fallback)
-    let id = columnMap.id >= 0 ? row[columnMap.id] : rowIndex;
-    id = parseInt(id) || rowIndex;
+    let idRaw = columnMap.id >= 0 ? row[columnMap.id] : rowIndex;
+    let id = convertToEnglishDigits(String(idRaw || '').trim());
+    if (!id || id === '0') id = String(rowIndex);
 
     // Get name - if empty, generate from Roll number
     let name = columnMap.name >= 0 ? String(row[columnMap.name] || '').trim() : '';
@@ -416,8 +417,9 @@ function parseExcelRow(row, columnMap, rowIndex) {
 
     // Get Class, Session and Subject
     const classVal = columnMap.class >= 0 ? String(row[columnMap.class] || '').trim() : '';
-    const sessionVal = columnMap.session || '';
-    const subjectVal = columnMap.subject >= 0 ? String(row[columnMap.subject] || '').trim() : '';
+    const sessionRaw = columnMap.session >= 0 ? row[columnMap.session] : '';
+    const sessionVal = convertToEnglishDigits(String(sessionRaw || '').trim());
+    const subjectVal = columnMap.subject >= 0 ? normalizeText(row[columnMap.subject] || '') : '';
 
     return {
         id,

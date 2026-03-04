@@ -97,36 +97,39 @@ export function determineStatus(student, options = {}) {
 
     const {
         writtenPass = FAILING_THRESHOLD.written,
-        mcqPass = FAILING_THRESHOLD.mcq
+        mcqPass = FAILING_THRESHOLD.mcq,
+        practicalPass = 0
     } = options;
 
-    const written = student.written === null ? null : Number(student.written);
-    const mcq = student.mcq === null ? null : Number(student.mcq);
-    const practical = student.practical === null ? null : Number(student.practical);
+    const written = student.written === null || student.written === '' || student.written === undefined ? null : Number(student.written);
+    const mcq = student.mcq === null || student.mcq === '' || student.mcq === undefined ? null : Number(student.mcq);
+    const practical = student.practical === null || student.practical === '' || student.practical === undefined ? null : Number(student.practical);
 
-    // Custom Logic 1: CQ-Only Subject
-    // Criteria: MCQ and Practical are literally empty/null in Excel
-    const isCQOnly = written !== null && mcq === null && (practical === null);
+    // Subject Configuration Priority System:
+    // Only check a component if its pass mark > 0 AND the student has a value for it
+    let failed = false;
 
-    if (isCQOnly) {
-        // For CQ-only subjects, use provided writtenPass or fallback to 33
-        const passMark = options.writtenPass !== undefined ? options.writtenPass : 33;
-        return (written || 0) >= passMark ? 'পাস' : 'ফেল';
+    // Check Written (CQ)
+    if (writtenPass > 0 && written !== null && written < writtenPass) {
+        failed = true;
     }
 
-    // Custom Logic 2: Standard/Custom Component Subject
-    // A student must pass BOTH Written and MCQ components if they exist
-    // Note: If a component is 0 (not null), it's treated as a score of 0
-    const writtenScore = written || 0;
-    const mcqScore = mcq || 0;
-
-    if (writtenScore < writtenPass || mcqScore < mcqPass) {
-        return 'ফেল';
+    // Check MCQ — only if mcqPass > 0
+    if (mcqPass > 0 && mcq !== null && mcq < mcqPass) {
+        failed = true;
     }
 
-    // If custom totalPass is provided, check it, otherwise pass if components pass
-    if (options.totalPass && (student.total || (writtenScore + mcqScore + (practical || 0))) < options.totalPass) {
-        return 'ফেল';
+    // Check Practical — only if practicalPass > 0
+    if (practicalPass > 0 && practical !== null && practical < practicalPass) {
+        failed = true;
+    }
+
+    if (failed) return 'ফেল';
+
+    // If custom totalPass is provided, check total
+    if (options.totalPass) {
+        const total = (written || 0) + (mcq || 0) + (practical || 0);
+        if (total < options.totalPass) return 'ফেল';
     }
 
     return 'পাস';

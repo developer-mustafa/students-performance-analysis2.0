@@ -8246,3 +8246,1309 @@ body:not(.dark-mode) .nav-btn {
   margin-top: 5px;
   flex-wrap: wrap;
 }
+
+/* =========================================
+   Page Navigation Tabs
+   ========================================= */
+.page-nav-tabs {
+  display: flex;
+  gap: 4px;
+  padding: 6px 8px;
+  background: var(--card-bg);
+  border-radius: 12px;
+  border: 1px solid var(--border-color);
+  margin-top: 10px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  backdrop-filter: blur(10px);
+}
+
+.page-nav-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.page-nav-btn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
+  color: var(--text-color);
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.25s ease;
+}
+
+.page-nav-btn:hover {
+  background: rgba(67, 97, 238, 0.08);
+  color: var(--primary);
+  transform: none;
+}
+
+.page-nav-btn.active {
+  background: var(--primary);
+  color: white;
+  box-shadow: 0 2px 8px rgba(67, 97, 238, 0.3);
+}
+
+@media (max-width: 600px) {
+  .page-nav-btn span {
+    display: none;
+  }
+
+  .page-nav-btn {
+    padding: 8px 12px;
+    font-size: 1rem;
+  }
+
+  .page-nav-tabs {
+    justify-content: center;
+  }
+}
+
+/* =========================================
+   App Page Containers
+   ========================================= */
+.app-page {
+  display: none;
+  animation: fadeIn 0.3s ease;
+}
+
+.app-page.active {
+  display: block;
+}
+
+/* =========================================
+   Student Management Filters
+   ========================================= */
+.student-mgmt-filters {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  padding: 8px 0;
+}
+
+.student-mgmt-filters select {
+  max-width: 160px;
+}
+
+.student-list-count {
+  font-size: 0.85rem;
+  color: var(--text-color);
+  opacity: 0.7;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
+
+@media (max-width: 600px) {
+  .student-mgmt-filters {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .student-mgmt-filters select {
+    max-width: none;
+  }
+}
+
+/* =========================================
+   Result Entry Selectors
+   ========================================= */
+.result-entry-selectors {
+  display: flex;
+  gap: 12px;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  margin-bottom: 15px;
+  padding: 12px;
+  background: var(--card-bg);
+  border-radius: 10px;
+  border: 1px solid var(--border-color);
+}
+
+.selector-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 120px;
+  flex: 1;
+}
+
+.selector-group label {
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-color);
+  opacity: 0.7;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+@media (max-width: 600px) {
+  .result-entry-selectors {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .selector-group {
+    min-width: auto;
+  }
+}
+
+/* Unsaved Changes Banner */
+.unsaved-banner {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 16px;
+  background: linear-gradient(135deg, #fff3cd, #ffeaa7);
+  color: #856404;
+  border-radius: 10px;
+  border: 1px solid #ffc107;
+  margin-bottom: 12px;
+  font-weight: 600;
+  font-size: 0.9rem;
+  flex-wrap: wrap;
+  animation: fadeIn 0.3s ease;
+}
+
+.dark-mode .unsaved-banner {
+  background: linear-gradient(135deg, #3d3200, #4a3d00);
+  color: #ffc107;
+  border-color: #665a00;
+}
+
+/* Result Entry Table Styles */
+.result-entry-table input[type="number"] {
+  width: 100%;
+  padding: 4px 6px;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  text-align: center;
+  font-size: 0.9rem;
+  background: var(--card-bg);
+  color: var(--text-color);
+  transition: all 0.2s;
+}
+
+.result-entry-table input[type="number"]:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.2);
+  outline: none;
+}
+
+/* === Real-time Mark Input Visual Feedback === */
+.result-entry-table input.mark-fail {
+  border-color: #ef4444;
+  background: rgba(239, 68, 68, 0.08);
+  color: #ef4444;
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.15), inset 0 1px 3px rgba(239, 68, 68, 0.1);
+  font-weight: 700;
+}
+
+.result-entry-table input.mark-pass {
+  border-color: #22c55e;
+  background: rgba(34, 197, 94, 0.08);
+  color: #22c55e;
+  box-shadow: 0 0 0 2px rgba(34, 197, 94, 0.15), inset 0 1px 3px rgba(34, 197, 94, 0.1);
+  font-weight: 700;
+}
+
+.result-entry-table input.mark-over {
+  border-color: #f59e0b;
+  background: rgba(245, 158, 11, 0.1);
+  color: #f59e0b;
+  box-shadow: 0 0 0 2px rgba(245, 158, 11, 0.2);
+  font-weight: 700;
+  animation: shake-subtle 0.3s ease;
+}
+
+@keyframes shake-subtle {
+
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-2px);
+  }
+
+  75% {
+    transform: translateX(2px);
+  }
+}
+
+.result-entry-table input[type="number"]:disabled {
+  background: rgba(100, 100, 100, 0.1);
+  color: #666;
+  cursor: not-allowed;
+  opacity: 0.5;
+  border-color: transparent;
+}
+
+.result-entry-table input[type="number"] {
+  transition: border-color 0.25s ease, background 0.25s ease, color 0.25s ease, box-shadow 0.25s ease;
+}
+
+/* Tooltip showing max marks on hover */
+.result-entry-table input[type="number"][data-max-info]::after {
+  content: attr(data-max-info);
+}
+
+/* Row status transitions */
+.result-entry-table tr {
+  transition: background-color 0.3s ease;
+}
+
+.re-exam-info {
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  flex-wrap: wrap;
+  padding: 8px 12px;
+  background: rgba(67, 97, 238, 0.05);
+  border-radius: 8px;
+  margin-bottom: 10px;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+
+/* Empty State Message */
+.empty-state-msg {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--text-color);
+  opacity: 0.6;
+}
+
+.empty-state-msg p {
+  margin-top: 10px;
+  font-size: 0.95rem;
+}
+
+/* =========================================
+   Marksheet Preview
+   ========================================= */
+.marksheet-preview-area {
+  min-height: 200px;
+}
+
+/* =========================================
+   Teacher Assignment Checklist
+   ========================================= */
+.ta-subject-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 10px;
+  background: var(--bg-color);
+  border-radius: 8px;
+  border: 1px solid var(--border-color);
+  min-height: 40px;
+}
+
+.ta-subject-checklist label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 12px;
+  border-radius: 20px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.ta-subject-checklist label:has(input:checked) {
+  background: var(--primary);
+  color: white;
+  border-color: var(--primary);
+}
+
+.ta-subject-checklist input[type="checkbox"] {
+  display: none;
+}
+
+/* Existing Teacher Assignment List */
+.ta-existing-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+
+.ta-assignment-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 10px 14px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  margin-bottom: 8px;
+  background: var(--card-bg);
+}
+
+.ta-assignment-card .ta-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.ta-assignment-card .ta-name {
+  font-weight: 700;
+  font-size: 0.9rem;
+}
+
+.ta-assignment-card .ta-detail {
+  font-size: 0.8rem;
+  opacity: 0.7;
+}
+
+.ta-assignment-card .ta-subjects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.ta-assignment-card .ta-subject-tag {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: rgba(67, 97, 238, 0.1);
+  color: var(--primary);
+  font-weight: 600;
+}
+
+.ta-assignment-card .ta-remove-btn {
+  background: #ef4444;
+  color: white;
+  border: none;
+  padding: 4px 8px;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  cursor: pointer;
+}
+
+/* Admin-only visibility */
+.admin-only {
+  display: none;
+}
+
+.super-admin-only {
+  display: none;
+}
+
+body.is-admin .admin-only {
+  display: inline-flex;
+}
+
+body.is-super-admin .super-admin-only {
+  display: inline-flex;
+}
+
+body.is-super-admin .admin-only {
+  display: inline-flex;
+}
+
+/* Table admin column */
+th.admin-only,
+td.admin-only {
+  display: none;
+}
+
+body.is-admin th.admin-only,
+body.is-admin td.admin-only {
+  display: table-cell;
+}
+
+body.is-super-admin th.admin-only,
+body.is-super-admin td.admin-only {
+  display: table-cell;
+}
+
+/* =========================================
+   Bangladeshi HSC Marksheet - Professional Design
+   ========================================= */
+.ms-page {
+  position: relative;
+  width: 210mm;
+  min-height: 297mm;
+  margin: 20px auto;
+  background: #fff;
+  color: #1a1a1a;
+  font-family: 'Noto Sans Bengali', 'Kalpurush', sans-serif;
+  font-size: 11pt;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.15);
+  page-break-after: always;
+  overflow: hidden;
+}
+
+.ms-watermark-bg {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 250px;
+  height: 250px;
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  pointer-events: none;
+  z-index: 0;
+}
+
+/* Decorative Border Frame */
+.ms-border-frame {
+  position: relative;
+  z-index: 1;
+  margin: 8mm;
+  padding: 10mm 12mm;
+  border: 3px solid #0d5e2e;
+  border-radius: 2px;
+  min-height: calc(297mm - 16mm);
+  box-sizing: border-box;
+}
+
+.ms-border-frame::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border: 1px solid #b8860b;
+  border-radius: 1px;
+  pointer-events: none;
+}
+
+/* Header Section */
+.ms-header-section {
+  text-align: center;
+  margin-bottom: 18px;
+  padding-bottom: 10px;
+}
+
+.ms-emblem {
+  font-size: 2.2rem;
+  color: #0d5e2e;
+  margin-bottom: 6px;
+}
+
+.ms-inst-name {
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #0d5e2e;
+  margin: 0;
+  letter-spacing: 0.5px;
+}
+
+.ms-inst-address {
+  font-size: 0.85rem;
+  color: #555;
+  margin: 3px 0 0;
+}
+
+.ms-title-divider {
+  width: 60px;
+  height: 3px;
+  background: linear-gradient(90deg, #b8860b, #daa520, #b8860b);
+  margin: 10px auto;
+  border-radius: 2px;
+}
+
+.ms-title-main {
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: #1a1a1a;
+  margin: 0 0 2px;
+  padding: 4px 24px;
+  display: inline-block;
+  border-bottom: 2px double #0d5e2e;
+}
+
+.ms-title-sub {
+  font-size: 0.85rem;
+  color: #666;
+  margin: 4px 0 0;
+}
+
+.ms-exam-name-display {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: #0d5e2e;
+  margin: 6px 0 0;
+}
+
+/* Student Info Section */
+.ms-student-section {
+  margin: 12px 0;
+  padding: 10px 14px;
+  background: #f8fdf8;
+  border: 1px solid #c8e6c9;
+  border-radius: 4px;
+}
+
+.ms-info-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px 20px;
+}
+
+.ms-info-grid .ms-info-item:first-child {
+  grid-column: 1 / -1;
+}
+
+.ms-info-item {
+  display: flex;
+  gap: 8px;
+  align-items: baseline;
+  font-size: 0.9rem;
+}
+
+.ms-info-label {
+  font-weight: 700;
+  color: #333;
+  min-width: 80px;
+}
+
+.ms-info-label::after {
+  content: ':';
+}
+
+.ms-info-value {
+  font-weight: 500;
+  color: #111;
+}
+
+.ms-info-name {
+  font-size: 1rem;
+  font-weight: 700;
+}
+
+/* Marks Table */
+.ms-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 14px 0;
+  font-size: 0.85rem;
+}
+
+.ms-table th,
+.ms-table td {
+  border: 1px solid #555;
+  padding: 5px 6px;
+  text-align: center;
+  vertical-align: middle;
+}
+
+.ms-table thead tr {
+  background: linear-gradient(180deg, #0d5e2e, #0a4a24);
+  color: #fff;
+}
+
+.ms-table th {
+  font-weight: 700;
+  font-size: 0.78rem;
+  padding: 6px 4px;
+  white-space: nowrap;
+}
+
+.ms-th-sl {
+  width: 30px;
+}
+
+.ms-th-subject {
+  text-align: left !important;
+}
+
+.ms-th-num {
+  width: 55px;
+}
+
+.ms-th-grade {
+  width: 45px;
+}
+
+.ms-th-gp {
+  width: 40px;
+}
+
+.ms-table tbody tr:nth-child(even) {
+  background: #f5faf5;
+}
+
+.ms-table tbody tr:hover {
+  background: #e8f5e9;
+}
+
+.ms-td-sl {
+  font-size: 0.8rem;
+  color: #666;
+}
+
+.ms-td-subject {
+  text-align: left !important;
+  font-weight: 600;
+}
+
+.ms-td-num {
+  font-variant-numeric: tabular-nums;
+}
+
+.ms-td-total {
+  font-weight: 800;
+  color: #0d5e2e;
+}
+
+.ms-td-grade {
+  font-weight: 700;
+  color: #0d5e2e;
+}
+
+.ms-td-gp {
+  font-weight: 600;
+}
+
+.ms-grade-fail {
+  color: #dc2626 !important;
+}
+
+.ms-row-total {
+  background: #e8f5e9 !important;
+  font-weight: 700;
+}
+
+.ms-row-total td {
+  border-top: 2px solid #0d5e2e;
+  padding: 7px 6px;
+}
+
+.ms-td-total-label {
+  text-align: right !important;
+  font-weight: 800;
+  font-size: 0.9rem;
+}
+
+/* Result Summary */
+.ms-result-section {
+  display: flex;
+  justify-content: center;
+  gap: 12px;
+  margin: 14px 0;
+  flex-wrap: wrap;
+}
+
+.ms-result-box {
+  text-align: center;
+  padding: 8px 16px;
+  border: 1px solid #c8e6c9;
+  border-radius: 6px;
+  background: #f0faf0;
+  min-width: 80px;
+}
+
+.ms-result-label {
+  display: block;
+  font-size: 0.72rem;
+  color: #666;
+  font-weight: 600;
+  text-transform: uppercase;
+  margin-bottom: 2px;
+}
+
+.ms-result-value {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #0d5e2e;
+}
+
+.ms-gpa-value {
+  font-size: 1.3rem;
+}
+
+.ms-result-pass {
+  background: #dcfce7;
+  border-color: #86efac;
+}
+
+.ms-result-pass .ms-result-value {
+  color: #16a34a;
+}
+
+.ms-result-fail {
+  background: #fef2f2;
+  border-color: #fca5a5;
+}
+
+.ms-result-fail .ms-result-value {
+  color: #dc2626;
+}
+
+/* Grade Scale */
+.ms-grade-scale {
+  margin: 10px 0;
+  padding: 6px 10px;
+  background: #fafafa;
+  border: 1px dashed #ccc;
+  border-radius: 4px;
+}
+
+.ms-grade-scale-title {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: #888;
+  margin: 0 0 4px;
+  text-align: center;
+}
+
+.ms-grade-scale-grid {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 4px 14px;
+  font-size: 0.68rem;
+  color: #666;
+}
+
+/* Signatures */
+.ms-signatures-section {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 40px;
+  padding: 0 10px;
+}
+
+.ms-sig-block {
+  text-align: center;
+  min-width: 100px;
+}
+
+.ms-sig-line {
+  width: 110px;
+  border-bottom: 1.5px solid #333;
+  margin: 0 auto 5px;
+}
+
+.ms-sig-block span {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #333;
+}
+
+/* Footer */
+.ms-footer {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 15px;
+  padding-top: 8px;
+  border-top: 1px solid #ddd;
+  font-size: 0.65rem;
+  color: #999;
+}
+
+/* Teacher Assignment Styles */
+.ta-subject-checklist {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  padding: 8px;
+  background: rgba(128, 128, 128, 0.05);
+  border-radius: 8px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.ta-subject-checklist label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 10px;
+  background: rgba(128, 128, 128, 0.1);
+  border-radius: 6px;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.ta-subject-checklist label:hover {
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.ta-assignment-card {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 12px;
+  margin: 6px 0;
+  background: rgba(128, 128, 128, 0.06);
+  border-radius: 8px;
+  border-left: 3px solid #3b82f6;
+}
+
+.ta-info {
+  flex: 1;
+}
+
+.ta-name {
+  font-weight: 700;
+  display: block;
+  font-size: 0.9rem;
+}
+
+.ta-detail {
+  font-size: 0.8rem;
+  color: #888;
+}
+
+.ta-subjects {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+.ta-subject-tag {
+  font-size: 0.7rem;
+  padding: 2px 8px;
+  background: rgba(59, 130, 246, 0.15);
+  color: #3b82f6;
+  border-radius: 10px;
+  font-weight: 600;
+}
+
+.ta-remove-btn {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  cursor: pointer;
+  padding: 6px;
+  font-size: 0.9rem;
+  border-radius: 6px;
+  transition: background 0.2s;
+}
+
+.ta-remove-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* =========================================
+   Print CSS - Marksheet
+   ========================================= */
+@media print {
+
+  /* When printing marksheets, hide everything else */
+  body.ms-printing * {
+    visibility: hidden;
+  }
+
+  body.ms-printing .ms-page,
+  body.ms-printing .ms-page * {
+    visibility: visible;
+  }
+
+  body.ms-printing .ms-page {
+    position: relative;
+    left: 0;
+    top: 0;
+    width: 210mm;
+    min-height: 297mm;
+    margin: 0;
+    box-shadow: none;
+    page-break-after: always;
+  }
+
+  body.ms-printing .no-print,
+  body.ms-printing .page-nav-tabs,
+  body.ms-printing .data-management-card,
+  body.ms-printing .header-controls,
+  body.ms-printing .result-entry-selectors,
+  body.ms-printing .ms-print-actions,
+  body.ms-printing #marksheetPage>.card>.card-header,
+  body.ms-printing #marksheetPage>.card>.result-entry-selectors {
+    display: none !important;
+  }
+
+  @page {
+    size: A4;
+    margin: 0;
+  }
+}
+
+/* Login & Access Modals */
+.login-tabs {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  padding-bottom: 10px;
+}
+
+.login-tab {
+  flex: 1;
+  padding: 10px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.login-tab.active {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary);
+}
+
+.login-section {
+  display: none;
+}
+
+.login-section.active {
+  display: block;
+}
+
+#openRequestAccessBtn {
+  text-decoration: none;
+  transition: color 0.2s;
+}
+
+#openRequestAccessBtn:hover {
+  text-decoration: underline;
+}
+
+.ta-form-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px;
+  margin-bottom: 15px;
+}
+
+@media (max-width: 600px) {
+  .ta-form-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.ta-subject-checklist {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 10px;
+  max-height: 200px;
+  overflow-y: auto;
+  padding: 10px;
+  border: 1px solid var(--border-color);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.02);
+}
+
+.ta-subject-checklist label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.ta-assignment-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px;
+  border: 1px solid var(--border-color);
+  border-radius: 10px;
+  margin-bottom: 10px;
+  background: var(--card-bg);
+}
+
+.ta-info .ta-name {
+  font-weight: 700;
+  display: block;
+}
+
+.ta-info .ta-detail {
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+
+.ta-subjects {
+  margin-top: 5px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.ta-subject-tag {
+  background: rgba(99, 102, 241, 0.1);
+  color: var(--primary);
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.ta-remove-btn {
+  background: none;
+  border: none;
+  color: var(--danger);
+  cursor: pointer;
+  padding: 8px;
+  border-radius: 50%;
+  transition: background 0.2s;
+}
+
+.ta-remove-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+}
+
+/* =========================================
+   Teacher Assignment - Scroll & Responsive
+   ========================================= */
+.ta-existing-list {
+  max-height: 65vh;
+  overflow-y: auto;
+  padding-right: 4px;
+  scrollbar-width: thin;
+}
+
+.ta-existing-list::-webkit-scrollbar {
+  width: 5px;
+}
+
+.ta-existing-list::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.3);
+  border-radius: 10px;
+}
+
+.ta-existing-list::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.5);
+}
+
+/* Responsive Teacher Assignment Layout */
+@media (max-width: 768px) {
+  #teacherAssignmentPage .two-column-layout {
+    flex-direction: column !important;
+  }
+
+  #teacherAssignmentPage .ta-form-column,
+  #teacherAssignmentPage .ta-list-column {
+    min-width: unset !important;
+    width: 100% !important;
+    flex: unset !important;
+  }
+
+  .ta-existing-list {
+    max-height: 50vh;
+  }
+
+  .ta-assignment-card {
+    flex-direction: column;
+    align-items: flex-start !important;
+    gap: 10px;
+  }
+
+  .ta-assignment-card>div:last-child {
+    flex-direction: row !important;
+    width: 100%;
+    justify-content: flex-end;
+  }
+}
+
+/* =========================================
+   Teacher Assignment - Dark Mode Fixes
+   ========================================= */
+.dark-mode .ta-assignment-card {
+  background: var(--card-bg);
+  border-color: var(--border-color);
+}
+
+.dark-mode .ta-assignment-card .ta-name {
+  color: var(--heading-color);
+}
+
+.dark-mode .ta-assignment-card .ta-detail {
+  color: #aaa;
+}
+
+.dark-mode .ta-subject-tag {
+  background: rgba(90, 112, 240, 0.2);
+  color: #8da0ff;
+}
+
+/* Password section dark mode */
+.dark-mode .ta-assignment-card [style*="background: #f8f9fa"],
+.dark-mode .ta-pass-section {
+  background: #383838 !important;
+  border-color: #555 !important;
+}
+
+.dark-mode .ta-assignment-card [style*="color: #6c757d"] {
+  color: #aaa !important;
+}
+
+/* Subject edit section dark mode */
+.dark-mode .ta-subjects-edit,
+.dark-mode .ta-assignment-card [style*="background: #f0f4ff"] {
+  background: #2a2f45 !important;
+  border-color: #4a5580 !important;
+}
+
+.dark-mode .ta-subjects-edit label,
+.dark-mode .ta-subjects-edit span {
+  color: var(--text-color);
+}
+
+/* Cancel button dark mode */
+.dark-mode .ta-cancel-subj-btn,
+.dark-mode .ta-assignment-card [style*="background: #eee"] {
+  background: #444 !important;
+  color: var(--text-color) !important;
+}
+
+/* Form columns dark mode */
+.dark-mode .ta-form-column,
+.dark-mode .ta-list-column {
+  background: var(--card-bg) !important;
+  border-color: var(--border-color) !important;
+}
+
+.dark-mode .ta-list-column h3 {
+  color: var(--heading-color);
+  border-color: #444 !important;
+}
+
+/* Form inputs dark mode */
+.dark-mode .ta-form-column select,
+.dark-mode .ta-form-column input[type="text"],
+.dark-mode .ta-form-column input[type="email"],
+.dark-mode .ta-form-column input[type="tel"],
+.dark-mode .ta-form-column input[type="password"] {
+  background: #383838;
+  color: var(--text-color);
+  border-color: #555;
+}
+
+/* Subject checklist dark mode */
+.dark-mode .ta-subject-checklist {
+  background: rgba(255, 255, 255, 0.03);
+  border-color: #555;
+}
+
+.dark-mode .ta-subject-checklist label {
+  color: var(--text-color);
+}
+
+.dark-mode .ta-subject-checklist label:hover {
+  background: rgba(90, 112, 240, 0.15);
+}
+
+/* Global Login Toggle section dark mode */
+.dark-mode #taLoginToggleSection {
+  background: linear-gradient(135deg, #2d1f1f 0%, #1e1e2e 100%) !important;
+  border-color: var(--border-color) !important;
+}
+
+.dark-mode #taLoginToggleSection h3 {
+  color: #ff6b6b !important;
+}
+
+.dark-mode #taLoginToggleSection p {
+  color: #aaa !important;
+}
+
+/* Edit / pen button dark mode */
+.dark-mode .ta-edit-subj-btn {
+  color: #64b5f6 !important;
+}
+
+.dark-mode .ta-copy-btn {
+  color: #8da0ff !important;
+}
+
+.dark-mode .ta-edit-pass-btn {
+  color: #ffb74d !important;
+}
+
+/* Checklist container dark mode */
+.dark-mode #taSubjectChecklist {
+  background: #2d2d2d !important;
+  border-color: #555 !important;
+  color: var(--text-color);
+}
+
+/* h3 border in form/list columns dark mode */
+.dark-mode .ta-form-column h3,
+.dark-mode .ta-list-column h3 {
+  border-color: #444 !important;
+  color: var(--heading-color);
+}
+
+/* New teacher fields section dark mode */
+.dark-mode #taNewTeacherFields {
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.dark-mode #taNewTeacherFields label {
+  color: var(--text-color);
+}
+
+.dark-mode #taNewTeacherFields small {
+  color: var(--primary) !important;
+}
+
+/* Form column scrollbar */
+.ta-form-column {
+  scrollbar-width: thin;
+}
+
+.ta-form-column::-webkit-scrollbar {
+  width: 5px;
+}
+
+.ta-form-column::-webkit-scrollbar-thumb {
+  background: rgba(128, 128, 128, 0.3);
+  border-radius: 10px;
+}
+
+.ta-form-column::-webkit-scrollbar-thumb:hover {
+  background: rgba(128, 128, 128, 0.5);
+}
+
+/* Dark mode form labels & text */
+.dark-mode .ta-form-column label,
+.dark-mode .ta-list-column label {
+  color: var(--text-color);
+}
+
+.dark-mode .ta-form-column .form-control,
+.dark-mode #taNewTeacherFields .form-control {
+  background: var(--card-bg);
+  color: var(--text-color);
+  border-color: var(--border-color);
+}
+
+.dark-mode .ta-form-column .form-control:focus,
+.dark-mode #taNewTeacherFields .form-control:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px rgba(90, 112, 240, 0.2);
+}
+
+/* Checklist checkbox labels dark mode */
+.dark-mode #taSubjectChecklist label {
+  color: var(--text-color);
+}
+
+/* Delete teacher button dark mode */
+.dark-mode #taDeleteTeacherBtn {
+  background: rgba(239, 68, 68, 0.15);
+  color: #ff6b6b;
+  border: 1px solid rgba(239, 68, 68, 0.3);
+}

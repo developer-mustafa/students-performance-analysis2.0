@@ -250,10 +250,10 @@ export function createPerformanceChart(canvas, data, options = {}) {
                             const student = limitedData[context.dataIndex];
                             const { writtenPass = FAILING_THRESHOLD.written, mcqPass = FAILING_THRESHOLD.mcq } = options;
                             let tooltipText = `গ্রুপ: ${student.group}`;
-                            if (chartType === 'written' && Number(student.written) < writtenPass) {
+                            if (chartType === 'written' && writtenPass > 0 && Number(student.written) < writtenPass) {
                                 tooltipText += `\n❌ ফেল (লিখিত < ${writtenPass})`;
                             }
-                            if (chartType === 'mcq' && Number(student.mcq) < mcqPass) {
+                            if (chartType === 'mcq' && mcqPass > 0 && Number(student.mcq) < mcqPass) {
                                 tooltipText += `\n❌ ফেল (MCQ < ${mcqPass})`;
                             }
                             return tooltipText;

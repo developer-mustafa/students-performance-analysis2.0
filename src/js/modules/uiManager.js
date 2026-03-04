@@ -66,6 +66,17 @@ export const elements = {
     inlineAnalysisType: null,
     inlineAnalysisMaxMarks: null,
     inlineDownloadBtn: null,
+
+    // Login & Access Modals
+    loginModal: null,
+    closeLoginModal: null,
+    googleLoginBtn: null,
+    emailLoginForm: null,
+    loginTabs: null,
+    openRequestAccessBtn: null,
+    requestAccessModal: null,
+    closeRequestAccessModal: null,
+    requestAccessForm: null,
     downloadBtn: null,
     downloadFailedBtn: null,
     downloadGroupStatsBtn: null,
@@ -259,6 +270,17 @@ export function initDOMReferences() {
     elements.inlineAnalysisMaxMarks = document.getElementById('inlineAnalysisMaxMarks');
     elements.inlineDownloadBtn = document.getElementById('inlineDownloadBtn');
 
+    // Login & Access Modals
+    elements.loginModal = document.getElementById('loginModal');
+    elements.closeLoginModal = document.getElementById('closeLoginModal');
+    elements.googleLoginBtn = document.getElementById('googleLoginBtn');
+    elements.emailLoginForm = document.getElementById('emailLoginForm');
+    elements.loginTabs = document.querySelectorAll('.login-tab');
+    elements.openRequestAccessBtn = document.getElementById('openRequestAccessBtn');
+    elements.requestAccessModal = document.getElementById('requestAccessModal');
+    elements.closeRequestAccessModal = document.getElementById('closeRequestAccessModal');
+    elements.requestAccessForm = document.getElementById('requestAccessForm');
+
     // Download Buttons
     elements.downloadBtn = document.getElementById('downloadBtn');
     elements.downloadFailedBtn = document.getElementById('downloadFailedBtn');
@@ -387,4 +409,34 @@ export function updateSyncStatus(isOnline) {
             : '<i class="fas fa-cloud-slash"></i> অফলাইন';
         elements.syncStatus.className = `sync-status ${isOnline ? 'online' : 'offline'}`;
     }
+}
+
+/**
+ * Show confirmation modal with custom message and callback
+ * @param {string} message - Message to display
+ * @param {Function} onConfirm - Callback on confirm
+ */
+export function showConfirmModal(message, onConfirm) {
+    if (!elements.confirmModal || !elements.confirmMessage || !elements.confirmDeleteBtn) return;
+
+    elements.confirmMessage.textContent = message;
+    elements.confirmModal.classList.add('active');
+
+    // Clean up previous listeners & clone buttons to avoid listener accumulation
+    const newDeleteBtn = elements.confirmDeleteBtn.cloneNode(true);
+    elements.confirmDeleteBtn.parentNode.replaceChild(newDeleteBtn, elements.confirmDeleteBtn);
+    elements.confirmDeleteBtn = newDeleteBtn;
+
+    const newCancelBtn = elements.confirmCancelBtn.cloneNode(true);
+    elements.confirmCancelBtn.parentNode.replaceChild(newCancelBtn, elements.confirmCancelBtn);
+    elements.confirmCancelBtn = newCancelBtn;
+
+    elements.confirmDeleteBtn.addEventListener('click', async () => {
+        elements.confirmModal.classList.remove('active');
+        await onConfirm();
+    });
+
+    elements.confirmCancelBtn.addEventListener('click', () => {
+        elements.confirmModal.classList.remove('active');
+    });
 }

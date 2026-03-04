@@ -8,7 +8,7 @@ import './styles/main.css';
 // Core Modules
 import { state, DEFAULT_SUBJECT_CONFIG } from './js/modules/state.js';
 import { elements, initDOMReferences, setLoading, updateSyncStatus, updateProfileUI } from './js/modules/uiManager.js';
-import { setupAuthListener, handleLogin, handleLogout } from './js/modules/authManager.js';
+import { setupAuthListener, handleLogin, handleLogout, handleEmailLogin, handleAccessRequest } from './js/modules/authManager.js';
 import {
     initializeData,
     onFileUpload,
@@ -27,7 +27,7 @@ import {
 import { initializeMainChart, handleChartDownload, initializeHistoryChart } from './js/modules/chartManager.js';
 
 // Utilities & Services
-import { showNotification, filterStudentData, sortStudentData, calculateStatistics, convertToEnglishDigits, formatDateBengali, normalizeText } from './js/utils.js';
+import { showNotification, filterStudentData, sortStudentData, calculateStatistics, convertToEnglishDigits, formatDateBengali, normalizeText, determineStatus, calculateGrade } from './js/utils.js';
 import { FAILING_THRESHOLD } from './js/constants.js';
 import {
     applyTheme,
@@ -39,11 +39,66 @@ import {
     loadThemePreference, saveThemePreference, captureElementAsImage
 } from './js/dataService.js';
 import { getChartTitle } from './js/chartModule.js';
-import { getSavedExams, subscribeToSettings, getSettings, subscribeToSubjectConfigs } from './js/firestoreService.js';
+import { getSavedExams, subscribeToSettings, getSettings, subscribeToSubjectConfigs, getSubjectConfigs } from './js/firestoreService.js';
 
 import { handleUserManagement } from './js/modules/userMgmtManager.js';
 import { initSubjectConfigManager } from './js/modules/subjectConfigManager.js';
 import { initClassMappingManager, populateSubjectDropdown } from './js/modules/classMappingManager.js';
+
+// New Feature Modules
+import { initPageRouter, updateNavVisibility } from './js/modules/pageRouter.js';
+import { initTeacherAssignmentUI, loadTeacherAssignmentData } from './js/modules/teacherAssignmentManager.js';
+import { initAccessRequestUI, loadAccessRequests, initAccessRequestNotifications } from './js/modules/accessRequestManager.js';
+import { initStudentManager, loadStudents } from './js/modules/studentManager.js';
+import { initResultEntryManager, populateREDropdowns } from './js/modules/resultEntryManager.js';
+import { initMarksheetManager, populateMSDropdowns } from './js/modules/marksheetManager.js';
+
+/**
+ * Recalculate student grades/statuses using CURRENT subject config.
+ * Called when loading exam data from Firestore to fix stale old values.
+ */
+function recalculateStudentData(studentData, subjectName) {
+    if (!studentData || studentData.length === 0) return studentData;
+
+    let subjectConfig = state.subjectConfigs?.[subjectName] || {};
+    if (!subjectConfig || Object.keys(subjectConfig).length === 0) {
+        // Fuzzy match
+        const normalizedName = normalizeText(subjectName);
+        const matchedKey = Object.keys(state.subjectConfigs || {})
+            .find(key => key !== 'updatedAt' && normalizeText(key) === normalizedName);
+        subjectConfig = matchedKey ? state.subjectConfigs[matchedKey] : {};
+    }
+
+    const cfgVal = (v) => {
+        if (v === null || v === undefined || v === '' || isNaN(Number(v))) return 0;
+        return Number(v);
+    };
+
+    const writtenPass = cfgVal(subjectConfig.writtenPass);
+    const mcqPass = cfgVal(subjectConfig.mcqPass);
+    const practicalPass = cfgVal(subjectConfig.practicalPass);
+
+    // Build options for determineStatus
+    const statusOptions = {
+        writtenPass: (subjectConfig.writtenPass !== undefined && subjectConfig.writtenPass !== '') ? Number(subjectConfig.writtenPass) : FAILING_THRESHOLD.written,
+        mcqPass: (subjectConfig.mcqPass !== undefined && subjectConfig.mcqPass !== '') ? Number(subjectConfig.mcqPass) : FAILING_THRESHOLD.mcq,
+        practicalPass: (subjectConfig.practicalPass !== undefined && subjectConfig.practicalPass !== '') ? Number(subjectConfig.practicalPass) : 0,
+    };
+
+    studentData.forEach(s => {
+        const written = (s.written !== null && s.written !== '' && s.written !== undefined) ? Number(s.written) : 0;
+        const mcq = (s.mcq !== null && s.mcq !== '' && s.mcq !== undefined) ? Number(s.mcq) : 0;
+        const practical = (s.practical !== null && s.practical !== '' && s.practical !== undefined) ? Number(s.practical) : 0;
+        const total = written + mcq + practical;
+
+        // Recalculate using current formula
+        s.total = total;
+        s.grade = calculateGrade(total).grade;
+        s.status = determineStatus(s, statusOptions);
+    });
+
+    return studentData;
+}
 
 async function init() {
     // Prevent multiple initializations from HMR if already initialized
@@ -61,13 +116,25 @@ async function init() {
         if (state.onSettingsUnsubscribe) state.onSettingsUnsubscribe();
         if (state.onSubjectConfigsUnsubscribe) state.onSubjectConfigsUnsubscribe();
         if (state.onAuthUnsubscribe) state.onAuthUnsubscribe();
+        if (state.onAccessReqUnsubscribe) state.onAccessReqUnsubscribe();
 
         const theme = await loadThemePreference();
         applyTheme(theme === 'dark', elements.themeToggle);
 
         // Fetch settings and exams first to know the default
         const [settings, exams] = await Promise.all([getSettings(), fetchExams()]);
+
+        // Wait for profile UI to finish role sync
+        await setupAuthListener();
+
+        // Initialize super-admin only notifications
+        if (state.isSuperAdmin) {
+            state.onAccessReqUnsubscribe = initAccessRequestNotifications();
+        }
         if (settings) state.defaultExamId = settings.defaultExamId;
+
+        // Load subject configs FIRST (needed for recalculation on exam load)
+        state.subjectConfigs = await getSubjectConfigs() || {};
 
         let defaultLoaded = false;
         // 1. Check for manually loaded exam (Overrides default)
@@ -75,7 +142,7 @@ async function init() {
         if (loadedExamId) {
             const loadedExam = exams.find(e => e.docId === loadedExamId);
             if (loadedExam) {
-                state.studentData = loadedExam.studentData || [];
+                state.studentData = recalculateStudentData(loadedExam.studentData || [], loadedExam.subject);
                 state.currentExamName = loadedExam.name;
                 state.currentSubject = loadedExam.subject;
                 state.currentExamSession = loadedExam.session;
@@ -89,7 +156,7 @@ async function init() {
         if (!defaultLoaded && state.defaultExamId) {
             const defaultExam = exams.find(e => e.docId === state.defaultExamId);
             if (defaultExam) {
-                state.studentData = defaultExam.studentData || [];
+                state.studentData = recalculateStudentData(defaultExam.studentData || [], defaultExam.subject);
                 state.currentExamName = defaultExam.name;
                 state.currentSubject = defaultExam.subject;
                 state.currentExamSession = defaultExam.session;
@@ -108,6 +175,7 @@ async function init() {
         state.onAuthUnsubscribe = setupAuthListener({
             renderUI: (user) => {
                 updateProfileUI(user, state.isAdmin, state.isSuperAdmin, state.userRole);
+                updateNavVisibility();
                 updateViews();
                 renderSavedExams();
             }
@@ -131,7 +199,7 @@ async function init() {
                 if (state.defaultExamId) {
                     const pinnedExam = state.savedExams.find(e => e.docId === state.defaultExamId);
                     if (pinnedExam) {
-                        state.studentData = pinnedExam.studentData || [];
+                        state.studentData = recalculateStudentData(pinnedExam.studentData || [], pinnedExam.subject);
                         state.currentExamName = pinnedExam.name;
                         state.currentSubject = pinnedExam.subject;
                         state.currentExamSession = pinnedExam.session;
@@ -153,6 +221,20 @@ async function init() {
 
         initSubjectConfigManager();
         initClassMappingManager();
+
+        // Initialize new feature modules
+        initPageRouter(async (pageId) => {
+            // Lazy-load page data on navigation
+            if (pageId === 'teacher-assignment') await loadTeacherAssignmentData();
+            if (pageId === 'students') await loadStudents();
+            if (pageId === 'result-entry') await populateREDropdowns();
+            if (pageId === 'marksheet') await populateMSDropdowns();
+        });
+        initTeacherAssignmentUI();
+
+        initStudentManager();
+        initResultEntryManager();
+        initMarksheetManager();
 
         updateViews();
         renderSavedExams();
@@ -179,6 +261,7 @@ function updateViews() {
     const subjectOptions = {
         writtenPass: (subjectConfig.writtenPass !== undefined && subjectConfig.writtenPass !== '') ? Number(subjectConfig.writtenPass) : FAILING_THRESHOLD.written,
         mcqPass: (subjectConfig.mcqPass !== undefined && subjectConfig.mcqPass !== '') ? Number(subjectConfig.mcqPass) : FAILING_THRESHOLD.mcq,
+        practicalPass: (subjectConfig.practicalPass !== undefined && subjectConfig.practicalPass !== '') ? Number(subjectConfig.practicalPass) : 0,
         totalPass: (subjectConfig.total !== undefined && subjectConfig.total !== '') ? Number(subjectConfig.total) * 0.33 : FAILING_THRESHOLD.total,
         criteria: state.currentChartType
     };
@@ -565,9 +648,10 @@ function initEventListeners() {
             subjectConfig = matchedKey ? state.subjectConfigs[matchedKey] : {};
         }
         const subjectOptions = {
-            writtenPass: Number(subjectConfig.writtenPass) || FAILING_THRESHOLD.written,
-            mcqPass: Number(subjectConfig.mcqPass) || FAILING_THRESHOLD.mcq,
-            totalPass: Number(subjectConfig.total) * 0.33 || FAILING_THRESHOLD.total,
+            writtenPass: (subjectConfig.writtenPass !== undefined && subjectConfig.writtenPass !== '') ? Number(subjectConfig.writtenPass) : FAILING_THRESHOLD.written,
+            mcqPass: (subjectConfig.mcqPass !== undefined && subjectConfig.mcqPass !== '') ? Number(subjectConfig.mcqPass) : FAILING_THRESHOLD.mcq,
+            practicalPass: (subjectConfig.practicalPass !== undefined && subjectConfig.practicalPass !== '') ? Number(subjectConfig.practicalPass) : 0,
+            totalPass: (subjectConfig.total !== undefined && subjectConfig.total !== '') ? Number(subjectConfig.total) * 0.33 : FAILING_THRESHOLD.total,
         };
         printAllStudents(filterStudentData(state.studentData, {
             group: state.currentGroupFilter,
@@ -605,9 +689,10 @@ function initEventListeners() {
             subjectConfig = matchedKey ? state.subjectConfigs[matchedKey] : {};
         }
         const subjectOptions = {
-            writtenPass: Number(subjectConfig.writtenPass) || FAILING_THRESHOLD.written,
-            mcqPass: Number(subjectConfig.mcqPass) || FAILING_THRESHOLD.mcq,
-            totalPass: Number(subjectConfig.total) * 0.33 || FAILING_THRESHOLD.total,
+            writtenPass: (subjectConfig.writtenPass !== undefined && subjectConfig.writtenPass !== '') ? Number(subjectConfig.writtenPass) : FAILING_THRESHOLD.written,
+            mcqPass: (subjectConfig.mcqPass !== undefined && subjectConfig.mcqPass !== '') ? Number(subjectConfig.mcqPass) : FAILING_THRESHOLD.mcq,
+            practicalPass: (subjectConfig.practicalPass !== undefined && subjectConfig.practicalPass !== '') ? Number(subjectConfig.practicalPass) : 0,
+            totalPass: (subjectConfig.total !== undefined && subjectConfig.total !== '') ? Number(subjectConfig.total) * 0.33 : FAILING_THRESHOLD.total,
         };
         printFailedStudents(filterStudentData(state.studentData, {
             group: state.currentGroupFilter,
@@ -663,11 +748,110 @@ function initEventListeners() {
     });
 
     // Auth
-    elements.adminToggle?.addEventListener('click', async () => {
+    elements.adminToggle?.addEventListener('click', () => {
         if (state.currentUser) {
             elements.profileModal.classList.add('active');
         } else {
-            await handleLogin();
+            elements.loginModal.classList.add('active');
+        }
+    });
+
+    // Login Modal Logic
+    elements.closeLoginModal?.addEventListener('click', () => elements.loginModal.classList.remove('active'));
+
+    elements.loginTabs?.forEach(tab => {
+        tab.addEventListener('click', () => {
+            elements.loginTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            const target = tab.dataset.tab;
+            document.getElementById('googleLoginSection').classList.toggle('active', target === 'google');
+            document.getElementById('emailLoginSection').classList.toggle('active', target === 'email');
+        });
+    });
+
+    elements.googleLoginBtn?.addEventListener('click', async () => {
+        const user = await handleLogin();
+        if (user) elements.loginModal.classList.remove('active');
+    });
+
+    elements.emailLoginForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const pass = document.getElementById('loginPassword').value;
+        const user = await handleEmailLogin(email, pass);
+        if (user) {
+            elements.loginModal.classList.remove('active');
+            e.target.reset();
+        }
+    });
+
+    elements.openRequestAccessBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        elements.loginModal.classList.remove('active');
+        elements.requestAccessModal.classList.add('active');
+    });
+
+    // Request Access Modal
+    elements.closeRequestAccessModal?.addEventListener('click', () => elements.requestAccessModal.classList.remove('active'));
+
+    elements.requestAccessForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const data = {
+            name: document.getElementById('reqName').value,
+            phone: document.getElementById('reqPhone').value,
+            email: document.getElementById('reqEmail').value,
+            reason: document.getElementById('reqReason').value
+        };
+        const success = await handleAccessRequest(data);
+        if (success) {
+            elements.requestAccessModal.classList.remove('active');
+            e.target.reset();
+
+            // Show large custom toast with instructions
+            const toast = document.createElement('div');
+            toast.style.cssText = 'position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 99999; background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%); color: white; padding: 30px 35px; border-radius: 16px; max-width: 420px; width: 90%; box-shadow: 0 20px 60px rgba(0,0,0,0.5); text-align: center; animation: fadeInUp 0.4s ease; border: 1px solid rgba(255,255,255,0.1);';
+            toast.innerHTML = `
+                <div style="font-size: 3rem; margin-bottom: 12px;">✅</div>
+                <h3 style="margin: 0 0 10px 0; font-size: 1.2rem; color: #4caf50;">অনুরোধ সফলভাবে পাঠানো হয়েছে!</h3>
+                <p style="margin: 0 0 12px 0; font-size: 0.9rem; line-height: 1.6; color: #ccc;">
+                    আপনার ইমেইল অনুযায়ী সুপার অ্যাডমিন ম্যানুয়ালি একাউন্ট তৈরি করে দিবেন।
+                </p>
+                <div style="background: rgba(255,255,255,0.1); padding: 15px; border-radius: 12px; margin-bottom: 15px; border: 1px solid rgba(255,255,255,0.05);">
+                    <p style="margin: 0; font-size: 0.95rem; color: #ffd54f;">
+                        <i class="fas fa-phone-alt"></i> দ্রুত পেতে কল দিন:
+                    </p>
+                    <a href="tel:01840643946" style="font-size: 1.4rem; font-weight: 700; color: #4caf50; text-decoration: none; display: block; margin-top: 8px;">
+                        📞 01840-643946
+                    </a>
+                </div>
+                <button id="closeLargeToast" style="background: var(--primary); color: white; border: none; padding: 12px 30px; border-radius: 8px; cursor: pointer; font-size: 0.9rem; font-weight: 600; width: 100%; transition: opacity 0.2s;">
+                    বন্ধ করুন
+                </button>
+            `;
+
+            const backdrop = document.createElement('div');
+            backdrop.style.cssText = 'position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.7); backdrop-filter: blur(4px); z-index: 99998;';
+
+            const removeToast = () => {
+                toast.style.opacity = '0';
+                toast.style.transform = 'translate(-50%, -40%)';
+                toast.style.transition = 'all 0.3s ease';
+                backdrop.style.opacity = '0';
+                backdrop.style.transition = 'opacity 0.3s ease';
+                setTimeout(() => {
+                    toast.remove();
+                    backdrop.remove();
+                }, 300);
+            };
+
+            backdrop.onclick = removeToast;
+            document.body.appendChild(backdrop);
+            document.body.appendChild(toast);
+            document.getElementById('closeLargeToast').onclick = removeToast;
+
+            // Auto remove after 20 seconds
+            setTimeout(removeToast, 20000);
         }
     });
 
@@ -960,7 +1144,7 @@ function initEventListeners() {
         }
 
         if (exam) {
-            state.studentData = exam.studentData || [];
+            state.studentData = recalculateStudentData(exam.studentData || [], exam.subject);
             state.currentExamName = exam.name;
             state.currentSubject = exam.subject;
             state.currentExamSession = exam.session;

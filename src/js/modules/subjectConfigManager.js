@@ -64,10 +64,19 @@ function calculateLiveTotal() {
     const written = parseInt(elements.configWrittenMax?.value) || 0;
     const mcq = parseInt(elements.configMcqMax?.value) || 0;
     const practical = parseInt(elements.configPracticalMax?.value) || 0;
-    const total = written + mcq + practical;
+    const autoSum = written + mcq + practical;
 
-    if (elements.configTotalMax) elements.configTotalMax.value = total;
-    if (elements.calcTotalPreview) elements.calcTotalPreview.innerText = `গণনা: ${total}`;
+    // Only show auto-sum as a HINT — don't overwrite the Total field
+    // User can set Total independently (e.g., 100 even if components sum to 33)
+    if (elements.calcTotalPreview) {
+        elements.calcTotalPreview.innerText = `যোগফল: ${autoSum}`;
+    }
+
+    // Auto-fill Total ONLY if it's currently empty or 0
+    const currentTotal = parseInt(elements.configTotalMax?.value) || 0;
+    if (currentTotal === 0 && autoSum > 0) {
+        elements.configTotalMax.value = autoSum;
+    }
 }
 
 function renderConfigList(configs, searchTerm = '') {
