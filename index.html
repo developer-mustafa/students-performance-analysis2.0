@@ -125,6 +125,9 @@
       <button class="page-nav-btn" data-page="marksheet">
         <i class="fas fa-file-alt"></i> <span>মার্কশীট</span>
       </button>
+      <button class="page-nav-btn" data-page="admit-card">
+        <i class="fas fa-id-card"></i> <span>এডমিট কার্ড</span>
+      </button>
       <button class="page-nav-btn super-admin-only" data-page="access-requests"
         style="display: none; position: relative;">
         <i class="fas fa-user-shield"></i> <span>রিকোয়েস্ট</span>
@@ -1360,6 +1363,84 @@
                 </div>
               </div>
             </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ========== PAGE: ADMIT CARD & SEAT PLAN ========== -->
+    <div id="admitCardPage" class="app-page" style="display: none;">
+      <div class="card">
+        <div class="card-header">
+          <div class="header-main-unified">
+            <h2 class="card-title"><i class="fas fa-id-card"></i> এডমিট কার্ড ও সীট প্ল্যান</h2>
+          </div>
+        </div>
+        <!-- Admit Card Selectors -->
+        <div class="result-entry-selectors">
+          <div class="form-row">
+            <div class="selector-group">
+              <label>শ্রেণি</label>
+              <select id="acClass" class="form-control" data-dynamic="class"></select>
+            </div>
+            <div class="selector-group">
+              <label>সেশন</label>
+              <select id="acSession" class="form-control" data-dynamic="session"></select>
+            </div>
+            <div class="selector-group">
+              <label>পরীক্ষা</label>
+              <select id="acExamName" class="form-control"></select>
+            </div>
+            <div class="selector-group">
+              <label>লেআউট</label>
+              <select id="acLayout" class="form-control">
+                <option value="4">৪টি প্রতি পেজ</option>
+                <option value="6">৬টি প্রতি পেজ</option>
+                <option value="8">৮টি প্রতি পেজ</option>
+                <option value="10">১০টি প্রতি পেজ</option>
+                <option value="12">১২টি প্রতি পেজ</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-row" style="margin-top: 15px;">
+            <button id="acGenerateBtn" class="dm-btn dm-save">
+              <i class="fas fa-id-card"></i> <span class="dm-btn-text">এডমিট কার্ড</span>
+            </button>
+            <button id="spGenerateBtn" class="dm-btn dm-save"
+              style="background:var(--secondary);border-color:var(--secondary);">
+              <i class="fas fa-chair"></i> <span class="dm-btn-text">সীট প্ল্যান</span>
+            </button>
+            <button id="acResetBtn" class="dm-btn dm-report">
+              <i class="fas fa-sync-alt"></i> <span class="dm-btn-text">রিসেট</span>
+            </button>
+            <button id="acPrintAllBtn" class="dm-btn dm-report" style="display:none;">
+              <i class="fas fa-print"></i> <span class="dm-btn-text">প্রিন্ট</span>
+            </button>
+          </div>
+        </div>
+        <!-- Admit Card Preview Area -->
+        <div class="marksheet-preview-wrapper" id="acPreviewWrapper" style="display:none;">
+          <div class="preview-header marksheet-main-preview-header">
+            <div class="preview-header-left">
+              <h4><i class="fas fa-search-plus"></i> প্রিভিউ কাস্টমাইজেশন</h4>
+            </div>
+            <div class="preview-header-actions">
+              <div class="zoom-control">
+                <i class="fas fa-search-minus"></i>
+                <input type="range" id="acMainZoom" min="0.2" max="1.5" step="0.05" value="1.0" title="জুম">
+                <i class="fas fa-search-plus"></i>
+                <span id="acMainZoomLevel">100%</span>
+              </div>
+            </div>
+          </div>
+          <div id="admitCardPreview" class="marksheet-preview-area admit-card-preview-area">
+          </div>
+        </div>
+
+        <div id="acEmptyStateMsg" class="marksheet-preview-area" style="min-height: 200px;">
+          <div class="empty-state-msg">
+            <i class="fas fa-id-badge" style="font-size: 2rem; opacity: 0.3;"></i>
+            <p>এডমিট কার্ড বা সীট প্ল্যান দেখতে উপরে থেকে তথ্য নির্বাচন করে সংশ্লিষ্ট বাটনে ক্লিক করুন।</p>
           </div>
         </div>
       </div>
