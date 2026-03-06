@@ -373,8 +373,7 @@ export async function initStudentManager() {
             const roll = convertToEnglishDigits(rollRaw); // Normalize to English digits
             const cls = document.getElementById('studentFormClass').value;
             const group = document.getElementById('studentFormGroup').value;
-            const sessionRaw = document.getElementById('studentFormSession').value.trim();
-            const session = convertToEnglishDigits(sessionRaw); // Normalize to English digits
+            const session = document.getElementById('studentFormSession').value; // Now a Select
             const existingDocId = document.getElementById('editStudentDocId').value;
 
             if (!name || !roll) {

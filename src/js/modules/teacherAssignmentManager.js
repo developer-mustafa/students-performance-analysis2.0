@@ -168,7 +168,7 @@ export function initTeacherAssignmentUI() {
         saveBtn.addEventListener('click', async () => {
             const teacherSelect = document.getElementById('taTeacherSelect');
             const classSelect = document.getElementById('taClassSelect');
-            const sessionInput = document.getElementById('taSessionInput');
+            const sessionSelect = document.getElementById('taSessionSelect');
 
             // New account fields
             const nameInput = document.getElementById('taNewNameInput');
@@ -216,7 +216,7 @@ export function initTeacherAssignmentUI() {
             }
 
             const assignedClass = classSelect.value;
-            const assignedSession = sessionInput.value.trim();
+            const assignedSession = sessionSelect.value;
 
             if (!assignedClass || !assignedSession) {
                 showNotification('শ্রেণি ও সেশন দিন', 'error');
@@ -391,12 +391,12 @@ export async function loadTeacherAssignmentData() {
         await renderExistingAssignments();
 
         // Implement logic to pre-check and disable already assigned subjects
-        const sessionInput = document.getElementById('taSessionInput');
+        const sessionSelect = document.getElementById('taSessionSelect');
 
         async function updateCheckboxes() {
             const selectedTeacher = teacherSelect.value;
             const selectedClass = classSelect.value;
-            const selectedSession = sessionInput.value.trim();
+            const selectedSession = sessionSelect.value;
 
             // First rebuild the subject checklist for the selected class
             rebuildSubjectChecklist(selectedClass);
@@ -443,7 +443,7 @@ export async function loadTeacherAssignmentData() {
         }
 
         classSelect.addEventListener('change', updateCheckboxes);
-        sessionInput.addEventListener('input', updateCheckboxes);
+        sessionSelect.addEventListener('change', updateCheckboxes);
         teacherSelect.addEventListener('change', updateCheckboxes);
 
 

@@ -14,7 +14,8 @@ const NEW_PAGE_IDS = {
     'result-entry': 'resultEntryPage',
     'marksheet': 'marksheetPage',
     'access-requests': 'accessRequestsPage',
-    'exam-config': 'examConfigPage'
+    'exam-config': 'examConfigPage',
+    'academic-settings': 'academicSettingsPage'
 };
 
 // IDs/selectors of all dashboard-only sections to hide on other pages
@@ -123,10 +124,10 @@ export function initPageRouter(callback) {
     // Listen for hash changes (back/forward navigation, direct URL entry)
     window.addEventListener('hashchange', () => {
         const hash = window.location.hash.replace('#', '') || 'dashboard';
-        const validPages = ['dashboard', 'teacher-assignment', 'students', 'result-entry', 'marksheet', 'access-requests', 'exam-config'];
+        const validPages = ['dashboard', 'teacher-assignment', 'students', 'result-entry', 'marksheet', 'access-requests', 'exam-config', 'academic-settings'];
         if (validPages.includes(hash)) {
             // Role protection for direct hash entry
-            if (hash === 'exam-config' && state.userRole !== 'super_admin') {
+            if ((hash === 'exam-config' || hash === 'academic-settings') && state.userRole !== 'super_admin') {
                 navigateTo('dashboard');
             } else {
                 navigateTo(hash);
@@ -139,7 +140,7 @@ export function initPageRouter(callback) {
 
     // Handle initial hash
     const currentHash = window.location.hash.replace('#', '') || 'dashboard';
-    const initialPages = ['dashboard', 'teacher-assignment', 'students', 'result-entry', 'marksheet', 'access-requests', 'exam-config'];
+    const initialPages = ['dashboard', 'teacher-assignment', 'students', 'result-entry', 'marksheet', 'access-requests', 'exam-config', 'academic-settings'];
     if (initialPages.includes(currentHash) && currentHash !== 'dashboard') {
         navigateTo(currentHash);
     }
@@ -189,7 +190,7 @@ export function updateNavVisibility() {
     const currentHash = window.location.hash.replace('#', '') || 'dashboard';
     if (role === 'admin' && (currentHash === 'dashboard' || currentHash === 'students')) {
         navigateTo('result-entry');
-    } else if (role !== 'super_admin' && currentHash === 'exam-config') {
+    } else if (role !== 'super_admin' && (currentHash === 'exam-config' || currentHash === 'academic-settings')) {
         navigateTo('dashboard');
     } else if (role === 'teacher' && currentHash === 'students') {
         navigateTo('dashboard');

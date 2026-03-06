@@ -12,7 +12,6 @@ let marksheetSettings = {
     institutionName: '',
     institutionAddress: '',
     headerLine1: 'পরীক্ষার ফলাফল পত্র',
-    headerLine2: '',
     watermarkUrl: '',
     watermarkOpacity: 0.1,
     primaryColor: '#4361ee',
@@ -94,19 +93,21 @@ export async function populateMSDropdowns() {
         const examSelect = document.getElementById('msExamName');
 
         if (examSelect) {
+            if (!selClass || !selSession) {
+                examSelect.innerHTML = '<option value="">শ্রেণি ও সেশন নির্বাচন</option>';
+                return;
+            }
+
             examSelect.innerHTML = '<option value="">লোড হচ্ছে...</option>';
 
-            let examNames = [];
-            if (selClass) {
-                const configs = await getExamConfigs(selClass);
-                examNames = configs.map(c => c.examName);
-            }
+            const configs = await getExamConfigs(selClass, selSession);
+            const examNames = configs.map(c => c.examName);
 
             examSelect.innerHTML = '<option value="">পরীক্ষা নির্বাচন</option>';
             if (examNames.length > 0) {
                 examSelect.innerHTML += '<option value="__all__">সব পরীক্ষা (Combined)</option>';
                 examNames.forEach(n => examSelect.innerHTML += `<option value="${n}">${n}</option>`);
-            } else if (selClass) {
+            } else {
                 examSelect.innerHTML = '<option value="">কোনো পরীক্ষা তৈরি করা নেই</option>';
             }
         }
@@ -225,7 +226,7 @@ async function generateMarksheets() {
 
     const previewArea = document.getElementById('marksheetPreview');
     previewArea.innerHTML = studentsArray.map(student =>
-        renderSingleMarksheet(student, subjects, examDisplayName)
+        renderSingleMarksheet(student, subjects, examDisplayName, session)
     ).join('');
 
     // Show bulk print button
@@ -238,8 +239,8 @@ async function generateMarksheets() {
 /**
  * Render a single student's marksheet (Bangladeshi HSC professional style)
  */
-function renderSingleMarksheet(student, subjects, examDisplayName) {
-    const ms = marksheetSettings;
+function renderSingleMarksheet(student, subjects, examDisplayName, selectedSession, customSettings = null) {
+    const ms = customSettings || marksheetSettings;
 
     // Calculate per-subject grades and grand totals
     let grandTotal = 0;
@@ -298,9 +299,15 @@ function renderSingleMarksheet(student, subjects, examDisplayName) {
     const todayDate = new Date().toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' });
 
     return `
-        <div class="ms-page font-${ms.fontSize || 'medium'} theme-${ms.theme || 'classic'} border-${ms.borderStyle || 'double'} typography-${ms.typography || 'default'} density-${ms.rowDensity || 'normal'}" style="--ms-primary: ${ms.primaryColor || '#4361ee'};">
+        <div class="ms-page font-${ms.fontSize || 'medium'} theme-${ms.theme || 'classic'} border-${ms.borderStyle || 'double'} typography-${ms.typography || 'default'} density-${ms.rowDensity || 'normal'}" id="ms_page_${student.id}_${student.group}" style="--ms-primary: ${ms.primaryColor || '#4361ee'};">
             ${watermarkHtml}
             
+            <div class="ms-actions-float no-print">
+                <button class="ms-btn-action ms-btn-print-single" onclick="window.printSingleMarksheet('ms_page_${student.id}_${student.group}')">
+                    <i class="fas fa-print"></i> প্রিন্ট
+                </button>
+            </div>
+
             <!-- Decorative Border -->
             <div class="ms-border-frame">
                 
@@ -313,7 +320,7 @@ function renderSingleMarksheet(student, subjects, examDisplayName) {
                     ${ms.institutionAddress ? `<p class="ms-inst-address">${ms.institutionAddress}</p>` : ''}
                     <div class="ms-title-divider"></div>
                     <h2 class="ms-title-main">${ms.headerLine1 || 'পরীক্ষার ফলাফল পত্র'}</h2>
-                    ${ms.headerLine2 ? `<p class="ms-title-sub">${ms.headerLine2}</p>` : ''}
+                    <p class="ms-title-sub">শিক্ষাবর্ষ: ${selectedSession}</p>
                     <p class="ms-exam-name-display">${examDisplayName}</p>
                 </div>
 
@@ -443,6 +450,52 @@ function getGradePoint(pct) {
 }
 
 /**
+ * Update Live Preview in Marksheet Settings Modal
+ */
+function updateSettingsLivePreview() {
+    const previewContainer = document.getElementById('msSettingsLivePreview');
+    if (!previewContainer) return;
+
+    // Helper to get element values
+    const getVal = (id) => document.getElementById(id) ? document.getElementById(id).value : '';
+
+    const currentSettings = {
+        institutionName: getVal('msInstitutionName') || 'প্রতিষ্ঠানের নাম',
+        institutionAddress: getVal('msInstitutionAddress') || 'ঠিকানা এখানে',
+        headerLine1: getVal('msHeaderLine1') || 'পরীক্ষার ফলাফল পত্র',
+        primaryColor: getVal('msPrimaryColor') || '#4361ee',
+        fontSize: getVal('msFontSize') || 'medium',
+        theme: getVal('msTheme') || 'classic',
+        borderStyle: getVal('msBorderStyle') || 'double',
+        typography: getVal('msTypography') || 'default',
+        rowDensity: getVal('msRowDensity') || 'normal',
+        watermarkUrl: marksheetSettings.watermarkUrl || '',
+        watermarkOpacity: (document.getElementById('msWatermarkOpacity') ? parseInt(document.getElementById('msWatermarkOpacity').value) : 10) / 100,
+        signatures: marksheetSettings.signatures || []
+    };
+
+    // Render the mock preview using existing render function
+    const mockStudent = {
+        id: 'mock-1',
+        name: 'মোহাম্মদ আব্দুল্লাহ',
+        roll: '১০১',
+        group: 'বিজ্ঞান',
+        marks: {
+            'Bangla': { cq: 65, mcq: 25, practical: 0, total: 90 },
+            'English': { cq: 85, mcq: 0, practical: 0, total: 85 },
+            'Math': { cq: 75, mcq: 20, practical: 0, total: 95 }
+        }
+    };
+
+    const html = renderSingleMarksheet(mockStudent, currentSettings, '২০২৫-২০২৬', 'অর্ধ-বার্ষিক পরীক্ষা ২০২৬');
+    previewContainer.innerHTML = html;
+
+    // Hide non-printable action buttons in preview
+    const actions = previewContainer.querySelectorAll('.ms-actions-float');
+    actions.forEach(a => a.style.display = 'none');
+}
+
+/**
  * Initialize Marksheet Settings Modal
  */
 function initMarksheetSettingsModal() {
@@ -462,6 +515,68 @@ function initMarksheetSettingsModal() {
 
     const menuItems = document.querySelectorAll('.config-menu-item');
     const tabContents = document.querySelectorAll('.config-tab-content');
+
+    // MOCK DATA for Live Preview
+    const MOCK_PREVIEW_STUDENT = {
+        id: 'mock-123',
+        name: 'মোহাম্মদ আব্দুল্লাহ',
+        roll: '১০১',
+        group: 'বিজ্ঞান',
+        subjects: {
+            'Bangla': { written: 65, mcq: 25, practical: 0, total: 90 },
+            'English': { written: 85, mcq: 0, practical: 0, total: 85 },
+            'Math': { written: 75, mcq: 20, practical: 0, total: 95 }
+        }
+    };
+
+    /**
+     * Update Live Preview in Settings
+     */
+    const updateSettingsLivePreview = () => {
+        const previewContainer = document.getElementById('msSettingsLivePreview');
+        if (!previewContainer) return;
+
+        const currentSettings = {
+            institutionName: document.getElementById('msInstitutionName').value || 'প্রতিষ্ঠানের নাম',
+            institutionAddress: document.getElementById('msInstitutionAddress').value || 'ঠিকানা এখানে',
+            headerLine1: document.getElementById('msHeaderLine1').value || 'পরীক্ষার ফলাফল পত্র',
+            primaryColor: document.getElementById('msPrimaryColor').value,
+            fontSize: document.getElementById('msFontSize').value,
+            theme: document.getElementById('msTheme').value,
+            borderStyle: document.getElementById('msBorderStyle').value,
+            typography: document.getElementById('msTypography').value,
+            rowDensity: document.getElementById('msRowDensity').value,
+            watermarkUrl: marksheetSettings.watermarkUrl || '',
+            watermarkOpacity: parseInt(document.getElementById('msWatermarkOpacity').value) / 100,
+            signatures: marksheetSettings.signatures || [
+                { label: 'শ্রেণি শিক্ষক', url: '' },
+                { label: 'পরীক্ষা কমিটি', url: '' },
+                { label: 'অধ্যক্ষ', url: '' }
+            ]
+        };
+
+        const mockSubjects = Object.keys(MOCK_PREVIEW_STUDENT.subjects);
+
+        // Render the preview
+        const html = renderSingleMarksheet(MOCK_PREVIEW_STUDENT, mockSubjects, 'অর্ধ-বার্ষিক পরীক্ষা ২০২৬', '২০২৫-২০২৬', currentSettings);
+        previewContainer.innerHTML = html;
+
+        // Ensure no-print elements and floating buttons are hidden or styled for preview
+        const actions = previewContainer.querySelectorAll('.ms-actions-float');
+        actions.forEach(a => a.style.display = 'none');
+    };
+
+    // Add listeners to all form controls for live preview
+    const controls = form.querySelectorAll('input, select, textarea');
+    controls.forEach(control => {
+        const eventName = control.type === 'range' || control.type === 'color' ? 'input' : 'change';
+        control.addEventListener(eventName, updateSettingsLivePreview);
+
+        // For text inputs, update on keyup for instant feel
+        if (control.type === 'text') {
+            control.addEventListener('keyup', updateSettingsLivePreview);
+        }
+    });
 
     // Tab Switching Logic
     menuItems.forEach(item => {
@@ -487,7 +602,6 @@ function initMarksheetSettingsModal() {
             if (el('msInstitutionName')) el('msInstitutionName').value = marksheetSettings.institutionName || '';
             if (el('msInstitutionAddress')) el('msInstitutionAddress').value = marksheetSettings.institutionAddress || '';
             if (el('msHeaderLine1')) el('msHeaderLine1').value = marksheetSettings.headerLine1 || '';
-            if (el('msHeaderLine2')) el('msHeaderLine2').value = marksheetSettings.headerLine2 || '';
             if (el('msPrimaryColor')) el('msPrimaryColor').value = marksheetSettings.primaryColor || '#4361ee';
             if (el('msFontSize')) el('msFontSize').value = marksheetSettings.fontSize || 'medium';
             if (el('msTheme')) el('msTheme').value = marksheetSettings.theme || 'classic';
@@ -506,6 +620,10 @@ function initMarksheetSettingsModal() {
                 const preview = document.getElementById('msWatermarkPreview');
                 if (preview) preview.innerHTML = `<img src="${marksheetSettings.watermarkUrl}" style="max-width:80px; opacity:0.3; border-radius:6px;">`;
             }
+
+            // Initial Preview Load
+            updateSettingsLivePreview();
+
             if (modal) modal.classList.add('active');
         });
     }
@@ -517,6 +635,7 @@ function initMarksheetSettingsModal() {
             if (!marksheetSettings.signatures) marksheetSettings.signatures = [];
             marksheetSettings.signatures.push({ label: '', url: '' });
             renderSignatureSlots();
+            updateSettingsLivePreview(); // Update preview when adding slot
         });
     }
 
@@ -541,6 +660,7 @@ function initMarksheetSettingsModal() {
                     marksheetSettings.watermarkUrl = ev.target.result;
                     const preview = document.getElementById('msWatermarkPreview');
                     if (preview) preview.innerHTML = `<img src="${ev.target.result}" style="max-width:80px; opacity:0.3; border-radius:6px;">`;
+                    updateSettingsLivePreview(); // Update preview after upload
                 };
                 reader.readAsDataURL(file);
             }
@@ -566,7 +686,6 @@ function initMarksheetSettingsModal() {
                 institutionName: document.getElementById('msInstitutionName').value.trim(),
                 institutionAddress: document.getElementById('msInstitutionAddress').value.trim(),
                 headerLine1: document.getElementById('msHeaderLine1').value.trim(),
-                headerLine2: document.getElementById('msHeaderLine2').value.trim(),
                 primaryColor: document.getElementById('msPrimaryColor').value,
                 fontSize: document.getElementById('msFontSize').value,
                 theme: document.getElementById('msTheme').value,
@@ -629,6 +748,7 @@ function renderSignatureSlots() {
 
         labelInput.addEventListener('input', (e) => {
             marksheetSettings.signatures[index].label = e.target.value;
+            updateSettingsLivePreview();
         });
 
         fileInput.addEventListener('change', (e) => {
@@ -640,6 +760,7 @@ function renderSignatureSlots() {
                     card.dataset.url = url;
                     marksheetSettings.signatures[index].url = url;
                     card.querySelector('.sig-preview-thumb').innerHTML = `<img src="${url}" alt="Signature">`;
+                    updateSettingsLivePreview();
                 };
                 reader.readAsDataURL(file);
             }
@@ -648,9 +769,42 @@ function renderSignatureSlots() {
         removeBtn.addEventListener('click', () => {
             marksheetSettings.signatures.splice(index, 1);
             renderSignatureSlots();
+            updateSettingsLivePreview();
         });
     });
 }
+
+/**
+ * Print a single marksheet
+ */
+window.printSingleMarksheet = function (containerId) {
+    const el = document.getElementById(containerId);
+    if (!el) return;
+
+    // We use a temporary class to hide everything except THIS specific marksheet
+    document.body.classList.add('ms-printing-single');
+    el.classList.add('ms-single-active');
+
+    // Hide all other ms-pages temporarily
+    const allPages = document.querySelectorAll('.ms-page');
+    allPages.forEach(p => {
+        if (p.id !== containerId) p.style.display = 'none';
+    });
+
+    window.print();
+
+    // Restoration
+    const restore = () => {
+        document.body.classList.remove('ms-printing-single');
+        el.classList.remove('ms-single-active');
+        allPages.forEach(p => p.style.display = '');
+        window.removeEventListener('afterprint', restore);
+    };
+
+    window.addEventListener('afterprint', restore);
+    // Switch back after 3s just in case
+    setTimeout(restore, 3000);
+};
 
 /**
  * Bulk Print - opens print dialog with only marksheets
@@ -680,6 +834,23 @@ export async function initMarksheetManager() {
     const printAllBtn = document.getElementById('msPrintAllBtn');
     if (printAllBtn) {
         printAllBtn.addEventListener('click', bulkPrint);
+    }
+
+    const resetBtn = document.getElementById('msResetBtn');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            const preview = document.getElementById('marksheetPreview');
+            if (preview) {
+                preview.innerHTML = `
+                    <div class="empty-state-msg">
+                        <i class="fas fa-scroll" style="font-size: 2rem; opacity: 0.3;"></i>
+                        <p>মার্কশীট দেখতে উপরে থেকে তথ্য নির্বাচন করে "মার্কশীট তৈরি করুন" বাটনে ক্লিক করুন।</p>
+                    </div>
+                `;
+            }
+            if (printAllBtn) printAllBtn.style.display = 'none';
+            showNotification('মার্কশীট প্রিভিউ রিসেট করা হয়েছে');
+        });
     }
 
     initMarksheetSettingsModal();

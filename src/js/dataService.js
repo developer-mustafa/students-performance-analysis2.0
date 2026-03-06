@@ -7,7 +7,7 @@
 import * as XLSX from 'xlsx';
 import html2canvas from 'html2canvas';
 import { STORAGE_KEYS } from './constants.js';
-import { showNotification, convertToEnglishDigits, normalizeText } from './utils.js';
+import { showNotification, convertToEnglishDigits, normalizeText, normalizeSession } from './utils.js';
 import defaultStudentData from '../data/students.json';
 import {
     getAllStudents,
@@ -418,7 +418,7 @@ function parseExcelRow(row, columnMap, rowIndex) {
     // Get Class, Session and Subject
     const classVal = columnMap.class >= 0 ? String(row[columnMap.class] || '').trim() : '';
     const sessionRaw = columnMap.session >= 0 ? row[columnMap.session] : '';
-    const sessionVal = convertToEnglishDigits(String(sessionRaw || '').trim());
+    const sessionVal = normalizeSession(String(sessionRaw || ''));
     const subjectVal = columnMap.subject >= 0 ? normalizeText(row[columnMap.subject] || '') : '';
 
     return {

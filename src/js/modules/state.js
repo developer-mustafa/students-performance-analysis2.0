@@ -59,7 +59,13 @@ export const state = {
     currentExamSession: null,
     currentExamClass: null,
     currentSessionStudents: [], // Store all students for current session for navigation
-    currentUser: null
+    currentUser: null,
+    academicStructure: {
+        class: [],
+        session: [],
+        group: [],
+        section: []
+    }
 };
 
 export const DEFAULT_SUBJECT_CONFIG = {

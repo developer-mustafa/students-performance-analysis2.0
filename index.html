@@ -133,6 +133,9 @@
       <button class="page-nav-btn super-admin-only" data-page="exam-config" style="display: none;">
         <i class="fas fa-cogs"></i> <span>এক্সাম কনফিগ</span>
       </button>
+      <button class="page-nav-btn super-admin-only" data-page="academic-settings" style="display: none;">
+        <i class="fas fa-university"></i> <span>একাডেমিক সেটিংস</span>
+      </button>
 
       <style>
         .nav-badge {
@@ -576,11 +579,11 @@
         <div class="result-entry-selectors">
           <div class="selector-group">
             <label>শ্রেণি</label>
-            <select id="reClass" class="form-control"></select>
+            <select id="reClass" class="form-control" data-dynamic="class"></select>
           </div>
           <div class="selector-group">
             <label>সেশন</label>
-            <select id="reSession" class="form-control"></select>
+            <select id="reSession" class="form-control" data-dynamic="session"></select>
           </div>
           <div class="selector-group">
             <label>বিষয়</label>
@@ -646,11 +649,11 @@
         <div class="result-entry-selectors">
           <div class="selector-group">
             <label>শ্রেণি</label>
-            <select id="msClass" class="form-control"></select>
+            <select id="msClass" class="form-control" data-dynamic="class"></select>
           </div>
           <div class="selector-group">
             <label>সেশন</label>
-            <select id="msSession" class="form-control"></select>
+            <select id="msSession" class="form-control" data-dynamic="session"></select>
           </div>
           <div class="selector-group">
             <label>পরীক্ষা</label>
@@ -664,6 +667,9 @@
           </div>
           <button id="msGenerateBtn" class="dm-btn dm-save">
             <i class="fas fa-file-alt"></i> <span class="dm-btn-text">মার্কশীট তৈরি করুন</span>
+          </button>
+          <button id="msResetBtn" class="dm-btn dm-report">
+            <i class="fas fa-sync-alt"></i> <span class="dm-btn-text">রিসেট</span>
           </button>
           <button id="msPrintAllBtn" class="dm-btn dm-report" style="display:none;">
             <i class="fas fa-print"></i> <span class="dm-btn-text">বাল্ক প্রিন্ট</span>
@@ -690,26 +696,21 @@
           <div class="form-group">
             <label for="examName">পরীক্ষার নাম (Exam Name):</label>
             <select id="examName" class="form-control" required disabled>
-              <option value="">আগে শ্রেণি সিলেক্ট করুন</option>
+              <option value="">আগে শ্রেণি ও সেশন সিলেক্ট করুন</option>
             </select>
           </div>
           <div class="form-row" style="display: flex; gap: 10px;">
             <div class="form-group" style="flex: 1;">
               <label for="examClass">শ্রেণি (Class):</label>
-              <select id="examClass" class="form-control">
+              <select id="examClass" class="form-control" data-dynamic="class">
                 <option value="">সিলেক্ট করুন</option>
-                <option value="6">৬ষ্ঠ শ্রেণি</option>
-                <option value="7">৭ম শ্রেণি</option>
-                <option value="8">৮ম শ্রেণি</option>
-                <option value="9">৯ম শ্রেণি</option>
-                <option value="10">১০ম শ্রেণি</option>
-                <option value="SSC">SSC</option>
-                <option value="HSC">HSC</option>
               </select>
             </div>
             <div class="form-group" style="flex: 1;">
               <label for="examSession">সেশন (Session):</label>
-              <input type="text" id="examSession" class="form-control" placeholder="2025" value="2025">
+              <select id="examSession" class="form-control" data-dynamic="session">
+                <option value="">সিলেক্ট করুন</option>
+              </select>
             </div>
           </div>
           <div class="form-group">
@@ -725,43 +726,38 @@
 
 
 
-    <!-- Edit Exam Modal -->
-    <div id="editExamModal" class="modal">
-      <div class="modal-content">
-        <span class="close" id="closeEditModal">&times;</span>
-        <h2><i class="fas fa-edit"></i> পরীক্ষার তথ্য সম্পাদনা</h2>
-        <form id="editExamForm">
-          <input type="hidden" id="editExamDocId">
+    <!-- Edit Exam Config Modal -->
+    <div id="editConfigModal" class="modal">
+      <div class="modal-content" style="max-width: 450px;">
+        <span class="close" id="closeEditConfigModal">&times;</span>
+        <h2 style="margin-top: 0; color: var(--primary);"><i class="fas fa-edit"></i> পরীক্ষার তথ্য সম্পাদনা</h2>
+        <form id="editConfigForm" style="display: flex; flex-direction: column; gap: 15px;">
+          <input type="hidden" id="editConfigDocId">
           <div class="form-group">
-            <label for="editExamName">পরীক্ষার নাম:</label>
-            <input type="text" id="editExamName" class="form-control" required>
-          </div>
-          <div class="form-row" style="display: flex; gap: 10px;">
-            <div class="form-group" style="flex: 1;">
-              <label for="editExamClass">শ্রেণি (Class):</label>
-              <select id="editExamClass" class="form-control">
-                <option value="">সিলেক্ট করুন</option>
-                <option value="6">৬ষ্ঠ শ্রেণি</option>
-                <option value="7">৭ম শ্রেণি</option>
-                <option value="8">৮ম শ্রেণি</option>
-                <option value="9">৯ম শ্রেণি</option>
-                <option value="10">১০ম শ্রেণি</option>
-                <option value="SSC">SSC</option>
-                <option value="HSC">HSC</option>
-              </select>
-            </div>
-            <div class="form-group" style="flex: 1;">
-              <label for="editExamSession">সেশন (Session):</label>
-              <input type="text" id="editExamSession" class="form-control" placeholder="2025">
-            </div>
-          </div>
-          <div class="form-group">
-            <label for="editSubjectName">বিষয়:</label>
-            <select id="editSubjectName" class="form-control">
-              <option value="">আগে শ্রেণি সিলেক্ট করুন</option>
+            <label for="editConfigClass">শ্রেণি নির্বাচন করুন</label>
+            <select id="editConfigClass" class="form-control" data-dynamic="class" required>
+              <option value="">সিলেক্ট করুন</option>
             </select>
           </div>
-          <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">আপডেট করুন</button>
+          <div class="form-group">
+            <label for="editConfigSession">সেশন নির্বাচন করুন</label>
+            <select id="editConfigSession" class="form-control" data-dynamic="session" required>
+              <option value="">সিলেক্ট করুন</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="editConfigExamName">পরীক্ষার নাম</label>
+            <input type="text" id="editConfigExamName" class="form-control" required placeholder="পরীক্ষার নাম লিখুন">
+          </div>
+          <div class="form-group">
+            <label for="editConfigExamDate">পরীক্ষার তারিখ (ঐচ্ছিক)</label>
+            <input type="date" id="editConfigExamDate" class="form-control">
+          </div>
+          <div class="form-group">
+            <button type="submit" class="btn-primary" style="width: 100%;">
+              <i class="fas fa-save"></i> আপডেট করুন
+            </button>
+          </div>
         </form>
       </div>
     </div>
@@ -1178,149 +1174,159 @@
           <!-- Main Content Area -->
           <div class="config-main">
             <form id="marksheetSettingsForm">
-
-              <!-- General Settings -->
-              <div class="config-tab-content active" id="ms-general">
-                <div class="form-header">
-                  <h3>সাধারণ তথ্য</h3>
-                  <p>মার্কশীটে প্রদর্শিত প্রতিষ্ঠানের নাম ও ঠিকানা</p>
-                </div>
-                <div class="form-group">
-                  <label for="msInstitutionName">প্রতিষ্ঠানের নাম</label>
-                  <input type="text" id="msInstitutionName" class="form-control" placeholder="আদর্শ উচ্চ বিদ্যালয়">
-                </div>
-                <div class="form-group">
-                  <label for="msInstitutionAddress">ঠিকানা</label>
-                  <input type="text" id="msInstitutionAddress" class="form-control" placeholder="ঢাকা, বাংলাদেশ">
-                </div>
-              </div>
-
-              <!-- Header Settings -->
-              <div class="config-tab-content" id="ms-header">
-                <div class="form-header">
-                  <h3>হেডার সেটিংস</h3>
-                  <p>টাইটেল এবং স্লোগান কনফিগার করুন</p>
-                </div>
-                <div class="form-group">
-                  <label for="msHeaderLine1">হেডার লাইন ১</label>
-                  <input type="text" id="msHeaderLine1" class="form-control" placeholder="পরীক্ষার ফলাফল পত্র">
-                </div>
-                <div class="form-group">
-                  <label for="msHeaderLine2">হেডার লাইন ২ (ঐচ্ছিক)</label>
-                  <input type="text" id="msHeaderLine2" class="form-control" placeholder="শিক্ষাবর্ষ: ২০২৪-২০২৫">
-                </div>
-              </div>
-
-              <!-- Watermark Settings -->
-              <div class="config-tab-content" id="ms-watermark">
-                <div class="form-header">
-                  <h3>জলছাপ (Watermark)</h3>
-                  <p>পেজের মাঝখানে প্রদর্শিত হালকা লোগো</p>
-                </div>
-                <div class="form-row" style="display: flex; gap: 15px; align-items: flex-end;">
-                  <div class="form-group" style="flex: 2;">
-                    <label for="msWatermarkUpload">ওয়াটারমার্ক ছবি আপলোড</label>
-                    <input type="file" id="msWatermarkUpload" class="form-control" accept="image/*">
+              <div id="msSettingsFormContainer">
+                <!-- General Settings -->
+                <div class="config-tab-content active" id="ms-general">
+                  <div class="form-header">
+                    <h3>সাধারণ তথ্য</h3>
+                    <p>মার্কশীটে প্রদর্শিত প্রতিষ্ঠানের নাম ও ঠিকানা</p>
                   </div>
-                  <div class="form-group" style="flex: 1;">
-                    <label for="msWatermarkOpacity">অপাসিটি (<span id="msOpacityVal">10</span>%)</label>
-                    <input type="range" id="msWatermarkOpacity" min="5" max="40" value="10" class="form-control">
+                  <div class="form-group">
+                    <label for="msInstitutionName">প্রতিষ্ঠানের নাম</label>
+                    <input type="text" id="msInstitutionName" class="form-control" placeholder="আদর্শ উচ্চ বিদ্যালয়">
+                  </div>
+                  <div class="form-group">
+                    <label for="msInstitutionAddress">ঠিকানা</label>
+                    <input type="text" id="msInstitutionAddress" class="form-control" placeholder="ঢাকা, বাংলাদেশ">
                   </div>
                 </div>
-                <div id="msWatermarkPreview"
-                  style="margin-top: 15px; padding: 15px; border: 1px dashed var(--border-color); border-radius: 8px; text-align: center;">
-                  <span style="opacity: 0.5;">কোনো ছবি নেই</span>
-                </div>
-              </div>
-
-              <!-- Signature Settings -->
-              <div class="config-tab-content" id="ms-signature">
-                <div class="signature-manager-premium">
-                  <div class="sig-manager-header">
-                    <label><i class="fas fa-file-signature"></i> স্বাক্ষরসমূহ (Signatures)</label>
-                    <button type="button" id="addSignatureSlotBtn" class="dm-btn dm-report btn-sm">
-                      <i class="fas fa-plus"></i> নতুন স্লট
-                    </button>
+                <!-- ... existing header settings ... -->
+                <div class="config-tab-content" id="ms-header">
+                  <div class="form-header">
+                    <h3>হেডার সেটিংস</h3>
+                    <p>টাইটেল এবং স্লোগান কনফিগার করুন</p>
                   </div>
-                  <div id="msSignatureSlotsContainer" class="sig-slots-grid">
-                    <!-- Signature slots will be injected here -->
-                  </div>
-                  <p class="sig-help-text">প্রতিটি পদের জন্য আলাদা স্বাক্ষর ছবি আপলোড করতে পারেন।</p>
-                </div>
-              </div>
-
-              <!-- Appearance Settings -->
-              <div class="config-tab-content" id="ms-appearance">
-                <div class="form-header">
-                  <h3>অ্যাপিয়ারেন্স (Appearance)</h3>
-                  <p>মার্কশীটের সামগ্রিক ডিজাইন ও স্টাইল কাস্টমাইজ করুন</p>
-                </div>
-
-                <div class="form-row" style="display: flex; gap: 15px;">
-                  <div class="form-group" style="flex: 1;">
-                    <label for="msTheme">থিম সিলেক্ট করুন</label>
-                    <select id="msTheme" class="form-control">
-                      <option value="classic">Classic (ক্লাসিক ব্লু)</option>
-                      <option value="modern">Modern (আধুনিক স্লিক)</option>
-                      <option value="elite">Elite (রয়াল গোল্ড ও ডার্ক)</option>
-                      <option value="certificate">Certificate (সনদ স্টাইল)</option>
-                    </select>
-                  </div>
-                  <div class="form-group" style="flex: 1;">
-                    <label for="msPrimaryColor">মূল রং (Primary Color)</label>
-                    <input type="color" id="msPrimaryColor" class="form-control" style="height: 45px; padding: 5px;"
-                      value="#4361ee">
+                  <div class="form-group">
+                    <label for="msHeaderLine1">হেডার লাইন ১</label>
+                    <input type="text" id="msHeaderLine1" class="form-control" placeholder="পরীক্ষার ফলাফল পত্র">
                   </div>
                 </div>
 
-                <div class="form-row" style="display: flex; gap: 15px; margin-top: 15px;">
-                  <div class="form-group" style="flex: 1;">
-                    <label for="msBorderStyle">বর্ডার স্টাইল</label>
-                    <select id="msBorderStyle" class="form-control">
-                      <option value="double">Double (মডার্ন ডাবল)</option>
-                      <option value="ornate">Ornate (অলঙ্কৃত ফ্রেম)</option>
-                      <option value="minimal">Minimal (সবার বর্ডার)</option>
-                      <option value="none">No Border (বর্ডারহীন)</option>
-                    </select>
+                <!-- Watermark Settings -->
+                <div class="config-tab-content" id="ms-watermark">
+                  <div class="form-header">
+                    <h3>জলছাপ (Watermark)</h3>
+                    <p>পেজের মাঝখানে প্রদর্শিত হালকা লোগো</p>
                   </div>
-                  <div class="form-group" style="flex: 1;">
-                    <label for="msTypography">ফন্ট পেয়ারিং (Typography)</label>
-                    <select id="msTypography" class="form-control">
-                      <option value="default">ডিফল্ট সিম্পল</option>
-                      <option value="premium">মডার্ন ও নিট (Premium)</option>
-                      <option value="formal">অফিসিয়াল ফরমাল</option>
-                    </select>
+                  <div class="form-row" style="display: flex; gap: 15px; align-items: flex-end;">
+                    <div class="form-group" style="flex: 2;">
+                      <label for="msWatermarkUpload">ওয়াটারমার্ক ছবি আপলোড</label>
+                      <input type="file" id="msWatermarkUpload" class="form-control" accept="image/*">
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                      <label for="msWatermarkOpacity">অপাসিটি (<span id="msOpacityVal">10</span>%)</label>
+                      <input type="range" id="msWatermarkOpacity" min="5" max="40" value="10" class="form-control">
+                    </div>
+                  </div>
+                  <div id="msWatermarkPreview"
+                    style="margin-top: 15px; padding: 15px; border: 1px dashed var(--border-color); border-radius: 8px; text-align: center;">
+                    <span style="opacity: 0.5;">কোনো ছবি নেই</span>
                   </div>
                 </div>
 
-                <div class="form-row" style="display: flex; gap: 15px; margin-top: 15px;">
-                  <div class="form-group" style="flex: 1;">
-                    <label for="msFontSize">বেস ফন্ট সাইজ</label>
-                    <select id="msFontSize" class="form-control">
-                      <option value="small">ছোট (Small)</option>
-                      <option value="medium" selected>মাঝারি (Normal)</option>
-                      <option value="large">বড় (Large)</option>
-                    </select>
-                  </div>
-                  <div class="form-group" style="flex: 1;">
-                    <label for="msRowDensity">টেবিল ডেনসিটি</label>
-                    <select id="msRowDensity" class="form-control">
-                      <option value="compact">কমপ্যাক্ট (Compact)</option>
-                      <option value="normal" selected>স্বাভাবিক (Normal)</option>
-                      <option value="relaxed">রিল্যাক্সড (Relaxed)</option>
-                    </select>
+                <!-- Signature Settings -->
+                <div class="config-tab-content" id="ms-signature">
+                  <div class="signature-manager-premium">
+                    <div class="sig-manager-header">
+                      <label><i class="fas fa-file-signature"></i> স্বাক্ষরসমূহ (Signatures)</label>
+                      <button type="button" id="addSignatureSlotBtn" class="dm-btn dm-report btn-sm">
+                        <i class="fas fa-plus"></i> নতুন স্লট
+                      </button>
+                    </div>
+                    <div id="msSignatureSlotsContainer" class="sig-slots-grid">
+                      <!-- Signature slots will be injected here -->
+                    </div>
+                    <p class="sig-help-text">প্রতিটি পদের জন্য আলাদা স্বাক্ষর ছবি আপলোড করতে পারেন।</p>
                   </div>
                 </div>
-              </div>
 
-              <!-- Save Container -->
-              <div
-                style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
-                <button type="submit" class="dm-btn dm-primary" style="padding: 12px 30px; font-weight: 700;">
-                  <i class="fas fa-save"></i> সেটিংস সংরক্ষণ করুন
-                </button>
+                <!-- Appearance Settings -->
+                <div class="config-tab-content" id="ms-appearance">
+                  <div class="form-header">
+                    <h3>অ্যাপিয়ারেন্স (Appearance)</h3>
+                    <p>মার্কশীটের সামগ্রিক ডিজাইন ও স্টাইল কাস্টমাইজ করুন</p>
+                  </div>
+
+                  <div class="form-row" style="display: flex; gap: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                      <label for="msTheme">থিম সিলেক্ট করুন</label>
+                      <select id="msTheme" class="form-control">
+                        <option value="classic">Classic (ক্লাসিক ব্লু)</option>
+                        <option value="modern">Modern (আধুনিক স্লিক)</option>
+                        <option value="elite">Elite (রয়াল গোল্ড ও ডার্ক)</option>
+                        <option value="certificate">Certificate (সনদ স্টাইল)</option>
+                      </select>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                      <label for="msPrimaryColor">মূল রং (Primary Color)</label>
+                      <input type="color" id="msPrimaryColor" class="form-control" style="height: 45px; padding: 5px;"
+                        value="#4361ee">
+                    </div>
+                  </div>
+
+                  <div class="form-row" style="display: flex; gap: 15px; margin-top: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                      <label for="msBorderStyle">বর্ডার স্টাইল</label>
+                      <select id="msBorderStyle" class="form-control">
+                        <option value="double">Double (মডার্ন ডাবল)</option>
+                        <option value="ornate">Ornate (অলঙ্কৃত ফ্রেম)</option>
+                        <option value="minimal">Minimal (সবার বর্ডার)</option>
+                        <option value="none">No Border (বর্ডারহীন)</option>
+                      </select>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                      <label for="msTypography">ফন্ট পেয়ারিং (Typography)</label>
+                      <select id="msTypography" class="form-control">
+                        <option value="default">ডিফল্ট সিম্পল</option>
+                        <option value="premium">মডার্ন ও নিট (Premium)</option>
+                        <option value="formal">অফিসিয়াল ফরমাল</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div class="form-row" style="display: flex; gap: 15px; margin-top: 15px;">
+                    <div class="form-group" style="flex: 1;">
+                      <label for="msFontSize">বেস ফন্ট সাইজ</label>
+                      <select id="msFontSize" class="form-control">
+                        <option value="small">ছোট (Small)</option>
+                        <option value="medium" selected>মাঝারি (Normal)</option>
+                        <option value="large">বড় (Large)</option>
+                      </select>
+                    </div>
+                    <div class="form-group" style="flex: 1;">
+                      <label for="msRowDensity">টেবিল ডেনসিটি</label>
+                      <select id="msRowDensity" class="form-control">
+                        <option value="compact">কমপ্যাক্ট (Compact)</option>
+                        <option value="normal" selected>স্বাভাবিক (Normal)</option>
+                        <option value="relaxed">রিল্যাক্সড (Relaxed)</option>
+                      </select>
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Save Container -->
+                <div
+                  style="margin-top: 30px; padding-top: 20px; border-top: 1px solid var(--border-color); display: flex; justify-content: flex-end;">
+                  <button type="submit" class="dm-btn dm-primary" style="padding: 12px 30px; font-weight: 700;">
+                    <i class="fas fa-save"></i> সেটিংস সংরক্ষণ করুন
+                  </button>
+                </div>
               </div>
             </form>
+          </div>
+
+          <!-- Live Preview Area -->
+          <div class="config-preview-panel">
+            <div class="preview-header">
+              <h4><i class="fas fa-eye"></i> ইনস্ট্যান্ট প্রিভিউ</h4>
+            </div>
+            <div id="msSettingsLivePreview" class="preview-container-inner">
+              <!-- Live preview will be injected here -->
+              <div class="preview-placeholder">
+                <i class="fas fa-sync fa-spin"></i>
+                <p>লোডিং প্রিভিউ...</p>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -1380,11 +1386,11 @@
             <div class="form-row" style="display: flex; gap: 10px;">
               <div class="form-group" style="flex: 1;">
                 <label>শ্রেণি</label>
-                <select id="taClassSelect" class="form-control"></select>
+                <select id="taClassSelect" class="form-control" data-dynamic="class"></select>
               </div>
               <div class="form-group" style="flex: 1;">
                 <label>সেশন</label>
-                <input type="text" id="taSessionInput" class="form-control" placeholder="2025-2026">
+                <select id="taSessionSelect" class="form-control" data-dynamic="session"></select>
               </div>
             </div>
 
@@ -1501,7 +1507,53 @@
     </div>
     <!-- END PAGE: ACCESS REQUESTS -->
 
-    <!-- ========== PAGE: EXAM CONFIGURATION (Super Admin Only) ========== -->
+    <!-- ========== PAGE: ACADEMIC SETTINGS (Super Admin Only) ========== -->
+    <div id="academicSettingsPage" class="app-page" style="display: none; padding: 0 20px 20px 20px;">
+      <div class="academic-settings-grid"
+        style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+
+        <!-- Class Management -->
+        <div class="card academic-card" data-type="class">
+          <h3><i class="fas fa-graduation-cap"></i> শ্রেণি ব্যবস্থাপনা</h3>
+          <div class="academic-form">
+            <input type="text" class="form-control academic-input" placeholder="শ্রেণির নাম (উদা: HSC)">
+            <button class="btn-primary add-academic-btn"><i class="fas fa-plus"></i></button>
+          </div>
+          <div class="academic-list" id="classList"></div>
+        </div>
+
+        <!-- Session Management -->
+        <div class="card academic-card" data-type="session">
+          <h3><i class="fas fa-calendar-alt"></i> সেশন ব্যবস্থাপনা</h3>
+          <div class="academic-form">
+            <input type="text" class="form-control academic-input" placeholder="সেশন (উদা: 2024-2025)">
+            <button class="btn-primary add-academic-btn"><i class="fas fa-plus"></i></button>
+          </div>
+          <div class="academic-list" id="sessionList"></div>
+        </div>
+
+        <!-- Group Management -->
+        <div class="card academic-card" data-type="group">
+          <h3><i class="fas fa-users"></i> গ্রুপ ব্যবস্থাপনা</h3>
+          <div class="academic-form">
+            <input type="text" class="form-control academic-input" placeholder="গ্রুপ (উদা: বিজ্ঞান গ্রুপ)">
+            <button class="btn-primary add-academic-btn"><i class="fas fa-plus"></i></button>
+          </div>
+          <div class="academic-list" id="groupList"></div>
+        </div>
+
+        <!-- Section Management (Optional) -->
+        <div class="card academic-card" data-type="section">
+          <h3><i class="fas fa-door-open"></i> শাখা (ঐচ্ছিক)</h3>
+          <div class="academic-form">
+            <input type="text" class="form-control academic-input" placeholder="শাখার নাম (উদা: ক শাখা)">
+            <button class="btn-primary add-academic-btn"><i class="fas fa-plus"></i></button>
+          </div>
+          <div class="academic-list" id="sectionList"></div>
+        </div>
+
+      </div>
+    </div>
     <div id="examConfigPage" class="app-page" style="display: none; padding: 0 20px 20px 20px;">
       <div style="display: grid; grid-template-columns: minmax(300px, 350px) 1fr; gap: 24px; align-items: start;">
         <div class="card"
@@ -1512,15 +1564,14 @@
           <form id="addExamConfigForm" style="display: flex; flex-direction: column; gap: 15px;">
             <div class="form-group">
               <label for="configClass">ক্লাস সিলেক্ট করুন</label>
-              <select id="configClass" class="form-control" required>
+              <select id="configClass" class="form-control" data-dynamic="class" required>
                 <option value="">সিলেক্ট করুন</option>
-                <option value="6">৬ষ্ঠ শ্রেণি</option>
-                <option value="7">৭ম শ্রেণি</option>
-                <option value="8">৮ম শ্রেণি</option>
-                <option value="9">৯ম শ্রেণি</option>
-                <option value="10">১০ম শ্রেণি</option>
-                <option value="SSC">SSC</option>
-                <option value="HSC">HSC</option>
+              </select>
+            </div>
+            <div class="form-group">
+              <label for="configSession">সেশন সিলেক্ট করুন</label>
+              <select id="configSession" class="form-control" data-dynamic="session" required>
+                <option value="">সিলেক্ট করুন</option>
               </select>
             </div>
             <div class="form-group">
@@ -1541,18 +1592,17 @@
 
         <div class="card"
           style="padding: 20px; border: 1px solid var(--border-color); box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
-          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px;">
-            <h3 style="margin: 0; color: var(--primary);"><i class="fas fa-list"></i> তৈরি করা পরীক্ষাসমূহ</h3>
-            <select id="filterConfigClass" class="form-select" style="max-width: 200px;">
-              <option value="all">সব ক্লাস</option>
-              <option value="6">৬ষ্ঠ শ্রেণি</option>
-              <option value="7">৭ম শ্রেণি</option>
-              <option value="8">৮ম শ্রেণি</option>
-              <option value="9">৯ম শ্রেণি</option>
-              <option value="10">১০ম শ্রেণি</option>
-              <option value="SSC">SSC</option>
-              <option value="HSC">HSC</option>
-            </select>
+          <div
+            style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; gap: 10px; flex-wrap: wrap;">
+            <h3 style="margin: 0; color: var(--primary); flex: 1;"><i class="fas fa-list"></i> তৈরি করা পরীক্ষাসমূহ</h3>
+            <div style="display: flex; gap: 10px;">
+              <select id="filterConfigClass" class="form-select" data-dynamic="class" style="max-width: 140px;">
+                <option value="all">সব ক্লাস</option>
+              </select>
+              <select id="filterConfigSession" class="form-select" data-dynamic="session" style="max-width: 140px;">
+                <option value="all">সব সেশন</option>
+              </select>
+            </div>
           </div>
           <div class="table-responsive" style="max-height: 500px; overflow-y: auto;">
             <table class="data-table">
@@ -1596,30 +1646,22 @@
           <div class="form-row" style="display: flex; gap: 10px;">
             <div class="form-group" style="flex: 1;">
               <label for="studentClass">শ্রেণি</label>
-              <select id="studentFormClass" class="form-control">
+              <select id="studentFormClass" class="form-control" data-dynamic="class">
                 <option value="">সিলেক্ট করুন</option>
-                <option value="6">৬ষ্ঠ শ্রেণি</option>
-                <option value="7">৭ম শ্রেণি</option>
-                <option value="8">৮ম শ্রেণি</option>
-                <option value="9">৯ম শ্রেণি</option>
-                <option value="10">১০ম শ্রেণি</option>
-                <option value="SSC">SSC</option>
-                <option value="HSC">HSC</option>
               </select>
             </div>
             <div class="form-group" style="flex: 1;">
               <label for="studentGroup">গ্রুপ</label>
-              <select id="studentFormGroup" class="form-control">
+              <select id="studentFormGroup" class="form-control" data-dynamic="group">
                 <option value="">সিলেক্ট করুন</option>
-                <option value="বিজ্ঞান গ্রুপ">বিজ্ঞান</option>
-                <option value="ব্যবসায় গ্রুপ">ব্যবসায়</option>
-                <option value="মানবিক গ্রুপ">মানবিক</option>
               </select>
             </div>
           </div>
           <div class="form-group">
             <label for="studentSession">সেশন</label>
-            <input type="text" id="studentFormSession" class="form-control" placeholder="2025-2026">
+            <select id="studentFormSession" class="form-control" data-dynamic="session">
+              <option value="">সেশন নির্বাচন করুন</option>
+            </select>
           </div>
           <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">সংরক্ষণ করুন</button>
         </form>

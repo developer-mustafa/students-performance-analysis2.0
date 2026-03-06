@@ -37,7 +37,8 @@ const COLLECTIONS = {
     users: 'users',
     access_requests: 'access_requests',
     teacher_assignments: 'teacher_assignments',
-    examConfigs: 'examConfigs'
+    examConfigs: 'examConfigs',
+    academicStructure: 'academicStructure'
 };
 
 // Memory cache for expensive read operations
@@ -1279,20 +1280,26 @@ export async function addExamConfig(configData) {
 }
 
 /**
- * Get Exam Configurations (Optionally filtered by class)
+ * Get Exam Configurations (Optionally filtered by class and session)
  * @param {string} [className] - Optional class name to filter
+ * @param {string} [session] - Optional session to filter
  * @returns {Promise<Array>}
  */
-export async function getExamConfigs(className = null) {
+export async function getExamConfigs(className = null, session = null) {
     try {
         const configsRef = collection(db, COLLECTIONS.examConfigs);
-        let q;
-        if (className) {
-            // Remove orderBy to prevent needing a composite index in Firestore
-            q = query(configsRef, where('class', '==', className));
-        } else {
-            // Remove orderBy here as well to keep logic consistent
-            q = query(configsRef);
+        let q = query(configsRef);
+
+        const conditions = [];
+        if (className && className !== 'all') {
+            conditions.push(where('class', '==', className));
+        }
+        if (session && session !== 'all') {
+            conditions.push(where('session', '==', session));
+        }
+
+        if (conditions.length > 0) {
+            q = query(configsRef, ...conditions);
         }
 
         const snapshot = await getDocs(q);
@@ -1325,6 +1332,77 @@ export async function deleteExamConfig(docId) {
         return true;
     } catch (error) {
         console.error('এক্সাম কনফিগ মুছতে সমস্যা:', error);
+        return false;
+    }
+}
+
+/**
+ * Update an existing Exam Configuration
+ * @param {string} docId 
+ * @param {Object} data 
+ * @returns {Promise<boolean>}
+ */
+export async function updateExamConfig(docId, data) {
+    try {
+        const docRef = doc(db, COLLECTIONS.examConfigs, docId);
+        await setDoc(docRef, {
+            ...data,
+            updatedAt: serverTimestamp()
+        }, { merge: true });
+        return true;
+    } catch (error) {
+        console.error('এক্সাম কনফিগ আপডেট করতে সমস্যা:', error);
+        return false;
+    }
+}
+
+/**
+ * Get all academic structure items
+ * @returns {Promise<Array>}
+ */
+export async function getAcademicStructure() {
+    try {
+        const q = query(collection(db, COLLECTIONS.academicStructure), orderBy('createdAt', 'asc'));
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({ docId: doc.id, ...doc.data() }));
+    } catch (error) {
+        console.error('একাডেমিক স্ট্রাকচার লোড করতে সমস্যা:', error);
+        return [];
+    }
+}
+
+/**
+ * Save an academic structure item
+ * @param {Object} item - { type: 'class'|'session'|'section'|'group', value: string, label: string }
+ * @returns {Promise<boolean>}
+ */
+export async function saveAcademicItem(item) {
+    try {
+        const collectionRef = collection(db, COLLECTIONS.academicStructure);
+        const docRef = doc(collectionRef);
+        await setDoc(docRef, {
+            ...item,
+            docId: docRef.id,
+            createdAt: serverTimestamp()
+        });
+        return true;
+    } catch (error) {
+        console.error('একাডেমিক আইটেম সেভ করতে সমস্যা:', error);
+        return false;
+    }
+}
+
+/**
+ * Delete an academic structure item
+ * @param {string} docId 
+ * @returns {Promise<boolean>}
+ */
+export async function deleteAcademicItem(docId) {
+    try {
+        await deleteDoc(doc(db, COLLECTIONS.academicStructure, docId));
+        return true;
+    } catch (error) {
+        console.error('একাডেমিক আইটেম মুছতে সমস্যা:', error);
         return false;
     }
 }

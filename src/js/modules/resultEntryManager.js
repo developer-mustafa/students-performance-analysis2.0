@@ -160,19 +160,20 @@ export async function populateREDropdowns() {
         // --- Exam Names from Global Exam Configs ---
         const updateExamList = async () => {
             const selClass = classSelect?.value;
+            const selSession = sessionSelect?.value;
             const examSelect = document.getElementById('reExam');
 
             if (!examSelect) return;
 
-            if (!selClass) {
-                examSelect.innerHTML = '<option value="">ক্লাস নির্বাচন করুন</option>';
+            if (!selClass || !selSession) {
+                examSelect.innerHTML = '<option value="">শ্রেণি ও সেশন নির্বাচন করুন</option>';
                 return;
             }
 
             examSelect.innerHTML = '<option value="">লোড হচ্ছে...</option>';
 
-            // Fetch global configs for the selected class
-            const configs = await getExamConfigs(selClass);
+            // Fetch global configs for the selected class & session
+            const configs = await getExamConfigs(selClass, selSession);
             const examNames = configs.map(c => c.examName);
 
             if (examNames.length === 0) {
@@ -189,7 +190,11 @@ export async function populateREDropdowns() {
             classSelect.removeEventListener('change', updateExamList);
             classSelect.addEventListener('change', updateExamList);
         }
-        // Also call once immediately if class is already selected
+        if (sessionSelect) {
+            sessionSelect.removeEventListener('change', updateExamList);
+            sessionSelect.addEventListener('change', updateExamList);
+        }
+        // Also call once immediately if class/session are already selected
         updateExamList();
     };
 

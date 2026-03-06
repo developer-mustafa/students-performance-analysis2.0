@@ -81,14 +81,14 @@ export const elements = {
     downloadFailedBtn: null,
     downloadGroupStatsBtn: null,
     adminToggle: null,
-    editExamModal: null,
-    closeEditModal: null,
-    editExamForm: null,
-    editExamDocId: null,
-    editExamName: null,
-    editSubjectName: null,
-    editExamClass: null,
-    editExamSession: null,
+    editConfigModal: null,
+    closeEditConfigModal: null,
+    editConfigForm: null,
+    editConfigDocId: null,
+    editConfigExamName: null,
+    editConfigClass: null,
+    editConfigSession: null,
+    editConfigExamDate: null,
     openClassMappingBtn: null,
     classSubjectMappingModal: null,
     closeClassMappingBtn: null,
@@ -98,6 +98,7 @@ export const elements = {
     mappingSubjectsContainer: null,
     saveMappingBtn: null,
     examClass: null,
+    examSession: null,
     examSubject: null,
     confirmModal: null,
     confirmCancelBtn: null,
@@ -287,14 +288,14 @@ export function initDOMReferences() {
     elements.downloadGroupStatsBtn = document.getElementById('downloadGroupStatsBtn');
 
     // Modal & Forms
-    elements.editExamModal = document.getElementById('editExamModal');
-    elements.closeEditModal = document.getElementById('closeEditModal');
-    elements.editExamForm = document.getElementById('editExamForm');
-    elements.editExamDocId = document.getElementById('editExamDocId');
-    elements.editExamName = document.getElementById('editExamName');
-    elements.editSubjectName = document.getElementById('editSubjectName');
-    elements.editExamClass = document.getElementById('editExamClass');
-    elements.editExamSession = document.getElementById('editExamSession');
+    elements.editConfigModal = document.getElementById('editConfigModal');
+    elements.closeEditConfigModal = document.getElementById('closeEditConfigModal');
+    elements.editConfigForm = document.getElementById('editConfigForm');
+    elements.editConfigDocId = document.getElementById('editConfigDocId');
+    elements.editConfigExamName = document.getElementById('editConfigExamName');
+    elements.editConfigClass = document.getElementById('editConfigClass');
+    elements.editConfigSession = document.getElementById('editConfigSession');
+    elements.editConfigExamDate = document.getElementById('editConfigExamDate');
 
     // Class Mapping
     elements.openClassMappingBtn = document.getElementById('openClassMappingBtn');
@@ -308,6 +309,7 @@ export function initDOMReferences() {
 
     // Exam Creation
     elements.examClass = document.getElementById('examClass');
+    elements.examSession = document.getElementById('examSession');
     elements.examSubject = document.getElementById('examSubject');
 
     // Confirmation Modal
@@ -449,4 +451,49 @@ export function showConfirmModal(message, onConfirm, itemName = '', contextInfo 
     elements.confirmCancelBtn.addEventListener('click', () => {
         elements.confirmModal.classList.remove('active');
     });
+}
+/**
+ * Populate all dynamic dropdowns across the app
+ */
+export function populateDynamicDropdowns() {
+    const types = ['class', 'session', 'group', 'section'];
+
+    types.forEach(type => {
+        const items = state.academicStructure[type] || [];
+        const selects = document.querySelectorAll(`select[data-dynamic="${type}"]`);
+
+        selects.forEach(select => {
+            const currentValue = select.value;
+            const hasAllOption = select.querySelector('option[value="all"]');
+            const placeholder = select.getAttribute('data-placeholder') || getPlaceholder(type);
+
+            let html = `<option value="">${placeholder}</option>`;
+            if (hasAllOption) {
+                html += '<option value="all">সবগুলো</option>';
+            }
+
+            items.forEach(item => {
+                html += `<option value="${item.value}">${item.value}</option>`;
+            });
+
+            select.innerHTML = html;
+
+            // Restore value if it still exists in the new list
+            if (currentValue && items.some(i => i.value === currentValue)) {
+                select.value = currentValue;
+            } else if (currentValue === 'all' && hasAllOption) {
+                select.value = 'all';
+            }
+        });
+    });
+}
+
+function getPlaceholder(type) {
+    const placeholders = {
+        class: 'শ্রেণি নির্বাচন',
+        session: 'সেশন নির্বাচন',
+        group: 'গ্রুপ নির্বাচন',
+        section: 'শাখা নির্বাচন'
+    };
+    return placeholders[type] || 'নির্বাচন করুন';
 }

@@ -53,6 +53,7 @@ import { initStudentManager, loadStudents } from './js/modules/studentManager.js
 import { initResultEntryManager, populateREDropdowns } from './js/modules/resultEntryManager.js';
 import { initMarksheetManager, populateMSDropdowns } from './js/modules/marksheetManager.js';
 import { initExamConfigManager, loadExamConfigs, populateExamNameDropdown } from './js/modules/examConfigManager.js';
+import { initAcademicSettingsManager } from './js/modules/academicSettingsManager.js';
 
 /**
  * Recalculate student grades/statuses using CURRENT subject config.
@@ -132,6 +133,9 @@ async function init() {
         if (state.isSuperAdmin) {
             state.onAccessReqUnsubscribe = initAccessRequestNotifications();
         }
+
+        // Initialize Academic Settings (Dynamic Structure)
+        await initAcademicSettingsManager();
         if (settings) state.defaultExamId = settings.defaultExamId;
 
         // Load subject configs FIRST (needed for recalculation on exam load)
@@ -418,15 +422,20 @@ function renderSavedExams() {
             state._isUnloadAction = isLoaded;
             // Wait for user confirmation
         },
-        onEdit: (exam) => {
+        onEdit: async (exam) => {
             elements.editExamDocId.value = exam.docId;
+
+            // Set class and session first so populate can use them
+            elements.editExamClass.value = exam.class || '';
+            elements.editExamSession.value = exam.session || '';
+
+            // Populate exam names based on class & session
+            await populateExamNameDropdown(elements.editExamName, exam.class, exam.session);
             elements.editExamName.value = exam.name;
 
             // Populate subjects based on class
             populateSubjectDropdown(elements.editSubjectName, exam.class, exam.subject);
 
-            elements.editExamClass.value = exam.class || '';
-            elements.editExamSession.value = exam.session || '';
             elements.editExamModal.classList.add('active');
         },
         onDelete: async (exam) => {
@@ -1100,14 +1109,31 @@ function initEventListeners() {
     elements.closeModalBtn?.addEventListener('click', () => elements.saveExamModal.classList.remove('active'));
     elements.closeEditModal?.addEventListener('click', () => elements.editExamModal.classList.remove('active'));
 
-    // Modal Class Selection Listeners
-    elements.examClass?.addEventListener('change', (e) => {
-        populateSubjectDropdown(elements.examSubject, e.target.value);
-        populateExamNameDropdown(document.getElementById('examName'), e.target.value);
+    // Modal Class & Session Selection Listeners
+    elements.examClass?.addEventListener('change', () => {
+        const classVal = elements.examClass.value;
+        const sessionVal = elements.examSession?.value || '';
+        populateSubjectDropdown(elements.examSubject, classVal);
+        populateExamNameDropdown(elements.examName, classVal, sessionVal);
     });
 
-    elements.editExamClass?.addEventListener('change', (e) => {
-        populateSubjectDropdown(elements.editSubjectName, e.target.value);
+    elements.examSession?.addEventListener('change', () => {
+        const classVal = elements.examClass?.value || '';
+        const sessionVal = elements.examSession.value;
+        populateExamNameDropdown(elements.examName, classVal, sessionVal);
+    });
+
+    elements.editExamClass?.addEventListener('change', () => {
+        const classVal = elements.editExamClass.value;
+        const sessionVal = elements.editExamSession?.value || '';
+        populateSubjectDropdown(elements.editSubjectName, classVal);
+        populateExamNameDropdown(elements.editExamName, classVal, sessionVal);
+    });
+
+    elements.editExamSession?.addEventListener('change', () => {
+        const classVal = elements.editExamClass?.value || '';
+        const sessionVal = elements.editExamSession.value;
+        populateExamNameDropdown(elements.editExamName, classVal, sessionVal);
     });
 
     // Class Mapping

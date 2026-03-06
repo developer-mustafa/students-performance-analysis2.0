@@ -385,20 +385,48 @@ export function showNotification(message) {
     }, 3000);
 }
 
-/**
- * Convert Bengali digits to English digits
- * @param {string} str - String containing Bengali digits
- * @returns {string} - String with English digits
- */
 export function convertToEnglishDigits(str) {
+    if (str === null || str === undefined) return '';
     const bengali = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
     const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
 
-    let result = str;
+    let result = String(str);
     for (let i = 0; i < bengali.length; i++) {
         result = result.replace(new RegExp(bengali[i], 'g'), english[i]);
     }
     return result;
+}
+
+/**
+ * Normalize session string to a standard English format (e.g., "2024-2025")
+ * Handles variants like "২০২৪ - ২০২৫", "2024/25", etc.
+ * @param {string} session - Raw session string
+ * @returns {string} - Normalized session string
+ */
+export function normalizeSession(session) {
+    if (!session) return '';
+
+    // Convert to English digits first
+    let normalized = convertToEnglishDigits(session);
+
+    // Replace various separators with a standard hyphen
+    normalized = normalized.replace(/[\/\u2013\u2014_,\\.]/g, '-');
+
+    // Remove any non-digit/non-hyphen characters and spaces
+    normalized = normalized.replace(/[^\d-]/g, '').trim();
+
+    // Handle "2024-25" type short sessions to "2024-2025"
+    const parts = normalized.split('-');
+    if (parts.length === 2) {
+        let [start, end] = parts;
+        if (start.length === 4 && end.length === 2) {
+            const prefix = start.substring(0, 2);
+            end = prefix + end;
+            normalized = `${start}-${end}`;
+        }
+    }
+
+    return normalized;
 }
 /**
  * Convert numbers to Bengali digits
