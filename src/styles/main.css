@@ -10378,21 +10378,29 @@ body.is-super-admin td.admin-only {
    ========================================================================== */
 .marksheet-config-modal .landscape-body {
   display: flex;
-  min-height: 500px;
+  min-height: 600px;
   background: #f1f3f9;
+  overflow: hidden;
+}
+
+.config-sidebar {
+  width: 220px;
+  flex-shrink: 0;
+  border-right: 1px solid var(--border-color);
 }
 
 .config-main {
-  flex: 1.5;
+  flex: 1.2;
   background: white;
   padding: 30px;
   border-right: 1px solid var(--border-color);
   max-height: 80vh;
   overflow-y: auto;
+  position: relative;
 }
 
 .config-preview-panel {
-  flex: 1.2;
+  flex: 1.5;
   background: #f8fafc;
   display: flex;
   flex-direction: column;
@@ -10402,24 +10410,47 @@ body.is-super-admin td.admin-only {
 }
 
 .preview-header {
-  padding: 15px 20px;
+  padding: 12px 20px;
   background: white;
   border-bottom: 1px solid var(--border-color);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
-.preview-header h4 {
-  margin: 0;
-  font-size: 0.9rem;
-  color: var(--primary);
+.preview-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+}
+
+.zoom-control {
   display: flex;
   align-items: center;
   gap: 8px;
+  background: #f1f5f9;
+  padding: 5px 12px;
+  border-radius: 20px;
+  color: #64748b;
+  font-size: 0.8rem;
+}
+
+.zoom-control input[type="range"] {
+  width: 80px;
+  accent-color: var(--primary);
+  cursor: pointer;
+}
+
+#msZoomLevel {
+  font-weight: 600;
+  min-width: 35px;
+  text-align: right;
 }
 
 .preview-container-inner {
   flex: 1;
   overflow: auto;
-  padding: 40px 20px;
+  padding: 20px;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -10428,28 +10459,47 @@ body.is-super-admin td.admin-only {
     radial-gradient(#cbd5e1 0.5px, #f8fafc 0.5px);
   background-size: 20px 20px;
   background-position: 0 0, 10px 10px;
+  position: relative;
 }
 
-/* Scaling the A4 preview to fit the panel */
-#msSettingsLivePreview .ms-page {
-  transform: scale(0.4);
+/* Enhanced Scaling logic using CSS Variable */
+#msSettingsLivePreview {
+  --ms-preview-scale: 0.4;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transform: scale(var(--ms-preview-scale));
   transform-origin: top center;
-  margin-bottom: -550px;
-  /* Offset the scale empty space */
+  width: 210mm;
+  /* Fixed A4 width */
+  height: 297mm;
+  /* Fixed A4 height */
   pointer-events: none;
-  /* Make it read-only */
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.15);
+}
+
+#msSettingsLivePreview .ms-page {
+  margin: 0 !important;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.2);
+  width: 100% !important;
 }
 
 .preview-placeholder {
-  margin-top: 100px;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
   text-align: center;
   color: #94a3b8;
+  z-index: 5;
 }
 
 .preview-placeholder i {
-  font-size: 2rem;
-  margin-bottom: 10px;
+  font-size: 2.5rem;
+  margin-bottom: 15px;
+  display: block;
+}
+
+.preview-placeholder p {
+  margin: 0;
+  font-weight: 500;
 }
 
 .config-menu {

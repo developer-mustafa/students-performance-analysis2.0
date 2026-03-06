@@ -559,9 +559,11 @@ function initMarksheetSettingsModal() {
 
         // Render the preview
         const html = renderSingleMarksheet(MOCK_PREVIEW_STUDENT, mockSubjects, 'অর্ধ-বার্ষিক পরীক্ষা ২০২৬', '২০২৫-২০২৬', currentSettings);
+
+        // Use a wrapper to keep the scale separate from the content
         previewContainer.innerHTML = html;
 
-        // Ensure no-print elements and floating buttons are hidden or styled for preview
+        // Hide non-printable action buttons in preview
         const actions = previewContainer.querySelectorAll('.ms-actions-float');
         actions.forEach(a => a.style.display = 'none');
     };
@@ -577,6 +579,28 @@ function initMarksheetSettingsModal() {
             control.addEventListener('keyup', updateSettingsLivePreview);
         }
     });
+
+    // Zoom and Refresh Logic
+    const zoomInput = document.getElementById('msPreviewZoom');
+    const zoomLevel = document.getElementById('msZoomLevel');
+    const refreshBtn = document.getElementById('refreshPreviewBtn');
+    const previewWrapper = document.getElementById('msSettingsLivePreview');
+
+    if (zoomInput && zoomLevel && previewWrapper) {
+        zoomInput.addEventListener('input', () => {
+            const scale = zoomInput.value;
+            previewWrapper.style.setProperty('--ms-preview-scale', scale);
+            zoomLevel.textContent = Math.round(scale * 100) + '%';
+        });
+    }
+
+    if (refreshBtn) {
+        refreshBtn.addEventListener('click', () => {
+            refreshBtn.classList.add('fa-spin');
+            updateSettingsLivePreview();
+            setTimeout(() => refreshBtn.classList.remove('fa-spin'), 1000);
+        });
+    }
 
     // Tab Switching Logic
     menuItems.forEach(item => {

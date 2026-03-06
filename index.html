@@ -1318,13 +1318,28 @@
           <!-- Live Preview Area -->
           <div class="config-preview-panel">
             <div class="preview-header">
-              <h4><i class="fas fa-eye"></i> ইনস্ট্যান্ট প্রিভিউ</h4>
+              <div class="preview-header-left">
+                <h4><i class="fas fa-eye"></i> ইনস্ট্যান্ট প্রিভিউ</h4>
+              </div>
+              <div class="preview-header-actions">
+                <div class="zoom-control">
+                  <i class="fas fa-search-minus"></i>
+                  <input type="range" id="msPreviewZoom" min="0.2" max="1.5" step="0.05" value="0.4" title="জুম">
+                  <i class="fas fa-search-plus"></i>
+                  <span id="msZoomLevel">40%</span>
+                </div>
+                <button type="button" id="refreshPreviewBtn" class="dm-btn dm-report btn-icon-sm" title="রিফ্রেশ">
+                  <i class="fas fa-sync-alt"></i>
+                </button>
+              </div>
             </div>
-            <div id="msSettingsLivePreview" class="preview-container-inner">
-              <!-- Live preview will be injected here -->
-              <div class="preview-placeholder">
-                <i class="fas fa-sync fa-spin"></i>
-                <p>লোডিং প্রিভিউ...</p>
+            <div class="preview-container-inner">
+              <div id="msSettingsLivePreview">
+                <!-- Live preview will be injected here -->
+                <div class="preview-placeholder">
+                  <i class="fas fa-sync fa-spin"></i>
+                  <p>লোডিং প্রিভিউ...</p>
+                </div>
               </div>
             </div>
           </div>
