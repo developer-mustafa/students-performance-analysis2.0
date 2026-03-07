@@ -1811,13 +1811,13 @@
 
     <!-- ========== PAGE: MARKSHEET SETTINGS ========== -->
     <div id="marksheetSettingsPage" class="app-page" style="display: none;">
-      <div class="card" style="margin-top: 20px;">
+      <div class="card ms-settings-main-card">
         <h2 class="section-title"><i class="fas fa-sliders-h"></i> মার্কশীট সেটিংস (Marksheet Configuration)</h2>
-        <div style="margin-top: 20px;">
+        <div class="ms-settings-container">
           <!-- Class Selector -->
-          <div class="form-group" style="padding: 0 15px 15px 15px;">
+          <div class="ms-settings-group ms-settings-class-selector">
             <label><strong>কনফিগারেশন এর জন্য ক্লাস নির্বাচন করুন</strong></label>
-            <select id="msSetClass" class="form-control" style="max-width: 300px; margin-top:10px;">
+            <select id="msSetClass" class="form-control">
               <option value="All">সকল ক্লাস (All Classes)</option>
               <option value="HSC">HSC (আলিম)</option>
               <option value="SSC">SSC (দাখিল/দশম)</option>
@@ -1826,51 +1826,45 @@
               <option value="Class 7">সপ্তম শ্রেণি</option>
               <option value="Class 6">ষষ্ঠ শ্রেণি</option>
             </select>
-            <p style="margin-top: 5px; color: #666; font-size: 0.85em;">* প্রতিটি ক্লাসের জন্য আলাদাভাবে অথবা সকল
-              ক্লাসের জন্য একসাথে সেটিংস সংরক্ষণ করা যাবে।</p>
+            <p class="ms-settings-help-text">* প্রতিটি ক্লাসের জন্য আলাদাভাবে অথবা সকল ক্লাসের জন্য একসাথে সেটিংস
+              সংরক্ষণ করা যাবে।</p>
           </div>
 
           <!-- Mode Toggle -->
-          <div class="form-group"
-            style="background: #f8f9fa; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">
+          <div class="ms-settings-group ms-settings-mode-card">
             <label><strong>মার্কশীট ক্যালকুলেশন মোড</strong></label>
-            <div style="display: flex; gap: 10px; margin-top: 10px;">
-              <select id="msSetMode" class="form-control" style="max-width: 200px;">
+            <div class="ms-settings-mode-controls">
+              <select id="msSetMode" class="form-control">
                 <option value="single">সিঙ্গেল পেপার মোড</option>
                 <option value="combined">উভয় পত্র মোড</option>
               </select>
-              <button class="btn-primary" id="msSetModeSaveBtn" style="padding: 5px 20px;">সেভ করুন</button>
+              <button class="btn-primary" id="msSetModeSaveBtn">সেভ করুন</button>
             </div>
           </div>
 
-          <div
-            style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; margin-top: 20px;">
+          <div class="ms-settings-grid">
             <!-- Category: General (Core) Subjects -->
-            <div class="form-group"
-              style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">
-              <h3 style="margin-bottom: 15px; color: var(--primary);"><i class="fas fa-star"></i> সাধারণ বিষয় (General
+            <div class="ms-settings-card">
+              <h3 class="ms-settings-card-title ms-text-primary"><i class="fas fa-star"></i> সাধারণ বিষয় (General
                 Subjects)</h3>
-              <p style="margin-bottom: 10px; color: #666; font-size: 0.85em;">সকল শিক্ষার্থীর জন আবশ্যক বিষয়গুলো (উদা:
-                বাংলা, ইংরেজি) এখানে যুক্ত করুন।</p>
+              <p class="ms-settings-help-text">সকল শিক্ষার্থীর জন আবশ্যক বিষয়গুলো (উদা: বাংলা, ইংরেজি) এখানে যুক্ত করুন।
+              </p>
               <div class="form-group">
-                <label style="font-size: 0.85em;">বিষয় নির্বাচন করুন</label>
-                <select id="msSetGenSubject" class="form-control" style="margin-bottom: 10px;"></select>
+                <label>বিষয় নির্বাচন করুন</label>
+                <select id="msSetGenSubject" class="form-control"></select>
               </div>
-              <button class="btn-primary" id="msSetGenAddBtn" style="width: 100%;"><i class="fas fa-plus"></i> যোগ
-                করুন</button>
-              <div id="msSetGenList" style="margin-top: 15px; max-height: 200px; overflow-y: auto;"></div>
+              <button class="btn-primary w-full" id="msSetGenAddBtn"><i class="fas fa-plus"></i> যোগ করুন</button>
+              <div id="msSetGenList" class="ms-settings-list"></div>
             </div>
 
             <!-- Category: Group-based Subjects -->
-            <div class="form-group"
-              style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">
-              <h3 style="margin-bottom: 15px; color: var(--secondary);"><i class="fas fa-users"></i> গ্রুপ ভিত্তিক বিষয়
+            <div class="ms-settings-card">
+              <h3 class="ms-settings-card-title ms-text-secondary"><i class="fas fa-users"></i> গ্রুপ ভিত্তিক বিষয়
                 (Group Subjects)</h3>
-              <p style="margin-bottom: 10px; color: #666; font-size: 0.85em;">গ্রুপ অনুযায়ী সাধারণ বিষয় ছাড়া অন্য
-                বিষয়গুলো (উদা: পদার্থবিজ্ঞান, হিসাববিজ্ঞান) যুক্ত করুন।</p>
+              <p class="ms-settings-help-text">গ্রুপ অনুযায়ী সাধারণ বিষয় ছাড়া অন্য বিষয়গুলো এখানে যুক্ত করুন।</p>
               <div class="form-group">
-                <label style="font-size: 0.85em;">গ্রুপ</label>
-                <select id="msSetGroupSubGroup" class="form-control" style="margin-bottom: 5px;">
+                <label>গ্রুপ</label>
+                <select id="msSetGroupSubGroup" class="form-control">
                   <option value="">গ্রুপ নির্বাচন করুন</option>
                   <option value="Science">বিজ্ঞান (Science)</option>
                   <option value="Humanities">মানবিক (Humanities)</option>
@@ -1878,24 +1872,23 @@
                 </select>
               </div>
               <div class="form-group">
-                <label style="font-size: 0.85em;">বিষয়</label>
-                <select id="msSetGroupSubSubject" class="form-control" style="margin-bottom: 10px;"></select>
+                <label>বিষয়</label>
+                <select id="msSetGroupSubSubject" class="form-control"></select>
               </div>
-              <button class="btn-primary" id="msSetGroupSubAddBtn" style="width: 100%; background: var(--secondary);"><i
-                  class="fas fa-plus"></i> যোগ করুন</button>
-              <div id="msSetGroupSubList" style="margin-top: 15px; max-height: 200px; overflow-y: auto;"></div>
+              <button class="btn-primary w-full ms-bg-secondary" id="msSetGroupSubAddBtn"><i class="fas fa-plus"></i>
+                যোগ করুন</button>
+              <div id="msSetGroupSubList" class="ms-settings-list"></div>
             </div>
 
             <!-- Category: Optional Subjects -->
-            <div class="form-group"
-              style="background: #fff; padding: 15px; border-radius: 8px; border: 1px solid #e9ecef;">
-              <h3 style="margin-bottom: 15px; color: #f39c12;"><i class="fas fa-book-open"></i> ঐচ্ছিক বিষয় (Optional
+            <div class="ms-settings-card">
+              <h3 class="ms-settings-card-title ms-text-warning"><i class="fas fa-book-open"></i> ঐচ্ছিক বিষয় (Optional
                 Subjects)</h3>
-              <p style="margin-bottom: 10px; color: #666; font-size: 0.85em;">যে বিষয়গুলো থেকে চতুর্থ বিষয় হিসেবে একটি
-                নির্বাচন করতে হয় তা এখানে যুক্ত করুন।</p>
+              <p class="ms-settings-help-text">যে বিষয়গুলো থেকে চতুর্থ বিষয় হিসেবে একটি নির্বাচন করতে হয় তা এখানে যুক্ত
+                করুন।</p>
               <div class="form-group">
-                <label style="font-size: 0.85em;">গ্রুপ</label>
-                <select id="msSetOptGroup" class="form-control" style="margin-bottom: 5px;">
+                <label>গ্রুপ</label>
+                <select id="msSetOptGroup" class="form-control">
                   <option value="">গ্রুপ নির্বাচন করুন</option>
                   <option value="Science">বিজ্ঞান (Science)</option>
                   <option value="Humanities">মানবিক (Humanities)</option>
@@ -1904,41 +1897,38 @@
                 </select>
               </div>
               <div class="form-group">
-                <label style="font-size: 0.85em;">বিষয়</label>
-                <select id="msSetOptSubject" class="form-control" style="margin-bottom: 10px;"></select>
+                <label>বিষয়</label>
+                <select id="msSetOptSubject" class="form-control"></select>
               </div>
-              <button class="btn-primary" id="msSetOptAddBtn" style="width: 100%; background: #f39c12;"><i
-                  class="fas fa-plus"></i> যোগ করুন</button>
-              <div id="msSetOptList" style="margin-top: 15px; max-height: 200px; overflow-y: auto;"></div>
+              <button class="btn-primary w-full ms-bg-warning" id="msSetOptAddBtn"><i class="fas fa-plus"></i> যোগ
+                করুন</button>
+              <div id="msSetOptList" class="ms-settings-list"></div>
             </div>
           </div>
 
-          <div style="margin-top: 20px;">
+          <div class="ms-settings-mapping-section">
             <!-- Combined Subject Mapping -->
-            <div class="form-group"
-              style="background: #fff; padding: 20px; border-radius: 8px; border: 1px solid #e9ecef;">
-              <h3 style="margin-bottom: 15px; color: var(--primary);"><i class="fas fa-layer-group"></i> উভয় পত্র
-                সাবজেক্ট ম্যাপিং (সমন্বিত ফলাফল)</h3>
-              <div
-                style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; align-items: end;">
+            <div class="ms-settings-card ms-settings-wide-card">
+              <h3 class="ms-settings-card-title ms-text-primary"><i class="fas fa-layer-group"></i> উভয় পত্র সাবজেক্ট
+                ম্যাপিং (সমন্বিত ফলাফল)</h3>
+              <div class="ms-settings-mapping-grid">
                 <div class="form-group">
-                  <label style="font-size: 0.85em;">১ম পত্র</label>
+                  <label>১ম পত্র</label>
                   <select id="msSetCombPaper1" class="form-control"></select>
                 </div>
                 <div class="form-group">
-                  <label style="font-size: 0.85em;">২য় পত্র</label>
+                  <label>২য় পত্র</label>
                   <select id="msSetCombPaper2" class="form-control"></select>
                 </div>
                 <div class="form-group">
-                  <label style="font-size: 0.85em;">সম্মিলিত নাম (উদা: বাংলা)</label>
+                  <label>সম্মিলিত নাম (উদা: বাংলা)</label>
                   <input type="text" id="msSetCombCombinedName" class="form-control">
                 </div>
-                <button class="btn-primary" id="msSetCombAddBtn" style="height: 40px;"><i class="fas fa-plus"></i>
-                  ম্যাপিং যোগ করুন</button>
+                <div class="ms-settings-action">
+                  <button class="btn-primary" id="msSetCombAddBtn"><i class="fas fa-plus"></i> ম্যাপিং যোগ করুন</button>
+                </div>
               </div>
-              <div id="msSetCombList"
-                style="margin-top: 20px; display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 10px;">
-              </div>
+              <div id="msSetCombList" class="ms-settings-mapping-list"></div>
             </div>
           </div>
         </div>

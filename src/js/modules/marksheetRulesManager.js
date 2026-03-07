@@ -354,7 +354,7 @@ function renderGeneralList(container, list) {
     if (!container) return;
     if (!list || list.length === 0) return container.innerHTML = '<p style="color: #888; text-align: center;">কোনো বিষয় নেই</p>';
     container.innerHTML = list.map((s, i) => `
-        <div class="academic-item" style="display: flex; justify-content: space-between; align-items: center; padding: 8px 10px; background: #fdfdfd; border: 1px solid #eee; border-radius: 6px; margin-bottom: 5px;">
+        <div class="ms-settings-item">
             <span>${s}</span>
             <button class="btn-danger delete-gen-btn" data-index="${i}" style="padding: 2px 8px;"><i class="fas fa-times"></i></button>
         </div>
@@ -367,11 +367,11 @@ function renderGroupSubList(container, groups) {
     if (entries.length === 0) return container.innerHTML = '<p style="color: #888; text-align: center;">কোনো বিষয় নেই</p>';
 
     container.innerHTML = entries.map(([group, subjects]) => `
-        <div style="margin-bottom: 10px;">
-            <div style="font-weight: bold; color: var(--secondary); font-size: 0.85em; margin-bottom: 4px; border-bottom: 1px solid #eee;">${group}</div>
+        <div class="ms-settings-group-wrapper">
+            <div class="ms-settings-group-header ms-text-secondary">${group}</div>
             ${subjects.map((s, i) => `
-                <div class="academic-item" style="display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; background: #fdfdfd; border: 1px solid #eee; border-radius: 6px; margin-bottom: 3px;">
-                    <span style="font-size: 0.9em;">${s}</span>
+                <div class="ms-settings-item">
+                    <span class="ms-settings-item-text">${s}</span>
                     <button class="btn-danger delete-group-sub-btn" data-group="${group}" data-index="${i}" style="padding: 2px 8px;"><i class="fas fa-times"></i></button>
                 </div>
             `).join('')}
@@ -385,11 +385,11 @@ function renderOptionalList(container, groups) {
     if (entries.length === 0) return container.innerHTML = '<p style="color: #888; text-align: center;">কোনো বিষয় নেই</p>';
 
     container.innerHTML = entries.map(([group, subjects]) => `
-        <div style="margin-bottom: 10px;">
-            <div style="font-weight: bold; color: #f39c12; font-size: 0.85em; margin-bottom: 4px; border-bottom: 1px solid #eee;">${group}</div>
+        <div class="ms-settings-group-wrapper">
+            <div class="ms-settings-group-header ms-text-warning">${group}</div>
             ${subjects.map((s, i) => `
-                <div class="academic-item" style="display: flex; justify-content: space-between; align-items: center; padding: 5px 10px; background: #fdfdfd; border: 1px solid #eee; border-radius: 6px; margin-bottom: 3px;">
-                    <span style="font-size: 0.9em;">${s}</span>
+                <div class="ms-settings-item">
+                    <span class="ms-settings-item-text">${s}</span>
                     <button class="btn-danger delete-opt-btn" data-group="${group}" data-index="${i}" style="padding: 2px 8px;"><i class="fas fa-times"></i></button>
                 </div>
             `).join('')}
@@ -403,10 +403,10 @@ function renderCombinedList(container, combinedSubjects) {
     if (subjects.length === 0) return container.innerHTML = '<p style="color: #888; text-align: center;">কোনো ম্যাপিং নেই</p>';
 
     container.innerHTML = subjects.map((rule, idx) => `
-        <div class="academic-item" style="display: flex; justify-content: space-between; align-items: center; padding: 10px; background: #fff; border: 1px solid #eee; border-radius: 6px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-            <div>
-                <strong style="color: var(--primary);">${rule.combinedName}</strong>
-                <div style="font-size: 0.75rem; color: #888; margin-top: 2px;">${rule.paper1} + ${rule.paper2}</div>
+        <div class="ms-settings-item ms-settings-mapping-item">
+            <div class="ms-settings-mapping-info">
+                <strong class="ms-text-primary">${rule.combinedName}</strong>
+                <div class="ms-settings-mapping-subtext">${rule.paper1} + ${rule.paper2}</div>
             </div>
             <button class="btn-danger delete-comb-btn" data-index="${idx}" style="padding: 5px 10px;"><i class="fas fa-trash"></i></button>
         </div>
