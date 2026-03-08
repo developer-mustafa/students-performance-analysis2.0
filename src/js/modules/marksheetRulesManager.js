@@ -74,6 +74,30 @@ export const populateMarksheetSettingsDropdowns = async (targetCls = null) => {
         localStorage.setItem('msSetSelectedClass', classToRestore);
     }
 
+    // 1.5. Populate Group Dropdowns (Dynamic from academic structure)
+    const groups = state.academicStructure?.group || [];
+    const groupSubGroupSelect = document.getElementById('msSetGroupSubGroup');
+    const optGroupSelect = document.getElementById('msSetOptGroup');
+    const groupOptions = [`<option value="">গ্রুপ নির্বাচন করুন</option>`];
+    groups.forEach(g => {
+        groupOptions.push(`<option value="${g.value}">${g.value}</option>`);
+    });
+    const groupHtml = groupOptions.join('');
+    if (groupSubGroupSelect) {
+        const currentVal = groupSubGroupSelect.value;
+        groupSubGroupSelect.innerHTML = groupHtml;
+        if (currentVal) groupSubGroupSelect.value = currentVal;
+    }
+    if (optGroupSelect) {
+        const currentVal = optGroupSelect.value;
+        const optGroupHtml = [...groupOptions];
+        if (!groups.some(g => g.value === 'General')) {
+            optGroupHtml.push('<option value="General">সাধারণ (General)</option>');
+        }
+        optGroupSelect.innerHTML = optGroupHtml.join('');
+        if (currentVal) optGroupSelect.value = currentVal;
+    }
+
     // 2. Fetch class-subject mappings directly from Firestore
     let classSubjectMappings = {};
     try {

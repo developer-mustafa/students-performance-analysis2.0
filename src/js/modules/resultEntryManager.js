@@ -8,7 +8,7 @@
 import { getSavedExams, updateExam, saveExam, getAllStudents, getExamConfigs, getClassSubjectMappings } from '../firestoreService.js';
 import { collectStudents } from './studentManager.js';
 import { state } from './state.js';
-import { showNotification, convertToEnglishDigits, calculateStatistics } from '../utils.js';
+import { showNotification, convertToEnglishDigits, calculateStatistics, normalizeText } from '../utils.js';
 import { isTeacherAuthorized, getTeacherAssignmentsByUid } from './teacherAssignmentManager.js';
 import { currentMarksheetRules } from './marksheetRulesManager.js';
 
@@ -16,6 +16,7 @@ let currentExamDoc = null;
 let originalStudentData = null; // For discard
 let hasUnsavedChanges = false;
 let isNewExam = false; // Flag: are we creating a new exam?
+let isREDropdownsInitialized = false; // Guard for event listeners
 
 // ==========================================
 // LOCAL STORAGE DRAFT HELPERS
@@ -141,7 +142,32 @@ export async function populateREDropdowns() {
         const subjectsWithMarks = new Set(filtered.map(e => e.subject).filter(Boolean));
 
         // --- Build categorized subject list ---
-        let allSubjects = [];
+        const reGroup = document.getElementById('reGroup');
+        const selGroup = reGroup?.value || 'all';
+
+        // Helper for robust group matching (Bengali <-> English)
+        const groupMapping = {
+            'science': ['science', 'বিজ্ঞান গ্রুপ', 'বিজ্ঞান'],
+            'business': ['business', 'ব্যবসায় গ্রুপ', 'ব্যবসায় শিক্ষা', 'ব্যবসায়', 'ব্যবসায়', 'commerce'],
+            'humanities': ['humanities', 'মানবিক গ্রুপ', 'মানবিক', 'humanities group', 'arts']
+        };
+
+        const isGroupMatch = (ruleGroup, targetGroup) => {
+            if (targetGroup === 'all') return true;
+            const normRule = normalizeText(ruleGroup).toLowerCase();
+            const normTarget = normalizeText(targetGroup).toLowerCase();
+            if (normRule === normTarget) return true;
+
+            for (const [key, aliases] of Object.entries(groupMapping)) {
+                const normAliases = aliases.map(a => normalizeText(a).toLowerCase());
+                if (normAliases.includes(normRule) && normAliases.includes(normTarget)) return true;
+            }
+            return false;
+        };
+
+        let generalSubs = [];
+        let groupSubs = [];
+        let optSubs = [];
         let hasCategorization = false;
 
         if (selClass && currentMarksheetRules) {
@@ -149,76 +175,78 @@ export async function populateREDropdowns() {
             const classRules = currentMarksheetRules[selClass] || {};
             const globalRules = currentMarksheetRules['All'] || {};
 
-            // Merge general subjects
-            const generalSubs = [...new Set([
+            // 1. General Subjects
+            generalSubs = [...new Set([
                 ...(globalRules.generalSubjects || []),
                 ...(classRules.generalSubjects || [])
-            ])];
+            ])].sort((a, b) => a.localeCompare(b, 'bn'));
 
-            // Merge group subjects (all groups)
-            const groupSubs = [];
+            // 2. Group Subjects (filtered by selected group)
             const mergedGroupSubs = { ...(globalRules.groupSubjects || {}), ...(classRules.groupSubjects || {}) };
-            for (const [group, subs] of Object.entries(mergedGroupSubs)) {
-                if (Array.isArray(subs)) groupSubs.push(...subs);
+            for (const [groupName, subs] of Object.entries(mergedGroupSubs)) {
+                if (isGroupMatch(groupName, selGroup)) {
+                    if (Array.isArray(subs)) groupSubs.push(...subs);
+                }
             }
+            groupSubs = [...new Set(groupSubs)].sort((a, b) => a.localeCompare(b, 'bn'));
 
-            // Merge optional subjects (all groups)
-            const optSubs = [];
+            // 3. Optional Subjects (filtered by group + General)
             const mergedOptSubs = { ...(globalRules.optionalSubjects || {}), ...(classRules.optionalSubjects || {}) };
-            for (const [group, subs] of Object.entries(mergedOptSubs)) {
-                if (Array.isArray(subs)) optSubs.push(...subs);
+            for (const [groupName, subs] of Object.entries(mergedOptSubs)) {
+                if (selGroup === 'all' || isGroupMatch(groupName, selGroup) || normalizeText(groupName).toLowerCase() === 'general') {
+                    if (Array.isArray(subs)) optSubs.push(...subs);
+                }
             }
+            optSubs = [...new Set(optSubs)].sort((a, b) => a.localeCompare(b, 'bn'));
 
             if (generalSubs.length > 0 || groupSubs.length > 0 || optSubs.length > 0) {
                 hasCategorization = true;
-                allSubjects = [...new Set([...generalSubs, ...groupSubs, ...optSubs])];
             }
         }
 
-        // Fallback: if no categories configured, use Class & Subject Mapping
-        if (!hasCategorization && selClass) {
+        let finalSubjects = [];
+        if (hasCategorization) {
+            // Priority: General -> Group -> Optional
+            finalSubjects = [...new Set([...generalSubs, ...groupSubs, ...optSubs])];
+        } else if (selClass) {
+            // Fallback: if no categories configured, use Class & Subject Mapping
             try {
                 const mappings = await getClassSubjectMappings();
                 const classMapped = mappings[selClass];
                 if (Array.isArray(classMapped) && classMapped.length > 0) {
-                    allSubjects = [...classMapped];
+                    finalSubjects = [...classMapped].sort((a, b) => a.localeCompare(b, 'bn'));
                 }
             } catch (e) {
                 console.warn('Could not fetch class subject mappings:', e);
             }
         }
 
-        // Also include teacher assignment subjects for teachers
-        let subjectsFromTA = [];
+        // Also include teacher assignment subjects for teachers (if not already present)
         if (state.userRole === 'teacher') {
-            subjectsFromTA = teacherAssignments
+            const subjectsFromTA = teacherAssignments
                 .filter(a =>
                     (!selClass || a.assignedClass === selClass) &&
                     (!selSession || a.assignedSession === selSession)
                 )
                 .flatMap(a => a.assignedSubjects || []);
+            finalSubjects = [...new Set([...finalSubjects, ...subjectsFromTA])];
         }
 
-        // If still empty, fall back to existing exam subjects + TA subjects
-        if (allSubjects.length === 0) {
-            allSubjects = [...subjectsWithMarks, ...subjectsFromTA];
-        } else {
-            // Merge TA subjects into the categorized list
-            allSubjects = [...new Set([...allSubjects, ...subjectsFromTA])];
+        // Final fallback: existing exam subjects
+        if (finalSubjects.length === 0) {
+            finalSubjects = [...new Set([...subjectsWithMarks])].sort((a, b) => a.localeCompare(b, 'bn'));
         }
-
-        const subjects = [...new Set(allSubjects)].sort((a, b) => a.localeCompare(b, 'bn'));
 
         const subjectSelect = document.getElementById('reSubject');
         if (subjectSelect) {
-            subjectSelect.innerHTML = (subjects.length === 1) ? '' : '<option value="">বিষয় নির্বাচন</option>';
-            subjects.forEach(s => {
+            subjectSelect.innerHTML = (finalSubjects.length === 1) ? '' : '<option value="">বিষয় নির্বাচন</option>';
+            finalSubjects.forEach(s => {
                 const hasMarks = subjectsWithMarks.has(s);
                 const style = hasMarks ? 'style="background-color: #dbeafe; color: #1e40af; font-weight: 500;"' : '';
                 const indicator = hasMarks ? ' ✓' : '';
                 subjectSelect.innerHTML += `<option value="${s}" ${style}>${s}${indicator}</option>`;
             });
-            if (subjects.length === 1) subjectSelect.value = subjects[0];
+            if (finalSubjects.length === 1) subjectSelect.value = finalSubjects[0];
         }
 
         // --- Exam Names from Global Exam Configs ---
@@ -260,10 +288,57 @@ export async function populateREDropdowns() {
         }
         // Also call once immediately if class/session are already selected
         updateExamList();
+
+        // --- NEW: Populate Group Dropdown ---
+        const updateGroupDropdown = async () => {
+            const reGroup = document.getElementById('reGroup');
+            if (!reGroup) return;
+
+            const currentVal = reGroup.value;
+            reGroup.innerHTML = '<option value="all">সকল গ্রুপ</option>';
+
+            if (!selClass || !selSession) return;
+
+            const allStudents = await collectStudents();
+            const filteredStudents = allStudents.filter(s =>
+                s.class && s.class.toLowerCase() === selClass.toLowerCase() &&
+                s.session && String(s.session).trim() === String(selSession).trim()
+            );
+
+            // Use a Map to keep track of already added groups (normalized)
+            const groupMap = new Map();
+            filteredStudents.forEach(s => {
+                const rawGroup = (s.group || '').trim();
+                if (!rawGroup) return;
+                const norm = normalizeText(rawGroup);
+                if (!groupMap.has(norm)) {
+                    groupMap.set(norm, rawGroup); // Store original (trimmed) for display
+                }
+            });
+
+            const sortedGroups = [...groupMap.values()].sort();
+            let optionsHtml = '<option value="all">সকল গ্রুপ</option>';
+            sortedGroups.forEach(g => {
+                const selected = g === currentVal ? 'selected' : '';
+                optionsHtml += `<option value="${g}" ${selected}>${g}</option>`;
+            });
+            reGroup.innerHTML = optionsHtml;
+        };
+
+        updateGroupDropdown();
     };
 
-    if (classSelect) classSelect.addEventListener('change', updateSubjectAndExam);
-    if (sessionSelect) sessionSelect.addEventListener('change', updateSubjectAndExam);
+    if (!isREDropdownsInitialized) {
+        if (classSelect) classSelect.addEventListener('change', updateSubjectAndExam);
+        if (sessionSelect) sessionSelect.addEventListener('change', updateSubjectAndExam);
+
+        const reGroup = document.getElementById('reGroup');
+        if (reGroup) {
+            reGroup.addEventListener('change', updateSubjectAndExam);
+        }
+
+        isREDropdownsInitialized = true;
+    }
 
     // Auto-trigger cascading dropdowns if class/session are pre-selected
     if (classSelect?.value || sessionSelect?.value) {
@@ -283,6 +358,7 @@ export async function populateREDropdowns() {
 async function loadExamForEntry() {
     const cls = document.getElementById('reClass')?.value;
     const session = document.getElementById('reSession')?.value;
+    const group = document.getElementById('reGroup')?.value || 'all';
     const subject = document.getElementById('reSubject')?.value;
     const examName = document.getElementById('reExam')?.value?.trim();
 
@@ -320,9 +396,13 @@ async function loadExamForEntry() {
         originalStudentData = JSON.parse(JSON.stringify(currentExamDoc.studentData || []));
         hasUnsavedChanges = false;
 
-        showExamInfo(exam, (currentExamDoc.studentData || []).length);
+        const studentDataToRender = (group === 'all')
+            ? (currentExamDoc.studentData || [])
+            : (currentExamDoc.studentData || []).filter(s => normalizeText(s.group) === normalizeText(group));
+
+        showExamInfo(exam, studentDataToRender.length, false, group);
         const config = getSubjectConfig(exam.subject);
-        renderRETable(currentExamDoc.studentData || [], config);
+        renderRETable(studentDataToRender, config);
     } else {
         // --- NEW EXAM: Fetch students for this class/session ---
         isNewExam = true;
@@ -382,9 +462,13 @@ async function loadExamForEntry() {
         originalStudentData = JSON.parse(JSON.stringify(studentData));
         hasUnsavedChanges = false;
 
-        showExamInfo(currentExamDoc, studentData.length, true);
+        const studentDataToRender = (group === 'all')
+            ? studentData
+            : studentData.filter(s => normalizeText(s.group) === normalizeText(group));
+
+        showExamInfo(currentExamDoc, studentDataToRender.length, true, group);
         const config = getSubjectConfig(subject);
-        renderRETable(studentData, config);
+        renderRETable(studentDataToRender, config);
     }
 
     // Show table, hide empty state
@@ -396,7 +480,7 @@ async function loadExamForEntry() {
 /**
  * Show exam info bar
  */
-function showExamInfo(exam, count, isNew = false) {
+function showExamInfo(exam, count, isNew = false, group = 'all') {
     const infoEl = document.getElementById('reExamInfo');
     if (infoEl) {
         infoEl.innerHTML = `
@@ -404,6 +488,7 @@ function showExamInfo(exam, count, isNew = false) {
             <span><i class="fas fa-book"></i> ${exam.subject}</span>
             <span><i class="fas fa-file-alt"></i> ${exam.name}</span>
             <span><i class="fas fa-school"></i> ${exam.class} | ${exam.session}</span>
+            ${group !== 'all' ? `<span><i class="fas fa-users"></i> ${group}</span>` : ''}
             <span><i class="fas fa-users"></i> ${count} জন শিক্ষার্থী</span>
         `;
     }
@@ -485,6 +570,13 @@ function renderRETable(students, config) {
     if (!tbody) return;
 
     const sorted = [...students].sort((a, b) => {
+        // Primary sort: Group (Bengali alphabetical)
+        const groupA = String(a.group || '').trim();
+        const groupB = String(b.group || '').trim();
+        const groupComp = groupA.localeCompare(groupB, 'bn');
+        if (groupComp !== 0) return groupComp;
+
+        // Secondary sort: Roll ID (numeric)
         const idA = parseInt(convertToEnglishDigits(String(a.id))) || 0;
         const idB = parseInt(convertToEnglishDigits(String(b.id))) || 0;
         return idA - idB;
