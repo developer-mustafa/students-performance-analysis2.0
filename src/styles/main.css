@@ -9150,12 +9150,13 @@ body.is-super-admin td.admin-only {
   left: 50%;
   transform: translate(-50%, -50%);
   width: 250px;
-  height: 250px;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
+  height: auto;
+  max-width: 40%;
+  max-height: 40%;
+  object-fit: contain;
   pointer-events: none;
   z-index: 10;
+  display: block;
 }
 
 /* Decorative Border Frame */
@@ -12126,9 +12127,9 @@ body.is-super-admin td.admin-only {
   .ms-watermark-bg {
     visibility: visible !important;
     display: block !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
     opacity: var(--ms-watermark-opacity, 0.1) !important;
+    position: absolute !important;
+    z-index: 1 !important; /* Move behind content but inside border */
   }
 
   /* Density adjustment for print */

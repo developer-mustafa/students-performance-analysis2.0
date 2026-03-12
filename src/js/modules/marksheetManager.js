@@ -739,7 +739,7 @@ function renderSingleMarksheet(student, subjects, examDisplayName, selectedSessi
     ).join('');
 
     const watermarkHtml = ms.watermarkUrl ?
-        `<div class="ms-watermark-bg" style="background-image: url('${ms.watermarkUrl}'); opacity: ${ms.watermarkOpacity || 0.1};"></div>` : '';
+        `<img class="ms-watermark-bg" src="${ms.watermarkUrl}" style="opacity: ${ms.watermarkOpacity || 0.1};">` : '';
 
     const todayDate = new Date().toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' });
 
