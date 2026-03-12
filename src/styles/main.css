@@ -12122,6 +12122,15 @@ body.is-super-admin td.admin-only {
     page-break-inside: avoid !important;
   }
 
+  /* WATERMARK - Ensure visibility and background rendering */
+  .ms-watermark-bg {
+    visibility: visible !important;
+    display: block !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    opacity: var(--ms-watermark-opacity, 0.1) !important;
+  }
+
   /* Density adjustment for print */
   .ms-page.density-compact {
     --ms-font-size: 11px !important;
