@@ -9624,13 +9624,18 @@ body.is-super-admin td.admin-only {
     position: relative;
     left: 0;
     top: 0;
-    width: 210mm;
+    display: block !important;
+    width: 210mm !important;
+    height: 297mm !important;
     min-height: 297mm;
     margin: 0;
     box-shadow: none;
     transform: none !important;
     transform-origin: top left !important;
+    overflow: hidden !important;
     page-break-after: always;
+    page-break-inside: avoid;
+    break-inside: avoid;
   }
 
   body.ms-printing .no-print,
@@ -9680,8 +9685,12 @@ body.is-super-admin td.admin-only {
   }
 
   @page {
-    size: A4;
-    margin: 0;
+    size: A4 portrait;
+    margin: 10mm;
+  }
+
+  @media print {
+    body.ms-printing { margin: 0; padding: 0; }
   }
 }
 
@@ -11992,3 +12001,119 @@ body.is-super-admin td.admin-only {
     }
   }
 }
+
+/* =========================================
+   MARSHEET PRINTING SYSTEM (A4 Perfect Fit)
+   ========================================= */
+
+@media print {
+  @page {
+    size: A4 portrait !important;
+    margin: 0 !important;
+  }
+
+  /* Universal Print Resets */
+  html, body {
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    background: white !important;
+    width: 210mm !important;
+    height: auto !important;
+    visibility: visible !important;
+    overflow: visible !important;
+  }
+
+  /* Hide common UI elements */
+  .header, .dm-controls, .page-nav-tabs, .footer, .theme-toggle, .loading-overlay,
+  .result-entry-selectors, .card-header, .preview-header, .ms-actions-float, 
+  .empty-state-msg, .reset-filters-btn, .unsaved-banner, .pagination-container, 
+  .saved-exams-section, .stats, .group-stats-grid, .failed-students, 
+  .page-navigation-tabs, .data-management-card, .chart-container, .view-toggle,
+  #inlineSearchPanel, .dropdown-menu, .ms-settings-mapping-subtext, .no-print {
+    display: none !important;
+  }
+
+  /* Force display for the specific page being printed */
+  #marksheetPage, .app-page#marksheetPage {
+    display: block !important;
+    visibility: visible !important;
+    grid: none !important;
+  }
+
+  /* Reset layout containers */
+  #app, .main-content, .container, .container-fluid, .card,
+  .marksheet-preview-wrapper, .marksheet-preview-area, #marksheetPreview {
+    display: block !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+    width: 210mm !important;
+    height: auto !important;
+    max-width: none !important;
+    min-height: 0 !important;
+    overflow: visible !important;
+    position: static !important;
+  }
+
+  /* MARKSHET PAGE STYLING - Strict A4 */
+  .ms-page {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 210mm !important;
+    height: 297mm !important;
+    min-height: 297mm !important;
+    max-height: 297mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: white !important;
+    position: relative !important;
+    box-sizing: border-box !important;
+    transform: none !important; 
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+    overflow: hidden !important;
+  }
+
+  /* Bulk Print Page Breaks */
+  body.ms-printing .ms-page {
+    page-break-after: always !important;
+    break-after: page !important;
+  }
+
+  body.ms-printing .ms-page:last-of-type {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* SINGLE PRINT FIX: Ensure only target is visible and no extra pages */
+  body.ms-printing-single .ms-page:not(.ms-single-active) {
+    display: none !important;
+  }
+
+  /* Internal component fixes - Specificity wins over density-compact */
+  .ms-page .ms-border-frame {
+    flex-grow: 1 !important;
+    margin: 4mm !important; /* Balanced margin */
+    display: flex !important;
+    flex-direction: column !important;
+    height: calc(297mm - 8mm) !important; /* Force stretch to match bottom gap */
+    min-height: calc(297mm - 8mm) !important;
+    box-sizing: border-box !important;
+  }
+
+  /* Ensure the content inside frame flows properly */
+  .ms-page .ms-border-frame > div:first-of-type {
+    flex-grow: 1 !important;
+  }
+
+  /* Density adjustment for print */
+  .ms-page.density-compact {
+    --ms-font-size: 11px !important;
+  }
+}
+

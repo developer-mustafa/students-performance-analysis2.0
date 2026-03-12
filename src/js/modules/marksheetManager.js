@@ -1310,15 +1310,9 @@ window.printSingleMarksheet = function (containerId) {
     const el = document.getElementById(containerId);
     if (!el) return;
 
-    // We use a temporary class to hide everything except THIS specific marksheet
+    // Trigger printing classes
     document.body.classList.add('ms-printing-single');
     el.classList.add('ms-single-active');
-
-    // Hide all other ms-pages temporarily
-    const allPages = document.querySelectorAll('.ms-page');
-    allPages.forEach(p => {
-        if (p.id !== containerId) p.style.display = 'none';
-    });
 
     window.print();
 
@@ -1326,7 +1320,6 @@ window.printSingleMarksheet = function (containerId) {
     const restore = () => {
         document.body.classList.remove('ms-printing-single');
         el.classList.remove('ms-single-active');
-        allPages.forEach(p => p.style.display = '');
         window.removeEventListener('afterprint', restore);
     };
 
@@ -1340,15 +1333,18 @@ window.printSingleMarksheet = function (containerId) {
  */
 function bulkPrint() {
     document.body.classList.add('ms-printing');
+
     window.print();
+
     // Remove class after print dialog closes
-    window.addEventListener('afterprint', () => {
+    const restoreBulk = () => {
         document.body.classList.remove('ms-printing');
-    }, { once: true });
+        window.removeEventListener('afterprint', restoreBulk);
+    };
+
+    window.addEventListener('afterprint', restoreBulk, { once: true });
     // Fallback for browsers that don't fire afterprint
-    setTimeout(() => {
-        document.body.classList.remove('ms-printing');
-    }, 3000);
+    setTimeout(restoreBulk, 3000);
 }
 
 /**
