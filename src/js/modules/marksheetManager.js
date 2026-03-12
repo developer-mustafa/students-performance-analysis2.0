@@ -744,7 +744,15 @@ function renderSingleMarksheet(student, subjects, examDisplayName, selectedSessi
     const todayDate = new Date().toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' });
 
     return `
-        <div class="ms-page font-${ms.fontSize || 'medium'} theme-${ms.theme || 'classic'} border-${ms.borderStyle || 'double'} typography-${ms.typography || 'default'} density-${ms.rowDensity || 'normal'}" id="ms_page_${student.id}_${student.group}" style="--ms-primary: ${ms.primaryColor || '#4361ee'}; --ms-watermark-opacity: ${ms.watermarkOpacity || 0.1}; display: flex; flex-direction: column;">
+        <div class="ms-page font-${ms.fontSize || 'medium'} theme-${ms.theme || 'classic'} border-${ms.borderStyle || 'double'} typography-${ms.typography || 'default'} density-${ms.rowDensity || 'normal'}" 
+             id="ms_page_${student.id}_${student.group}" 
+             data-student-id="${student.id}"
+             data-student-name="${student.name}"
+             data-student-group="${student.group || ''}"
+             data-student-class="${student.class || ''}"
+             data-student-session="${selectedSession || ''}"
+             data-exam-name="${examDisplayName || ''}"
+             style="--ms-primary: ${ms.primaryColor || '#4361ee'}; --ms-watermark-opacity: ${ms.watermarkOpacity || 0.1}; display: flex; flex-direction: column;">
             ${watermarkHtml}
             
             <div class="ms-actions-float no-print">
@@ -1310,6 +1318,18 @@ window.printSingleMarksheet = function (containerId) {
     const el = document.getElementById(containerId);
     if (!el) return;
 
+    // Save current title and construct new title for PDF filename
+    const originalTitle = document.title;
+    const id = el.dataset.studentId || '';
+    const name = el.dataset.studentName || '';
+    const group = el.dataset.studentGroup || '';
+    const cls = el.dataset.studentClass || '';
+    const session = el.dataset.studentSession || '';
+    const exam = el.dataset.examName || '';
+    
+    // Format: Roll_Group_Name(Class-Session)_ExamName
+    document.title = `${id}_${group}_${name}(${cls}-${session})_${exam}`;
+
     // Trigger printing classes
     document.body.classList.add('ms-printing-single');
     el.classList.add('ms-single-active');
@@ -1318,6 +1338,7 @@ window.printSingleMarksheet = function (containerId) {
 
     // Restoration
     const restore = () => {
+        document.title = originalTitle;
         document.body.classList.remove('ms-printing-single');
         el.classList.remove('ms-single-active');
         window.removeEventListener('afterprint', restore);
@@ -1332,12 +1353,26 @@ window.printSingleMarksheet = function (containerId) {
  * Bulk Print - opens print dialog with only marksheets
  */
 function bulkPrint() {
+    const originalTitle = document.title;
+    
+    const cls = document.getElementById('msClass')?.value || '';
+    const session = document.getElementById('msSession')?.value || '';
+    const group = document.getElementById('msGroup')?.value || '';
+    const exam = document.getElementById('msExamName')?.value || 'Combined';
+    
+    // Construct bulk name: ক্লাস_সেশন_বিভাগ_পরীক্ষার নাম
+    const groupText = group === 'all' ? 'AllGroups' : group;
+    const examText = exam === '__all__' ? 'Combined' : exam;
+    
+    document.title = `${cls}_${session}_${groupText}_${examText}`;
+
     document.body.classList.add('ms-printing');
 
     window.print();
 
     // Remove class after print dialog closes
     const restoreBulk = () => {
+        document.title = originalTitle;
         document.body.classList.remove('ms-printing');
         window.removeEventListener('afterprint', restoreBulk);
     };

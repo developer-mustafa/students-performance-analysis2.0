@@ -12012,16 +12012,16 @@ body.is-super-admin td.admin-only {
     margin: 0 !important;
   }
 
-  /* Universal Print Resets */
+  /* Universal Print Resets - Total Isolation */
   html, body {
     margin: 0 !important;
     padding: 0 !important;
     border: none !important;
     background: white !important;
     width: 210mm !important;
-    height: auto !important;
-    visibility: visible !important;
-    overflow: visible !important;
+    height: 297mm !important;
+    overflow: hidden !important;
+    visibility: hidden !important;
   }
 
   /* Hide common UI elements */
@@ -12034,28 +12034,33 @@ body.is-super-admin td.admin-only {
     display: none !important;
   }
 
-  /* Force display for the specific page being printed */
-  #marksheetPage, .app-page#marksheetPage {
-    display: block !important;
+  /* Print Page Isolation */
+  body.ms-printing, body.ms-printing-single {
     visibility: visible !important;
-    grid: none !important;
   }
 
-  /* Reset layout containers */
-  #app, .main-content, .container, .container-fluid, .card,
-  .marksheet-preview-wrapper, .marksheet-preview-area, #marksheetPreview {
+  #marksheetPage, .app-page#marksheetPage, .marksheet-preview-wrapper, 
+  .marksheet-preview-area, #marksheetPreview {
     display: block !important;
+    visibility: visible !important;
     margin: 0 !important;
     padding: 0 !important;
     border: none !important;
     box-shadow: none !important;
     background: transparent !important;
     width: 210mm !important;
-    height: auto !important;
     max-width: none !important;
+    height: auto !important;
     min-height: 0 !important;
     overflow: visible !important;
-    position: static !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+  }
+
+  /* Bulk Print Adjustments */
+  body.ms-printing #marksheetPreview {
+    position: relative !important;
   }
 
   /* MARKSHET PAGE STYLING - Strict A4 */
@@ -12071,44 +12076,50 @@ body.is-super-admin td.admin-only {
     background: white !important;
     position: relative !important;
     box-sizing: border-box !important;
-    transform: none !important; 
+    overflow: hidden !important;
+    visibility: visible !important;
+    break-after: page !important;
+    page-break-after: always !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    page-break-after: avoid !important;
-    break-after: avoid !important;
-    overflow: hidden !important;
   }
 
-  /* Bulk Print Page Breaks */
-  body.ms-printing .ms-page {
-    page-break-after: always !important;
-    break-after: page !important;
-  }
-
-  body.ms-printing .ms-page:last-of-type {
-    page-break-after: avoid !important;
-    break-after: avoid !important;
-  }
-
-  /* SINGLE PRINT FIX: Ensure only target is visible and no extra pages */
-  body.ms-printing-single .ms-page:not(.ms-single-active) {
+  /* Single Print Mode - Absolute Isolation to prevent overflow page */
+  body.ms-printing-single .ms-page {
     display: none !important;
   }
-
-  /* Internal component fixes - Specificity wins over density-compact */
-  .ms-page .ms-border-frame {
-    flex-grow: 1 !important;
-    margin: 4mm !important; /* Balanced margin */
+  
+  body.ms-printing-single .ms-page.ms-single-active {
     display: flex !important;
-    flex-direction: column !important;
-    height: calc(297mm - 8mm) !important; /* Force stretch to match bottom gap */
-    min-height: calc(297mm - 8mm) !important;
-    box-sizing: border-box !important;
+    page-break-after: avoid !important;
+    break-after: avoid !important;
   }
 
-  /* Ensure the content inside frame flows properly */
+  /* Last Page Reset */
+  .ms-page:last-of-type {
+    page-break-after: avoid !important;
+    break-after: avoid !important;
+  }
+
+  /* Border Frame Refinement - Pushes to very edge if needed, but keeping 5mm safety */
+  .ms-page .ms-border-frame {
+    flex-grow: 1 !important;
+    margin: 5mm !important;
+    display: flex !important;
+    flex-direction: column !important;
+    height: calc(297mm - 10mm) !important;
+    min-height: calc(297mm - 10mm) !important;
+    box-sizing: border-box !important;
+    border-width: 2px !important;
+  }
+
   .ms-page .ms-border-frame > div:first-of-type {
     flex-grow: 1 !important;
+  }
+
+  /* SIGNATURES - Ensure they are visible and not cut */
+  .ms-signatures-section {
+    page-break-inside: avoid !important;
   }
 
   /* Density adjustment for print */
