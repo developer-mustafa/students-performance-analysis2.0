@@ -240,6 +240,7 @@ async function init() {
             if (pageId === 'exam-config') await loadExamConfigs();
             if (pageId === 'marksheet-settings') await populateMarksheetSettingsDropdowns();
             if (pageId === 'admit-card') await populateACDropdowns();
+            if (pageId === 'access-requests') await loadAccessRequests();
         });
         initTeacherAssignmentUI();
 
@@ -250,6 +251,8 @@ async function init() {
         initExamConfigManager();
         initAdmitCardManager();
         initRoutineManager();
+        initAccessRequestUI();
+        initAccessRequestNotifications();
 
         // Listen for exam data updates from Result Entry
         window.addEventListener('examDataUpdated', async () => {

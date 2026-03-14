@@ -166,17 +166,9 @@
         }
 
         @keyframes badgePulse {
-          0% {
-            transform: scale(1);
-          }
-
-          50% {
-            transform: scale(1.1);
-          }
-
-          100% {
-            transform: scale(1);
-          }
+          0% { transform: scale(1); }
+          50% { transform: scale(1.1); }
+          100% { transform: scale(1); }
         }
       </style>
     </div>
@@ -1501,22 +1493,35 @@
     <!-- ========== PAGE: ADMIT CARD & SEAT PLAN ========== -->
     <div id="admitCardPage" class="app-page" style="display: none;">
       <div class="card">
-        <div class="card-header">
-          <div class="header-main-unified">
-            <h2 class="card-title"><i class="fas fa-id-card"></i> এডমিট কার্ড ও সীট প্ল্যান</h2>
-            <div class="ms-header-actions">
+        <div class="card-header" style="padding-bottom: 0;">
+          <!-- Header Row: Title -->
+         
+          <!-- Tab Bar -->
+          <div class="ac-tab-bar" style="justify-content: space-between; align-items: center;">
+            <div style="display: flex; gap: 8px;">
+              <button class="ac-tab-pill active" data-target="acTabPanel">
+                <i class="fas fa-id-card"></i> এডমিট কার্ড
+              </button>
+              <button class="ac-tab-pill" data-target="spTabPanel">
+                <i class="fas fa-chair"></i> সীট প্ল্যান
+              </button>
+            </div>
+            
+            <!-- Global Actions on the right -->
+            <div class="ms-header-actions" style="margin-bottom: 5px;">
               <button id="acRoutineBtn" class="dm-btn dm-save" title="পরীক্ষার রুটিন ম্যানেজমেন্ট">
-                <i class="fas fa-calendar-alt"></i> এডমিট কার্ড রুটিন
+                <i class="fas fa-calendar-alt"></i>পরীক্ষার রুটিন তৈরী
               </button>
               <button id="acSettingsBtn" class="dm-btn dm-report" title="এডমিট কার্ড ও সীট প্ল্যান সেটিংস">
-                <i class="fas fa-cog"></i> ডিজাইন সেটিংস
+                <i class="fas fa-cog"></i>প্রবেশপত্র সেটিংস
               </button>
             </div>
           </div>
         </div>
-        <!-- Admit Card Selectors -->
-        <div class="result-entry-selectors">
-          <div class="form-row">
+
+        <!-- Tab Panel: Admit Card -->
+        <div class="ac-tab-panel active" id="acTabPanel">
+          <div class="ac-compact-filters">
             <div class="selector-group">
               <label>শ্রেণি</label>
               <select id="acClass" class="form-control" data-dynamic="class"></select>
@@ -1545,17 +1550,13 @@
             <div class="selector-group">
               <label>পৃষ্ঠার ধরণ</label>
               <select id="acOrientation" class="form-control">
-                <option value="landscape">A4 Landscape (আড়াআড়ি)</option>
+                <option value="landscape">A4 Landscape (আড়াআড়ি)</option>
               </select>
             </div>
           </div>
-          <div class="form-row" style="margin-top: 15px;">
+          <div class="ac-compact-actions">
             <button id="acGenerateBtn" class="dm-btn dm-save">
-              <i class="fas fa-id-card"></i> <span class="dm-btn-text">এডমিট কার্ড</span>
-            </button>
-            <button id="spGenerateBtn" class="dm-btn dm-save"
-              style="background:var(--secondary);border-color:var(--secondary);">
-              <i class="fas fa-chair"></i> <span class="dm-btn-text">সীট প্ল্যান</span>
+              <i class="fas fa-id-card"></i> <span class="dm-btn-text">জেনারেট করুন</span>
             </button>
             <button id="acResetBtn" class="dm-btn dm-report">
               <i class="fas fa-sync-alt"></i> <span class="dm-btn-text">রিসেট</span>
@@ -1565,6 +1566,39 @@
             </button>
           </div>
         </div>
+
+        <!-- Tab Panel: Seat Plan -->
+        <div class="ac-tab-panel" id="spTabPanel">
+          <div class="ac-compact-filters">
+            <div class="selector-group">
+              <label>শ্রেণি</label>
+              <select id="spClass" class="form-control" data-dynamic="class"></select>
+            </div>
+            <div class="selector-group">
+              <label>সেশন</label>
+              <select id="spSession" class="form-control" data-dynamic="session"></select>
+            </div>
+            <div class="selector-group">
+              <label>পরীক্ষা</label>
+              <select id="spExamName" class="form-control"></select>
+            </div>
+            <div class="selector-group">
+              <label>গ্রুপ/বিভাগ</label>
+              <select id="spGroup" class="form-control">
+                <option value="all">সকল গ্রুপ</option>
+              </select>
+            </div>
+          </div>
+          <div class="ac-compact-actions">
+            <button id="spGenerateBtn" class="dm-btn dm-save" style="background: var(--secondary); border-color: var(--secondary);">
+              <i class="fas fa-chair"></i> <span class="dm-btn-text">জেনারেট করুন</span>
+            </button>
+            <button id="spResetBtn" class="dm-btn dm-report">
+              <i class="fas fa-sync-alt"></i> <span class="dm-btn-text">রিসেট</span>
+            </button>
+          </div>
+        </div>
+
         <!-- Admit Card Preview Area -->
         <div class="marksheet-preview-wrapper" id="acPreviewWrapper" style="display:none;">
           <div class="preview-header marksheet-main-preview-header">
@@ -1729,41 +1763,57 @@
 
 
     <div id="accessRequestsPage" class="app-page"
-      style="display: none; max-width: 1000px; margin: 0 auto; padding: 20px;">
+      style="display: none; max-width: 1000px; margin: 0 auto; padding: 10px;">
 
 
       <div class="card"
-        style="padding: 25px; border: 1px solid var(--border-color); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
-        <div
-          style="display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 15px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
-          <div style="display: flex; align-items: center; gap: 12px;">
-            <h3 style="margin: 0; font-size: 1.1rem; color: var(--text-color);">অনুরোধের তালিকা</h3>
-            <div style="display: flex; gap: 5px;">
-              <span id="arTotalCount"
-                style="background: var(--primary); color: white; font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; font-weight: 700;">0</span>
-              <span id="arPendingCount"
-                style="background: #ff9800; color: white; font-size: 0.75rem; padding: 3px 10px; border-radius: 20px; font-weight: 700;">0
-                পেন্ডিং</span>
-            </div>
+        style="padding: 15px; border: 1px solid var(--border-color); border-radius: 20px; box-shadow: 0 10px 30px rgba(0,0,0,0.05);">
+        <div class="ar-header-row" style="display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-bottom: 20px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px; flex-wrap: wrap;">
+          <!-- Stats row -->
+          <div id="arHeaderStats" style="flex: 1; min-width: 300px;">
+            <!-- Professional dashboard will be injected here -->
           </div>
-          <div style="display: flex; gap: 8px;">
+          <!-- Filter + Refresh -->
+          <div class="ar-header-controls" style="display: flex; gap: 10px; align-items: center; flex-wrap: nowrap;">
             <select id="arStatusFilter" class="form-select"
-              style="font-size: 0.85rem; border-radius: 8px; min-width: 130px;">
+              style="font-size: 0.9rem; border-radius: 10px; min-width: 130px; height: 40px; box-shadow: 0 2px 8px rgba(0,0,0,0.05);">
               <option value="all">সকল স্ট্যাটাস</option>
               <option value="pending" selected>পেন্ডিং</option>
               <option value="approved">অনুমোদিত</option>
               <option value="rejected">প্রত্যাখ্যাত</option>
             </select>
             <button id="arRefreshBtn" class="btn btn-sm"
-              style="background: var(--primary); color: white; border: none; border-radius: 8px; padding: 6px 12px;">
+              style="background: var(--primary); color: white; border: none; border-radius: 10px; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; box-shadow: 0 4px 12px rgba(67, 97, 238, 0.2);">
               <i class="fas fa-sync-alt"></i>
             </button>
           </div>
         </div>
-        <div id="arList" class="ar-slider-container">
+        <div id="arList" class="custom-ar-slider-wrapper">
           <p style="opacity: 0.5; text-align: center; padding: 30px;">লোড হচ্ছে...</p>
         </div>
         <div id="arSliderNav" style="display: none;"></div>
+        <!-- VITE CACHE BUSTER & FORCED CSS (v2) -->
+        <style>
+          /* Force hide the old injected side buttons if they still exist in DOM */
+          .custom-ar-slider-wrapper > .ar-slider-btn.prev,
+          .custom-ar-slider-wrapper > .ar-slider-btn.next {
+              display: none !important;
+              opacity: 0 !important;
+              pointer-events: none !important;
+              visibility: hidden !important;
+          }
+          /* Fix mobile layout for stats dashboard */
+          #arHeaderStats .ar-stats-dashboard {
+              flex-wrap: wrap !important;
+              justify-content: center !important;
+          }
+        </style>
+        <script>
+            // Hard wipe of any ghost arrows
+            setTimeout(() => {
+                document.querySelectorAll('.ar-slider-btn.prev, .ar-slider-btn.next').forEach(el => el.remove());
+            }, 1000);
+        </script>
       </div>
     </div>
     <!-- END PAGE: ACCESS REQUESTS -->
@@ -2288,10 +2338,12 @@
           </div>
         </div>
 
-        <!-- Action Buttons Footer -->
         <div class="modal-footer" style="display: flex; gap: 15px; justify-content: flex-end; border-top: 1px solid var(--border-color); padding: 15px 20px;">
-          <button id="printRoutineBtn" class="dm-btn dm-report">
-            <i class="fas fa-print"></i> রুটিন প্রিন্ট করুন
+          <button id="printAllGroupRoutineBtn" class="dm-btn dm-report" style="background: var(--purple-accent, #6f42c1); border-color: var(--purple-accent, #6f42c1);">
+            <i class="fas fa-print"></i> সকল গ্রুপ রুটিন প্রিন্ট
+          </button>
+          <button id="printGroupBasedRoutineBtn" class="dm-btn dm-report">
+            <i class="fas fa-print"></i> গ্রুপ ভিত্তিক প্রিন্ট
           </button>
           <button id="saveRoutineBtn" class="dm-btn dm-save">
             <i class="fas fa-save"></i> রুটিন সেভ করুন

@@ -5,7 +5,8 @@ import { getRoutinesData, normalizeGroupName, fetchRoutines } from './routineMan
 import { compressImage } from '../imageUtils.js';
 
 let acClassSelect, acSessionSelect, acExamNameSelect, acGroupSelect, acLayoutSelect;
-let acGenerateBtn, spGenerateBtn, acResetBtn, acPrintAllBtn, acSettingsBtn;
+let spClassSelect, spSessionSelect, spExamNameSelect, spGroupSelect;
+let acGenerateBtn, spGenerateBtn, acResetBtn, spResetBtn, acPrintAllBtn, acSettingsBtn;
 let admitCardPreview, acPreviewWrapper, acEmptyStateMsg, acMainZoomInput, acMainZoomLevelTxt;
 
 // Settings Modal Elements
@@ -29,9 +30,15 @@ export function initAdmitCardManager() {
     acGroupSelect = document.getElementById('acGroup');
     acLayoutSelect = document.getElementById('acLayout');
 
+    spClassSelect = document.getElementById('spClass');
+    spSessionSelect = document.getElementById('spSession');
+    spExamNameSelect = document.getElementById('spExamName');
+    spGroupSelect = document.getElementById('spGroup');
+
     acGenerateBtn = document.getElementById('acGenerateBtn');
     spGenerateBtn = document.getElementById('spGenerateBtn');
     acResetBtn = document.getElementById('acResetBtn');
+    spResetBtn = document.getElementById('spResetBtn');
     acPrintAllBtn = document.getElementById('acPrintAllBtn');
     acSettingsBtn = document.getElementById('acSettingsBtn');
 
@@ -57,7 +64,7 @@ export function initAdmitCardManager() {
     acThemeSelect = document.getElementById('acTheme');
     acShowRoutine = document.getElementById('acShowRoutine');
 
-    // Tab Switching Logic
+    // Settings Modal Tab Switching Logic
     const acMenuItems = document.querySelectorAll('#acSettingsModal .config-menu-item');
     const acTabContents = document.querySelectorAll('#acSettingsModal .config-tab-content');
 
@@ -72,7 +79,40 @@ export function initAdmitCardManager() {
         });
     });
 
+    // Main Page Tab Switching Logic
+    const acTabPills = document.querySelectorAll('.ac-tab-pill');
+    const acTabPanels = document.querySelectorAll('.ac-tab-panel');
 
+    acTabPills.forEach(pill => {
+        pill.addEventListener('click', () => {
+            acTabPills.forEach(p => p.classList.remove('active'));
+            acTabPanels.forEach(p => p.classList.remove('active'));
+            pill.classList.add('active');
+            const targetId = pill.getAttribute('data-target');
+            document.getElementById(targetId)?.classList.add('active');
+            
+            // Auto sync class/session
+            if (targetId === 'spTabPanel') {
+                if(acClassSelect && spClassSelect && !spClassSelect.value) {
+                    spClassSelect.value = acClassSelect.value;
+                    spClassSelect.dispatchEvent(new Event('change'));
+                }
+                if(acSessionSelect && spSessionSelect && !spSessionSelect.value) {
+                    spSessionSelect.value = acSessionSelect.value;
+                    spSessionSelect.dispatchEvent(new Event('change'));
+                }
+            } else {
+                if(spClassSelect && acClassSelect && !acClassSelect.value) {
+                    acClassSelect.value = spClassSelect.value;
+                    acClassSelect.dispatchEvent(new Event('change'));
+                }
+                if(spSessionSelect && acSessionSelect && !acSessionSelect.value) {
+                    acSessionSelect.value = spSessionSelect.value;
+                    acSessionSelect.dispatchEvent(new Event('change'));
+                }
+            }
+        });
+    });
     if (acGenerateBtn) {
         acGenerateBtn.addEventListener('click', () => generateCards('admit'));
     }
@@ -81,13 +121,18 @@ export function initAdmitCardManager() {
         spGenerateBtn.addEventListener('click', () => generateCards('seat'));
     }
 
+    const performReset = () => {
+        admitCardPreview.innerHTML = '';
+        acPreviewWrapper.style.display = 'none';
+        acEmptyStateMsg.style.display = 'flex';
+        acPrintAllBtn.style.display = 'none';
+    };
+
     if (acResetBtn) {
-        acResetBtn.addEventListener('click', () => {
-            admitCardPreview.innerHTML = '';
-            acPreviewWrapper.style.display = 'none';
-            acEmptyStateMsg.style.display = 'flex';
-            acPrintAllBtn.style.display = 'none';
-        });
+        acResetBtn.addEventListener('click', performReset);
+    }
+    if (spResetBtn) {
+        spResetBtn.addEventListener('click', performReset);
     }
 
     if (acPrintAllBtn) {
@@ -475,48 +520,61 @@ export async function populateACDropdowns() {
     const classes = [...new Set(exams.map(e => e.class).filter(Boolean))].sort();
     const sessions = [...new Set(exams.map(e => e.session).filter(Boolean))].sort().reverse();
 
-    if (acClassSelect) {
-        acClassSelect.innerHTML = '<option value="">শ্রেণি নির্বাচন</option>';
-        classes.forEach(c => acClassSelect.innerHTML += `<option value="${c}">${c}</option>`);
-    }
+    const populateSelect = (selectElem, optionsHTML) => {
+        if (selectElem) selectElem.innerHTML = optionsHTML;
+    };
 
-    if (acSessionSelect) {
-        acSessionSelect.innerHTML = '<option value="">সেশন নির্বাচন</option>';
-        sessions.forEach(s => acSessionSelect.innerHTML += `<option value="${s}">${s}</option>`);
-    }
+    let classOptions = '<option value="">শ্রেণি নির্বাচন</option>';
+    classes.forEach(c => classOptions += `<option value="${c}">${c}</option>`);
+    populateSelect(acClassSelect, classOptions);
+    populateSelect(spClassSelect, classOptions);
 
-    const updateExamNames = async () => {
-        const selClass = acClassSelect?.value;
-        const selSession = acSessionSelect?.value;
+    let sessionOptions = '<option value="">সেশন নির্বাচন</option>';
+    sessions.forEach(s => sessionOptions += `<option value="${s}">${s}</option>`);
+    populateSelect(acSessionSelect, sessionOptions);
+    populateSelect(spSessionSelect, sessionOptions);
 
-        if (acExamNameSelect) {
+    const updateExamNames = async (sourcePrefix) => {
+        const clsSelect = sourcePrefix === 'ac' ? acClassSelect : spClassSelect;
+        const sessSelect = sourcePrefix === 'ac' ? acSessionSelect : spSessionSelect;
+        const examSelect = sourcePrefix === 'ac' ? acExamNameSelect : spExamNameSelect;
+        const grpSelect = sourcePrefix === 'ac' ? acGroupSelect : spGroupSelect;
+        
+        const selClass = clsSelect?.value;
+        const selSession = sessSelect?.value;
+
+        if (examSelect) {
             if (!selClass || !selSession) {
-                acExamNameSelect.innerHTML = '<option value="">শ্রেণি ও সেশন নির্বাচন</option>';
-                if (acGroupSelect) acGroupSelect.innerHTML = '<option value="all">সকল গ্রুপ</option>';
+                examSelect.innerHTML = '<option value="">শ্রেণি ও সেশন নির্বাচন</option>';
+                if (grpSelect) grpSelect.innerHTML = '<option value="all">সকল গ্রুপ</option>';
                 return;
             }
-            acExamNameSelect.innerHTML = '<option value="">লোড হচ্ছে...</option>';
+            examSelect.innerHTML = '<option value="">লোড হচ্ছে...</option>';
             const configs = await getExamConfigs(selClass, selSession);
             const examNames = configs.map(c => c.examName);
 
-            acExamNameSelect.innerHTML = '<option value="">পরীক্ষা নির্বাচন</option>';
+            examSelect.innerHTML = '<option value="">পরীক্ষা নির্বাচন</option>';
             if (examNames.length > 0) {
-                examNames.forEach(n => acExamNameSelect.innerHTML += `<option value="${n}">${n}</option>`);
+                examNames.forEach(n => examSelect.innerHTML += `<option value="${n}">${n}</option>`);
             } else {
-                acExamNameSelect.innerHTML = '<option value="">কোনো পরীক্ষা তৈরি করা নেই</option>';
+                examSelect.innerHTML = '<option value="">কোনো পরীক্ষা তৈরি করা নেই</option>';
             }
 
             // Auto Update Groups when Class/Session changes
-            updateGroupDropdown();
+            updateGroupDropdown(sourcePrefix);
         }
     };
 
-    const updateGroupDropdown = async () => {
-        const selClass = acClassSelect?.value;
-        const selSession = acSessionSelect?.value;
+    const updateGroupDropdown = async (sourcePrefix) => {
+        const clsSelect = sourcePrefix === 'ac' ? acClassSelect : spClassSelect;
+        const sessSelect = sourcePrefix === 'ac' ? acSessionSelect : spSessionSelect;
+        const grpSelect = sourcePrefix === 'ac' ? acGroupSelect : spGroupSelect;
 
-        if (acGroupSelect) {
-            acGroupSelect.innerHTML = '<option value="all">সকল গ্রুপ</option>';
+        const selClass = clsSelect?.value;
+        const selSession = sessSelect?.value;
+
+        if (grpSelect) {
+            grpSelect.innerHTML = '<option value="all">সকল গ্রুপ</option>';
             if (selClass && selSession) {
                 const filteredExams = exams.filter(e => e.class === selClass && e.session === selSession);
                 const groups = new Set();
@@ -530,25 +588,34 @@ export async function populateACDropdowns() {
 
                 const sortedGroups = [...groups].sort();
                 sortedGroups.forEach(g => {
-                    acGroupSelect.innerHTML += `<option value="${g}">${g}</option>`;
+                    grpSelect.innerHTML += `<option value="${g}">${g}</option>`;
                 });
             }
         }
     }
 
-    if (acClassSelect) acClassSelect.addEventListener('change', updateExamNames);
-    if (acSessionSelect) acSessionSelect.addEventListener('change', updateExamNames);
+    if (acClassSelect) acClassSelect.addEventListener('change', () => updateExamNames('ac'));
+    if (acSessionSelect) acSessionSelect.addEventListener('change', () => updateExamNames('ac'));
+    if (acExamNameSelect) acExamNameSelect.addEventListener('change', () => updateGroupDropdown('ac'));
+
+    if (spClassSelect) spClassSelect.addEventListener('change', () => updateExamNames('sp'));
+    if (spSessionSelect) spSessionSelect.addEventListener('change', () => updateExamNames('sp'));
+    if (spExamNameSelect) spExamNameSelect.addEventListener('change', () => updateGroupDropdown('sp'));
     // When Exam Name changes, update groups specifically for that exam if needed (Optional, currently global for class/session)
     if (acExamNameSelect) acExamNameSelect.addEventListener('change', updateGroupDropdown);
 }
 
 async function generateCards(type) {
-    const cls = acClassSelect?.value;
-    const session = acSessionSelect?.value;
-    const examName = acExamNameSelect?.value;
-    const layoutSize = parseInt(acLayoutSelect?.value || '6', 10);
+    const isAdmit = type === 'admit';
+    const cls = isAdmit ? acClassSelect?.value : spClassSelect?.value;
+    const session = isAdmit ? acSessionSelect?.value : spSessionSelect?.value;
+    const examName = isAdmit ? acExamNameSelect?.value : spExamNameSelect?.value;
+    const selectedGroup = isAdmit ? (acGroupSelect?.value || 'all') : (spGroupSelect?.value || 'all');
+    
+    // Layout and orientation only apply to admit cards right now; seat plans use default/fixed layout
+    const layoutSize = isAdmit ? parseInt(acLayoutSelect?.value || '6', 10) : 6;
     const orientationSelect = document.getElementById('acOrientation');
-    const pageOrientation = orientationSelect ? orientationSelect.value : 'portrait';
+    const pageOrientation = isAdmit && orientationSelect ? orientationSelect.value : 'portrait';
 
     if (!cls || !session || !examName) {
         showNotification('শ্রেণি, সেশন এবং পরীক্ষা নির্বাচন করুন', 'error');
@@ -571,7 +638,6 @@ async function generateCards(type) {
 
     // Build unique student list
     const studentAgg = new Map();
-    const selectedGroup = acGroupSelect?.value || 'all';
 
     relevantExams.forEach(exam => {
         if (exam.studentData) {
@@ -728,15 +794,21 @@ function renderAdmitCard(student, subjects, examName, config) {
     const studentClass = (student.class || '').trim();
     const studentSession = (student.session || '').trim();
     
-    // Attempt specific normalized, then specific raw, then all normalized
+    // Attempt specific normalized, then specific raw, then all normalized (only if group is 'all')
     const keySpecificNorm = `${studentClass}_${studentSession}_${cleanExamName}_${studentGroupNorm}`;
     const keySpecificRaw = `${studentClass}_${studentSession}_${cleanExamName}_${studentGroupRaw}`;
     const keyAll = `${studentClass}_${studentSession}_${cleanExamName}_all`;
     
-    // Robust lookup: try with exact keys
-    let routineRows = routineData[keySpecificNorm] || routineData[keySpecificRaw] || routineData[keyAll] || [];
+    // Robust lookup: try with exact group keys first
+    // Only fall back to 'all' key when student group IS 'all' (i.e., no specific group filtering)
+    let routineRows = routineData[keySpecificNorm] || routineData[keySpecificRaw] || [];
+    
+    // Only use keyAll if student group is 'all' or no group-specific routine was found AND keyAll is the only option
+    if (routineRows.length === 0 && (studentGroupNorm === 'all')) {
+        routineRows = routineData[keyAll] || [];
+    }
 
-    // Second level fallback: Fuzzy matching for exam name
+    // Second level fallback: Fuzzy matching for exam name (group-aware)
     if (routineRows.length === 0) {
         const allKeys = Object.keys(routineData);
         // Better fuzzy logic: matches class, session, group exactly; matches exam partially
@@ -749,7 +821,10 @@ function renderAdmitCard(student, subjects, examName, config) {
             const kSess = parts[1];
             const kCls = parts[0];
 
-            const groupMatches = kGrp === studentGroupNorm || kGrp === studentGroupRaw || kGrp === 'all';
+            // For specific groups, only match the same group (not 'all')
+            const groupMatches = studentGroupNorm === 'all' 
+                ? (kGrp === studentGroupNorm || kGrp === studentGroupRaw || kGrp === 'all')
+                : (kGrp === studentGroupNorm || kGrp === studentGroupRaw);
             const examMatches = cleanExamName === kExam || cleanExamName.includes(kExam) || kExam.includes(cleanExamName);
             
             return kCls === studentClass && kSess === studentSession && groupMatches && examMatches;

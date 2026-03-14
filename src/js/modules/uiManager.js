@@ -419,11 +419,37 @@ export function updateSyncStatus(isOnline) {
  * @param {Function} onConfirm - Callback on confirm
  * @param {string} itemName - Name of the item being deleted
  * @param {string} contextInfo - Where/what is being deleted
+ * @param {Object} options - Optional UI overrides (title, icon, btnText, btnClass)
  */
-export function showConfirmModal(message, onConfirm, itemName = '', contextInfo = 'এটি ডাটাবেস থেকে স্থায়ীভাবে মুছে যাবে') {
+export function showConfirmModal(message, onConfirm, itemName = '', contextInfo = 'এটি ডাটাবেস থেকে স্থায়ীভাবে মুছে যাবে', options = {}) {
     if (!elements.confirmModal || !elements.confirmMessage || !elements.confirmDeleteBtn) return;
 
     elements.confirmMessage.textContent = message;
+
+    // Default configuration (Delete Mode)
+    const config = {
+        title: 'মুছে ফেলতে চান?',
+        icon: 'fa-trash-alt',
+        iconColor: '#ff4d4f', // Red by default
+        btnText: 'হ্যাঁ, মুছে ফেলুন',
+        btnClass: 'btn-danger-confirm',
+        ...options
+    };
+
+    // Update Modal Title & Icon
+    const modalTitle = document.getElementById('confirmTitle');
+    const modalIconContainer = document.querySelector('.confirm-modal-icon');
+    
+    if (modalTitle) modalTitle.textContent = config.title;
+    if (modalIconContainer) {
+        modalIconContainer.innerHTML = `<i class="fas ${config.icon}"></i>`;
+        modalIconContainer.style.color = config.iconColor;
+        modalIconContainer.style.backgroundColor = `${config.iconColor}15`; // 15% opacity background
+    }
+
+    // Update confirm button properties
+    elements.confirmDeleteBtn.textContent = config.btnText;
+    elements.confirmDeleteBtn.className = config.btnClass; // E.g., 'btn-danger-confirm' or 'btn-success-confirm'
 
     // Update new informative elements
     const itemNameEl = document.getElementById('confirmItemName');

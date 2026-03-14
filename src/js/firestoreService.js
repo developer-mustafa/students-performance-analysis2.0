@@ -45,6 +45,8 @@ const COLLECTIONS = {
 const _cache = {
     exams: null,
     examsExpiry: 0,
+    accessRequests: null,
+    accessRequestsExpiry: 0,
     CACHE_DURATION: 10 * 60 * 1000 // 10 minutes cache
 };
 
@@ -859,14 +861,33 @@ export async function submitAccessRequest(data) {
  * @returns {Promise<Array>}
  */
 export async function getAccessRequests() {
+    const now = Date.now();
+    if (_cache.accessRequests && now < _cache.accessRequestsExpiry) {
+        console.log('[Firestore] Returning cached access requests (Read Optimization Active)');
+        return _cache.accessRequests;
+    }
+
+    console.log('[Firestore] Fetching fresh access requests from Firestore');
     try {
         const ref = collection(db, COLLECTIONS.access_requests);
-        const q = query(ref, orderBy('createdAt', 'desc'));
-        const snapshot = await getDocs(q);
-        return snapshot.docs.map(d => ({ docId: d.id, ...d.data() }));
+        const snapshot = await getDocs(ref);
+        let data = snapshot.docs.map(d => ({ docId: d.id, ...d.data() }));
+        
+        // Manual sort to handle missing createdAt gracefully
+        data.sort((a, b) => {
+            const timeA = a.createdAt?.toMillis?.() || 0;
+            const timeB = b.createdAt?.toMillis?.() || 0;
+            return timeB - timeA;
+        });
+        
+        // Cache result
+        _cache.accessRequests = data;
+        _cache.accessRequestsExpiry = now + _cache.CACHE_DURATION;
+        
+        return data;
     } catch (error) {
         console.error('Error loading access requests:', error);
-        return [];
+        return _cache.accessRequests || []; // Fallback to stale cache if any
     }
 }
 
@@ -882,6 +903,8 @@ export async function updateAccessRequestStatus(docId, status, role) {
             reviewedBy: auth.currentUser?.uid || 'unknown',
             assignedRole: role || null
         });
+        // Clear cache to ensure fresh data on next load
+        _cache.accessRequests = null;
         return true;
     } catch (error) {
         console.error('Error updating access request:', error);
@@ -895,6 +918,8 @@ export async function updateAccessRequestStatus(docId, status, role) {
 export async function deleteAccessRequest(docId) {
     try {
         await deleteDoc(doc(db, COLLECTIONS.access_requests, docId));
+        // Clear cache
+        _cache.accessRequests = null;
         return true;
     } catch (error) {
         console.error('Error deleting access request:', error);

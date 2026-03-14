@@ -16,7 +16,7 @@ export function getRoutinesData() {
 }
 
 // UI Elements
-let routineModal, closeRoutineBtn, addRowBtn, saveBtn, printBtn;
+let routineModal, closeRoutineBtn, addRowBtn, saveBtn, printAllBtn, printGroupBtn;
 let rtClassSelect, rtSessionSelect, rtExamNameSelect, rtGroupSelect, routineTableBody;
 
 const DAYS_BN = ['রবিবার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার', 'শনিবার'];
@@ -33,7 +33,8 @@ export async function initRoutineManager() {
     closeRoutineBtn = document.getElementById('closeAcRoutineBtn');
     addRowBtn = document.getElementById('addRoutineRowBtn');
     saveBtn = document.getElementById('saveRoutineBtn');
-    printBtn = document.getElementById('printRoutineBtn');
+    printAllBtn = document.getElementById('printAllGroupRoutineBtn');
+    printGroupBtn = document.getElementById('printGroupBasedRoutineBtn');
 
     rtClassSelect = document.getElementById('rtClass');
     rtSessionSelect = document.getElementById('rtSession');
@@ -47,7 +48,9 @@ export async function initRoutineManager() {
     closeRoutineBtn.addEventListener('click', () => routineModal.classList.remove('active'));
     addRowBtn.addEventListener('click', () => addRoutineRow());
     saveBtn.addEventListener('click', saveCurrentRoutine);
-    printBtn.addEventListener('click', printRoutine);
+    
+    if (printAllBtn) printAllBtn.addEventListener('click', () => printRoutine('all'));
+    if (printGroupBtn) printGroupBtn.addEventListener('click', () => printRoutine('group'));
 
     // Filter Listeners
     [rtClassSelect, rtSessionSelect, rtExamNameSelect, rtGroupSelect].forEach(sel => {
@@ -313,6 +316,29 @@ async function addRoutineRow(data = null) {
         }
     });
 
+    // Subject change listener to prevent duplicates dynamically
+    const subjectSelect = row.querySelector('.rt-subject');
+    subjectSelect.addEventListener('change', (e) => {
+        const selectedValue = e.target.value;
+        if (!selectedValue) return;
+
+        // Count how many times this subject is selected in the table
+        const allSubjectSelects = routineTableBody.querySelectorAll('.rt-subject');
+        let count = 0;
+        allSubjectSelects.forEach(select => {
+            if (select.value === selectedValue) count++;
+        });
+
+        if (count > 1) {
+            showNotification('এই বিষয়টি ইতিমধ্যে রুটিনে যুক্ত করা হয়েছে!', 'warning');
+            e.target.value = ''; // Reset the selection
+            
+            // Highlight the select briefly to show the error
+            e.target.style.border = '2px solid var(--danger)';
+            setTimeout(() => e.target.style.border = '', 2000);
+        }
+    });
+
     // Delete row
     row.querySelector('.rt-delete-btn').addEventListener('click', () => {
         row.remove();
@@ -344,17 +370,36 @@ async function saveCurrentRoutine() {
         return;
     }
 
+    let hasDuplicates = false;
+    const seenSubjects = new Set();
+
     tableRows.forEach(tr => {
         const seq = tr.querySelector('.rt-seq').value;
         const date = tr.querySelector('.rt-date').value;
         const day = tr.querySelector('.rt-day').value;
-        const subject = tr.querySelector('.rt-subject').value;
+        const subjectSelect = tr.querySelector('.rt-subject');
+        const subject = subjectSelect.value;
         const time = tr.querySelector('.rt-time').value;
         
+        if (subject) {
+            if (seenSubjects.has(subject)) {
+                hasDuplicates = true;
+                subjectSelect.style.border = '2px solid var(--danger)';
+                setTimeout(() => subjectSelect.style.border = '', 3000);
+            } else {
+                seenSubjects.add(subject);
+            }
+        }
+
         if (date || subject) {
             rows.push({ seq, date, day, subject, time });
         }
     });
+
+    if (hasDuplicates) {
+        showNotification('রুটিনে একই বিষয় একাধিকবার যুক্ত করা হয়েছে! দয়া করে সংশোধন করুন।', 'error');
+        return;
+    }
 
     if (rows.length === 0) {
         showNotification('কমপক্ষে একটি বিয়য় ও তারিখ দিন', 'warning');
@@ -375,38 +420,59 @@ async function saveCurrentRoutine() {
     }
 }
 
-async function printRoutine() {
-    const rows = [];
-    routineTableBody.querySelectorAll('tr').forEach(tr => {
-        const seq = tr.querySelector('.rt-seq').value;
-        const date = tr.querySelector('.rt-date').value;
-        const day = tr.querySelector('.rt-day').value;
-        const subject = tr.querySelector('.rt-subject').value;
-        if (date && subject) {
-            rows.push({ seq, date, day, subject });
-        }
-    });
-
-    if (rows.length === 0) {
-        showNotification('প্রিন্ট করার মতো কোনো তথ্য নেই', 'warning');
+async function printRoutine(mode = 'group') {
+    const cls = rtClassSelect.value;
+    const session = rtSessionSelect.value;
+    const examName = rtExamNameSelect.value;
+    
+    if (!examName) {
+        showNotification('প্রথমে পরীক্ষা নির্বাচন করুন', 'warning');
         return;
     }
 
-    // Sort rows by seq
-    rows.sort((a, b) => Number(a.seq) - Number(b.seq));
+    // Collection of routines to print
+    const routinesToPrint = [];
+
+    if (mode === 'all') {
+        const groups = ['science', 'business', 'humanities'];
+        for (const g of groups) {
+            const key = `${cls}_${session}_${examName}_${g}`;
+            const routine = routinesData[key];
+            if (routine && routine.rows && routine.rows.length > 0) {
+                // Get display name for group
+                let displayGroup = g === 'science' ? 'বিজ্ঞান' : (g === 'business' ? 'ব্যবসায় শিক্ষা' : 'মানবিক');
+                routinesToPrint.push({
+                    groupName: displayGroup,
+                    rows: routine.rows.sort((a, b) => Number(a.seq) - Number(b.seq))
+                });
+            }
+        }
+    } else {
+        const currentKey = `${cls}_${session}_${examName}_${normalizeGroupName(rtGroupSelect.value)}`;
+        const routine = routinesData[currentKey];
+        if (!routine || !routine.rows || routine.rows.length === 0) {
+            showNotification('এই গ্রুপের জন্য কোনো রুটিন পাওয়া যায়নি', 'warning');
+            return;
+        }
+        routinesToPrint.push({
+            groupName: rtGroupSelect.options[rtGroupSelect.selectedIndex].text,
+            rows: routine.rows.sort((a, b) => Number(a.seq) - Number(b.seq))
+        });
+    }
+
+    if (routinesToPrint.length === 0) {
+        showNotification('প্রিন্ট করার মতো কোনো তথ্য পাওয়া যায়নি', 'warning');
+        return;
+    }
 
     // Get dynamic header info from Admit Card Configuration
     const appSettings = await getSettings() || {};
     const acConfig = appSettings.admitCard || {};
     
-    // Primary source: Admit Card Settings, Fallback: General Settings
     const instName = acConfig.instName || appSettings.institutionName || 'শিক্ষা প্রতিষ্ঠান';
     const instAddress = acConfig.instAddress || appSettings.institutionAddress || '';
     const logoUrl = acConfig.logoUrl || appSettings.logoUrl || '';
     const watermarkUrl = acConfig.watermarkUrl || '';
-
-    const examTitle = `${rtExamNameSelect.value} এর সময়সূচী`;
-    const classInfo = `শ্রেণি: ${rtClassSelect.value} | সেশন: ${rtSessionSelect.value} ${rtGroupSelect.value !== 'all' ? '| গ্রুপ: ' + rtGroupSelect.value : ''}`;
 
     const printWindow = window.open('', '_blank');
     printWindow.document.write(`
@@ -422,30 +488,29 @@ async function printRoutine() {
                     padding: 0; 
                     margin: 0;
                     color: #2c3e50; 
-                    background: #fff;
+                    background: #f0f2f5;
                 }
                 
                 .print-page {
                     width: 210mm;
                     min-height: 297mm;
-                    padding: 20mm;
+                    padding: 15mm;
                     margin: 10mm auto;
                     background: white;
                     box-shadow: 0 0 10px rgba(0,0,0,0.1);
                     position: relative;
-                    overflow: hidden;
                 }
 
                 /* Watermark */
                 ${watermarkUrl ? `
                 .watermark {
-                    position: absolute;
+                    position: fixed;
                     top: 50%;
                     left: 50%;
                     transform: translate(-50%, -50%) rotate(-30deg);
                     width: 400px;
                     height: 400px;
-                    opacity: 0.05;
+                    opacity: 0.04;
                     pointer-events: none;
                     z-index: 0;
                     background: url('${watermarkUrl}') no-repeat center center;
@@ -461,112 +526,104 @@ async function printRoutine() {
                 .header { 
                     text-align: center; 
                     border-bottom: 2px double #2c3e50; 
-                    padding-bottom: 15px; 
-                    margin-bottom: 25px; 
+                    padding-bottom: 12px; 
+                    margin-bottom: 20px; 
                     display: flex; 
                     align-items: center; 
                     justify-content: center; 
-                    gap: 25px; 
+                    gap: 20px; 
                 }
                 
                 .logo { 
-                    width: 85px; 
-                    height: 85px; 
+                    width: 70px; 
+                    height: 70px; 
                     object-fit: contain; 
-                    filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
                 }
                 
                 .header-text h1 { 
                     margin: 0; 
-                    font-size: 28px; 
+                    font-size: 24px; 
                     color: #1a237e; 
                     font-weight: 700;
-                    letter-spacing: 0.5px;
                 }
                 
                 .header-text p { 
-                    margin: 5px 0 0 0; 
-                    font-size: 15px; 
+                    margin: 3px 0 0 0; 
+                    font-size: 13px; 
                     color: #555; 
-                    font-weight: 500;
                 }
                 
+                .routine-section {
+                    margin-bottom: 40px;
+                    page-break-inside: avoid;
+                }
+
                 .exam-title-card { 
                     text-align: center; 
-                    margin-bottom: 30px; 
+                    margin-bottom: 15px; 
                     background: #f8f9fa;
-                    padding: 15px;
-                    border-radius: 8px;
+                    padding: 10px;
+                    border-radius: 6px;
                     border-left: 5px solid #1a237e;
                 }
                 
                 .exam-title-card h2 { 
                     margin: 0; 
-                    font-size: 22px; 
+                    font-size: 18px; 
                     color: #c62828; 
-                    font-weight: 700;
-                    text-transform: uppercase;
                 }
                 
                 .exam-title-card p { 
-                    margin: 10px 0 0 0; 
+                    margin: 5px 0 0 0; 
                     font-weight: 600; 
-                    font-size: 17px; 
-                    color: #34495e;
+                    font-size: 15px; 
                 }
                 
                 table { 
                     width: 100%; 
                     border-collapse: collapse; 
-                    margin-top: 10px;
                     background: white;
                 }
                 
                 th, td { 
                     border: 1px solid #2c3e50; 
-                    padding: 14px 10px; 
+                    padding: 10px 8px; 
                     text-align: center; 
-                    font-size: 16px; 
+                    font-size: 14px; 
                 }
                 
                 th { 
                     background-color: #f1f4f9; 
                     color: #1a237e;
                     font-weight: 700; 
-                    text-transform: uppercase;
-                    font-size: 15px;
                 }
-                
-                tr:nth-child(even) { background-color: #fafafa; }
                 
                 .subject-cell { 
                     text-align: left; 
-                    padding-left: 20px; 
-                    font-weight: 500;
+                    padding-left: 15px; 
                 }
 
                 .footer { 
-                    margin-top: 80px; 
+                    margin-top: 50px; 
                     display: flex; 
                     justify-content: space-between; 
-                    padding: 0 20px;
+                    padding: 0 10px;
                 }
                 
                 .sig-box { 
                     border-top: 1.5px solid #2c3e50; 
-                    width: 180px; 
+                    width: 160px; 
                     text-align: center; 
-                    padding-top: 8px; 
-                    font-size: 15px; 
+                    padding-top: 5px; 
+                    font-size: 14px; 
                     font-weight: 600; 
-                    color: #2c3e50;
                 }
 
                 .print-info {
-                    position: absolute;
-                    bottom: 10mm;
-                    left: 20mm;
-                    font-size: 10px;
+                    position: fixed;
+                    bottom: 5mm;
+                    left: 15mm;
+                    font-size: 9px;
                     color: #999;
                 }
                 
@@ -576,11 +633,12 @@ async function printRoutine() {
                         margin: 0; 
                         box-shadow: none; 
                         width: 100%;
-                        height: 100%;
+                        min-height: auto;
+                        padding: 10mm;
                     }
                     @page {
                         size: A4;
-                        margin: 0;
+                        margin: 10mm;
                     }
                 }
             </style>
@@ -589,40 +647,46 @@ async function printRoutine() {
             <div class="print-page">
                 ${watermarkUrl ? `<div class="watermark"></div>` : ''}
                 
+                <div class="header">
+                    ${logoUrl ? `<img src="${logoUrl}" class="logo">` : ''}
+                    <div class="header-text">
+                        <h1>${instName}</h1>
+                        <p>${instAddress}</p>
+                    </div>
+                </div>
+
                 <div class="content-wrapper">
-                    <div class="header">
-                        ${logoUrl ? `<img src="${logoUrl}" class="logo">` : ''}
-                        <div class="header-text">
-                            <h1>${instName}</h1>
-                            <p>${instAddress}</p>
+                    ${routinesToPrint.map(routine => `
+                        <div class="routine-section">
+                            <div class="exam-title-card">
+                                <h2>${examName} এর সময়সূচী</h2>
+                                <p>শ্রেণি: ${cls} | সেশন: ${session} | গ্রুপ: ${routine.groupName}</p>
+                            </div>
+                            
+                            <table>
+                                <thead>
+                                    <tr>
+                                        <th style="width: 8%;">নং</th>
+                                        <th style="width: 22%;">তারিখ</th>
+                                        <th style="width: 15%;">বার</th>
+                                        <th>বিষয়</th>
+                                        <th style="width: 18%;">সময়</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    ${routine.rows.map(r => `
+                                        <tr>
+                                            <td style="font-weight:bold;">${convertToBengaliDigits(r.seq)}</td>
+                                            <td>${formatDateBengali(r.date)}</td>
+                                            <td>${r.day}</td>
+                                            <td class="subject-cell">${r.subject}</td>
+                                            <td>${r.time || ''}</td>
+                                        </tr>
+                                    `).join('')}
+                                </tbody>
+                            </table>
                         </div>
-                    </div>
-                    
-                    <div class="exam-title-card">
-                        <h2>${examTitle}</h2>
-                        <p>${classInfo}</p>
-                    </div>
-                    
-                    <table>
-                        <thead>
-                            <tr>
-                                <th style="width: 10%;">নং</th>
-                                <th style="width: 25%;">তারিখ</th>
-                                <th style="width: 18%;">বার</th>
-                                <th>বিষয়</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            ${rows.map(r => `
-                                <tr>
-                                    <td style="font-weight:bold;">${convertToBengaliDigits(r.seq)}</td>
-                                    <td>${formatDateBengali(r.date)}</td>
-                                    <td>${r.day}</td>
-                                    <td class="subject-cell">${r.subject}</td>
-                                </tr>
-                            `).join('')}
-                        </tbody>
-                    </table>
+                    `).join('')}
                     
                     <div class="footer">
                         <div class="sig-box">পরীক্ষা নিয়ন্ত্রক</div>
@@ -636,18 +700,15 @@ async function printRoutine() {
             </div>
 
             <script>
-                // Format date function for Bengali
                 function formatDateBengali(dateStr) {
                     if(!dateStr) return '';
                     const date = new Date(dateStr);
                     const months = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
                     const enDigits = ['0','1','2','3','4','5','6','7','8','9'];
                     const bnDigits = ['০','১','২','৩','৪','৫','৬','৭','৮','৯'];
-                    
                     const d = date.getDate().toString().split('').map(c => bnDigits[enDigits.indexOf(c)] || c).join('');
                     const m = months[date.getMonth()];
                     const y = date.getFullYear().toString().split('').map(c => bnDigits[enDigits.indexOf(c)] || c).join('');
-                    
                     return d + ' ' + m + ', ' + y;
                 }
                 
