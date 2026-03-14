@@ -440,6 +440,35 @@ async function loadExamForEntry() {
         // Recalculate all statuses using current subject config
         recalculateStudentStatuses(currentExamDoc.studentData || [], exam.subject);
 
+        // --- AUTOMATIC SORTING ---
+        // 1. Group Priority Map
+        const groupPriority = {
+            'science': 1, 'বিজ্ঞান': 1,
+            'business': 2, 'ব্যবসায়': 2, 'ব্যবসায়': 2, 'commerce': 2, 'ব্যবসায় শিক্ষা': 2,
+            'humanities': 3, 'মানবিক': 3, 'arts': 3,
+            'general': 4, 'সাধারণ': 4
+        };
+
+        const getGroupScore = (g) => {
+            if (!g) return 99;
+            const norm = g.trim().toLowerCase();
+            for (const [key, score] of Object.entries(groupPriority)) {
+                if (norm.includes(key)) return score;
+            }
+            return 90;
+        };
+
+        // 2. Apply Sort to existing exam data
+        (currentExamDoc.studentData || []).sort((a, b) => {
+            const scoreA = getGroupScore(a.group);
+            const scoreB = getGroupScore(b.group);
+            if (scoreA !== scoreB) return scoreA - scoreB;
+            const rollA = parseInt(a.id) || 0;
+            const rollB = parseInt(b.id) || 0;
+            if (rollA !== rollB) return rollA - rollB;
+            return (a.name || '').localeCompare(b.name || '', 'bn');
+        });
+
         originalStudentData = JSON.parse(JSON.stringify(currentExamDoc.studentData || []));
         hasUnsavedChanges = false;
 
@@ -517,7 +546,42 @@ async function loadExamForEntry() {
             studentCount: studentData.length,
             date: new Date().toLocaleDateString('bn-BD')
         };
-        originalStudentData = JSON.parse(JSON.stringify(studentData));
+
+        // --- AUTOMATIC SORTING ---
+        // 1. Group Priority Map
+        const groupPriority = {
+            'science': 1, 'বিজ্ঞান': 1,
+            'business': 2, 'ব্যবসায়': 2, 'ব্যবসায়': 2, 'commerce': 2, 'ব্যবসায় শিক্ষা': 2,
+            'humanities': 3, 'মানবিক': 3, 'arts': 3,
+            'general': 4, 'সাধারণ': 4
+        };
+
+        const getGroupScore = (g) => {
+            if (!g) return 99;
+            const norm = g.trim().toLowerCase();
+            for (const [key, score] of Object.entries(groupPriority)) {
+                if (norm.includes(key)) return score;
+            }
+            return 90;
+        };
+
+        // 2. Apply Sort
+        currentExamDoc.studentData.sort((a, b) => {
+            // Sort by Group first
+            const scoreA = getGroupScore(a.group);
+            const scoreB = getGroupScore(b.group);
+            if (scoreA !== scoreB) return scoreA - scoreB;
+
+            // Then sort by Roll (numeric safe)
+            const rollA = parseInt(a.id) || 0;
+            const rollB = parseInt(b.id) || 0;
+            if (rollA !== rollB) return rollA - rollB;
+
+            // Final fallback: name
+            return (a.name || '').localeCompare(b.name || '', 'bn');
+        });
+
+        originalStudentData = JSON.parse(JSON.stringify(currentExamDoc.studentData));
         hasUnsavedChanges = false;
 
         showExamInfo(currentExamDoc, studentData.length, true);
