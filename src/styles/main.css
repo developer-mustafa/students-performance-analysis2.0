@@ -11823,6 +11823,8 @@ input:checked + .toggle-slider:before {
   overflow: hidden;
   width: 100%;
   background: transparent; /* Ensure watermark is visible */
+  position: relative; /* Base for watermark positioning */
+  z-index: 1;
 }
 
 .ac-section-title {
@@ -11854,7 +11856,7 @@ input:checked + .toggle-slider:before {
 }
 
 .ac-routine-table th {
-  background-color: #f1f5f9;
+  background-color: rgba(241, 245, 249, 0.6); /* Semi-transparent to show watermark */
   font-weight: 700;
   color: #1e293b;
   font-size: 9px;
@@ -11863,7 +11865,32 @@ input:checked + .toggle-slider:before {
 }
 
 .ac-routine-table tr:nth-child(even) {
-  background-color: #fdfdfd;
+  background-color: transparent; /* Changed from #fdfdfd for watermark visibility */
+}
+
+/* Watermark Repositioning when Routine is present */
+.ac-card.ac-with-routine.ac-has-watermark .ac-card-inner::before {
+  display: none !important; /* Hide the default inner watermark when routine is present */
+}
+
+/* Specific Watermark for Routine Box to ensure perfect centering */
+.ac-card.ac-with-routine.ac-has-watermark .ac-routine-box::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 70mm;
+  height: 70mm;
+  background-image: var(--ac-watermark-url);
+  background-size: contain;
+  background-repeat: no-repeat;
+  background-position: center;
+  opacity: 0.12;
+  pointer-events: none;
+  z-index: -1; /* Behind table content but inside routine-box */
+  -webkit-print-color-adjust: exact;
+  print-color-adjust: exact;
 }
 
 /* Widths handled by inline styles in JS */

@@ -938,8 +938,11 @@ function renderAdmitCard(student, subjects, examName, config) {
     const logoHtml = config.logoUrl ? `<img src="${config.logoUrl}" class="ac-logo" alt="Logo">` : '';
     const addressHtml = config.institutionAddress ? `<div class="ac-address">${config.institutionAddress}</div>` : '';
 
+    // Determine if routine is present for specific styling
+    const hasRoutine = config.showRoutine !== false && routineRows && routineRows.length > 0;
+
     return `
-        <div class="ac-card ${groupClass} ${config.watermarkUrl ? 'ac-has-watermark' : ''}">
+        <div class="ac-card ${groupClass} ${config.watermarkUrl ? 'ac-has-watermark' : ''} ${hasRoutine ? 'ac-with-routine' : ''}">
             <div class="ac-card-inner">
                 <div class="ac-header">
                     <div class="ac-logo-container">${logoHtml}</div>
