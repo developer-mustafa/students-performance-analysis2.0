@@ -299,26 +299,33 @@ async function getREGroupSubjects(cls, group) {
             const matchGroup = (mapping) => {
                 const keys = Object.keys(mapping);
                 const gValue = group.trim().toLowerCase();
+                
+                // 1. Exact match (case-insensitive)
+                let foundKey = keys.find(k => k.trim().toLowerCase() === gValue);
+                if (foundKey) return mapping[foundKey];
+
+                // 2. Partial/Sub-string match
+                foundKey = keys.find(k => gValue.includes(k.toLowerCase()) || k.toLowerCase().includes(gValue));
+                if (foundKey) return mapping[foundKey];
+
+                // 3. Translation/Variation match
                 const GROUP_TRANSLATIONS = {
                     'science': ['বিজ্ঞান', 'science', 'sci', 'sc.'],
                     'humanities': ['মানবিক', 'humanities', 'arts', 'hum', 'arts group'],
-                    'business': ['ব্যবসায়', 'ব্যবসায়', 'ব্যবসায় শিক্ষা', 'ব্যবসায় শিক্ষা', 'business', 'commerce', 'com', 'bus'],
+                    'business': ['ব্যবসায়', 'ব্যবসায়', 'ব্যবসা', 'ব্যবসায় শিক্ষা', 'ব্যবসায় শিক্ষা', 'business', 'commerce', 'com', 'bus'],
                     'arts': ['মানবিক', 'arts', 'humanities']
                 };
-                let foundKey = keys.find(k => k.trim().toLowerCase() === gValue) ||
-                               keys.find(k => gValue.includes(k.toLowerCase()) || k.toLowerCase().includes(gValue));
-                if (!foundKey) {
-                    for (const [eng, bns] of Object.entries(GROUP_TRANSLATIONS)) {
-                        if (bns.some(b => gValue.includes(b)) || gValue.includes(eng)) {
-                            foundKey = keys.find(k => {
-                                const kLow = k.toLowerCase();
-                                return kLow.includes(eng) || bns.some(b => kLow.includes(b));
-                            });
-                            if (foundKey) break;
-                        }
+
+                for (const [eng, bns] of Object.entries(GROUP_TRANSLATIONS)) {
+                    if (bns.some(b => gValue.includes(b)) || gValue.includes(eng)) {
+                        foundKey = keys.find(k => {
+                            const kLow = k.toLowerCase();
+                            return kLow.includes(eng) || bns.some(b => kLow.includes(b));
+                        });
+                        if (foundKey) return mapping[foundKey];
                     }
                 }
-                return foundKey ? mapping[foundKey] : [];
+                return [];
             };
             subjectGroups.groupBased = matchGroup(groupSubsMapping);
             subjectGroups.optional = matchGroup(optionalSubsMapping);
