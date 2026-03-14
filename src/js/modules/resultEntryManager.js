@@ -212,15 +212,6 @@ export async function populateREDropdowns() {
             subOptions += renderSubGroup('গ্রুপ ভিত্তিক বিষয় (Group Subjects)', subjectGroups.groupBased);
             subOptions += renderSubGroup('ঐচ্ছিক বিষয় (Optional Subjects)', subjectGroups.optional);
 
-            // Fallback for subjects not in rules
-            const groupedSubjectNames = new Set([...subjectGroups.general, ...subjectGroups.groupBased, ...subjectGroups.optional]);
-            const otherSubjects = [...new Set([
-                ...assignedExams.filter(e => e.class === selClass && e.session === selSession).map(e => e.subject),
-                ...(state.userRole === 'teacher' ? teacherAssignments.filter(a => a.assignedClass === selClass && a.assignedSession === selSession).flatMap(a => a.assignedSubjects || []) : [])
-            ])].filter(s => s && !groupedSubjectNames.has(s)).sort();
-
-            subOptions += renderSubGroup('অন্যান্য (Others)', otherSubjects);
-
             subjectSelect.innerHTML = subOptions;
         }
 
