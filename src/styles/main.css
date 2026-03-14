@@ -12492,7 +12492,7 @@ input:checked + .toggle-slider:before {
     gap: 10px;
     align-items: center;
     flex-wrap: wrap;
-    background: #f8fafc;
+    background: var(--container-bg);
     padding: 12px;
     border-radius: 8px;
     border: 1px solid var(--border-color, #e2e8f0);
