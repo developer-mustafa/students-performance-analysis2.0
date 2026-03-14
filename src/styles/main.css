@@ -12665,4 +12665,46 @@ input:checked + .toggle-slider:before {
 
 /* Teacher Specific UI Restrictions */
 body.is-teacher #reGroupContainer {
+    display: none !important;
+}
+
+/* Result Entry Group Highlighting */
+.re-row-science { background-color: #fff1f2 !important; }
+.re-row-business { background-color: #eff6ff !important; }
+.re-row-humanities { background-color: #f0fdf4 !important; }
+
+/* Highlight Roll and Group text */
+.re-row-science td:first-child strong { color: #e11d48 !important; }
+.re-row-business td:first-child strong { color: #2563eb !important; }
+.re-row-humanities td:first-child strong { color: #16a34a !important; }
+
+/* Result Entry Group Highlighting (Text Only) */
+.re-row-science td:first-child strong,
+.re-row-science td:nth-child(3) { 
+    color: #ef4444 !important; /* Bold Red (Tailwind Red 500) */
+    font-weight: 800 !important; 
+}
+.re-row-business td:first-child strong,
+.re-row-business td:nth-child(3) { 
+    color: #3b82f6 !important; /* Bold Blue (Tailwind Blue 500) */
+    font-weight: 800 !important; 
+}
+.re-row-humanities td:first-child strong,
+.re-row-humanities td:nth-child(3) { 
+    color: #22c55e !important; /* Bold Green (Tailwind Green 500) */
+    font-weight: 800 !important; 
+}
+
+/* Dark mode adjustments - even more vibrant */
+body.dark-mode .re-row-science td:first-child strong,
+body.dark-mode .re-row-science td:nth-child(3) { color: #f87171 !important; }
+body.dark-mode .re-row-business td:first-child strong,
+body.dark-mode .re-row-business td:nth-child(3) { color: #60a5fa !important; }
+body.dark-mode .re-row-humanities td:first-child strong,
+body.dark-mode .re-row-humanities td:nth-child(3) { color: #4ade80 !important; }
+
+/* Enforce NO background is applied to these rows */
+.re-row-science, .re-row-business, .re-row-humanities,
+.re-row-science:hover, .re-row-business:hover, .re-row-humanities:hover { 
+    background-color: transparent !important; 
 }

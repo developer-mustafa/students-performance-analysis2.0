@@ -606,8 +606,8 @@ function sortStudentsByGroupAndRoll(studentData) {
         const scoreB = getGroupScore(b.group);
         if (scoreA !== scoreB) return scoreA - scoreB;
         
-        const rollA = parseInt(a.id) || 0;
-        const rollB = parseInt(b.id) || 0;
+        const rollA = parseInt(convertToEnglishDigits(String(a.id))) || 0;
+        const rollB = parseInt(convertToEnglishDigits(String(b.id))) || 0;
         if (rollA !== rollB) return rollA - rollB;
         
         return (a.name || '').localeCompare(b.name || '', 'bn');
@@ -665,11 +665,9 @@ function renderRETable(students, config) {
     const tbody = document.getElementById('reTableBody');
     if (!tbody) return;
 
-    const sorted = [...students].sort((a, b) => {
-        const idA = parseInt(convertToEnglishDigits(String(a.id))) || 0;
-        const idB = parseInt(convertToEnglishDigits(String(b.id))) || 0;
-        return idA - idB;
-    });
+    // Apply strict sorting before rendering
+    const sorted = [...students];
+    sortStudentsByGroupAndRoll(sorted);
 
     tbody.innerHTML = sorted.map((s, i) => {
         const written = s.written != null ? s.written : '';
@@ -685,11 +683,18 @@ function renderRETable(students, config) {
         const mcqMax = cfgNum(config.mcq);
         const practicalMax = cfgNum(config.practical);
 
+        // Group Highlighting Class
+        let groupClass = '';
+        const normGroup = (s.group || '').toLowerCase();
+        if (normGroup.includes('বিজ্ঞান') || normGroup.includes('science')) groupClass = 're-row-science';
+        else if (normGroup.includes('ব্যবসায়') || normGroup.includes('ব্যবসায়') || normGroup.includes('business') || normGroup.includes('commerce')) groupClass = 're-row-business';
+        else if (normGroup.includes('মানবিক') || normGroup.includes('humanities') || normGroup.includes('arts')) groupClass = 're-row-humanities';
+
         // Generate a unique key: roll + class + name + group + session
         const uniqueKey = `${s.id}_${(s.class || '').replace(/\s+/g, '_')}_${(s.name || '').replace(/\s+/g, '_')}_${(s.group || '').replace(/\s+/g, '_')}_${(s.session || '').replace(/\s+/g, '_')}`;
 
         return `
-            <tr data-student-key="${uniqueKey}" class="${isFail ? 'row-fail' : ''} ${isAbsent ? 'row-absent' : ''}">
+            <tr data-student-key="${uniqueKey}" class="${groupClass} ${isFail ? 'row-fail' : ''} ${isAbsent ? 'row-absent' : ''}">
                 <td><strong>${s.id}</strong></td>
                 <td>${s.name || '-'}</td>
                 <td>${s.group || '-'}</td>
