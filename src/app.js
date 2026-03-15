@@ -927,6 +927,11 @@ function initEventListeners() {
         // Ignore if typing in input
         if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
 
+        // Prevent default browser scroll or dropdown navigation if we handle it
+        if (['ArrowLeft', 'ArrowRight'].includes(e.key)) {
+            e.preventDefault();
+        }
+
         if (e.key === 'ArrowLeft') {
             if (elements.prevRollBtn && !elements.prevRollBtn.disabled) {
                 elements.prevRollBtn.classList.add('active');
@@ -970,7 +975,10 @@ function initEventListeners() {
         }
 
         elements.analysisStudentId.value = nextStudent.id;
-        handleAnalysis(nextStudent);
+        
+        // Preserve "All Subjects" state if currently selected
+        const isAllSubjects = elements.analysisSubjectSelect?.value === 'all';
+        handleAnalysis(nextStudent, { preserveAllSubjects: isAllSubjects });
     }
 
     // Analysis View
@@ -1253,7 +1261,7 @@ function initEventListeners() {
     });
 }
 
-function populateComparisonDropdowns(history, student) {
+function populateComparisonDropdowns(history, student, options = {}) {
     if (!elements.analysisSessionSelect || !elements.analysisSubjectSelect || !elements.analysisExamSelect) return;
 
     // 1. Sessions (Strictly limited to student's current session)
@@ -1300,16 +1308,18 @@ function populateComparisonDropdowns(history, student) {
     populateAnalysisSubjectDropdown();
 
     const targetSubject = student?.subject || state.currentSubject;
-    if (targetSubject) {
-        const options = Array.from(elements.analysisSubjectSelect.options);
-        const hasSubject = options.some(opt => opt.value === targetSubject);
+    if (targetSubject && !options.preserveAllSubjects) {
+        const optionsArr = Array.from(elements.analysisSubjectSelect.options);
+        const hasSubject = optionsArr.some(opt => opt.value === targetSubject);
         if (hasSubject) {
             elements.analysisSubjectSelect.value = targetSubject;
         }
+    } else if (options.preserveAllSubjects) {
+        elements.analysisSubjectSelect.value = 'all';
     }
 
     // Initialize context info text
-    updateAnalysisHeaderContext();
+    updateAnalysisHeaderContext('exam', options);
 }
 
 function populateAnalysisSubjectDropdown() {
@@ -1331,7 +1341,7 @@ function populateAnalysisSubjectDropdown() {
  * Update the dynamic context text in the analysis header (red box area)
  * and synchronize dropdowns if needed.
  */
-function updateAnalysisHeaderContext(triggerSource = 'exam') {
+function updateAnalysisHeaderContext(triggerSource = 'exam', options = {}) {
     if (!elements.analysisContextInfo || !elements.analysisExamSelect || !elements.analysisSubjectSelect) return;
 
     const selectedExamId = elements.analysisExamSelect.value;
@@ -1362,8 +1372,8 @@ function updateAnalysisHeaderContext(triggerSource = 'exam') {
         // Option 2: Specific Exam
         const exam = state.savedExams.find(e => e.docId === selectedExamId);
         if (exam) {
-            // Auto-select subject for this exam (unless already matching)
-            if (triggerSource === 'exam') {
+            // Auto-select subject for this exam (unless already matching or preserving All)
+            if (triggerSource === 'exam' && !options.preserveAllSubjects) {
                 elements.analysisSubjectSelect.value = exam.subject || 'all';
             }
 
@@ -1535,7 +1545,7 @@ function refreshAnalysisChart() {
     }
 }
 
-async function handleAnalysis(student) {
+async function handleAnalysis(student, options = {}) {
     setLoading(true, '#analysisView');
     try {
         // Find full student info from all loaded data if missing context
@@ -1579,7 +1589,7 @@ async function handleAnalysis(student) {
         updateNavRolls(student);
 
         // Populate Session/Subject Dropdowns with student context for auto-selection
-        populateComparisonDropdowns(history, student);
+        populateComparisonDropdowns(history, student, options);
 
         // Sync max marks for the initial view
         syncAnalysisMaxMarks();
