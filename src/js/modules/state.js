@@ -65,6 +65,21 @@ export const state = {
         session: [],
         group: [],
         section: []
+    },
+    accessControl: {
+        tabAccess: {
+            'dashboard': ['super_admin', 'admin'],
+            'students': ['super_admin', 'admin', 'teacher'],
+            'result-entry': ['super_admin', 'admin', 'teacher'],
+            'marksheet': ['super_admin', 'admin', 'teacher'],
+            'access-requests': ['super_admin'],
+            'exam-config': ['super_admin'],
+            'academic-settings': ['super_admin'],
+            'admit-card': ['super_admin', 'admin']
+        },
+        globalEntryDisabled: false,
+        entryDeadline: null,
+        teacherPermissions: {} // uid -> { disabled: boolean }
     }
 };
 

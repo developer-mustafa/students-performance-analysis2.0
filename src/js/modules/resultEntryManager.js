@@ -400,6 +400,13 @@ async function loadExamForEntry() {
         showNotification('সব ফিল্ড পূরণ করুন', 'error');
         return;
     }
+
+    // --- ACCESSS CONTROL ENFORCEMENT ---
+    const permission = checkMarkEntryPermission();
+    if (!permission.allowed) {
+        showAccessDeniedMessage(permission.reason);
+        return;
+    }
     
     // Authorization check for teachers
     if (state.userRole === 'teacher' && !state.isAdmin && !state.isSuperAdmin) {
@@ -902,6 +909,13 @@ function onMarkChanged(input) {
 async function saveMarks() {
     if (!currentExamDoc) return;
 
+    // --- ACCESSS CONTROL ENFORCEMENT ---
+    const permission = checkMarkEntryPermission();
+    if (!permission.allowed) {
+        showNotification(permission.reason, 'error');
+        return;
+    }
+
     // Authorization check for teachers
     if (state.userRole === 'teacher' && !state.isAdmin && !state.isSuperAdmin) {
         const uid = state.currentUser?.uid;
@@ -1066,4 +1080,69 @@ export async function initResultEntryManager() {
     }
 
     await populateREDropdowns();
+}
+
+/**
+ * Check if the current user has permission to enter/update marks
+ * @returns {Object} { allowed: boolean, reason: string }
+ */
+function checkMarkEntryPermission() {
+    // Super admins always allowed
+    if (state.userRole === 'super_admin') return { allowed: true };
+
+    const ac = state.accessControl;
+    if (!ac) return { allowed: true }; // Fallback if not loaded yet
+
+    // 1. Global Disable
+    if (ac.globalEntryDisabled) {
+        return { 
+            allowed: false, 
+            reason: 'নিরাপত্তা বা তথ্য হালনাগাদ করার জন্য বর্তমানে সকল শিক্ষকের জন্য ফলাফল এন্ট্রি সাময়িকভাবে বন্ধ রাখা হয়েছে।' 
+        };
+    }
+
+    // 2. Deadline Check (Only if enabled)
+    if (ac.deadlineEnabled && ac.entryDeadline) {
+        const deadline = new Date(ac.entryDeadline);
+        if (new Date() > deadline) {
+            return { 
+                allowed: false, 
+                reason: `ফলাফল এন্ট্রির সময়সীমা ${deadline.toLocaleString('bn-BD')} এ শেষ হয়ে গেছে। এখন আর কোনো তথ্য পরিবর্তন বা নতুন এন্ট্রি করা সম্ভব নয়।` 
+            };
+        }
+    }
+
+    // 3. Individual Teacher Permission
+    if (state.userRole === 'teacher' && state.currentUser) {
+        const teacherPerm = ac.teacherPermissions[state.currentUser.uid];
+        if (teacherPerm && teacherPerm.disabled) {
+            return { 
+                allowed: false, 
+                reason: 'আপনার জন্য এই ফিচারে এক্সেস বর্তমানে নিস্ক্রিয় করা হয়েছে। অনুগ্রহ করে অ্যাডমিনের সাথে যোগাযোগ করুন।' 
+            };
+        }
+    }
+
+    return { allowed: true };
+}
+
+/**
+ * Show a professional message when access is denied
+ */
+function showAccessDeniedMessage(message) {
+    const tableWrapper = document.getElementById('resultEntryTableWrapper');
+    const emptyState = document.getElementById('reEmptyState');
+    
+    if (tableWrapper) tableWrapper.style.display = 'none';
+    
+    if (emptyState) {
+        emptyState.style.display = 'flex';
+        emptyState.innerHTML = `
+            <div style="text-align: center; max-width: 500px; padding: 40px; background: #fff5f5; border: 1px solid #feb2b2; border-radius: 12px; color: #c53030;">
+                <i class="fas fa-user-shield" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.8;"></i>
+                <h3 style="margin-bottom: 10px; font-weight: 700;">প্রবেশাধিকার সংরক্ষিত</h3>
+                <p style="font-size: 1rem; line-height: 1.6; color: #742a2a;">${message}</p>
+            </div>
+        `;
+    }
 }

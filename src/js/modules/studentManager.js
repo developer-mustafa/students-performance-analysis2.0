@@ -4,10 +4,13 @@
  * @module studentManager
  */
 
-import { getSavedExams, generateStudentDocId, deleteStudent, deleteFilteredStudents } from '../firestoreService.js';
+import { getSavedExams, generateStudentDocId, deleteStudent, deleteFilteredStudents, getSettings } from '../firestoreService.js';
 import { state } from './state.js';
 import { showNotification, convertToEnglishDigits, normalizeText } from '../utils.js';
 import { showConfirmModal } from './uiManager.js';
+import { loadMarksheetSettings, getMarksheetSettings } from './marksheetManager.js';
+import { printStudentManagementList } from '../uiComponents.js';
+import { GROUP_NAMES } from '../constants.js';
 
 let allStudentsFromExams = [];
 let filteredStudents = [];
@@ -35,6 +38,8 @@ async function collectStudents() {
             group: s.group || '',
             class: s.class || '',
             session: s.session || '',
+            fatherName: s.fatherName || '',
+            mobile: s.mobile || '',
             _examDocIds: []
         });
     });
@@ -165,7 +170,7 @@ function renderStudentTable() {
     }
 
     if (pageStudents.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="7" style="text-align:center; padding: 20px;">কোনো শিক্ষার্থী পাওয়া যায়নি</td></tr>';
+        tbody.innerHTML = '<tr><td colspan="9" style="text-align:center; padding: 20px;">কোনো শিক্ষার্থী পাওয়া যায়নি</td></tr>';
         if (paginationEl) paginationEl.innerHTML = '';
         return;
     }
@@ -178,6 +183,17 @@ function renderStudentTable() {
             <td><span class="badge">${s.group || '-'}</span></td>
             <td>${s.class || '-'}</td>
             <td>${s.session || '-'}</td>
+            <td>${s.fatherName || '-'}</td>
+            <td>
+                <div style="display: flex; align-items: center; justify-content: center; gap: 8px;">
+                    <span style="font-weight: 700; color: var(--primary);">${s.mobile || '-'}</span>
+                    ${s.mobile ? `
+                        <a href="tel:${s.mobile}" class="call-btn-new" title="কল করুন">
+                            <i class="fas fa-phone-alt"></i> কল করুন
+                        </a>
+                    ` : ''}
+                </div>
+            </td>
             <td class="admin-only">
                 <div class="action-btn-group">
                     <button class="action-btn edit-student-btn" data-index="${start + i}" title="এডিট">
@@ -273,6 +289,12 @@ export function openAddStudentModal() {
     if (title) title.innerHTML = '<i class="fas fa-user-plus"></i> নতুন শিক্ষার্থী যোগ করুন';
     if (form) form.reset();
     document.getElementById('editStudentDocId').value = '';
+    
+    // Reset new fields
+    const fName = document.getElementById('studentFormFatherName');
+    const mobile = document.getElementById('studentFormMobile');
+    if (fName) fName.value = '';
+    if (mobile) mobile.value = '';
 
     modal.classList.add('active');
 }
@@ -298,6 +320,12 @@ function openEditStudentModal(student) {
     document.getElementById('studentFormGroup').value = student.group || '';
     document.getElementById('studentFormSession').value = student.session || '';
     document.getElementById('editStudentDocId').value = student.docId || '';
+
+    // Populate new fields
+    const fName = document.getElementById('studentFormFatherName');
+    const mobile = document.getElementById('studentFormMobile');
+    if (fName) fName.value = student.fatherName || '';
+    if (mobile) mobile.value = student.mobile || '';
 
     modal.classList.add('active');
 }
@@ -355,6 +383,64 @@ export async function initStudentManager() {
         });
     }
 
+    // Print Button
+    const printBtn = document.getElementById('studentPrintBtn');
+    if (printBtn) {
+        printBtn.addEventListener('click', async () => {
+            if (filteredStudents.length === 0) {
+                showNotification('প্রিন্ট করার জন্য কোনো শিক্ষার্থী নেই', 'warning');
+                return;
+            }
+
+            try {
+                // Fetch latest settings
+                await loadMarksheetSettings();
+                const marksheetSettings = getMarksheetSettings();
+                const appSettings = await getSettings();
+                const settings = {
+                    ...marksheetSettings,
+                    logoUrl: appSettings?.admitCard?.logoUrl || appSettings?.logoUrl || ''
+                };
+
+                // Get current filter values to display in header
+                const filters = {
+                    classFilter: document.getElementById('studentFilterClass')?.value || 'all',
+                    sessionFilter: document.getElementById('studentFilterSession')?.value || 'all',
+                    groupFilter: document.getElementById('studentFilterGroup')?.value || 'all'
+                };
+
+                const groupPriority = {
+                    'বিজ্ঞান গ্রুপ': 1,
+                    'ব্যবসায় গ্রুপ': 2,
+                    'ব্যবসায় গ্রুপ': 2,
+                    'মানবিক গ্রুপ': 3
+                };
+
+                const sortedStudents = [...filteredStudents].sort((a, b) => {
+                    // 1. Sort by Session (Ascending: 2024-2025 before 2025-2026)
+                    const sessA = String(a.session || '');
+                    const sessB = String(b.session || '');
+                    if (sessA !== sessB) return sessA.localeCompare(sessB);
+
+                    // 2. Sort by Group Priority
+                    const groupA = groupPriority[a.group] || 4;
+                    const groupB = groupPriority[b.group] || 4;
+                    if (groupA !== groupB) return groupA - groupB;
+
+                    // 3. Sort by Roll Number
+                    const rollA = parseInt(convertToEnglishDigits(String(a.id))) || 0;
+                    const rollB = parseInt(convertToEnglishDigits(String(b.id))) || 0;
+                    return rollA - rollB;
+                });
+
+                printStudentManagementList(sortedStudents, settings, filters);
+            } catch (error) {
+                console.error('Print Error:', error);
+                showNotification('প্রিন্ট করতে সমস্যা হয়েছে', 'error');
+            }
+        });
+    }
+
     // Close modal
     const closeBtn = document.getElementById('closeAddStudentModal');
     if (closeBtn) {
@@ -374,6 +460,9 @@ export async function initStudentManager() {
             const cls = document.getElementById('studentFormClass').value;
             const group = document.getElementById('studentFormGroup').value;
             const session = document.getElementById('studentFormSession').value; // Now a Select
+            const fatherName = document.getElementById('studentFormFatherName')?.value.trim() || '';
+            const mobileRaw = document.getElementById('studentFormMobile')?.value.trim() || '';
+            const mobile = convertToEnglishDigits(mobileRaw);
             const existingDocId = document.getElementById('editStudentDocId').value;
 
             if (!name || !roll) {
@@ -391,7 +480,9 @@ export async function initStudentManager() {
                     name,
                     class: cls,
                     group,
-                    session
+                    session,
+                    fatherName,
+                    mobile
                 });
             } else {
                 // Add mode
@@ -400,7 +491,9 @@ export async function initStudentManager() {
                     name,
                     class: cls,
                     group,
-                    session
+                    session,
+                    fatherName,
+                    mobile
                 });
                 success = !!newDocId;
             }

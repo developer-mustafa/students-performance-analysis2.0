@@ -3,6 +3,7 @@ import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { showNotification } from '../utils.js';
 import { state } from './state.js';
 import { getClassSubjectMappings } from '../firestoreService.js';
+import { showConfirmModal } from './uiManager.js';
 
 const SETTINGS_COLLECTION = 'settings';
 const RULES_DOC_ID = 'marksheet_rules';
@@ -331,45 +332,89 @@ export async function initMarksheetRulesManager() {
     });
 
     // Delegated Delete Handlers
-    genList.addEventListener('click', async (e) => {
+    genList.addEventListener('click', (e) => {
         const delBtn = e.target.closest('.delete-gen-btn');
         if (delBtn) {
+            const index = delBtn.dataset.index;
             const rules = getClassRules(selectedClass);
-            rules.generalSubjects.splice(delBtn.dataset.index, 1);
-            await saveMarksheetRules({ [selectedClass]: rules });
-            renderGeneralList(genList, rules.generalSubjects);
+            const subjectName = rules.generalSubjects[index];
+            
+            showConfirmModal(
+                `আপনি কি নিশ্চিতভাবে এই বিষয়টি মুছে ফেলতে চান?`,
+                async () => {
+                    rules.generalSubjects.splice(index, 1);
+                    await saveMarksheetRules({ [selectedClass]: rules });
+                    renderGeneralList(genList, rules.generalSubjects);
+                    showNotification('বিষয়টি মুছে ফেলা হয়েছে', 'success');
+                },
+                subjectName,
+                'সাধারণ বিষয় (General Subject)'
+            );
         }
     });
 
-    groupSubList.addEventListener('click', async (e) => {
+    groupSubList.addEventListener('click', (e) => {
         const delBtn = e.target.closest('.delete-group-sub-btn');
         if (delBtn) {
-            const rules = getClassRules(selectedClass);
+            const index = delBtn.dataset.index;
             const group = delBtn.dataset.group;
-            rules.groupSubjects[group].splice(delBtn.dataset.index, 1);
-            await saveMarksheetRules({ [selectedClass]: rules });
-            renderGroupSubList(groupSubList, rules.groupSubjects);
+            const rules = getClassRules(selectedClass);
+            const subjectName = rules.groupSubjects[group][index];
+
+            showConfirmModal(
+                `আপনি কি নিশ্চিতভাবে এই বিষয়টিকে গ্রুপ থেকে মুছে ফেলতে চান?`,
+                async () => {
+                    rules.groupSubjects[group].splice(index, 1);
+                    await saveMarksheetRules({ [selectedClass]: rules });
+                    renderGroupSubList(groupSubList, rules.groupSubjects);
+                    showNotification('গ্রুপ বিষয় মুছে ফেলা হয়েছে', 'success');
+                },
+                subjectName,
+                `${group} গ্রুপ ভিত্তিক বিষয়`
+            );
         }
     });
 
-    optList.addEventListener('click', async (e) => {
+    optList.addEventListener('click', (e) => {
         const delBtn = e.target.closest('.delete-opt-btn');
         if (delBtn) {
-            const rules = getClassRules(selectedClass);
+            const index = delBtn.dataset.index;
             const group = delBtn.dataset.group;
-            rules.optionalSubjects[group].splice(delBtn.dataset.index, 1);
-            await saveMarksheetRules({ [selectedClass]: rules });
-            renderOptionalList(optList, rules.optionalSubjects);
+            const rules = getClassRules(selectedClass);
+            const subjectName = rules.optionalSubjects[group][index];
+
+            showConfirmModal(
+                `আপনি কি নিশ্চিতভাবে এই ঐচ্ছিক বিষয়টি মুছে ফেলতে চান?`,
+                async () => {
+                    rules.optionalSubjects[group].splice(index, 1);
+                    await saveMarksheetRules({ [selectedClass]: rules });
+                    renderOptionalList(optList, rules.optionalSubjects);
+                    showNotification('ঐচ্ছিক বিষয় মুছে ফেলা হয়েছে', 'success');
+                },
+                subjectName,
+                `${group} এর ঐচ্ছিক বিষয়`
+            );
         }
     });
 
-    combList.addEventListener('click', async (e) => {
+    combList.addEventListener('click', (e) => {
         const delBtn = e.target.closest('.delete-comb-btn');
         if (delBtn) {
+            const index = delBtn.dataset.index;
             const rules = getClassRules(selectedClass);
-            rules.combinedSubjects.splice(delBtn.dataset.index, 1);
-            await saveMarksheetRules({ [selectedClass]: rules });
-            renderCombinedList(combList, rules.combinedSubjects);
+            const mapping = rules.combinedSubjects[index];
+
+            showConfirmModal(
+                `আপনি কি নিশ্চিতভাবে এই সাবজেক্ট ম্যাপিংটি মুছে ফেলতে চান?`,
+                async () => {
+                    rules.combinedSubjects.splice(index, 1);
+                    await saveMarksheetRules({ [selectedClass]: rules });
+                    renderCombinedList(combList, rules.combinedSubjects);
+                    showNotification('ম্যাপিং মুছে ফেলা হয়েছে', 'success');
+                },
+                mapping.combinedName,
+                `${mapping.paper1} + ${mapping.paper2}`
+            );
         }
     });
 }

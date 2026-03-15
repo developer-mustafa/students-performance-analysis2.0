@@ -29,9 +29,16 @@ let marksheetSettings = {
 };
 
 /**
+ * Get current marksheet settings
+ */
+export function getMarksheetSettings() {
+    return marksheetSettings;
+}
+
+/**
  * Load marksheet settings from Firestore
  */
-async function loadMarksheetSettings() {
+export async function loadMarksheetSettings() {
     try {
         const { doc, getDoc } = await import('firebase/firestore');
         const { db } = await import('../firebase.js');

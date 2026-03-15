@@ -225,6 +225,16 @@ export function initDOMReferences() {
     elements.saveExamModal = document.getElementById('saveExamModal');
     elements.closeModalBtn = document.getElementById('closeModalBtn');
     elements.saveExamForm = document.getElementById('saveExamForm');
+
+    // New Edit Exam Modal References
+    elements.editExamModal = document.getElementById('editExamModal');
+    elements.editExamForm = document.getElementById('editExamForm');
+    elements.editExamDocId = document.getElementById('editExamDocId');
+    elements.editExamClass = document.getElementById('editExamClass');
+    elements.editExamSession = document.getElementById('editExamSession');
+    elements.editExamName = document.getElementById('editExamName');
+    elements.editSubjectName = document.getElementById('editSubjectName');
+    elements.closeEditModalBtn = document.getElementById('closeEditModalBtn');
     elements.jsonPreview = document.getElementById('jsonPreview');
     elements.chartView = document.getElementById('chartView');
     elements.tableView = document.getElementById('tableView');

@@ -28,7 +28,7 @@ import {
 } from 'firebase/firestore';
 
 // Collection names
-const COLLECTIONS = {
+export const COLLECTIONS = {
     students: 'students',
     exams: 'exams',
     analytics: 'analytics',
@@ -38,7 +38,8 @@ const COLLECTIONS = {
     access_requests: 'access_requests',
     teacher_assignments: 'teacher_assignments',
     examConfigs: 'examConfigs',
-    academicStructure: 'academicStructure'
+    academicStructure: 'academicStructure',
+    accessControl: 'accessControl'
 };
 
 // Memory cache for expensive read operations
@@ -1494,4 +1495,61 @@ export async function deleteAcademicItem(docId) {
         console.error('একাডেমিক আইটেম মুছতে সমস্যা:', error);
         return false;
     }
+}
+
+// ==========================================
+// ACCESS CONTROL OPERATIONS
+// ==========================================
+
+/**
+ * Get access control settings
+ * @returns {Promise<Object>}
+ */
+export async function getAccessControlSettings() {
+    try {
+        const docRef = doc(db, COLLECTIONS.settings, 'access_control');
+        const docSnap = await getDoc(docRef);
+        if (docSnap.exists()) {
+            return docSnap.data();
+        }
+        return null;
+    } catch (error) {
+        console.error('এক্সেস কন্ট্রোল সেটিংস লোড করতে সমস্যা:', error);
+        return null;
+    }
+}
+
+/**
+ * Update access control settings
+ * @param {Object} settings 
+ * @returns {Promise<boolean>}
+ */
+export async function updateAccessControlSettings(settings) {
+    try {
+        const docRef = doc(db, COLLECTIONS.settings, 'access_control');
+        await setDoc(docRef, {
+            ...settings,
+            updatedAt: serverTimestamp()
+        }, { merge: true });
+        return true;
+    } catch (error) {
+        console.error('এক্সেস কন্ট্রোল সেটিংস আপডেট করতে সমস্যা:', error);
+        return false;
+    }
+}
+
+/**
+ * Subscribe to access control settings
+ * @param {Function} callback 
+ * @returns {Function} unsubscribe
+ */
+export function subscribeToAccessControl(callback) {
+    const docRef = doc(db, COLLECTIONS.settings, 'access_control');
+    return onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+            callback(docSnap.data());
+        } else {
+            callback(null);
+        }
+    });
 }

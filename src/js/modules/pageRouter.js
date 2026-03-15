@@ -17,7 +17,8 @@ const NEW_PAGE_IDS = {
     'access-requests': 'accessRequestsPage',
     'exam-config': 'examConfigPage',
     'academic-settings': 'academicSettingsPage',
-    'admit-card': 'admitCardPage'
+    'admit-card': 'admitCardPage',
+    'access-control': 'accessControlPage'
 };
 
 // IDs/selectors of all dashboard-only sections to hide on other pages
@@ -91,6 +92,11 @@ export function navigateTo(pageId) {
     } else if (pageId === 'access-requests') {
         initAccessRequestUI();
         loadAccessRequests();
+    } else if (pageId === 'access-control') {
+        // AccessControlManager is initialized in app.js
+        if (window.AccessControlManager) {
+            window.AccessControlManager.renderUI();
+        }
     }
 
     // Callback for lazy-loading page content
@@ -126,10 +132,10 @@ export function initPageRouter(callback) {
     // Listen for hash changes (back/forward navigation, direct URL entry)
     window.addEventListener('hashchange', () => {
         const hash = window.location.hash.replace('#', '') || 'dashboard';
-        const validPages = ['dashboard', 'teacher-assignment', 'students', 'result-entry', 'marksheet', 'access-requests', 'exam-config', 'academic-settings', 'admit-card'];
+        const validPages = ['dashboard', 'teacher-assignment', 'students', 'result-entry', 'marksheet', 'access-requests', 'exam-config', 'academic-settings', 'admit-card', 'access-control'];
         if (validPages.includes(hash)) {
             // Role protection for direct hash entry
-            if ((hash === 'exam-config' || hash === 'academic-settings') && state.userRole !== 'super_admin') {
+            if ((hash === 'exam-config' || hash === 'academic-settings' || hash === 'access-control') && state.userRole !== 'super_admin') {
                 navigateTo('dashboard');
             } else {
                 navigateTo(hash);
@@ -142,7 +148,7 @@ export function initPageRouter(callback) {
 
     // Handle initial hash
     const currentHash = window.location.hash.replace('#', '') || 'dashboard';
-    const initialPages = ['dashboard', 'teacher-assignment', 'students', 'result-entry', 'marksheet', 'access-requests', 'exam-config', 'academic-settings', 'admit-card'];
+    const initialPages = ['dashboard', 'teacher-assignment', 'students', 'result-entry', 'marksheet', 'access-requests', 'exam-config', 'academic-settings', 'admit-card', 'access-control'];
     if (initialPages.includes(currentHash) && currentHash !== 'dashboard') {
         navigateTo(currentHash);
     }
@@ -162,24 +168,22 @@ export function updateNavVisibility() {
     // Role-based individual tab visibility
     document.querySelectorAll('.page-nav-btn').forEach(btn => {
         const page = btn.dataset.page;
-        if (!page) return; // Skip buttons without data-page (like teacher assignment)
+        if (!page) return;
 
-        let visible = true;
+        // Dynamic check against access control settings
+        const allowedRoles = state.accessControl.tabAccess[page] || [];
+        let visible = allowedRoles.includes(role);
 
-        if (role === 'admin') {
-            // Admins cannot see Dashboard or Student Management
-            if (page === 'dashboard' || page === 'students') visible = false;
-        } else if (role === 'teacher') {
-            // Teachers can see everything except Student Management (if needed)
-            if (page === 'students') visible = false;
+        // Special override for Super Admin: always see certain tabs regardless of settings
+        if (role === 'super_admin') {
+            const superAdminTabs = ['dashboard', 'access-requests', 'exam-config', 'academic-settings', 'access-control'];
+            if (superAdminTabs.includes(page)) visible = true;
         }
 
         // Apply visibility
         if (visible) {
-            // For super-admin-only elements, we must respect the CSS !important rules
-            // Removing inline display: none allows the CSS body.is-super-admin rule to take over
             if (btn.classList.contains('super-admin-only')) {
-                btn.style.display = '';
+                btn.style.display = (role === 'super_admin') ? '' : 'none';
             } else {
                 btn.style.display = 'inline-flex';
             }
@@ -188,13 +192,20 @@ export function updateNavVisibility() {
         }
     });
 
-    // Handle initial navigation if on a restricted page
+    // Handle initial navigation if on a restricted page or role-based redirection
     const currentHash = window.location.hash.replace('#', '') || 'dashboard';
-    if (role === 'admin' && (currentHash === 'dashboard' || currentHash === 'students')) {
+    
+    if (role === 'teacher' && (currentHash === 'dashboard' || currentHash === 'students')) {
         navigateTo('result-entry');
+    } else if (role === 'admin' && currentHash === 'dashboard') {
+        // Ensure dashboard is visible for admins
+        navigateTo('dashboard');
     } else if (role !== 'super_admin' && (currentHash === 'exam-config' || currentHash === 'academic-settings')) {
         navigateTo('dashboard');
-    } else if (role === 'teacher' && currentHash === 'students') {
+    }
+    
+    // Explicitly show dashboard for super admins too if they are on it
+    if (role === 'super_admin' && currentHash === 'dashboard') {
         navigateTo('dashboard');
     }
 

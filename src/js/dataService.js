@@ -281,6 +281,8 @@ function detectColumns(headers) {
         subject: -1,
         class: -1,
         session: -1,
+        fatherName: -1,
+        mobile: -1,
     };
 
     headers.forEach((header, index) => {
@@ -323,6 +325,14 @@ function detectColumns(headers) {
         // Session column
         else if (header.includes('session') || header.includes('সেশন') || header.includes('শিক্ষাবর্ষ')) {
             map.session = index;
+        }
+        // Father's Name column
+        else if (header.includes('father') || header.includes('পিতা') || header.includes('অভিভাবক') || header.includes('guardian')) {
+            map.fatherName = index;
+        }
+        // Mobile Number column
+        else if (header.includes('phone') || header.includes('mobile') || header.includes('মোবাইল') || header.includes('ফোন') || header.includes('contact')) {
+            map.mobile = index;
         }
     });
 
@@ -420,6 +430,9 @@ function parseExcelRow(row, columnMap, rowIndex) {
     const sessionRaw = columnMap.session >= 0 ? row[columnMap.session] : '';
     const sessionVal = normalizeSession(String(sessionRaw || ''));
     const subjectVal = columnMap.subject >= 0 ? normalizeText(row[columnMap.subject] || '') : '';
+    const fatherName = columnMap.fatherName >= 0 ? String(row[columnMap.fatherName] || '').trim() : '';
+    const mobileRaw = columnMap.mobile >= 0 ? row[columnMap.mobile] : '';
+    const mobile = convertToEnglishDigits(String(mobileRaw || '').trim());
 
     return {
         id,
@@ -428,6 +441,8 @@ function parseExcelRow(row, columnMap, rowIndex) {
         class: classVal,
         session: sessionVal,
         subject: subjectVal,
+        fatherName,
+        mobile,
         written,
         mcq,
         practical,
@@ -600,10 +615,12 @@ export function downloadDemoTemplate() {
         {
             'Roll': '101',
             'Name': 'রহিম উদ্দিন',
+            'Father Name': 'আব্দুর রহমান',
+            'Mobile': '01712345678',
             'Class': '11',
             'Session': '2024-2025',
-            'Subject': 'ICT',
             'Group': 'Science',
+            'Subject': 'ICT',
             'Written (50)': 40,
             'MCQ(25)': 20,
             'Practical (25)': 22,
@@ -615,10 +632,12 @@ export function downloadDemoTemplate() {
         {
             'Roll': '102',
             'Name': 'করিম হোসেন',
+            'Father Name': 'জয়নাল আবেদীন',
+            'Mobile': '01812345678',
             'Class': '11',
             'Session': '2024-2025',
-            'Subject': 'ICT',
             'Group': 'Humanities',
+            'Subject': 'ICT',
             'Written (50)': 35,
             'MCQ(25)': 18,
             'Practical (25)': 20,
@@ -635,10 +654,12 @@ export function downloadDemoTemplate() {
     const wscols = [
         { wch: 10 }, // Roll
         { wch: 20 }, // Name
+        { wch: 20 }, // Father Name
+        { wch: 15 }, // Mobile
         { wch: 10 }, // Class
         { wch: 15 }, // Session
-        { wch: 10 }, // Subject
         { wch: 15 }, // Group
+        { wch: 10 }, // Subject
         { wch: 15 }, // Written
         { wch: 10 }, // MCQ
         { wch: 15 }, // Practical
@@ -671,10 +692,12 @@ export function exportStudentDataAsExcel(students, filename = 'students_data.xls
         'ক্রমিক নং (SL)': index + 1,
         'রোল (Roll)': student.id,
         'নাম (Name)': student.name,
-        'বিষয় (Subject)': subject || '-',
-        'গ্রুপ (Group)': student.group,
+        'পিতার নাম (Father)': student.fatherName || '-',
+        'মোবাইল (Mobile)': student.mobile || '-',
         'শ্রেণি (Class)': student.class || '-',
         'সেশন (Session)': student.session || '-',
+        'গ্রুপ (Group)': student.group,
+        'বিষয় (Subject)': subject || '-',
         'লিখিত (Written)': student.written,
         'এমসিকিউ (MCQ)': student.mcq,
         'ব্যবহারিক (Practical)': student.practical,
@@ -690,10 +713,12 @@ export function exportStudentDataAsExcel(students, filename = 'students_data.xls
         { wch: 10 }, // SL
         { wch: 10 }, // Roll
         { wch: 25 }, // Name
-        { wch: 20 }, // Subject
-        { wch: 15 }, // Group
+        { wch: 20 }, // Father's Name
+        { wch: 15 }, // Mobile
         { wch: 10 }, // Class
         { wch: 15 }, // Session
+        { wch: 15 }, // Group
+        { wch: 20 }, // Subject
         { wch: 10 }, // Written
         { wch: 10 }, // MCQ
         { wch: 10 }, // Practical

@@ -66,9 +66,13 @@ export async function updateExamDetails(docId, updates) {
             return false;
         }
     } else if (state.userRole === 'teacher') {
-        showNotification('আপনার এই পেইজে এডিট করার অনুমতি নেই', 'error');
-        setLoading(false);
-        return false;
+        const exams = await getSavedExams();
+        const exam = exams.find(e => e.docId === docId);
+        if (exam && exam.createdBy !== state.currentUser?.uid) {
+            showNotification('আপনি শুধুমাত্র আপনার নিজের তৈরি করা রেজাল্ট এডিট করতে পারবেন', 'error');
+            setLoading(false);
+            return false;
+        }
     }
 
     try {
@@ -157,9 +161,9 @@ export async function clearAllData() {
 }
 
 export async function onFileUpload(event, callback) {
-    // Role restriction for upload
-    if (state.userRole === 'teacher') {
-        showNotification('শিক্ষকদের ফাইল আপলোড করার অনুমতি নেই', 'error');
+    // Role restriction for upload - Teachers now allowed
+    if (state.userRole === 'guest') {
+        showNotification('ফাইল আপলোড করার জন্য লগইন করুন', 'error');
         return;
     }
 

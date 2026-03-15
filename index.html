@@ -142,6 +142,9 @@
       <button class="page-nav-btn super-admin-only" data-page="academic-settings" style="display: none;">
         <i class="fas fa-university"></i> <span>একাডেমিক সেটিংস</span>
       </button>
+      <button class="page-nav-btn super-admin-only" data-page="access-control" style="display: none;">
+        <i class="fas fa-user-lock"></i> <span>এক্সেস কন্ট্রোল</span>
+      </button>
 
       <style>
         .nav-badge {
@@ -169,6 +172,33 @@
           0% { transform: scale(1); }
           50% { transform: scale(1.1); }
           100% { transform: scale(1); }
+        }
+
+        .call-btn-new {
+          display: inline-flex;
+          align-items: center;
+          gap: 6px;
+          background: linear-gradient(135deg, #22c55e 0%, #16a34a 100%);
+          color: white !important;
+          padding: 5px 12px;
+          border-radius: 50px;
+          font-size: 0.82rem;
+          font-weight: 700;
+          text-decoration: none !important;
+          transition: all 0.3s ease;
+          box-shadow: 0 2px 4px rgba(34, 197, 94, 0.2);
+          border: none;
+          cursor: pointer;
+        }
+
+        .call-btn-new:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 4px 8px rgba(34, 197, 94, 0.3);
+          background: linear-gradient(135deg, #16a34a 0%, #15803d 100%);
+        }
+
+        .call-btn-new i {
+          font-size: 0.8rem;
         }
       </style>
     </div>
@@ -528,6 +558,9 @@
             <i class="fas fa-search dm-search-icon"></i>
             <input type="text" id="studentSearchInput" placeholder="নাম বা রোল দিয়ে খুঁজুন..." />
           </div>
+          <button id="studentPrintBtn" class="dm-btn" style="background: linear-gradient(90deg, #4361ee 0%, #3f37c9 100%);">
+            <i class="fas fa-print"></i> <span class="dm-btn-text">প্রিন্ট</span>
+          </button>
           <button id="addStudentBtn" class="dm-btn dm-save admin-only">
             <i class="fas fa-plus"></i> <span class="dm-btn-text">শিক্ষার্থী যোগ করুন</span>
           </button>
@@ -549,12 +582,14 @@
                 <th>গ্রুপ</th>
                 <th>শ্রেণি</th>
                 <th>সেশন</th>
+                <th>পিতার নাম</th>
+                <th>মোবাইল</th>
                 <th class="admin-only">অ্যাকশন</th>
               </tr>
             </thead>
             <tbody id="studentTableBody">
               <tr>
-                <td colspan="7" style="text-align:center;">ডেটা লোড হচ্ছে...</td>
+                <td colspan="9" style="text-align:center;">ডেটা লোড হচ্ছে...</td>
               </tr>
             </tbody>
           </table>
@@ -636,25 +671,13 @@
       </div>
     </div>
 
-      </div>
-    </div>
-
     <!-- ========== PAGE: MARKSHEET SETTINGS (RECONFIGURED) ========== -->
     <div id="marksheetSettingsPage" class="app-page" style="display: none;">
       <div class="card">
-        <div class="card-header">
-          <div class="header-main-unified">
-            <h2 class="card-title"><i class="fas fa-cogs"></i> মার্কশীট সেটিংস (Marksheet Configuration)</h2>
-          </div>
+        <div class="card-header ms-merged-header">
+          <h2 class="card-title" style="margin:0;"><i class="fas fa-cogs"></i> মার্কশীট সেটিংস (Configuration)</h2>
         </div>
         <div class="card-body">
-          <!-- Class Selector for Settings -->
-          <div class="ms-settings-section-card" style="margin-bottom: 20px; border: 1px solid var(--border-color); border-radius: 12px; padding: 20px; background: var(--bg-secondary);">
-            <div class="selector-group" style="margin-bottom: 0;">
-              <label style="font-weight: 600; font-size: 1.1rem; color: var(--primary);">কনফিগারেশনের জন্য ক্লাস নির্বাচন করুন</label>
-              <select id="msSetClass" class="form-control" style="max-width: 400px;"></select>
-            </div>
-          </div>
 
           <div class="ms-settings-grid" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
             
@@ -664,6 +687,10 @@
                 <h4 style="margin:0; font-size: 1rem;"><i class="fas fa-calculator"></i> মার্কশীট ক্যালকুলেশন মোড</h4>
               </div>
               <div class="card-body">
+                <div class="form-group" style="margin-bottom: 15px;">
+                  <label><i class="fas fa-filter"></i> ক্লাস নির্বাচন</label>
+                  <select id="msSetClass" class="form-control"></select>
+                </div>
                 <div class="form-group" style="margin-bottom: 15px;">
                   <label>রিপোর্ট কার্ড মোড</label>
                   <select id="msSetMode" class="form-control">
@@ -770,48 +797,19 @@
             </div>
           </div>
         </div>
-        <!-- Marksheet Selectors -->
         <div class="result-entry-selectors">
-          <div class="selector-group">
-            <label>শ্রেণি</label>
-            <select id="msClass" class="form-control" data-dynamic="class"></select>
-          </div>
-          <div class="selector-group">
-            <label>সেশন</label>
-            <select id="msSession" class="form-control" data-dynamic="session"></select>
-          </div>
-          <div class="selector-group">
-            <label>পরীক্ষা</label>
-            <select id="msExamName" class="form-control"></select>
-          </div>
-          <div class="selector-group">
-            <label>গ্রুপ/বিভাগ</label>
-            <select id="msGroup" class="form-control">
-              <option value="all">সকল গ্রুপ</option>
-            </select>
-          </div>
-          <div class="selector-group">
-            <label>শিক্ষার্থী</label>
-            <select id="msStudent" class="form-control">
-              <option value="all">সকল শিক্ষার্থী</option>
-            </select>
-          </div>
-          <button id="msGenerateBtn" class="dm-btn dm-save">
-            <i class="fas fa-file-alt"></i> <span class="dm-btn-text">মার্কশীট তৈরি করুন</span>
-          </button>
-          <button id="msResetBtn" class="dm-btn dm-report">
-            <i class="fas fa-sync-alt"></i> <span class="dm-btn-text">রিসেট</span>
-          </button>
-          <button id="msPrintAllBtn" class="dm-btn dm-report" style="display:none;">
-            <i class="fas fa-print"></i> <span class="dm-btn-text">বাল্ক প্রিন্ট</span>
-          </button>
+          <div class="selector-group"><label>শ্রেণি</label><select id="msClass" class="form-control" data-dynamic="class"></select></div>
+          <div class="selector-group"><label>সেশন</label><select id="msSession" class="form-control" data-dynamic="session"></select></div>
+          <div class="selector-group"><label>পরীক্ষা</label><select id="msExamName" class="form-control"></select></div>
+          <div class="selector-group"><label>গ্রুপ/বিভাগ</label><select id="msGroup" class="form-control"><option value="all">সকল গ্রুপ</option></select></div>
+          <div class="selector-group"><label>শিক্ষার্থী</label><select id="msStudent" class="form-control"><option value="all">সকল শিক্ষার্থী</option></select></div>
+          <button id="msGenerateBtn" class="dm-btn dm-save"><i class="fas fa-file-alt"></i> <span class="dm-btn-text">মার্কশীট তৈরি করুন</span></button>
+          <button id="msResetBtn" class="dm-btn dm-report"><i class="fas fa-sync-alt"></i> <span class="dm-btn-text">রিসেট</span></button>
+          <button id="msPrintAllBtn" class="dm-btn dm-report" style="display:none;"><i class="fas fa-print"></i> <span class="dm-btn-text">বাল্ক প্রিন্ট</span></button>
         </div>
-        <!-- Marksheet Preview Area -->
         <div class="marksheet-preview-wrapper">
           <div class="preview-header marksheet-main-preview-header" style="display: none;" id="msMainPreviewHeader">
-            <div class="preview-header-left">
-              <h4><i class="fas fa-search-plus"></i> ভিউ কাস্টমাইজেশন</h4>
-            </div>
+            <div class="preview-header-left"><h4><i class="fas fa-search-plus"></i> ভিউ কাস্টমাইজেশন</h4></div>
             <div class="preview-header-actions">
               <div class="zoom-control">
                 <i class="fas fa-search-minus"></i>
@@ -819,9 +817,7 @@
                 <i class="fas fa-search-plus"></i>
                 <span id="msMainZoomLevel">100%</span>
               </div>
-              <button type="button" id="msMainRefreshBtn" class="dm-btn dm-report btn-icon-sm" title="রিফ্রেশ">
-                <i class="fas fa-sync-alt"></i>
-              </button>
+              <button type="button" id="msMainRefreshBtn" class="dm-btn dm-report btn-icon-sm" title="রিফ্রেশ"><i class="fas fa-sync-alt"></i></button>
             </div>
           </div>
           <div id="marksheetPreview" class="marksheet-preview-area">
@@ -832,6 +828,328 @@
           </div>
         </div>
       </div>
+    </div>
+
+    <!-- ========== PAGE: ACCESS CONTROL PANEL ========== -->
+    <div id="accessControlPage" class="app-page super-admin-only" style="display: none;">
+
+      <!-- 3-Grid Layout -->
+      <div class="ac-grid-3">
+
+        <!-- Card 1: Merged Control -->
+        <div class="card ac-card-flex">
+          <div class="card-header" style="flex-wrap:nowrap; margin-bottom:12px; padding-bottom:8px;">
+            <h2 class="card-title"><i class="fas fa-sliders-h"></i>মার্কস এন্ট্রি ও ডেডলাইন নিয়ন্ত্রণ</h2>
+          </div>
+          
+          <!-- Deadline Control -->
+          <div style="background: var(--bg-color); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-bottom: 12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-size: 0.85rem; font-weight:700;"><i class="fas fa-clock" style="color:var(--primary);margin-right:4px;"></i> ডেডলাইন</span>
+              <label class="ac-toggle-pill" style="margin:0;"><input type="checkbox" id="acDeadlineEnabled"><span class="ac-toggle-track"></span><span class="ac-toggle-lbl" id="acDeadlineLabel">অফ</span></label>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <input type="datetime-local" id="acEntryDeadline" class="ac-dl-input" style="flex:1;">
+              <button id="acSaveDeadlineBtn" class="dm-btn dm-save"><i class="fas fa-save"></i></button>
+            </div>
+            <p class="ac-hint" style="margin-top:6px; font-size:0.75rem;"><i class="fas fa-info-circle"></i> অন থাকলে সময়মত এন্ট্রি বন্ধ হবে</p>
+          </div>
+
+          <!-- Global Entry Control -->
+          <div style="background: var(--bg-color); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color);">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-size: 0.85rem; font-weight:700;"><i class="fas fa-power-off" style="color:var(--danger);margin-right:4px;"></i> সকল শিক্ষকের এন্ট্রি</span>
+              <p id="acGlobalStatusText" class="ac-status-text" style="margin:0; font-size:0.8rem;">সক্রিয়</p>
+            </div>
+            <div class="ac-global-btns" style="display:flex; gap:8px;">
+              <button id="acAllSikshokOk" class="dm-btn dm-save" style="flex:1; padding: 6px 10px;"><i class="fas fa-check-circle"></i> সক্রিয়</button>
+              <button id="acAllSikshokNo" class="dm-btn dm-report" style="flex:1; padding: 6px 10px; background:var(--danger);border-color:var(--danger);"><i class="fas fa-ban"></i> নিস্ক্রিয়</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Card 2: Tab Access -->
+        <div class="card ac-card-flex">
+          <div class="card-header"><h2 class="card-title"><i class="fas fa-th-large"></i> পেজ ও ট্যাব এক্সেস</h2></div>
+          <div id="acTabAccessList" class="ac-tab-list-v2"><div style="text-align:center; padding:15px; opacity:0.5;">লোড হচ্ছে...</div></div>
+        </div>
+
+        <!-- Card 3: Teacher Permissions -->
+        <div class="card ac-card-flex">
+          <div class="card-header ac-header-stack">
+          
+            <div class="ac-search-v2-refined">
+              <i class="fas fa-search"></i>
+              <input type="text" id="acTeacherSearch" placeholder="শিক্ষক খুঁজুন...">
+            </div>
+          </div>
+          <div id="acTeacherStats" class="ac-stats-mini-row">
+            <div class="ac-stat-item">মোট: <span id="acStatTotal">-</span></div>
+            <div class="ac-stat-item">সক্রিয়: <span id="acStatActive" style="color:var(--success);">-</span></div>
+            <div class="ac-stat-item">নিস্ক্রিয়: <span id="acStatInactive" style="color:var(--danger);">-</span></div>
+          </div>
+          <div id="acTeacherList" class="ac-teacher-list-v2"><div style="text-align:center; padding:15px; opacity:0.5;">লোড হচ্ছে...</div></div>
+        </div>
+
+      </div>
+
+      <style>
+        /* Fix: Ensure inactive pages stay hidden even if they are super-admin-only */
+        .app-page:not(.active) { display: none !important; }
+        #accessControlPage.active { display: flex !important; flex-direction: column; }
+        #accessControlPage > * { width: 100%; box-sizing: border-box; }
+
+        /* 3-Grid Layout */
+        .ac-grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: var(--spacing-lg, 16px); align-items: stretch; margin-bottom: var(--spacing-lg, 16px); }
+        @media (max-width: 1024px) {
+          .ac-grid-3 { grid-template-columns: 1fr 1fr; }
+        }
+        @media (max-width: 768px) {
+          .ac-grid-3 { grid-template-columns: 1fr; }
+          .ac-search-v2 { max-width: 100%; }
+        }
+
+        /* Shared card overrides */
+        .ac-card-flex { margin-bottom: 0 !important; display: flex; flex-direction: column; height: 100%; }
+        .ac-card-flex .card-header { margin-bottom: 10px; padding-bottom: 8px; }
+        /* Teacher Permission Refined Header */
+        .ac-header-stack {
+          flex-direction: column;
+          align-items: flex-start !important;
+          gap: 10px;
+          padding-bottom: 12px;
+        }
+        .ac-header-title {
+          font-size: 0.95rem;
+          font-weight: 800;
+          color: var(--text-color);
+          margin: 0;
+          letter-spacing: 0.5px;
+        }
+        .ac-search-v2-refined {
+          width: 100%;
+          position: relative;
+          display: flex;
+          align-items: center;
+        }
+        .ac-search-v2-refined i {
+          position: absolute;
+          left: 12px;
+          color: var(--primary);
+          font-size: 0.85rem;
+          opacity: 0.7;
+        }
+        .ac-search-v2-refined input {
+          width: 100%;
+          padding: 8px 12px 8px 35px;
+          background: var(--container-bg);
+          border: 1.5px solid var(--border-color);
+          border-radius: 10px;
+          font-size: 0.85rem;
+          color: var(--text-color);
+          transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+          box-shadow: inset 0 1px 2px rgba(0,0,0,0.03);
+        }
+        .ac-search-v2-refined input:focus {
+          border-color: var(--primary);
+          background: var(--card-bg);
+          box-shadow: 0 0 0 3px rgba(67, 97, 238, 0.1);
+          outline: none;
+        }
+        body.dark-mode .ac-search-v2-refined input {
+          background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Stats Row */
+        .ac-stats-mini-row { 
+          display: flex; 
+          gap: 12px; 
+          margin-bottom: 12px; 
+          padding: 8px 12px; 
+          background: var(--container-bg); 
+          border-radius: var(--radius-sm); 
+          border: 1px solid var(--border-color); 
+          font-size: 0.8rem; 
+          font-weight: 700;
+          box-shadow: inset 0 1px 3px rgba(0,0,0,0.05);
+        }
+        .ac-stat-item { flex: 1; text-align: center; }
+
+        /* Teacher List Scrollability */
+        /* Marksheet Settings Merged Header */
+        .ms-merged-header { 
+          display: flex; 
+          justify-content: space-between; 
+          align-items: center; 
+          flex-wrap: wrap; 
+          gap: 15px; 
+          padding: 12px 20px !important;
+          background: linear-gradient(to right, rgba(var(--primary-rgb), 0.05), transparent);
+        }
+        .ms-header-selector { 
+          display: flex; 
+          align-items: center; 
+          gap: 12px; 
+          background: var(--bg-secondary); 
+          padding: 6px 15px; 
+          border-radius: 30px; 
+          border: 1px solid var(--border-color);
+          box-shadow: inset 0 1px 2px rgba(0,0,0,0.05);
+        }
+        .ms-header-selector label { 
+          margin: 0; 
+          font-size: 0.85rem; 
+          font-weight: 700; 
+          color: var(--primary); 
+          white-space: nowrap; 
+        }
+        .ms-sel-compact { 
+          background: transparent !important; 
+          border: none !important; 
+          padding: 0 5px !important; 
+          font-weight: 700; 
+          font-size: 0.9rem; 
+          color: var(--text-color); 
+          cursor: pointer;
+          min-width: 120px;
+        }
+        .ms-sel-compact:focus { box-shadow: none !important; }
+
+        @media (max-width: 600px) {
+          .ms-merged-header { justify-content: center; text-align: center; }
+          .hide-mobile { display: none; }
+        }
+
+        .ac-teacher-list-v2 { 
+          flex: 1; 
+          max-height: 420px; 
+          overflow-y: auto; 
+          display: flex; 
+          flex-direction: column; 
+          gap: 10px; 
+          padding: 2px 8px 2px 2px;
+          scroll-behavior: smooth;
+        }
+        
+        /* Professional Scrollbar */
+        .ac-teacher-list-v2::-webkit-scrollbar { width: 6px; }
+        .ac-teacher-list-v2::-webkit-scrollbar-track { background: transparent; }
+        .ac-teacher-list-v2::-webkit-scrollbar-thumb { 
+          background: var(--border-color); 
+          border-radius: 10px;
+          opacity: 0.5;
+        }
+        .ac-teacher-list-v2::-webkit-scrollbar-thumb:hover { background: var(--primary-light); }
+
+        .ac-teacher-row { 
+          display: flex; 
+          align-items: center; 
+          justify-content: space-between; 
+          padding: 12px 15px; 
+          background: var(--card-bg); 
+          border: 1px solid var(--border-color); 
+          border-radius: var(--radius-lg); 
+          transition: transform 0.2s, box-shadow 0.2s, background-color 0.2s;
+        }
+        .ac-teacher-row:hover { 
+          background: var(--container-bg); 
+          box-shadow: var(--card-shadow); 
+          transform: translateY(-1px);
+        }
+
+        /* Status colors */
+        .ac-teacher-row.is-active {
+            border-left: 4px solid var(--success-color);
+            background: linear-gradient(to right, rgba(34, 197, 94, 0.05), transparent);
+        }
+        .ac-teacher-row.is-inactive {
+            border-left: 4px solid var(--danger-color);
+            background: linear-gradient(to right, rgba(239, 68, 68, 0.05), transparent);
+            opacity: 0.85;
+        }
+        body.dark-mode .ac-teacher-row.is-active {
+            background: linear-gradient(to right, rgba(34, 197, 94, 0.1), transparent);
+        }
+        body.dark-mode .ac-teacher-row.is-inactive {
+            background: linear-gradient(to right, rgba(239, 68, 68, 0.1), transparent);
+        }
+
+        .ac-teacher-name { font-weight: 700; font-size: 0.95rem; color: var(--text-color); }
+        .ac-teacher-email { font-size: 0.8rem; opacity: 0.6; margin-bottom: 6px; }
+
+        /* Badges */
+        .ac-badge-group { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+        .ac-badge { 
+          padding: 3px 10px; 
+          border-radius: 6px; 
+          font-size: 0.72rem; 
+          font-weight: 700; 
+          border: 1px solid transparent;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.05);
+          letter-spacing: 0.3px;
+        }
+        
+        /* Dark mode overrides for specific elements if needed */
+        body.dark-mode .ac-stats-mini-row { background: rgba(255,255,255,0.03); }
+        body.dark-mode .ac-badge { box-shadow: 0 1px 2px rgba(0,0,0,0.2); }
+        
+        /* Tab List */
+        .ac-tab-list-v2 { display: flex; flex-direction: column; gap: 6px; }
+        .ac-tab-row { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: var(--radius-md); transition: all 0.2s; }
+        .ac-tab-row:hover { background: var(--card-bg); box-shadow: var(--card-shadow); }
+        .ac-tab-row-label { display: flex; align-items: center; gap: 8px; font-weight: 600; font-size: 0.85rem; color: var(--text-color); }
+        .ac-tab-row-label i { color: var(--primary); width: 18px; text-align: center; font-size: 0.85rem; }
+        .ac-tab-checks { display: flex; gap: 8px; }
+        .ac-check-label { display: flex; align-items: center; gap: 5px; font-size: 0.75rem; cursor: pointer; background: var(--card-bg); padding: 3px 10px; border-radius: 20px; border: 1px solid var(--border-color); color: var(--text-color); transition: all 0.2s; }
+        .ac-check-label:hover { border-color: var(--primary); }
+        .ac-check-label input[type="checkbox"] { accent-color: var(--primary); cursor: pointer; width: 14px; height: 14px; }
+
+        /* Deadline */
+        .ac-dl-input { flex: 1; padding: 8px 10px; border: 1px solid var(--border-color); border-radius: var(--radius-md); background: var(--card-bg); color: var(--text-color); font-size: 0.85rem; }
+        .ac-hint { font-size: 0.72rem; opacity: 0.5; display: flex; align-items: center; gap: 5px; margin: 4px 0 0; }
+
+        /* Toggle Pill */
+        .ac-toggle-pill { display: flex; align-items: center; gap: 8px; cursor: pointer; margin-left: auto; }
+        .ac-toggle-track { position: relative; width: 40px; height: 22px; background: #cbd5e1; border-radius: 34px; transition: 0.3s; }
+        .ac-toggle-track::before { content: ''; position: absolute; width: 16px; height: 16px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+        #acDeadlineEnabled:checked ~ .ac-toggle-track { background: var(--success); }
+        #acDeadlineEnabled:checked ~ .ac-toggle-track::before { transform: translateX(18px); }
+        #acDeadlineEnabled { display: none; }
+        .ac-toggle-lbl { font-size: 0.75rem; font-weight: 700; color: var(--text-color); opacity: 0.7; }
+
+        /* Global Entry */
+        .ac-status-text { font-weight: 700; font-size: 0.88rem; margin-bottom: 10px; color: var(--text-color); }
+        .ac-global-btns { display: flex; gap: 10px; }
+        .ac-global-btns button { flex: 1; font-size: 0.85rem; padding: 8px 12px; }
+
+        /* Search */
+        .ac-search-v2 { position: relative; max-width: 200px; margin-left: auto; }
+        .ac-search-v2 input { width: 100%; padding: 6px 10px 6px 30px; border: 1px solid var(--border-color); border-radius: var(--radius-md); font-size: 0.85rem; background: var(--card-bg); color: var(--text-color); }
+        .ac-search-v2 i { position: absolute; left: 10px; top: 50%; transform: translateY(-50%); opacity: 0.4; font-size: 0.8rem; color: var(--text-color); }
+
+        /* Teacher List */
+        .ac-teacher-list-v2 { display: flex; flex-direction: column; gap: 6px; max-height: 350px; overflow-y: auto; }
+        .ac-teacher-row { display: flex; align-items: center; justify-content: space-between; padding: 10px 12px; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: var(--radius-md); transition: all 0.2s; }
+        .ac-teacher-row:hover { background: var(--card-bg); box-shadow: var(--card-shadow); }
+        .ac-teacher-name { font-weight: 700; font-size: 0.88rem; color: var(--heading-color); }
+        .ac-teacher-email { font-size: 0.75rem; opacity: 0.6; color: var(--text-color); }
+        .ac-teacher-detail { font-size: 0.7rem; color: var(--primary); font-weight: 600; }
+
+        /* Toggle Switch */
+        .ac-sw { position: relative; display: inline-block; width: 40px; height: 22px; flex-shrink: 0; }
+        .ac-sw input { opacity: 0; width: 0; height: 0; }
+        .ac-sw-sl { position: absolute; cursor: pointer; inset: 0; background-color: #cbd5e1; border-radius: 34px; transition: 0.3s; }
+        .ac-sw-sl::before { position: absolute; content: ''; height: 16px; width: 16px; left: 3px; bottom: 3px; background: white; border-radius: 50%; transition: 0.3s; }
+        .ac-sw input:checked + .ac-sw-sl { background-color: var(--success); }
+        .ac-sw input:checked + .ac-sw-sl::before { transform: translateX(18px); }
+
+        /* Responsive */
+        @media (max-width: 900px) {
+          .ac-row-1 { grid-template-columns: 1fr; }
+          .ac-row-2 { grid-template-columns: 1fr; }
+          .ac-search-v2 { max-width: 100%; }
+        }
+      </style>
     </div>
 
     <!-- Modals deleted to remove duplicates -->
@@ -869,6 +1187,44 @@
             </select>
           </div>
           <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">সংরক্ষণ করুন</button>
+        </form>
+      </div>
+    </div>
+
+    <!-- Edit Exam Modal -->
+    <div id="editExamModal" class="modal">
+      <div class="modal-content">
+        <span class="close" id="closeEditModalBtn">&times;</span>
+        <h2>পরীক্ষার তথ্য সম্পাদন করুন</h2>
+        <form id="editExamForm">
+          <input type="hidden" id="editExamDocId">
+          <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+              <label for="editExamClass">শ্রেণি (Class):</label>
+              <select id="editExamClass" class="form-control" data-dynamic="class" required>
+                <option value="">সিলেক্ট করুন</option>
+              </select>
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label for="editExamSession">সেশন (Session):</label>
+              <select id="editExamSession" class="form-control" data-dynamic="session" required>
+                <option value="">সিলেক্ট করুন</option>
+              </select>
+            </div>
+          </div>
+          <div class="form-group">
+            <label for="editExamName">পরীক্ষার নাম (Exam Name):</label>
+            <select id="editExamName" class="form-control" required>
+              <option value="">সেশন সিলেক্ট করুন</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="editSubjectName">বিষয় (Subject):</label>
+            <select id="editSubjectName" class="form-control" required>
+              <option value="">শ্রেণি সিলেক্ট করুন</option>
+            </select>
+          </div>
+          <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">আপডেট করুন</button>
         </form>
       </div>
     </div>
@@ -1995,6 +2351,16 @@
             <select id="studentFormSession" class="form-control" data-dynamic="session">
               <option value="">সেশন নির্বাচন করুন</option>
             </select>
+          </div>
+          <div class="form-row">
+            <div class="form-group" style="flex: 1;">
+              <label for="studentFormFatherName">পিতার/অভিভাবকের নাম</label>
+              <input type="text" id="studentFormFatherName" class="form-control" placeholder="পিতার নাম">
+            </div>
+            <div class="form-group" style="flex: 1;">
+              <label for="studentFormMobile">মোবাইল নম্বর</label>
+              <input type="tel" id="studentFormMobile" class="form-control" placeholder="01XXXXXXXXX">
+            </div>
           </div>
           <button type="submit" class="btn-primary" style="width: 100%; margin-top: 10px;">সংরক্ষণ করুন</button>
         </form>

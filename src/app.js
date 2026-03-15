@@ -57,6 +57,7 @@ import { initExamConfigManager, loadExamConfigs, populateExamNameDropdown } from
 import { initAcademicSettingsManager } from './js/modules/academicSettingsManager.js';
 import { initAdmitCardManager, populateACDropdowns } from './js/modules/admitCardManager.js';
 import { initRoutineManager } from './js/modules/routineManager.js';
+import AccessControlManager from './js/modules/accessControlManager.js';
 
 /**
  * Recalculate student grades/statuses using CURRENT subject config.
@@ -258,6 +259,7 @@ async function init() {
         initRoutineManager();
         initAccessRequestUI();
         initAccessRequestNotifications();
+        AccessControlManager.init();
 
         // Listen for exam data updates from Result Entry
         window.addEventListener('examDataUpdated', async () => {
@@ -1075,8 +1077,8 @@ function initEventListeners() {
 
     // Save Exam
     elements.saveAnalysisBtn?.addEventListener('click', () => {
-        if (!state.isAdmin) {
-            showNotification('শুধুমাত্র অ্যাডমিনরা এই ফিচারটি ব্যবহার করতে পারবেন', 'warning');
+        if (!state.isAdmin && state.userRole !== 'teacher') {
+            showNotification('শুধুমাত্র শিক্ষকরা এই ফিচারটি ব্যবহার করতে পারবেন', 'warning');
             return;
         }
 
@@ -1131,7 +1133,7 @@ function initEventListeners() {
     });
 
     elements.closeModalBtn?.addEventListener('click', () => elements.saveExamModal.classList.remove('active'));
-    elements.closeEditModal?.addEventListener('click', () => elements.editExamModal.classList.remove('active'));
+    elements.closeEditModalBtn?.addEventListener('click', () => elements.editExamModal.classList.remove('active'));
 
     // Modal Class & Session Selection Listeners
     elements.examClass?.addEventListener('change', () => {

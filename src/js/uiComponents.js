@@ -1141,8 +1141,8 @@ export function renderSavedExamsList(container, exams, options = {}) {
     const manuallyLoadedId = localStorage.getItem('loadedExamId');
     const isActiveLoad = exam.docId === manuallyLoadedId;
 
-    // Logic to hide "Load" button permanently for default exams (for non-admins)
-    const shouldHideLoadBtn = !state.isAdmin && exam.docId === defaultExamId;
+    // Logic to hide "Load" button permanently for default exams (for non-admins/non-teachers)
+    const shouldHideLoadBtn = (!state.isAdmin && state.userRole !== 'teacher') && exam.docId === defaultExamId;
 
     // Calculate pass percentage
     const participants = stats.participants || 0;
@@ -1154,6 +1154,8 @@ export function renderSavedExamsList(container, exams, options = {}) {
 
     const sessionStyle = getSessionStyle(exam.session);
     const isDefault = exam.docId === defaultExamId;
+    const isOwner = exam.createdBy === state.currentUser?.uid;
+    const canEdit = state.userRole === 'super_admin' || isOwner;
 
     return `
             <div class="exam-card ${isCurrent ? 'active' : ''} ${isActiveLoad ? 'is-active-load' : ''} ${isDefault ? 'is-default' : ''}" data-id="${exam.docId}">
@@ -1208,7 +1210,7 @@ export function renderSavedExamsList(container, exams, options = {}) {
                         <input type="checkbox" class="pin-checkbox" ${exam.docId === defaultExamId ? 'checked' : ''}>
                         <span class="pin-slider"></span>
                     </label>
-                    <button class="card-btn-min edit-btn admin-only" title="এডিট"><i class="fas fa-edit"></i></button>
+                    <button class="card-btn-min edit-btn" style="display: ${canEdit ? 'inline-flex' : 'none'}" title="এডিট"><i class="fas fa-edit"></i></button>
                     <button class="card-btn-min delete-btn super-admin-only" title="মুছুন"><i class="fas fa-trash"></i></button>
                 </div>
             </div>
@@ -1458,4 +1460,384 @@ export function renderCandidateResults(container, candidates, onSelect) {
       container.style.display = 'none';
     });
   });
+}
+
+/**
+ * Print Student Management List as a professional A4 document
+ */
+export function printStudentManagementList(students, settings, filters = {}) {
+  if (!students || students.length === 0) return;
+
+  const {
+    institutionName = 'প্রতিষ্ঠানের নাম',
+    institutionAddress = '',
+    watermarkUrl = '',
+    logoUrl = '',
+    watermarkOpacity = 0.08
+  } = settings;
+
+  const { classFilter = 'all', sessionFilter = 'all', groupFilter = 'all' } = filters;
+
+  // Header meta description
+  const classLabel = classFilter !== 'all' ? `শ্রেণি: ${classFilter}` : '';
+  const sessionLabel = sessionFilter !== 'all' ? `সেশন: ${sessionFilter}` : '';
+  const groupLabel = groupFilter !== 'all' ? `বিভাগ: ${groupFilter}` : '';
+  const metaText = [classLabel, sessionLabel, groupLabel].filter(Boolean).join(' | ') || 'সকল শিক্ষার্থী';
+
+  // Summary counts
+  const counts = {
+    'science': 0,
+    'business': 0,
+    'humanities': 0,
+    'other': 0
+  };
+
+  students.forEach(s => {
+    const gn = normalizeText(s.group || '');
+    if (gn.includes('বিজ্ঞান')) counts.science++;
+    else if (gn.includes('ব্যবসায়') || gn.includes('ব্যব্যসায়') || gn.includes('ব্যবসায়')) counts.business++;
+    else if (gn.includes('মানবিক')) counts.humanities++;
+    else counts.other++;
+  });
+
+  // Detailed Multi-level Summary (Class + Session + Group)
+  let detailedSummaryHTML = '';
+  if (classFilter === 'all' && sessionFilter === 'all') {
+    const classGroups = {};
+    students.forEach(s => {
+      const cls = s.class || 'N/A';
+      const sess = String(s.session || 'N/A');
+      const key = `${cls}_${sess}`;
+      if (!classGroups[key]) {
+        classGroups[key] = { class: cls, session: sess, total: 0, science: 0, business: 0, humanities: 0 };
+      }
+      classGroups[key].total++;
+      const gn = normalizeText(s.group || '');
+      if (gn.includes('বিজ্ঞান')) classGroups[key].science++;
+      else if (gn.includes('ব্যবসায়') || gn.includes('ব্যবসায়')) classGroups[key].business++;
+      else if (gn.includes('মানবিক')) classGroups[key].humanities++;
+    });
+
+    const dRows = Object.values(classGroups).sort((a,b) => {
+        if (a.class !== b.class) return a.class.localeCompare(b.class);
+        return a.session.localeCompare(b.session);
+    }).map(g => `
+      <tr>
+        <td style="background:#f8fafc; font-weight:700;">${g.class}</td>
+        <td style="font-weight:600;">${convertToBengaliDigits(g.session)}</td>
+        <td style="font-weight:800; color:var(--primary); font-size:14px;">${convertToBengaliDigits(g.total)}</td>
+        <td style="color:var(--sci-accent); font-weight:700;">${convertToBengaliDigits(g.science)}</td>
+        <td style="color:var(--bus-accent); font-weight:700;">${convertToBengaliDigits(g.business)}</td>
+        <td style="color:var(--hum-accent); font-weight:700;">${convertToBengaliDigits(g.humanities)}</td>
+      </tr>
+    `).join('');
+
+    detailedSummaryHTML = `
+      <div style="margin-bottom: 20px; text-align: center;">
+        <h3 style="font-size: 13px; color: #64748b; margin-bottom: 8px; font-weight: 800; text-transform: uppercase;">শ্রেণি ও সেশন ভিত্তিক পরিসংখ্যান</h3>
+        <table class="stat-table">
+          <thead>
+            <tr>
+              <th width="100">শ্রেণি</th>
+              <th>সেশন</th>
+              <th>মোট শিক্ষার্থী</th>
+              <th>বিজ্ঞান</th>
+              <th>ব্যবসায়</th>
+              <th>মানবিক</th>
+            </tr>
+          </thead>
+          <tbody>${dRows}</tbody>
+        </table>
+      </div>
+      <style>
+        .stat-table { width: 100%; border-collapse: collapse; margin-top: 5px; }
+        .stat-table th { background: #f1f5f9; font-size: 11px; padding: 7px; border: 1px solid #e2e8f0; color: #475569; }
+        .stat-table td { padding: 6px; font-size: 13px; border: 1px solid #e2e8f0; text-align: center; }
+      </style>
+    `;
+  }
+
+  // Session Colors Mapping
+  const uniqueSessions = [...new Set(students.map(s => String(s.session || '')))].sort();
+  const sessionColors = {};
+  const palette = [
+    { bg: '#eff6ff', accent: '#2563eb' }, // Blue
+    { bg: '#fffbeb', accent: '#d97706' }, // Amber
+    { bg: '#f0fdf4', accent: '#16a34a' }, // Green
+    { bg: '#fdf2f8', accent: '#db2777' }, // Pink
+    { bg: '#f5f3ff', accent: '#7c3aed' }, // Violet
+    { bg: '#fff7ed', accent: '#ea580c' }  // Orange
+  ];
+  uniqueSessions.forEach((s, idx) => {
+    sessionColors[s] = palette[idx % palette.length];
+  });
+
+  const tableRows = students.map((s, i) => {
+    const rawGroup = s.group || '';
+    let grpClass = 'grp-other';
+    const normGroup = normalizeText(rawGroup);
+    
+    if (normGroup.includes('বিজ্ঞান')) grpClass = 'grp-science';
+    else if (normGroup.includes('ব্যবসায়') || normGroup.includes('ব্যবসায়')) grpClass = 'grp-business';
+    else if (normGroup.includes('মানবিক')) grpClass = 'grp-humanities';
+
+    const sessColor = sessionColors[String(s.session || '')] || { bg: 'transparent', accent: 'inherit' };
+    
+    return `
+      <tr class="${grpClass}">
+          <td>${convertToBengaliDigits(i + 1)}</td>
+          <td class="id-cell"><strong>${convertToBengaliDigits(s.id)}</strong></td>
+          <td class="name-td">${s.name}</td>
+          <td class="group-td"><span>${rawGroup || '-'}</span></td>
+          <td>${s.class || '-'}</td>
+          <td style="background-color: ${sessColor.bg}; font-weight: 700; color: ${sessColor.accent}; border: 1px solid #e2e8f0;">${convertToBengaliDigits(s.session || '-')}</td>
+          <td class="name-td">${s.fatherName || '-'}</td>
+          <td style="font-weight: 600;">${convertToBengaliDigits(s.mobile || '-')}</td>
+      </tr>
+    `;
+  }).join('');
+
+  const printHTML = `
+<!DOCTYPE html>
+<html lang="bn">
+<head>
+  <meta charset="UTF-8">
+  <title>Student List - ${institutionName}</title>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
+    
+    :root {
+      --primary: #0f172a;
+      --sci-bg: #fef2f2;
+      --sci-accent: #dc2626;
+      --bus-bg: #eff6ff;
+      --bus-accent: #2563eb;
+      --hum-bg: #f0fdf4;
+      --hum-accent: #16a34a;
+      --border: #e2e8f0;
+    }
+
+    @page { size: A4; margin: 5mm; }
+    * { margin: 0; padding: 0; box-sizing: border-box; -webkit-print-color-adjust: exact; }
+    body { font-family: 'Hind Siliguri', sans-serif; color: #1e293b; background: white; line-height: 1.4; }
+
+    .page {
+      width: 100%;
+      min-height: 280mm;
+      padding: 5mm 2mm;
+      margin: 0 auto;
+      position: relative;
+    }
+
+    /* Watermark */
+    .watermark {
+      position: fixed;
+      top: 55%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 400px;
+      height: 400px;
+      background: ${watermarkUrl ? `url('${watermarkUrl}')` : 'none'} no-repeat center center;
+      background-size: contain;
+      opacity: ${watermarkOpacity};
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .content { position: relative; z-index: 1; }
+
+    /* Header */
+    .header {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 20px;
+      border-bottom: 2px solid var(--primary);
+      padding-bottom: 8px;
+      margin-bottom: 12px;
+    }
+    .logo { width: 70px; height: 70px; object-fit: contain; }
+    .header-info { text-align: center; }
+    .header-info h1 { font-size: 24px; font-weight: 800; color: var(--primary); margin-bottom: 2px; }
+    .header-info p { font-size: 13px; color: #64748b; }
+
+    .doc-meta {
+      text-align: center;
+      margin-bottom: 12px;
+    }
+    .doc-title {
+      background: #f8fafc;
+      padding: 4px 20px;
+      border-radius: 50px;
+      font-size: 15px;
+      font-weight: 700;
+      color: #334155;
+      border: 1px solid var(--border);
+      display: inline-block;
+    }
+
+    /* Summary Bar - Solid and Visible */
+    .summary-grid {
+      display: flex;
+      justify-content: center;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    .summary-item {
+      flex: 1;
+      max-width: 130px;
+      padding: 8px;
+      border-radius: 10px;
+      text-align: center;
+      background: #ffffff;
+      border: 1.5px solid var(--border);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .summary-val { font-size: 20px; font-weight: 800; display: block; line-height: 1; margin-bottom: 2px; }
+    .summary-lbl { font-size: 10px; font-weight: 700; color: #64748b; }
+
+    /* Table */
+    table { width: 100%; border-collapse: separate; border-spacing: 0; background: transparent; }
+    th {
+      background: #f8fafc;
+      color: var(--primary);
+      padding: 8px 4px;
+      font-size: 11.5px;
+      font-weight: 800;
+      border: 1px solid var(--border);
+      border-bottom: 2px solid var(--primary);
+    }
+    td {
+      padding: 6px 4px;
+      border: 1px solid var(--border);
+      font-size: 11.5px;
+      text-align: center;
+      vertical-align: middle;
+      background: transparent;
+    }
+    .name-td { text-align: left; padding-left: 8px; font-weight: 600; }
+    
+    /* Clean Group Accent Styles (No Row Backgrounds) */
+    .grp-science .id-cell { color: var(--sci-accent); font-weight: 800; }
+    .grp-science .group-td span { color: var(--sci-accent); font-weight: 700; border-bottom: 1px solid var(--sci-bg); }
+
+    .grp-business .id-cell { color: var(--bus-accent); font-weight: 800; }
+    .grp-business .group-td span { color: var(--bus-accent); font-weight: 700; border-bottom: 1px solid var(--bus-bg); }
+
+    .grp-humanities .id-cell { color: var(--hum-accent); font-weight: 800; }
+    .grp-humanities .group-td span { color: var(--hum-accent); font-weight: 700; border-bottom: 1px solid var(--hum-bg); }
+
+    /* Repeating Footer */
+    .footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      background: white;
+      border-top: 1.5px solid #e2e8f0;
+      padding: 8px 10mm;
+      text-align: center;
+      z-index: 100;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .footer-left { text-align: left; }
+    .footer-right { text-align: right; }
+    .ftr-dev { font-size: 10px; font-weight: 700; color: #0f172a; margin-bottom: 2px; }
+    .ftr-contact { font-size: 9px; color: #64748b; font-weight: 600; }
+    .ftr-soft { color: #2563eb; font-weight: 800; margin-left: 8px; }
+
+    @media print {
+      .page { margin: 0; box-shadow: none; border: none; }
+      tr { break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+  <div class="page">
+    <div class="watermark"></div>
+    <div class="content">
+      <div class="header">
+        ${logoUrl ? `<img src="${logoUrl}" class="logo">` : ''}
+        <div class="header-info">
+          <h1>${institutionName}</h1>
+          <p>${institutionAddress}</p>
+        </div>
+      </div>
+
+      <div class="doc-meta">
+        <div class="doc-title">${metaText} - শিক্ষার্থী তালিকা</div>
+      </div>
+
+      <div class="summary-grid">
+        <div class="summary-item" style="border-bottom: 4px solid var(--primary);">
+          <span class="summary-val">${convertToBengaliDigits(students.length)}</span>
+          <span class="summary-lbl">মোট শিক্ষার্থী</span>
+        </div>
+        <div class="summary-item" style="border-bottom: 4px solid var(--sci-accent);">
+          <span class="summary-val">${convertToBengaliDigits(counts.science)}</span>
+          <span class="summary-lbl">বিজ্ঞান</span>
+        </div>
+        <div class="summary-item" style="border-bottom: 4px solid var(--bus-accent);">
+          <span class="summary-val">${convertToBengaliDigits(counts.business)}</span>
+          <span class="summary-lbl">ব্যবসায়</span>
+        </div>
+        <div class="summary-item" style="border-bottom: 4px solid var(--hum-accent);">
+          <span class="summary-val">${convertToBengaliDigits(counts.humanities)}</span>
+          <span class="summary-lbl">মানবিক</span>
+        </div>
+      </div>
+
+      ${detailedSummaryHTML}
+
+      <table>
+        <thead>
+          <tr>
+            <th width="40">নং</th>
+            <th width="50">রোল</th>
+            <th style="text-align:left; padding-left:8px;">শিক্ষার্থীর নাম</th>
+            <th width="100">বিভাগ</th>
+            <th width="60">শ্রেণি</th>
+            <th width="70">সেশন</th>
+            <th style="text-align:left; padding-left:8px;">পিতার নাম</th>
+            <th width="100">মোবাইল</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${tableRows}
+        </tbody>
+        <tfoot>
+          <tr><td colspan="8" style="border:none; height: 50px;"></td></tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <!-- Repeating Footer -->
+    <div class="footer">
+      <div class="footer-left">
+        <div class="ftr-dev">সফটওয়্যার নির্মাতা: মোস্তফা রাহমান, সিনিয়র সফটওয়্যার ইন্জিনিয়্যার, ইস্তাম্বুল, তুরস্ক</div>
+        <div class="ftr-contact">যোগাযোগ: ০১৮৪০-৬৪৩৯৪৬ <span class="ftr-soft">অটোমেটেড এক্সাম এনালিষ্ট সফটওয়্যার</span></div>
+      </div>
+      <div class="footer-right">
+        <div class="ftr-contact">প্রিন্টের তারিখ: ${new Date().toLocaleDateString('bn-BD')}</div>
+        <div class="ftr-contact" style="color: #2563eb; font-weight: 700;">${window.location.host}</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    window.onload = () => {
+      setTimeout(() => {
+        window.print();
+        window.close();
+      }, 500);
+    };
+  </script>
+</body>
+</html>`;
+
+  const printWindow = window.open('', '_blank');
+  printWindow.document.write(printHTML);
+  printWindow.document.close();
 }
