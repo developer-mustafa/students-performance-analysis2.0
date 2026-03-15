@@ -578,12 +578,25 @@ export function printFailedStudents(data, options = {}) {
     .business-group { background: #fffbeb !important; color: #b45309 !important; font-weight: 700; }
     .arts-group { background: #fdf2f8 !important; color: #be185d !important; font-weight: 700; }
     
-    /* Persistent Footer Logic */
-    .ftr { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1.5px solid #e2e8f0; padding: 10px 0; text-align: center; }
-    .ftr-dev { font-size: 10px; font-weight: 700; color: #0f172a; margin-bottom: 3px; }
-    .ftr-contact { font-size: 9px; color: #64748b; font-weight: 600; }
     .ftr-soft { color: #10b981; font-weight: 800; border-left: 2px solid #e2e8f0; margin-left: 8px; padding-left: 8px; }
     
+    /* Watermark & Transparency Fix */
+    .watermark {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      height: 300px;
+      background: ${options.watermarkUrl ? `url('${options.watermarkUrl}')` : 'none'} no-repeat center center;
+      background-size: contain;
+      opacity: ${options.watermarkOpacity || 0.08};
+      pointer-events: none;
+      z-index: -1;
+    }
+    table, tr, td, th { background: transparent !important; }
+    body > div:not(.watermark) { position: relative; z-index: 1; background: transparent !important; }
+
     @media print {
       body { padding: 0; margin: 0; }
       .section, .g-card { break-inside: avoid; }
@@ -593,10 +606,12 @@ export function printFailedStudents(data, options = {}) {
   </style>
 </head>
 <body>
-  <div class="h">
-    <h1>অকৃতকার্য শিক্ষার্থীদের তালিকা</h1>
-    <div class="sub">${examName} — ${subjectName}</div>
-  </div>
+  <div class="watermark"></div>
+  <div class="content-wrapper">
+    <div class="h">
+      <h1>অকৃতকার্য শিক্ষার্থীদের তালিকা</h1>
+      <div class="sub">${examName} — ${subjectName}</div>
+    </div>
 
   <div class="top-bar">
     <div class="top-item"><span class="lbl">শ্রেণি ও সেশন:</span> <span class="val">${className} (${convertToBengaliDigits(session)})</span></div>
@@ -830,11 +845,25 @@ export function printAllStudents(data, options = {}) {
     .s-fail { color: #ef4444; font-weight: 800; }
     .s-abs { color: #94a3b8; font-weight: 700; }
     
-    .ftr { position: fixed; bottom: 0; left: 0; right: 0; background: white; border-top: 1.5px solid #e2e8f0; padding: 10px 0; text-align: center; }
-    .ftr-dev { font-size: 10px; font-weight: 700; color: #0f172a; margin-bottom: 3px; }
-    .ftr-contact { font-size: 9px; color: #64748b; font-weight: 600; }
     .ftr-soft { color: #10b981; font-weight: 800; border-left: 2px solid #e2e8f0; margin-left: 8px; padding-left: 8px; }
     
+    /* Watermark & Transparency Fix */
+    .watermark {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      width: 300px;
+      height: 300px;
+      background: ${options.watermarkUrl ? `url('${options.watermarkUrl}')` : 'none'} no-repeat center center;
+      background-size: contain;
+      opacity: ${options.watermarkOpacity || 0.08};
+      pointer-events: none;
+      z-index: -1;
+    }
+    table, tr, td, th { background: transparent !important; }
+    body > div:not(.watermark) { position: relative; z-index: 1; background: transparent !important; }
+
     @media print {
       body { padding: 0; margin: 0; }
       .section { break-inside: avoid; }
@@ -844,10 +873,12 @@ export function printAllStudents(data, options = {}) {
   </style>
 </head>
 <body>
-  <div class="h">
-    <h1>শিক্ষার্থীদের পূর্ণাঙ্গ ফলাফল তালিকা</h1>
-    <div class="sub">${examName} — ${subjectName}</div>
-  </div>
+  <div class="watermark"></div>
+  <div class="content-wrapper">
+    <div class="h">
+      <h1>শিক্ষার্থীদের পূর্ণাঙ্গ ফলাফল তালিকা</h1>
+      <div class="sub">${examName} — ${subjectName}</div>
+    </div>
 
   <div class="top-bar">
     <div class="top-item"><span class="lbl">শ্রেণি ও সেশন:</span> <span class="val">${className} (${convertToBengaliDigits(session)})</span></div>
@@ -1632,17 +1663,21 @@ export function printStudentManagementList(students, settings, filters = {}) {
     /* Watermark */
     .watermark {
       position: fixed;
-      top: 55%;
+      top: 50%;
       left: 50%;
       transform: translate(-50%, -50%);
-      width: 400px;
-      height: 400px;
+      width: 300px;
+      height: 300px;
       background: ${watermarkUrl ? `url('${watermarkUrl}')` : 'none'} no-repeat center center;
       background-size: contain;
-      opacity: ${watermarkOpacity};
+      opacity: ${watermarkOpacity > 0.08 ? 0.08 : watermarkOpacity};
       pointer-events: none;
-      z-index: 0;
+      z-index: -1;
     }
+    
+    .content { position: relative; z-index: 1; }
+    table, tr, td, th { background: transparent !important; }
+    .summary-item, .stat-table, .stat-table td, .stat-table th { background: transparent !important; }
 
     .content { position: relative; z-index: 1; }
 
