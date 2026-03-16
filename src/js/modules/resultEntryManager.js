@@ -1137,8 +1137,12 @@ function showAccessDeniedMessage(message) {
     
     if (emptyState) {
         emptyState.style.display = 'flex';
+        emptyState.style.justifyContent = 'center';
+        emptyState.style.alignItems = 'center';
+        emptyState.style.padding = '40px 20px';
+        
         emptyState.innerHTML = `
-            <div style="text-align: center; max-width: 500px; padding: 40px; background: #fff5f5; border: 1px solid #feb2b2; border-radius: 12px; color: #c53030;">
+            <div style="text-align: center; max-width: 550px; padding: 40px; background: #fff5f5; border: 1px solid #feb2b2; border-radius: 12px; color: #c53030; box-shadow: 0 4px 6px rgba(0,0,0,0.05);">
                 <i class="fas fa-user-shield" style="font-size: 3rem; margin-bottom: 20px; opacity: 0.8;"></i>
                 <h3 style="margin-bottom: 10px; font-weight: 700;">প্রবেশাধিকার সংরক্ষিত</h3>
                 <p style="font-size: 1rem; line-height: 1.6; color: #742a2a;">${message}</p>
