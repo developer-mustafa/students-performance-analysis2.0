@@ -120,9 +120,15 @@ export function setupAuthListener(callbacks = {}) {
             state.isAdmin = ['admin', 'super_admin'].includes(role);
             state.isSuperAdmin = role === 'super_admin';
 
+            // Start real-time security watcher
+            startSecurityWatcher(user, role);
+
             if (onLogin) onLogin(user, role);
             if (onRoleSync) onRoleSync(role);
         } else {
+            // Stop security watcher on logout
+            stopSecurityWatcher();
+            
             state.currentUser = null;
             state.isAdmin = false;
             state.isSuperAdmin = false;
@@ -133,4 +139,55 @@ export function setupAuthListener(callbacks = {}) {
 
         if (renderUI) renderUI(user);
     });
+}
+
+/**
+ * Real-time security watcher to force logout if access is revoked
+ * @param {Object} user - Firebase user object
+ * @param {string} role - User role
+ */
+async function startSecurityWatcher(user, role) {
+    // 1. Clear any existing watchers
+    stopSecurityWatcher();
+
+    // 2. Super Admins are exempt from forced logout
+    if (role === 'super_admin') return;
+
+    // 3. Watch Global Login Status
+    const { subscribeToGlobalLogin, subscribeToUserLoginStatus } = await import('../firestoreService.js').catch(() => ({}));
+    
+    if (subscribeToGlobalLogin) {
+        state.onGlobalLoginUnsubscribe = subscribeToGlobalLogin((allowed) => {
+            if (!allowed && state.userRole !== 'super_admin') {
+                console.warn('Security Watcher: Global login disabled. Logging out...');
+                handleLogout();
+                showNotification('⛔ লগইন সাময়িকভাবে বন্ধ করা হয়েছে।', 'error', 10000);
+            }
+        });
+    }
+
+    // 4. Watch Current User Specific Login Status
+    if (subscribeToUserLoginStatus && user.uid) {
+        state.onUserStatusUnsubscribe = subscribeToUserLoginStatus(user.uid, (disabled) => {
+            if (disabled && state.userRole !== 'super_admin') {
+                console.warn('Security Watcher: User login disabled. Logging out...');
+                handleLogout();
+                showNotification('⛔ আপনার লগইন সুবিধা বন্ধ করা হয়েছে।', 'error', 10000);
+            }
+        });
+    }
+}
+
+/**
+ * Stop active security watchers
+ */
+function stopSecurityWatcher() {
+    if (state.onGlobalLoginUnsubscribe) {
+        state.onGlobalLoginUnsubscribe();
+        state.onGlobalLoginUnsubscribe = null;
+    }
+    if (state.onUserStatusUnsubscribe) {
+        state.onUserStatusUnsubscribe();
+        state.onUserStatusUnsubscribe = null;
+    }
 }

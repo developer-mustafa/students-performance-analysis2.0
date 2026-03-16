@@ -1208,6 +1208,44 @@ export async function getUserLoginStatus(uid) {
 }
 
 /**
+ * Subscribe to global login permission status
+ * @param {Function} callback 
+ * @returns {Function} unsubscribe
+ */
+export function subscribeToGlobalLogin(callback) {
+    const settingsRef = doc(db, 'settings', 'global');
+    return onSnapshot(settingsRef, (snap) => {
+        if (snap.exists() && snap.data().loginEnabled === false) {
+            callback(false);
+        } else {
+            callback(true);
+        }
+    }, (error) => {
+        console.error('গ্লোবাল লগইন সিঙ্ক সমস্যা:', error);
+    });
+}
+
+/**
+ * Subscribe to a specific user's login status
+ * @param {string} uid 
+ * @param {Function} callback 
+ * @returns {Function} unsubscribe
+ */
+export function subscribeToUserLoginStatus(uid, callback) {
+    if (!uid) return () => {};
+    const userRef = doc(db, 'users', uid);
+    return onSnapshot(userRef, (snap) => {
+        if (snap.exists() && snap.data().loginDisabled === true) {
+            callback(true); // IS disabled
+        } else {
+            callback(false); // is NOT disabled
+        }
+    }, (error) => {
+        console.error('ইউজার লগইন স্ট্যাটাস সিঙ্ক সমস্যা:', error);
+    });
+}
+
+/**
  * Subscribe to auth state changes
  * @param {Function} callback - Receives user object or null
  * @returns {Function} - Unsubscribe function

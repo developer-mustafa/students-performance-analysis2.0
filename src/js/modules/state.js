@@ -43,6 +43,8 @@ export const state = {
     analysisSearchDebounce: null,
     currentAnalysisNextStudent: null,
     editingSubjectKey: null,
+    onGlobalLoginUnsubscribe: null,
+    onUserStatusUnsubscribe: null,
 
     // Saved Exams Pagination
     savedExamsCurrentPage: 1,
