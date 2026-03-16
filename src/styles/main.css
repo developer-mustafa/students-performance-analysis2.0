@@ -8897,19 +8897,21 @@ body.is-super-admin td.admin-only {
   background-repeat: no-repeat;
   background-position: center;
   pointer-events: none;
-  z-index: 10;
+  z-index: 0;
+  opacity: 0.1;
 }
 
 /* Decorative Border Frame */
 .ms-border-frame {
-  position: relative;
+  position: absolute;
+  top: 2.2mm;
+  left: 2.2mm;
+  bottom: 2.2mm;
+  right: 2.2mm;
   z-index: 1;
-  margin: 6mm auto !important;
-  padding: 5mm 8mm 2mm; /* Reduced bottom padding */
-  border: 3px solid #0d5e2e;
-  border-radius: 2px;
-  height: calc(100% - 12mm);
-  width: calc(100% - 12mm);
+  padding: 2mm 3mm 1mm; /* Minimized padding */
+  border: 1.5px solid #0d5e2e; /* Thinner border */
+  border-radius: 1px;
   box-sizing: border-box;
   display: flex;
   flex-direction: column;
@@ -8932,8 +8934,8 @@ body.is-super-admin td.admin-only {
 /* Header Section */
 .ms-header-section {
   text-align: center;
-  margin-bottom: 18px;
-  padding-bottom: 10px;
+  margin-bottom: 12px; /* Tightened from 18px */
+  padding-bottom: 6px; /* Tightened from 10px */
 }
 
 .ms-emblem {
@@ -8989,8 +8991,8 @@ body.is-super-admin td.admin-only {
 
 /* Student Info Section */
 .ms-student-section {
-  margin: 12px 0;
-  padding: 10px 14px;
+  margin: 8px 0; /* Tightened from 12px */
+  padding: 8px 12px; /* Tightened */
   background: #f8fdf8;
   border: 1px solid #c8e6c9;
   border-radius: 4px;
@@ -9037,16 +9039,18 @@ body.is-super-admin td.admin-only {
 .ms-table {
   width: 100%;
   border-collapse: collapse;
-  margin: 14px 0;
-  font-size: 0.85rem;
+  margin: 4px 0; /* Tightest margin */
+  font-size: 0.75rem; /* Reduced to ensure no wrap */
+  table-layout: auto; 
 }
 
 .ms-table th,
 .ms-table td {
   border: 1px solid #555;
-  padding: 5px 6px;
+  padding: 2px 2px; /* Minimized padding */
   text-align: center;
   vertical-align: middle;
+  white-space: nowrap; /* No wrapping allowed */
 }
 
 .ms-table thead tr {
@@ -9067,10 +9071,11 @@ body.is-super-admin td.admin-only {
 
 .ms-th-subject {
   text-align: left !important;
+  min-width: 80px; 
 }
 
 .ms-th-num {
-  width: 55px;
+  width: 42px; /* Reduced from 55px */
 }
 
 .ms-th-grade {
@@ -9078,7 +9083,7 @@ body.is-super-admin td.admin-only {
 }
 
 .ms-th-gp {
-  width: 40px;
+  width: 50px; /* Reduced from 65px */
 }
 
 .ms-table tbody tr:nth-child(even) {
@@ -9097,6 +9102,7 @@ body.is-super-admin td.admin-only {
 .ms-td-subject {
   text-align: left !important;
   font-weight: 600;
+  line-height: 1.1;
 }
 
 .ms-td-num {
@@ -9121,6 +9127,40 @@ body.is-super-admin td.admin-only {
   color: #dc2626 !important;
 }
 
+.ms-mark-fail {
+  color: #dc2626 !important;
+  font-weight: 800 !important;
+}
+
+.ms-gp-col-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+}
+
+.ms-subject-name-cell {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 2px;
+}
+
+.ms-optional-tag {
+  font-size: 0.58rem;
+  font-weight: 800;
+  color: var(--ms-primary, #4361ee);
+  text-transform: uppercase;
+  background: rgba(67, 97, 238, 0.05);
+  padding: 0.5px 3px;
+  border-radius: 2px;
+  line-height: 1;
+  border: 1px solid rgba(67, 97, 238, 0.15);
+  margin-top: 1px;
+}
+
 .ms-row-total {
   background: #e8f5e9 !important;
   font-weight: 700;
@@ -9141,8 +9181,8 @@ body.is-super-admin td.admin-only {
 .ms-result-section {
   display: flex;
   justify-content: center;
-  gap: 12px;
-  margin: 14px 0;
+  gap: 10px; /* Tightened gap */
+  margin: 10px 0; /* Tightened from 14px */
   flex-wrap: wrap;
 }
 
@@ -9195,8 +9235,8 @@ body.is-super-admin td.admin-only {
 
 /* Grade Scale */
 .ms-grade-scale {
-  margin: 10px 0;
-  padding: 6px 10px;
+  margin: 6px 0; /* Tightened from 10px */
+  padding: 5px 8px; /* Tightened */
   background: #fafafa;
   border: 1px dashed #ccc;
   border-radius: 4px;
@@ -9251,8 +9291,8 @@ body.is-super-admin td.admin-only {
 .ms-footer {
   display: flex;
   justify-content: space-between;
-  margin-top: 15px;
-  padding-top: 8px;
+  margin-top: 10px; /* Tightened from 15px */
+  padding-top: 6px; /* Tightened */
   border-top: 1px solid #ddd;
   font-size: 0.65rem;
   color: #999;
@@ -9368,6 +9408,9 @@ body.is-super-admin td.admin-only {
   body.ms-printing .ms-watermark-bg {
     opacity: var(--ms-watermark-opacity, 0.1) !important;
     display: block !important;
+    background-image: inherit !important; /* Force preservation */
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   body.ms-printing .ms-page {
