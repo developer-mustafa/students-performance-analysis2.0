@@ -14273,9 +14273,8 @@ body.sr-bulk-printing-active .print-only {
 
 .sr-id-card-glow-wrapper {
     position: relative !important;
-    width: 100% !important;
-    max-width: 580px !important; /* Increased width for better rectangular fit */
-    height: 320px !important; /* Balanced height */
+    width: 620px !important; /* Increased from 580px for better laptop presence */
+    height: 350px !important; /* Balanced height for the new width */
     margin: 20px auto !important;
     padding: 3px !important; /* This creates the visible border space */
     border-radius: 15px !important;
@@ -14324,6 +14323,12 @@ body.sr-bulk-printing-active .print-only {
 }
 
 @media print {
+    /* Critical: Ensure background colors and images are rendered as-is */
+    * {
+        -webkit-print-color-adjust: exact !important;
+        print-color-adjust: exact !important;
+    }
+
     .sr-id-card-glow-wrapper {
         max-width: none !important;
         margin: 0 !important;
@@ -14335,11 +14340,39 @@ body.sr-bulk-printing-active .print-only {
         display: none !important;
     }
     .sr-id-card-inner {
-        width: 90mm !important;
-        height: 60mm !important;
+        width: 100mm !important; /* Explicitly match A4 column width */
+        height: 65mm !important;
         box-shadow: none !important;
-        border: 1px solid #000 !important;
-        border-radius: 0 !important;
+        border: 1px solid #cbd5e1 !important;
+        border-radius: 12px !important;
+        background-color: #ffffff !important;
+        overflow: hidden !important;
+        page-break-inside: avoid !important;
+    }
+
+    /* Print Specific Header Backgrounds - ULTRA ROBUST */
+    .sr-id-card-inner .sr-id-card-header {
+        background-color: #f8fafc !important;
+        border-bottom: 2px solid #e2e8f0 !important;
+    }
+    
+    .sr-id-group-science .sr-id-card-header { 
+        background-color: #fee2e2 !important; 
+        border-bottom-color: #fecaca !important;
+    }
+    .sr-id-group-business .sr-id-card-header,
+    .sr-id-group-default .sr-id-card-header { 
+        background-color: #dbeafe !important; 
+        border-bottom-color: #bfdbfe !important;
+    }
+    .sr-id-group-humanities .sr-id-card-header { 
+        background-color: #dcfce7 !important; 
+        border-bottom-color: #bbf7d0 !important;
+    }
+    
+    .sr-id-uid-box-print-centered {
+        background-color: #f8fafc !important;
+        border: 1.5px solid #e2e8f0 !important;
     }
 }
 
@@ -14542,8 +14575,8 @@ body.sr-bulk-printing-active .print-only {
 .sr-id-uid-code {
     font-family: 'Courier New', monospace !important;
     font-weight: 900 !important;
-    font-size: 1.25rem !important; 
-    color: #1e293b !important;
+    font-size: 1.35rem !important; /* Optimized for legibility */
+    color: #0f172a !important;
     letter-spacing: 0.5px !important;
     white-space: nowrap !important;
 }
@@ -14591,4 +14624,138 @@ body.sr-bulk-printing-active .print-only {
 .sr-id-dev-name {
     font-weight: bold !important;
     color: #1e293b !important;
+}
+
+/* Print Specific UID Overlay Fix */
+.sr-id-uid-box-print-centered {
+    width: 100% !important;
+    display: flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 8px !important;
+    background: #f8fafc !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 8px !important;
+    margin: 0 15px !important; /* Centered with side margins */
+}
+
+@media print {
+    /* Hide specific buttons in print even if they are present */
+    .sr-id-actions, .no-print {
+        display: none !important;
+    }
+    
+    .sr-id-uid-container {
+        height: auto !important;
+        padding-bottom: 12px !important; /* Proper spacing in print */
+    }
+}
+
+
+/* =========================================
+   EXPERT MOBILE RESPONSIVENESS OVERRIDES
+   ========================================= */
+@media (max-width: 620px) {
+    /* Ensure no container overflow */
+    html, body {
+        overflow-x: hidden !important;
+        width: 100% !important;
+    }
+
+    .container-fluid {
+        padding: 8px !important;
+    }
+
+    /* Student Results Tab Navigation */
+    .sr-tabs {
+        overflow-x: auto !important;
+        display: flex !important;
+        flex-wrap: nowrap !important;
+        padding: 5px !important;
+        gap: 5px !important;
+        -webkit-overflow-scrolling: touch !important;
+    }
+
+    .sr-tab-btn {
+        flex-shrink: 0 !important;
+        min-width: 140px !important;
+        white-space: nowrap !important;
+    }
+
+    /* ID Generator Layout */
+    .sr-gen-grid-inline {
+        grid-template-columns: 1fr !important;
+        gap: 12px !important;
+    }
+
+    /* Marksheet Preview Header */
+    .sr-preview-header {
+        flex-direction: column !important;
+        align-items: center !important;
+        gap: 10px !important;
+        padding: 10px !important;
+    }
+
+    .sr-zoom-controls {
+        width: 100% !important;
+        justify-content: center !important;
+    }
+
+    /* Data Tables Horizontal Scrolling */
+    .table-responsive {
+        width: 100% !important;
+        overflow-x: auto !important;
+        border-radius: 8px !important;
+        border: 1px solid var(--border-color) !important;
+        margin-bottom: 15px !important;
+    }
+
+    table.data-table {
+        min-width: 700px !important; /* Force scroll for legibility */
+    }
+
+    /* Card Layouts */
+    .card {
+        padding: 15px !important;
+    }
+
+    .card-header {
+        flex-direction: column !important;
+        gap: 8px !important;
+        text-align: center !important;
+    }
+
+    /* Form Rows */
+    .form-row {
+        flex-direction: column !important;
+        gap: 10px !important;
+    }
+
+    .form-group {
+        width: 100% !important;
+    }
+
+    /* Utility Helpers */
+    .m-w-100 { width: 100% !important; }
+    .m-text-center { text-align: center !important; }
+}
+
+@media (max-width: 480px) {
+    /* Extra-tight scaling for very small devices */
+    .sr-id-card-glow-wrapper {
+        margin: 5px auto -150px !important; /* Space reclamation for scale */
+    }
+
+    .sr-search-box {
+        padding: 5px !important;
+    }
+
+    .sr-search-input {
+        font-size: 16px !important; /* Prevents iOS auto-zoom on focus */
+    }
+
+    /* Nav links scroll */
+    .nav-links {
+        gap: 15px !important;
+    }
 }

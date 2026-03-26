@@ -302,9 +302,11 @@ async function displayStudentMarksheet(studentResult) {
 
     previewArea.innerHTML = html;
 
-    // Auto-fit zoom for mobile
-    if (window.innerWidth <= 768) {
-        const initialScale = window.innerWidth <= 480 ? 0.35 : 0.45;
+    // Robust Auto-fit zoom for mobile devices
+    const containerWidth = previewArea.clientWidth || window.innerWidth;
+    const targetWidth = 840; // A4 Standard context width
+    if (containerWidth < targetWidth) {
+        const initialScale = Math.max(0.3, (containerWidth - 30) / targetWidth);
         previewArea.style.setProperty('--ms-main-scale', initialScale);
         
         const zoomInput = document.getElementById('srZoom');
@@ -413,7 +415,6 @@ function getIdCardHTML(studentResult, isGenerator = false, devCredit = null) {
                         </button>
                     </div>
                 </div>
-                </div>
             </div>
         </div>
 
@@ -460,13 +461,15 @@ function getIdCardHTML(studentResult, isGenerator = false, devCredit = null) {
                         </div>
                     </div>
                 </div>
-                <div class="sr-id-uid-container">
-                    <div class="sr-id-uid-box" style="width: 100%; justify-content: center; border: 1px solid #e2e8f0; padding: 5px; border-radius: 5px;">
-                        <span class="sr-id-uid-code" style="font-size: 1rem;">${uid}</span>
+                <div class="sr-id-uid-container" style="height: auto; padding-bottom: 20px;">
+                    <div class="sr-id-uid-box-print-centered">
+                        <span class="sr-id-uid-code" style="font-size: 1.1rem;">${uid}</span>
                     </div>
                 </div>
+
             </div>
         </div>
+
     `;
 
 }
@@ -480,6 +483,19 @@ function renderIdCard(studentResult) {
 
     container.innerHTML = getIdCardHTML(studentResult, false);
     container.style.display = 'block';
+
+    // Advanced dynamic scaling for all mobile devices
+    const wrapper = container.querySelector('.sr-id-card-glow-wrapper');
+    if (wrapper) {
+        const parentWidth = container.clientWidth || window.innerWidth;
+        if (parentWidth < 650) {
+            const scale = Math.min(1.0, (parentWidth - 16) / 620);
+            wrapper.style.transform = `scale(${scale})`;
+            wrapper.style.transformOrigin = 'center top';
+            wrapper.style.margin = '10px auto';
+            wrapper.style.marginBottom = `${-350 * (1 - scale)}px`; 
+        }
+    }
 
     // Copy feedback
     window.__srCopyFeedback = () => {
@@ -805,6 +821,23 @@ async function handleGenerateId() {
         
         resultBox.innerHTML = getIdCardHTML(studentResult, true, developerCredit);
         resultBox.style.display = 'block';
+
+        // Precise dynamic scaling for results box (laptop/mobile)
+        const wrapperFactor = resultBox.querySelector('.sr-id-card-glow-wrapper');
+        if (wrapperFactor) {
+            const containerWidth = resultBox.clientWidth || window.innerWidth;
+            if (containerWidth < 650) {
+                const s = Math.min(1.0, (containerWidth - 16) / 620);
+                wrapperFactor.style.transform = `scale(${s})`;
+                wrapperFactor.style.transformOrigin = 'center top';
+                wrapperFactor.style.margin = '10px auto';
+                wrapperFactor.style.marginBottom = `${-350 * (1 - s)}px`;
+            } else {
+                // Ensure reset on large screens
+                wrapperFactor.style.transform = 'none';
+                wrapperFactor.style.margin = '20px auto';
+            }
+        }
 
         // Show the reset generator button
         const genResetBtn = document.getElementById('srGenResetBtn');
