@@ -13581,9 +13581,9 @@ body.dark-mode .sr-tabs { background: rgba(15, 23, 42, 0.5); }
 
 .sr-gen-split-layout {
     display: grid;
-    grid-template-columns: 1.2fr 1fr;
-    gap: 20px;
-    align-items: stretch;
+    grid-template-columns: 1fr 1.3fr;
+    gap: 24px;
+    align-items: flex-start;
 }
 
 .sr-gen-form-box {
@@ -13699,11 +13699,12 @@ body.dark-mode .sr-gen-result-box { background: rgba(59, 130, 246, 0.05); }
     background: linear-gradient(135deg, rgba(67, 97, 238, 0.05) 0%, rgba(59, 130, 246, 0.05) 100%);
     border: 1px solid rgba(67, 97, 238, 0.2);
     border-radius: 10px;
-    padding: 20px;
-    text-align: center;
+    padding: 24px;
+    text-align: left;
     display: flex;
     flex-direction: column;
-    align-items: center;
+    align-items: stretch;
+    justify-content: flex-start;
     gap: 12px;
     width: 100%;
     animation: fadeInUp 0.3s ease;
@@ -14288,8 +14289,8 @@ body.sr-bulk-printing-active .print-only {
 
 .sr-id-card-wrapper {
     width: 100% !important;
-    max-width: 100% !important;
-    margin: 8px auto !important;
+    max-width: 600px !important;
+    margin: 0 !important;
     display: block !important;
 }
 
@@ -14503,38 +14504,41 @@ body.sr-bulk-printing-active .print-only {
 }
 
 .sr-id-uid-box {
-    flex: 2.5 !important; 
+    flex: 4.5 !important; 
     display: flex !important;
     align-items: center !important;
     justify-content: center !important;
-    background: transparent !important;
-    padding: 8px 12px !important; 
+    padding: 8px 6px !important; 
     border-radius: 8px !important;
     border: 1.5px solid transparent !important;
+    min-width: 0 !important;
 }
 
 .sr-id-uid-prefix {
-    font-size: 0.95rem !important;
+    font-size: 0.85rem !important;
     font-weight: 600 !important;
     opacity: 0.6 !important;
     color: inherit !important;
-    margin-right: 8px !important;
+    margin-right: 6px !important;
     font-family: 'Inter', sans-serif !important;
+    white-space: nowrap !important;
 }
 
 .sr-id-uid-code {
     font-family: 'Courier New', monospace !important;
     font-weight: 800 !important;
-    font-size: 1.05rem !important;
+    font-size: 0.95rem !important;
     color: inherit !important;
-    letter-spacing: 0.8px !important;
+    letter-spacing: 0.5px !important;
     white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
 }
 
 .sr-id-actions {
-    flex: 3 !important;
+    flex: 2 !important;
     display: flex !important;
-    gap: 8px !important;
+    gap: 6px !important;
 }
 
 .sr-id-btn {

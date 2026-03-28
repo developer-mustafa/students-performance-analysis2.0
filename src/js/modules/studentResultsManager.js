@@ -7,6 +7,7 @@
 import { getSavedExams, getExamConfigs, getSettings } from '../firestoreService.js';
 import { state } from './state.js';
 import QRCode from 'qrcode';
+import html2canvas from 'html2canvas';
 import { showNotification, convertToEnglishDigits } from '../utils.js';
 import {
     renderSingleMarksheet,
@@ -51,9 +52,9 @@ window.srDirectSearch = (uid) => {
         const inputEvent = new Event('input', { bubbles: true });
         searchInput.dispatchEvent(inputEvent);
     }
-    
+
     if (searchTab) searchTab.click();
-    
+
     // Give UI time to switch and process
     setTimeout(() => {
         if (searchBtn) searchBtn.click();
@@ -99,7 +100,7 @@ function extractBengaliChars(text, count, fromEnd = false) {
     const str = String(text).replace(/\s+/g, '');
     // Bengali matras (dependent vowels) — should be attached to previous consonant
     const matras = new Set(['া', 'ি', 'ী', 'ু', 'ূ', 'ৃ', 'ে', 'ৈ', 'ো', 'ৌ', '্']);
-    
+
     // First collect "logical characters" (base + attached matras)
     const logicalChars = [];
     let current = '';
@@ -149,9 +150,9 @@ function generateShortHash(str) {
 function generateStudentUniqueId(name, cls, session, roll, group) {
     const first3 = extractBengaliChars(name, 3, false);
     const namePrefix = transliterateBangla(first3).toUpperCase().padEnd(3, 'X').substring(0, 3);
-    
+
     const rollPart = convertToEnglishDigits(String(roll || '').replace(/\s+/g, '')).padStart(2, '0');
-    
+
     // Hash the exact inputs
     const rawString = `${name}|${cls}|${session}|${roll}|${group}`;
     const hash = generateShortHash(rawString);
@@ -309,7 +310,7 @@ async function displayStudentMarksheet(studentResult) {
     if (containerWidth < targetWidth) {
         const initialScale = Math.max(0.3, (containerWidth - 30) / targetWidth);
         previewArea.style.setProperty('--ms-main-scale', initialScale);
-        
+
         const zoomInput = document.getElementById('srZoom');
         const zoomLevel = document.getElementById('srZoomLevel');
         if (zoomInput) zoomInput.value = initialScale;
@@ -329,16 +330,16 @@ async function displayStudentMarksheet(studentResult) {
 function getIdCardHTML(studentResult, isGenerator = false, devCredit = null) {
     const uid = studentResult.uniqueId;
     const group = studentResult.group || '';
-    
+
     // Group-based color class
     let groupClass = 'sr-id-group-default';
     const gText = group.toLowerCase();
-    
+
     let printHeaderColor = '#eff6ff'; // Ultra-soft Blue (blue-50)
     let printHeaderIconColor = '#3b82f6';
     let printHeaderTitleColor = '#1e40af';
     let printHeaderBorderColor = '#bfdbfe';
-    
+
     if (gText.includes('বিজ্ঞা') || gText.includes('sci')) {
         groupClass = 'sr-id-group-science';
         printHeaderColor = '#fef2f2'; // Ultra-soft Red (red-50)
@@ -422,7 +423,7 @@ function getIdCardHTML(studentResult, isGenerator = false, devCredit = null) {
                         </button>
                         <button class="sr-id-btn search-btn" title="সরাসরি মার্কশীট দেখুন" onclick="window.srDirectSearch('${uid}')">
                             <i class="fas fa-search"></i>
-                            <span>সরাসরি সার্চ</span>
+                            <span>ID দিয়ে ফলাফল সার্চ</span>
                         </button>
                     </div>
                 </div>
@@ -474,8 +475,8 @@ function getIdCardHTML(studentResult, isGenerator = false, devCredit = null) {
                 </div>
                 <div class="sr-id-uid-container" style="height: auto; padding-bottom: 10px;">
                     <div class="sr-id-uid-box-print-centered" style="-webkit-print-color-adjust: exact !important; background: ${printHeaderColor} !important; border: 1.5px solid ${printHeaderBorderColor} !important;">
-                        <span class="sr-id-uid-prefix" style="font-weight: 600; font-size: 6.5pt; margin-right: 6px; color: ${printHeaderTitleColor} !important; opacity: 0.75;">ID No.</span>
-                        <span class="sr-id-uid-code" style="font-family: monospace, sans-serif; font-size: 9.5pt; font-weight: 800; letter-spacing: 0.5px; color: ${printHeaderTitleColor} !important;">${uid}</span>
+                        <span class="sr-id-uid-prefix" style="white-space: nowrap !important; font-weight: 600; font-size: 6.5pt; margin-right: 6px; color: ${printHeaderTitleColor} !important; opacity: 0.75;">ID No.</span>
+                        <span class="sr-id-uid-code" style="white-space: nowrap !important; font-family: monospace, sans-serif; font-size: 9.5pt; font-weight: 800; letter-spacing: 0.5px; color: ${printHeaderTitleColor} !important;">${uid}</span>
                     </div>
                 </div>
             </div>
@@ -589,6 +590,11 @@ export async function initStudentResultsManager() {
         genBtn.addEventListener('click', handleGenerateId);
     }
 
+    const downloadBtn = document.getElementById('srDownloadIdBtn');
+    if (downloadBtn) {
+        downloadBtn.addEventListener('click', handleDownloadIdCard);
+    }
+
     // Toggle between search and generate modes
     const tabBtns = document.querySelectorAll('.sr-tab-btn');
     tabBtns.forEach(btn => {
@@ -683,8 +689,8 @@ async function populateSrDropdowns() {
 
             studentSelect.innerHTML = '<option value="">খুঁজছে...</option>';
 
-            const relevantExams = allExams.filter(e => 
-                e.class === selClass && 
+            const relevantExams = allExams.filter(e =>
+                e.class === selClass &&
                 e.session === selSession
             );
 
@@ -694,7 +700,7 @@ async function populateSrDropdowns() {
                     exam.studentData.forEach(s => {
                         const stGroup = s.group || '';
                         if (selGroup && selGroup !== 'all' && stGroup !== selGroup) return;
-                        
+
                         const key = `${s.id}_${stGroup}`;
                         if (!studentsMap.has(key)) {
                             studentsMap.set(key, s);
@@ -704,13 +710,13 @@ async function populateSrDropdowns() {
             });
 
             const studentsList = Array.from(studentsMap.values());
-            
+
             // Wait for dynamic import of utility functions for sorting
             const { sortStudentData } = await import('../utils.js');
             const sortedStudents = sortStudentData(studentsList, 'id', 'roll-asc');
-            
+
             studentSelect.innerHTML = '<option value="">শিক্ষার্থী নির্বাচন করুন (রোল - নাম)</option>';
-            
+
             if (sortedStudents.length === 0) {
                 studentSelect.innerHTML = '<option value="">কোনো শিক্ষার্থী পাওয়া যায়নি</option>';
             } else {
@@ -740,7 +746,7 @@ async function handleSearch() {
     const searchId = searchInput?.value?.trim();
 
     const searchBtn = document.getElementById('srSearchBtn');
-    
+
     if (searchBtn) {
         searchBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> <span>সার্চিং...</span>';
         searchBtn.disabled = true;
@@ -796,7 +802,7 @@ async function handleSearch() {
                 searchBtn.innerHTML = '<i class="fas fa-search"></i> <span>সার্চ</span>';
                 searchBtn.disabled = false;
             }
-            
+
             // Auto-scroll to marksheet
             const previewArea = document.getElementById('srMarksheetPreview');
             if (previewArea) {
@@ -844,7 +850,7 @@ async function handleGenerateId() {
         // Load developer credit settings once
         const settings = await getSettings();
         const developerCredit = settings?.developerCredit;
-        
+
         const studentResult = {
             id: roll,
             name: name,
@@ -853,17 +859,21 @@ async function handleGenerateId() {
             group: group,
             uniqueId: uid
         };
-        
+
         resultBox.innerHTML = getIdCardHTML(studentResult, true, developerCredit);
         resultBox.style.display = 'block';
 
         // Generate QR code instantly
         await renderQRCodesInContainer(resultBox, studentResult, developerCredit);
 
-        // Show the reset generator button
+        // Show the reset and download buttons
         const genResetBtn = document.getElementById('srGenResetBtn');
+        const genDownloadBtn = document.getElementById('srDownloadIdBtn');
         if (genResetBtn) {
             genResetBtn.style.display = 'block';
+        }
+        if (genDownloadBtn) {
+            genDownloadBtn.style.display = 'block';
         }
 
         const rightCol = document.querySelector('.sr-gen-result-box');
@@ -936,6 +946,91 @@ function resetGeneratorSection() {
 
     const genResetBtn = document.getElementById('srGenResetBtn');
     if (genResetBtn) genResetBtn.style.display = 'none';
+
+    const genDownloadBtn = document.getElementById('srDownloadIdBtn');
+    if (genDownloadBtn) genDownloadBtn.style.display = 'none';
+}
+
+/**
+ * Download the generated ID card as a high-quality image
+ */
+async function handleDownloadIdCard() {
+    const cardElement = document.querySelector('#srGenResult .sr-id-card-inner');
+    if (!cardElement) {
+        showNotification('ডাউনলোড করার মতো কোনো আইডি কার্ড খুঁজে পাওয়া যায়নি', 'error');
+        return;
+    }
+
+    const btn = document.getElementById('srDownloadIdBtn');
+    const originalText = btn.innerHTML;
+
+    try {
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> ডাউনলোড হচ্ছে...';
+        btn.disabled = true;
+
+        // Temporarily hide the action buttons inside the card (copy/search)
+        const actions = cardElement.querySelector('.sr-id-actions');
+        if (actions) actions.style.display = 'none';
+
+        // Capture! Using high scale for "clear" image (3x resolution)
+        const canvas = await html2canvas(cardElement, {
+            scale: 3,
+            useCORS: true,
+            backgroundColor: null,
+            logging: false,
+            onclone: (clonedDoc) => {
+                // Ensure cloned element is visible and styled correctly for capture
+                const clonedCard = clonedDoc.querySelector('.sr-id-card-inner');
+                if (clonedCard) {
+                    clonedCard.style.boxShadow = 'none';
+                    clonedCard.style.border = '1.5px solid #e2e8f0';
+                }
+            }
+        });
+
+        // Restore actions
+        if (actions) actions.style.display = '';
+
+        // Extract metadata directly from the generator dropdown options (As requested)
+        const classSelect = document.getElementById('srGenClass');
+        const sessionSelect = document.getElementById('srGenSession');
+        const studentSelect = document.getElementById('srGenStudent');
+
+        const selectedStudent = studentSelect?.options[studentSelect.selectedIndex];
+        const rawName = selectedStudent?.dataset.name || 'Student';
+        const roll = selectedStudent?.dataset.roll || 'Roll';
+        const clsValue = classSelect?.value || 'Class';
+        const sessionValue = sessionSelect?.value || 'Session';
+        
+        // Strictly ASCII-only filename for maximum browser compatibility (Prevords GUID fallback)
+        const engName = transliterateBangla(rawName).replace(/[^a-zA-Z0-9]/g, '-').substring(0, 15);
+        const engCls = transliterateBangla(clsValue).replace(/[^a-zA-Z0-9]/g, '-');
+        const englishFileName = `IDCard_${engName}_Roll-${roll}_${engCls}_${sessionValue.replace(/\//g, '-')}.png`;
+
+        // Generate high-resolution image
+        const dataUrl = canvas.toDataURL('image/png', 1.0);
+        
+        // Stable download trigger
+        const link = document.createElement('a');
+        link.style.display = 'none';
+        link.href = dataUrl;
+        link.setAttribute('download', englishFileName);
+        
+        document.body.appendChild(link);
+        link.click();
+        
+        setTimeout(() => {
+            document.body.removeChild(link);
+        }, 200);
+        
+        showNotification('আইডি কার্ড সফলভাবে ডাউনলোড হয়েছে! ✅');
+    } catch (err) {
+        console.error('Download failed:', err);
+        showNotification('ইমেজ ডাউনলোড করতে একটি সমস্যা হয়েছে', 'error');
+    } finally {
+        btn.innerHTML = originalText;
+        btn.disabled = false;
+    }
 }
 
 /**
@@ -965,14 +1060,14 @@ async function handleBulkPrint() {
     try {
         const allExams = await getSavedExams();
         const relevantExams = allExams.filter(e => e.class === selClass && e.session === selSession);
-        
+
         const studentsMap = new Map();
         relevantExams.forEach(exam => {
             if (exam.studentData) {
                 exam.studentData.forEach(s => {
                     const stGroup = s.group || '';
                     if (selGroup && selGroup !== 'all' && stGroup !== selGroup) return;
-                    
+
                     const key = `${s.id}_${stGroup}`;
                     if (!studentsMap.has(key)) {
                         studentsMap.set(key, s);
@@ -991,7 +1086,7 @@ async function handleBulkPrint() {
 
         const { sortStudentData } = await import('../utils.js');
         const sortedStudents = sortStudentData(studentsList, 'id', 'roll-asc');
-        
+
         // Fetch settings for developer credit
         const settings = await getSettings();
         const developerCredit = settings?.developerCredit;
@@ -1010,13 +1105,13 @@ async function handleBulkPrint() {
         // Generate Print Output (8 cards per page to ensure maximum utility)
         let printHTML = '';
         const cardsPerPage = 8;
-        
+
         for (let i = 0; i < sortedStudents.length; i += cardsPerPage) {
             const pageStudents = sortedStudents.slice(i, i + cardsPerPage);
-            
+
             printHTML += `<div class="sr-bp-page">
                             <div class="sr-bp-grid-layout">`;
-                            
+
             pageStudents.forEach(s => {
                 const uid = generateStudentUniqueId(s.name, selClass, selSession, s.id, s.group || '');
                 const studentResult = {
@@ -1026,11 +1121,11 @@ async function handleBulkPrint() {
                     session: selSession,
                     group: s.group || '',
                     uniqueId: uid,
-                    showSearchBtn: false 
+                    showSearchBtn: false
                 };
                 printHTML += `<div class="sr-bp-card-wrapper">${getIdCardHTML(studentResult, false, developerCredit)}</div>`;
             });
-            
+
             printHTML += `  </div>
                             ${devCreditHtml}
                           </div>`;
@@ -1043,7 +1138,7 @@ async function handleBulkPrint() {
             printContainer.id = 'srBulkPrintContainer';
             document.body.appendChild(printContainer);
         }
-        
+
         printContainer.innerHTML = printHTML;
 
         // Generate QR codes for all bulk print cards instantly
@@ -1062,14 +1157,14 @@ async function handleBulkPrint() {
 
         // Add a class to body to trigger print styles, then print
         document.body.classList.add('sr-bulk-printing-active');
-        
+
         setTimeout(() => {
             window.print();
-            
+
             // Cleanup
             document.body.classList.remove('sr-bulk-printing-active');
             printContainer.innerHTML = '';
-            
+
             btn.innerHTML = originalText;
             btn.disabled = false;
         }, 800);
