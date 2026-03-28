@@ -495,11 +495,12 @@ async function renderQRCodesInContainer(container, studentResult, devCredit = nu
 
     let qrDevInfoString = '';
     if (devCredit && devCredit.name) {
-        qrDevInfoString = `\nDev: ${devCredit.name}`;
-        if (devCredit.link) qrDevInfoString += ` (${devCredit.link})`;
+        qrDevInfoString = `\nDeveloper: ${devCredit.name}`;
+        if (devCredit.link) qrDevInfoString += `\nDev Link: ${devCredit.link}`;
     }
 
-    const qrData = `ID: ${uid}\nName: ${studentResult.name}\nRoll: ${studentResult.id}\nClass: ${studentResult.class}\nGroup: ${group || 'N/A'}\nSession: ${studentResult.session}${qrDevInfoString}`;
+    const liveLink = window.location.origin + window.location.pathname;
+    const qrData = `ID: ${uid}\nName: ${studentResult.name}\nRoll: ${studentResult.id}\nClass: ${studentResult.class}\nGroup: ${group || 'N/A'}\nSession: ${studentResult.session}\nলাইভ লিংক: ${liveLink}${qrDevInfoString}`;
 
     // IMPORTANT BUGFIX: Select only the canvases for the CURRENT UID
     const canvases = container.querySelectorAll(`.sr-id-qr-canvas[data-uid="${uid}"]`);

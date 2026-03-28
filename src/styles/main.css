@@ -8435,17 +8435,13 @@ body:not(.dark-mode) .nav-btn {
 }
 
 @media (max-width: 600px) {
-  .page-nav-btn span {
-    display: none;
-  }
-
   .page-nav-btn {
     padding: 8px 12px;
-    font-size: 1rem;
+    font-size: 0.9rem;
   }
 
   .page-nav-tabs {
-    justify-content: center;
+    justify-content: flex-start;
   }
 }
 
@@ -13994,12 +13990,9 @@ body.dark-mode .sr-gen-result-uid { background: rgba(0, 0, 0, 0.2); }
 }
 
 @media (max-width: 480px) {
-    .sr-search-btn span {
-        display: none;
-    }
-
     .sr-search-btn {
         padding: 10px 14px;
+        font-size: 0.85rem;
     }
 }
 
