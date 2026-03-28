@@ -839,7 +839,7 @@ export function renderSingleMarksheet(student, subjects, examDisplayName, select
     ).join('');
 
     const watermarkHtml = ms.watermarkUrl ?
-        `<div class="ms-watermark-bg" style="background-image: url('${ms.watermarkUrl}'); opacity: ${ms.watermarkOpacity || 0.1};"></div>` : '';
+        `<img src="${ms.watermarkUrl}" class="ms-watermark-img" style="opacity: ${ms.watermarkOpacity || 0.1};" alt="Watermark">` : '';
 
     const todayDate = new Date().toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' });
 
@@ -860,8 +860,7 @@ export function renderSingleMarksheet(student, subjects, examDisplayName, select
     }
 
     return `
-        <div class="ms-page font-${ms.fontSize || 'medium'} theme-${ms.theme || 'classic'} border-${ms.borderStyle || 'double'} typography-${ms.typography || 'default'} density-${ms.rowDensity || 'normal'}" id="ms_page_${student.id}_${student.group}" style="--ms-primary: ${ms.primaryColor || '#4361ee'}; --ms-watermark-opacity: ${ms.watermarkOpacity || 0.1};">
-            ${watermarkHtml}
+        <div class="ms-page font-${ms.fontSize || 'medium'} theme-${ms.theme || 'classic'} border-${ms.borderStyle || 'double'} typography-${ms.typography || 'default'} density-${ms.rowDensity || 'normal'}" id="ms_page_${student.id}_${student.group}" style="--ms-primary: ${ms.primaryColor || '#4361ee'};">
             
             <div class="ms-actions-float no-print">
                 <button class="ms-btn-action ms-btn-print-single" onclick="window.printSingleMarksheet('ms_page_${student.id}_${student.group}')">
@@ -915,26 +914,29 @@ export function renderSingleMarksheet(student, subjects, examDisplayName, select
                     </div>
                 </div>
 
-                <!-- Marks Table -->
-                <table class="ms-table">
-                    <thead>
-                        ${headerRow}
-                    </thead>
-                    <tbody>
-                        ${subjectRows}
-                    </tbody>
-                    <tfoot>
-                        <tr class="ms-row-total">
-                            <td colspan="${isCombinedMode ? 3 : 2}" class="ms-td-total-label">সর্বমোট</td>
-                            <td class="ms-td-num">${maxGrand}</td>
-                            <td colspan="3"></td>
-                            <td class="ms-td-num ms-td-total">${grandTotal}</td>
-                            ${isCombinedMode ? '<td class="ms-td-num"></td>' : ''}
-                            <td class="ms-td-grade">${overallGrade}</td>
-                            <td class="ms-td-gp">${avgGPA}</td>
-                        </tr>
-                    </tfoot>
-                </table>
+                <!-- Marks Table with Watermark -->
+                <div class="ms-table-wrapper" style="position: relative;">
+                    ${watermarkHtml}
+                    <table class="ms-table">
+                        <thead>
+                            ${headerRow}
+                        </thead>
+                        <tbody>
+                            ${subjectRows}
+                        </tbody>
+                        <tfoot>
+                            <tr class="ms-row-total">
+                                <td colspan="${isCombinedMode ? 3 : 2}" class="ms-td-total-label">সর্বমোট</td>
+                                <td class="ms-td-num">${maxGrand}</td>
+                                <td colspan="3"></td>
+                                <td class="ms-td-num ms-td-total">${grandTotal}</td>
+                                ${isCombinedMode ? '<td class="ms-td-num"></td>' : ''}
+                                <td class="ms-td-grade">${overallGrade}</td>
+                                <td class="ms-td-gp">${avgGPA}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
 
                 <!-- Result Summary -->
                 <div class="ms-result-section">
@@ -1535,14 +1537,13 @@ function buildMarksheetPrintDocument(marksheetHtmlArray) {
             .ms-grade-scale,
             .ms-optional-tag,
             .ms-header-pill,
-            .ms-watermark-bg {
+            .ms-watermark-img {
                 -webkit-print-color-adjust: exact !important;
                 print-color-adjust: exact !important;
             }
 
-            .ms-watermark-bg {
+            .ms-watermark-img {
                 display: block !important;
-                opacity: var(--ms-watermark-opacity, 0.1) !important;
             }
 
             .ms-border-frame {

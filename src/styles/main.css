@@ -8996,18 +8996,17 @@ body.is-super-admin td.admin-only {
   box-sizing: border-box;
 }
 
-.ms-watermark-bg {
+/* Updated Watermark - Guaranteed 100% Print Visibility */
+.ms-watermark-img {
   position: absolute;
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
   width: 250px;
   height: 250px;
-  background-size: contain;
-  background-repeat: no-repeat;
-  background-position: center;
+  object-fit: contain;
   pointer-events: none;
-  z-index: 0;
+  z-index: 10; /* Stack over background colors */
   opacity: 0.1;
 }
 
@@ -9600,8 +9599,8 @@ body.is-super-admin td.admin-only {
     display: none !important;
   }
 
-    body.ms-printing .ms-watermark-bg,
-    body.ms-printing-single .ms-watermark-bg {
+    body.ms-printing .ms-watermark-img,
+    body.ms-printing-single .ms-watermark-img {
       display: block !important;
       opacity: var(--ms-watermark-opacity, 0.1) !important;
     }
@@ -13569,6 +13568,9 @@ body.dark-mode .sr-tabs { background: rgba(15, 23, 42, 0.5); }
     grid-template-columns: 1fr 1.3fr;
     gap: 24px;
     align-items: flex-start;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .sr-gen-form-box {
@@ -13576,6 +13578,9 @@ body.dark-mode .sr-tabs { background: rgba(15, 23, 42, 0.5); }
     padding: 20px;
     border-radius: 12px;
     border: 1px solid rgba(67, 97, 238, 0.1);
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 .sr-gen-grid-inline {
@@ -13605,44 +13610,86 @@ body.dark-mode .sr-gen-form-box { background: rgba(67, 97, 238, 0.05); }
     grid-column: 1 / -1;
 }
 
+.sr-gen-field {
+    min-width: 0;
+}
+
 .sr-gen-field .form-control {
+    width: 100%;
+    max-width: 100%;
     padding: 8px 12px;
     font-size: 0.85rem;
     border-radius: 6px;
     border: 1px solid var(--border-color);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
+    box-sizing: border-box;
 }
 
 .sr-gen-btn-field {
     grid-column: 1 / -1;
     display: flex;
-    gap: 10px;
+    flex-wrap: wrap;
+    gap: 12px;
     align-items: center;
-    margin-top: 8px;
+    margin-top: 10px;
 }
 
 .sr-gen-btn {
-    padding: 10px 16px !important;
-    font-size: 0.85rem !important;
-    border-radius: 6px !important;
+    padding: 10px 18px !important;
+    font-size: 0.88rem !important;
+    border-radius: 8px !important;
     display: inline-flex;
     align-items: center;
     justify-content: center;
     gap: 8px;
-    height: 42px;
+    height: 44px;
+    font-weight: 700 !important;
+    box-shadow: none !important;
+    border: 1.5px solid transparent !important;
+    transition: all 0.2s ease !important;
+    flex: 1 1 auto;
 }
 
+/* Primary Button: Light Indigo Theme */
 #srGenIdBtn {
-    flex: 1;
+    flex: 1 1 100%;
+    background: #e0e7ff !important;
+    color: #4338ca !important;
+    border-color: #c7d2fe !important;
+}
+#srGenIdBtn:hover {
+    background: #c7d2fe !important;
+    border-color: #a5b4fc !important;
+    transform: translateY(-1.5px);
 }
 
+/* Secondary Button: Light Emerald Theme */
+#srDownloadIdBtn {
+    flex: 2 1 auto;
+    background: #ecfdf5 !important;
+    color: #047857 !important;
+    border-color: #a7f3d0 !important;
+}
+#srDownloadIdBtn:hover {
+    background: #d1fae5 !important;
+    border-color: #6ee7b7 !important;
+    transform: translateY(-1.5px);
+}
+
+/* Danger Button: Light Rose Theme */
 #srGenResetBtn {
-    background: #ef4444 !important;
-    color: white !important;
-    min-width: 100px;
+    flex: 0.8 1 auto;
+    background: #fff1f2 !important;
+    color: #be123c !important;
+    border-color: #fecdd3 !important;
+    min-width: 0 !important;
 }
-
 #srGenResetBtn:hover {
-    background: #dc2626 !important;
+    background: #ffe4e6 !important;
+    border-color: #fda4af !important;
+    transform: translateY(-1.5px);
 }
 
 .sr-gen-result-box {
@@ -13656,6 +13703,9 @@ body.dark-mode .sr-gen-form-box { background: rgba(67, 97, 238, 0.05); }
     padding: 0;
     min-height: 200px;
     overflow: hidden;
+    min-width: 0;
+    width: 100%;
+    box-sizing: border-box;
 }
 
 body.dark-mode .sr-gen-result-box { background: rgba(59, 130, 246, 0.05); }
@@ -14289,6 +14339,7 @@ body.sr-bulk-printing-active .print-only {
     font-family: 'Inter', 'SolaimanLipi', sans-serif !important;
     border: 1.5px solid #e2e8f0 !important;
     box-shadow: 0 4px 16px rgba(0,0,0,0.07) !important;
+    isolation: isolate !important; /* Fixes backdrop-filter breaking border-radius clipping */
 }
 
 .sr-id-card-header {
@@ -14300,6 +14351,8 @@ body.sr-bulk-printing-active .print-only {
     display: flex !important;
     align-items: center !important;
     gap: 14px !important;
+    border-top-left-radius: 12.5px !important; /* Forcing rounding visually */
+    border-top-right-radius: 12.5px !important;
 }
 
 /* Science: Soft Light Red */
@@ -14777,5 +14830,88 @@ body.sr-bulk-printing-active .print-only {
     /* Nav links scroll */
     .nav-links {
         gap: 15px !important;
+    }
+}
+
+/* =========================================
+   STUDENT ID CARD MOBILE RESPONSIVENESS (PROPORTIONAL SCALE)
+========================================= */
+@media (max-width: 500px) {
+    .sr-id-card-header {
+        padding: 10px 14px !important;
+        gap: 8px !important;
+    }
+    .sr-id-card-title {
+        font-size: 11.5pt !important;
+    }
+    .sr-id-card-subtitle {
+        font-size: 7.5pt !important;
+    }
+    .sr-id-icon {
+        width: 30px !important;
+        height: 30px !important;
+        font-size: 1rem !important;
+        border-radius: 8px !important;
+    }
+    
+    .sr-id-card-main {
+        padding: 12px 14px !important;
+        gap: 12px !important;
+    }
+    
+    .sr-id-card-body-right {
+        width: 90px !important;
+        padding-left: 12px !important;
+    }
+    
+    .sr-id-qr-canvas, .sr-id-qr-img {
+        width: 75px !important;
+        height: 75px !important;
+        padding: 2px !important;
+    }
+    
+    .sr-id-qr-label {
+        font-size: 5pt !important;
+        letter-spacing: 1px !important;
+    }
+    
+    .sr-id-field-grid {
+        gap: 6px !important;
+        margin-bottom: 6px !important;
+    }
+    
+    .sr-id-label {
+        font-size: 7.5pt !important;
+    }
+    
+    .sr-id-value {
+        font-size: 9pt !important;
+    }
+    
+    .sr-id-uid-container {
+        padding: 8px 14px 10px !important;
+        gap: 8px !important;
+    }
+    
+    .sr-id-uid-box {
+        padding: 6px !important;
+    }
+    
+    .sr-id-uid-prefix {
+        font-size: 0.7rem !important;
+        margin-right: 4px !important;
+    }
+    
+    .sr-id-uid-code {
+        font-size: 0.8rem !important;
+    }
+    
+    .sr-id-btn {
+        padding: 8px 10px !important;
+        font-size: 7.5pt !important;
+    }
+    
+    .sr-id-btn i {
+        font-size: 0.85rem !important;
     }
 }
