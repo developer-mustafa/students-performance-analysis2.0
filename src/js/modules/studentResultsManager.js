@@ -552,17 +552,35 @@ export async function initStudentResultsManager() {
     }
 
     if (searchInput) {
-        searchInput.addEventListener('keydown', (e) => {
-            if (e.key === 'Enter') handleSearch();
-        });
-        // Auto-uppercase as user types
+        // Show/Hide Clear button and update value
         searchInput.addEventListener('input', (e) => {
             e.target.value = e.target.value.toUpperCase();
+            if (clearBtn) clearBtn.style.display = e.target.value ? 'flex' : 'none';
+        });
+
+        searchInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') handleSearch();
         });
     }
 
     if (clearBtn) {
-        clearBtn.addEventListener('click', clearSearchSection);
+        clearBtn.addEventListener('click', () => {
+            if (searchInput) {
+                searchInput.value = '';
+                searchInput.focus();
+            }
+            clearBtn.style.display = 'none';
+            
+            // Clear result areas
+            const resultArea = document.getElementById('srResultArea');
+            const notFoundMsg = document.getElementById('srNotFound');
+            if (resultArea) resultArea.style.display = 'none';
+            if (notFoundMsg) notFoundMsg.style.display = 'none';
+            
+            // Pulse effect
+            clearBtn.classList.add('sr-reset-anim');
+            setTimeout(() => clearBtn.classList.remove('sr-reset-anim'), 400);
+        });
     }
 
     // Generator Reset Btn
@@ -786,12 +804,14 @@ async function handleSearch() {
             if (resultArea) resultArea.style.display = 'none';
             const zoomHeader = document.getElementById('srPreviewHeader');
             if (zoomHeader) zoomHeader.style.display = 'none';
+            
+            // Fix: Reset button when not found
+            if (searchBtn) {
+                searchBtn.innerHTML = '<i class="fas fa-search"></i> <span>সার্চ</span>';
+                searchBtn.disabled = false;
+            }
             return;
         }
-
-        // Selective Rendering: Show marksheet ONLY during search (Prevents redundant ID card generation)
-        // renderIdCard(result); 
-
 
         // Generate marksheet
         await displayStudentMarksheet(result);
@@ -972,18 +992,36 @@ async function handleDownloadIdCard() {
         const actions = cardElement.querySelector('.sr-id-actions');
         if (actions) actions.style.display = 'none';
 
-        // Capture! Using high scale for "clear" image (3x resolution)
+        // Final high-fidelity capture
         const canvas = await html2canvas(cardElement, {
             scale: 3,
             useCORS: true,
-            backgroundColor: null,
             logging: false,
+            backgroundColor: null,
             onclone: (clonedDoc) => {
-                // Ensure cloned element is visible and styled correctly for capture
                 const clonedCard = clonedDoc.querySelector('.sr-id-card-inner');
                 if (clonedCard) {
                     clonedCard.style.boxShadow = 'none';
                     clonedCard.style.border = '1.5px solid #e2e8f0';
+                    
+                    // Stabilize UID bar and prevent vertical clipping
+                    const uidBox = clonedCard.querySelector('.sr-id-uid-box');
+                    const uidContainer = clonedCard.querySelector('.sr-id-uid-container');
+                    if (uidBox && uidContainer) {
+                        uidContainer.style.display = 'flex'; // Use flex for perfect centering
+                        uidContainer.style.alignItems = 'center';
+                        uidContainer.style.paddingTop = '15px'; // Extra top padding as requested
+                        uidContainer.style.paddingBottom = '20px'; // Extra bottom buffer
+                        uidContainer.style.overflow = 'visible';
+                        
+                        uidBox.style.flex = '1';
+                        uidBox.style.width = '100%';
+                        uidBox.style.background = 'white'; 
+                        uidBox.style.display = 'flex';
+                        uidBox.style.alignItems = 'center';
+                        uidBox.style.justifyContent = 'center';
+                        uidBox.style.minHeight = '45px'; // Ensure sufficient height
+                    }
                 }
             }
         });
@@ -1000,33 +1038,32 @@ async function handleDownloadIdCard() {
         const rawName = selectedStudent?.dataset.name || 'Student';
         const roll = selectedStudent?.dataset.roll || 'Roll';
         const clsValue = classSelect?.value || 'Class';
-        const sessionValue = sessionSelect?.value || 'Session';
         
         // Strictly ASCII-only filename for maximum machine compatibility
-        // Transliterate from Bengali to English, lowercase, no special chars
         const engName = transliterateBangla(rawName).replace(/[^a-z0-9]/gi, '_').substring(0, 15);
         const engCls = transliterateBangla(clsValue).replace(/[^a-z0-9]/gi, '_');
         const finalFileName = `ID-Card_${engName}_Roll-${roll}_${engCls}.png`;
 
-        // Capture! Using toBlob for stable large-file handling on Desktops
+        // Capture! Using File-Object in Blob for absolute Chrome desktop naming fidelity
         canvas.toBlob((blob) => {
             if (!blob) {
                 showNotification('ইমেজ তৈরি করতে ব্যর্থ হয়েছে', 'error');
                 return;
             }
 
-            const url = window.URL.createObjectURL(blob);
-            const link = document.createElement('a');
+            // Creating a File object inside the Blob URL often forces Chrome to respect the name
+            const file = new File([blob], finalFileName, { type: 'image/png' });
+            const url = window.URL.createObjectURL(file);
             
+            const link = document.createElement('a');
             link.style.display = 'none';
             link.href = url;
-            link.setAttribute('download', finalFileName);
+            link.download = finalFileName;
             
-            // Critical for desktop Chrome: append to body
             document.body.appendChild(link);
             link.click();
             
-            // Cleanup
+            // Allow more time for the OS to finalize
             setTimeout(() => {
                 document.body.removeChild(link);
                 window.URL.revokeObjectURL(url);

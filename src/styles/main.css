@@ -13469,24 +13469,31 @@ body.dark-mode .sr-tabs { background: rgba(15, 23, 42, 0.5); }
     padding: 8px 16px; /* Reduced top/bottom padding */
 }
 
-/* Compact Search Box */
+/* Premium Search Box */
 .sr-search-box {
     display: flex;
     align-items: center;
     gap: 0;
     background: var(--card-bg, #fff);
-    border: 1px solid var(--border-color, #e2e8f0); /* Thinner border */
-    border-radius: 12px; /* Slightly rounder */
-    padding: 2px 2px 2px 12px; /* Internal alignment */
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.03), 0 1px 2px rgba(0, 0, 0, 0.02);
-    max-width: 620px;
-    margin: 4px auto;
+    border: 1px solid var(--border-color, #e2e8f0);
+    border-radius: 14px;
+    padding: 4px 4px 4px 16px;
+    transition: all 0.4s cubic-bezier(0.165, 0.84, 0.44, 1);
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+    max-width: 680px;
+    margin: 8px auto;
+}
+
+.sr-search-box:hover {
+    border-color: var(--primary-light, #93c5fd);
+    box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.08);
+    transform: translateY(-1px);
 }
 
 .sr-search-box:focus-within {
     border-color: var(--primary);
-    box-shadow: 0 4px 15px rgba(67, 97, 238, 0.1);
+    box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1), 0 12px 24px -8px rgba(0, 0, 0, 0.1);
+    transform: translateY(-2px);
 }
 
 .sr-search-icon {
@@ -13494,61 +13501,74 @@ body.dark-mode .sr-tabs { background: rgba(15, 23, 42, 0.5); }
     align-items: center;
     justify-content: center;
     color: var(--primary);
-    font-size: 1.2rem;
-    opacity: 0.8;
-    margin-right: 4px;
+    font-size: 1.25rem!important;
+    opacity: 0.9;
+    margin-right: 10px;
 }
 
 .sr-search-input {
     flex: 1;
     border: none;
     background: transparent;
-    padding: 10px 8px;
-    font-size: 0.9rem;
+    padding: 12px 10px;
+    font-size: 1rem;
     color: var(--text-color);
     outline: none;
-    font-weight: 600;
-    letter-spacing: 1px;
+    font-weight: 500;
+    letter-spacing: 0.5px;
+    width: 0; /* Let flex control width */
 }
 
 .sr-search-input::placeholder {
-    color: var(--text-color);
-    opacity: 0.4;
+    color: #94a3b8;
+    opacity: 0.8;
     font-weight: 400;
-    letter-spacing: 0;
 }
 
 .sr-search-btn {
-    background: var(--primary, #4361ee);
+    background: #4f46e5; /* Modern Indigo */
     color: white;
     border: none;
-    padding: 8px 20px;
-    border-radius: 8px;
+    padding: 10px 24px;
+    border-radius: 10px;
     font-weight: 600;
-    font-size: 0.85rem;
+    font-size: 0.95rem;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 6px;
-    transition: all 0.2s ease;
+    gap: 8px;
+    transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+    margin-left: 8px;
 }
 
 .sr-search-btn:hover {
-    background: #3b82f6;
-    transform: translateY(-1px);
-    box-shadow: 0 4px 12px rgba(67, 97, 238, 0.2);
+    background: #4338ca;
+    box-shadow: 0 6px 15px rgba(79, 70, 229, 0.25);
+    transform: scale(1.02);
+}
+
+.sr-search-btn:active {
+    transform: scale(0.98);
 }
 
 .sr-clear-btn {
-    background: transparent;
+    background: #f1f5f9;
     border: none;
-    color: var(--text-color);
-    opacity: 0.4;
-    padding: 8px;
+    color: #64748b;
+    width: 34px;
+    height: 34px;
+    display: none; /* Logic will show it */
+    align-items: center;
+    justify-content: center;
     cursor: pointer;
     transition: all 0.2s;
-    border-radius: 6px;
+    border-radius: 50%;
     margin-right: 4px;
+}
+
+.sr-clear-btn:hover {
+    background: #e2e8f0;
+    color: #ef4444;
 }
 
 .sr-clear-btn:hover {
@@ -14525,11 +14545,11 @@ body.sr-bulk-printing-active .print-only {
 }
 
 .sr-id-uid-code {
-    font-family: 'Courier New', monospace !important;
-    font-weight: 800 !important;
+    font-family: 'Inter', sans-serif !important;
+    font-weight: 700 !important;
     font-size: 0.95rem !important;
     color: inherit !important;
-    letter-spacing: 0.5px !important;
+    letter-spacing: 0.2px !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
