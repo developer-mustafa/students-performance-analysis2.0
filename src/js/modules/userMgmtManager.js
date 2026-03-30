@@ -7,6 +7,8 @@ import { elements, setLoading, showConfirmModal } from './uiManager.js';
 import { showNotification } from '../utils.js';
 import { state } from './state.js';
 
+let allUsers = []; // Local cache for all users to enable efficient client-side search
+
 /**
  * Initialize and render user management list
  */
@@ -18,14 +20,58 @@ export async function handleUserManagement() {
 
     setLoading(true, '#userManagementModal .modal-content');
     try {
-        const users = await getAllUsers();
-        renderUsers(users);
+        allUsers = await getAllUsers();
+        setupSearchListener();
+        updateUserStats(allUsers);
+        renderUsers(allUsers);
     } catch (error) {
         console.error('Error in user management:', error);
         showNotification('ব্যবহারকারী তালিকা লোড করতে সমস্যা হয়েছে', 'error');
     } finally {
         setLoading(false, '#userManagementModal .modal-content');
     }
+}
+
+/**
+ * Setup search input listener (once)
+ */
+function setupSearchListener() {
+    if (!elements.userMgmtSearch || elements.userMgmtSearch.dataset.listenerAttached) return;
+
+    elements.userMgmtSearch.addEventListener('input', (e) => {
+        const query = e.target.value.toLowerCase().trim();
+        const filtered = allUsers.filter(user => 
+            (user.displayName && user.displayName.toLowerCase().includes(query)) ||
+            (user.email && user.email.toLowerCase().includes(query))
+        );
+        renderUsers(filtered);
+    });
+    
+    elements.userMgmtSearch.dataset.listenerAttached = 'true';
+}
+
+/**
+ * Update statistics badges in the UI
+ * @param {Array} users 
+ */
+function updateUserStats(users) {
+    const stats = {
+        super_admin: 0,
+        admin: 0,
+        user: 0
+    };
+
+    users.forEach(u => {
+        if (u.role && stats.hasOwnProperty(u.role)) {
+            stats[u.role]++;
+        } else {
+            stats.user++;
+        }
+    });
+
+    if (elements.statSuperAdminCount) elements.statSuperAdminCount.textContent = stats.super_admin;
+    if (elements.statAdminCount) elements.statAdminCount.textContent = stats.admin;
+    if (elements.statUserCount) elements.statUserCount.textContent = stats.user;
 }
 
 /**
@@ -85,7 +131,7 @@ function renderUsers(users) {
  * Update user role
  * @param {string} uid 
  * @param {string} newRole 
- * @param {string} userName // Added userName parameter
+ * @param {string} userName 
  */
 async function handleRoleUpdate(uid, newRole, userName) {
     showConfirmModal(
@@ -95,7 +141,8 @@ async function handleRoleUpdate(uid, newRole, userName) {
                 const success = await updateUserRole(uid, newRole);
                 if (success) {
                     showNotification('ব্যবহারকারীর রোল সফলভাবে আপডেট করা হয়েছে');
-                    // Re-fetch and re-render after successful update
+                    // Update stats locally and re-render to avoid full refetch if possible, 
+                    // but for simplicity and safety, we re-fetch to ensure sync with DB
                     await handleUserManagement();
                 } else {
                     showNotification('রোল আপডেট করতে সমস্যা হয়েছে', 'error');
@@ -110,10 +157,3 @@ async function handleRoleUpdate(uid, newRole, userName) {
     );
 }
 
-function getRoleColor(role) {
-    switch (role) {
-        case 'super_admin': return '#6c5ce7';
-        case 'admin': return '#00b894';
-        default: return '#b2bec3';
-    }
-}

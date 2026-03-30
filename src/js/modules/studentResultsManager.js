@@ -331,7 +331,20 @@ async function displayStudentMarksheet(studentResult) {
     const globalSettings = await getSettings();
     state.developerCredit = globalSettings?.developerCredit || null;
 
-    const examDisplayName = activeExams.length > 1 ? 'সমন্বিত ফলাফল' : (activeExams[0]?.name || 'পরীক্ষা');
+    // Correctly determine the Display Name
+    let examDisplayName = 'পরীক্ষা';
+    const uniqueExamNames = [...new Set(activeExams.map(e => e.name).filter(Boolean))];
+
+    if (searchExamName && searchExamName !== 'all') {
+        // If user specifically picked an exam, use that name
+        examDisplayName = searchExamName;
+    } else if (uniqueExamNames.length > 1) {
+        // Only show "Combined" if there are multiple different exam sessions
+        examDisplayName = 'সমন্বিত ফলাফল';
+    } else if (uniqueExamNames.length === 1) {
+        // Only one type of exam found
+        examDisplayName = uniqueExamNames[0];
+    }
 
     const html = renderSingleMarksheet(studentAgg, displaySubjects, examDisplayName, session, null, rules, allOptSubs);
 

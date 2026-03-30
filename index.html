@@ -1845,6 +1845,24 @@
             </button>
           </div>
         </div>
+        <div class="user-mgmt-toolbar">
+          <div class="user-stats-bar" id="userStatsBar">
+            <div class="user-stat-chip chip-super-admin">
+              <i class="fas fa-user-shield"></i> <span>সুপার এডমিন: </span><strong id="statSuperAdminCount">0</strong>
+            </div>
+            <div class="user-stat-chip chip-admin">
+              <i class="fas fa-user-tie"></i> <span>এডমিন: </span><strong id="statAdminCount">0</strong>
+            </div>
+            <div class="user-stat-chip chip-user">
+              <i class="fas fa-user"></i> <span>ইউজার: </span><strong id="statUserCount">0</strong>
+            </div>
+          </div>
+          <div class="user-search-wrapper">
+            <i class="fas fa-search search-icon"></i>
+            <input type="text" id="userMgmtSearch" placeholder="নাম বা ইমেইল দিয়ে খুঁজুন...">
+          </div>
+        </div>
+
         <div class="user-list-container" style="overflow-x: auto;">
           <table class="user-table-premium">
             <thead>

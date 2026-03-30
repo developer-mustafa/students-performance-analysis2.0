@@ -151,7 +151,11 @@ export const elements = {
     loadExamConfirmBtn: null,
     loadExamCancelBtn: null,
     closeContactModalBtn: null,
-    formTitle: null
+    formTitle: null,
+    userMgmtSearch: null,
+    statSuperAdminCount: null,
+    statAdminCount: null,
+    statUserCount: null
 };
 
 export function updateProfileUI(user, isAdmin, isSuperAdmin, role) {
@@ -380,6 +384,10 @@ export function initDOMReferences() {
     elements.loadExamCancelBtn = document.getElementById('loadExamCancelBtn');
     elements.closeContactModalBtn = document.getElementById('closeContactModalBtn');
     elements.formTitle = document.getElementById('formTitle');
+    elements.userMgmtSearch = document.getElementById('userMgmtSearch');
+    elements.statSuperAdminCount = document.getElementById('statSuperAdminCount');
+    elements.statAdminCount = document.getElementById('statAdminCount');
+    elements.statUserCount = document.getElementById('statUserCount');
 }
 
 export function setLoading(isLoading, targetSelector = null) {

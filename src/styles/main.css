@@ -10608,11 +10608,119 @@ body.is-super-admin td.admin-only {
   transform: rotate(90deg);
 }
 
-.user-list-container {
-  padding: 20px 30px;
-  max-height: 450px;
-  overflow-y: auto;
+.user-mgmt-toolbar {
+  padding: 15px 30px;
+  background: rgba(var(--primary-rgb), 0.02);
+  border-bottom: 1px solid var(--border-color);
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
 }
+
+.user-stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.user-stat-chip {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 16px;
+  border-radius: 12px;
+  font-size: 0.85rem;
+  font-weight: 600;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  transition: all 0.2s;
+}
+
+.user-stat-chip i {
+  font-size: 1rem;
+}
+
+.user-stat-chip strong {
+  font-size: 1.1rem;
+  color: var(--primary);
+  margin-left: 2px;
+}
+
+.chip-super-admin {
+  border-left: 4px solid #6c5ce7;
+}
+
+.chip-admin {
+  border-left: 4px solid #00b894;
+}
+
+.chip-user {
+  border-left: 4px solid #b2bec3;
+}
+
+.user-search-wrapper {
+  position: relative;
+  width: 100%;
+}
+
+.user-search-wrapper i {
+  position: absolute;
+  left: 15px;
+  top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.5;
+  color: var(--text-color);
+}
+
+.user-search-wrapper input {
+  width: 100%;
+  padding: 12px 15px 12px 42px;
+  border-radius: 14px;
+  border: 1px solid var(--border-color);
+  background: var(--card-bg);
+  font-size: 0.9rem;
+  transition: all 0.2s;
+}
+
+.user-search-wrapper input:focus {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 4px rgba(67, 97, 238, 0.1);
+  outline: none;
+}
+
+/* Mobile specific overrides */
+@media (max-width: 600px) {
+  .user-mgmt-toolbar {
+    padding: 12px;
+    gap: 10px;
+  }
+
+  .user-stats-bar {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+
+  .user-stat-chip {
+    padding: 8px 10px;
+    font-size: 0.75rem;
+    justify-content: center;
+  }
+  
+  .user-stat-chip.chip-user {
+    grid-column: span 2;
+  }
+
+  .user-stat-chip strong {
+    font-size: 0.95rem;
+  }
+
+  .user-search-wrapper input {
+    padding: 10px 12px 10px 38px;
+    font-size: 0.85rem;
+  }
+}
+
 
 .user-table-premium {
   width: 100%;
@@ -11147,8 +11255,151 @@ body.is-super-admin td.admin-only {
   .user-mgmt-modal {
     max-width: 98% !important;
     width: 98% !important;
+    border-radius: 12px !important;
+  }
+
+  .modal-header-premium {
+    padding: 12px 15px;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+  }
+
+  .modal-header-premium h2 {
+    font-size: 1.1rem;
+    gap: 8px;
+  }
+
+  .header-actions-right {
+    width: 100%;
+    flex-wrap: wrap;
+    gap: 8px;
+  }
+
+  .header-actions-right .dm-btn {
+    flex: 1;
+    min-width: 110px;
+    justify-content: center;
+    padding: 6px 8px;
+    font-size: 0.75rem;
+  }
+
+  .modal-close-premium {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .user-list-container {
+    padding: 10px;
+    max-height: 75vh;
+  }
+
+  /* Table to Card Transformation for Small Screens */
+  @media (max-width: 600px) {
+    .user-table-premium thead {
+      display: none;
+    }
+
+    .user-table-premium, 
+    .user-table-premium tbody, 
+    .user-table-premium tr, 
+    .user-table-premium td {
+      display: block;
+      width: 100%;
+    }
+
+    .user-row {
+      background: var(--card-bg);
+      border: 1px solid var(--border-color) !important;
+      border-radius: 12px !important;
+      margin-bottom: 10px;
+      padding: 12px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+      position: relative;
+    }
+
+    .user-row td {
+      padding: 6px 0 !important;
+      border: none !important;
+      background: transparent !important;
+    }
+
+    .user-name-cell {
+      border-bottom: 1px solid var(--border-color) !important;
+      margin-bottom: 8px;
+      padding-bottom: 10px !important;
+    }
+
+    .user-info-flex {
+      gap: 10px;
+    }
+
+    .user-avatar-small {
+      width: 38px;
+      height: 38px;
+      border-radius: 10px;
+    }
+
+    .user-display-name {
+      font-size: 1rem;
+    }
+
+    .user-email-cell {
+      font-size: 0.8rem;
+      word-break: break-all;
+      margin-bottom: 6px;
+      opacity: 0.7;
+    }
+
+    .user-role-cell {
+      margin-bottom: 10px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .user-role-cell::before {
+      content: 'রোল:';
+      font-size: 0.7rem;
+      font-weight: 700;
+      opacity: 0.5;
+    }
+
+    .role-badge {
+      font-size: 0.65rem;
+      padding: 3px 8px;
+      border-radius: 6px;
+    }
+
+    .user-action-cell {
+      text-align: left !important;
+      border-top: 1px solid var(--border-color) !important;
+      padding-top: 12px !important;
+    }
+
+    .user-action-cell::before {
+      content: 'রোল পরিবর্তন করুন:';
+      display: block;
+      font-size: 0.7rem;
+      font-weight: 700;
+      opacity: 0.5;
+      margin-bottom: 6px;
+    }
+
+    .role-select-premium {
+      width: 100%;
+      height: 38px;
+      font-size: 0.85rem;
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
   }
 }
+
+
 
 /* ==========================================================================
    RESPONSIVE SETTINGS MODAL (MOBILE & TABLET)

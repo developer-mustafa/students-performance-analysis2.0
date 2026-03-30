@@ -884,7 +884,7 @@ export function renderSingleMarksheet(student, subjects, examDisplayName, select
                     
                     <div class="ms-header-pill">
                         <div class="ms-pill-left">${ms.headerLine1 || 'পরীক্ষার ফলাফল পত্র'}</div>
-                        <div class="ms-pill-right">${selectedSession} &nbsp; ${examDisplayName}</div>
+                        <div class="ms-pill-right">${examDisplayName} (${selectedSession})</div>
                     </div>
                 </div>
 
