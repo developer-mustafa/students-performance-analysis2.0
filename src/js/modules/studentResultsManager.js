@@ -4,7 +4,7 @@
  * @module studentResultsManager
  */
 
-import { getSavedExams, getExamConfigs, getSettings } from '../firestoreService.js';
+import { getSavedExams, getExamsByCriteria, getExamConfigs, getSettings } from '../firestoreService.js';
 import { state } from './state.js';
 import QRCode from 'qrcode';
 import html2canvas from 'html2canvas';
@@ -168,9 +168,13 @@ function generateStudentUniqueId(name, cls, session, roll, group) {
  */
 async function searchByUniqueId(searchId, filters = {}) {
     const normalizedSearch = searchId.toUpperCase().replace(/\s+/g, '');
-    const allExams = await getSavedExams();
-    
     const { class: selClass, session: selSession, examName } = filters;
+    
+    // Cost-Optimization: If Class & Session are provided, only fetch relevant exams
+    // Otherwise, use allExams (which has localStorage/memory caching)
+    const allExams = (selClass && selSession) 
+        ? await getExamsByCriteria(selClass, selSession) 
+        : await getSavedExams();
 
     // Filter exams first if filter options are provided
     let filteredExams = allExams;
@@ -178,14 +182,10 @@ async function searchByUniqueId(searchId, filters = {}) {
     if (selSession) filteredExams = filteredExams.filter(e => e.session === selSession);
     if (examName && examName !== 'all') filteredExams = filteredExams.filter(e => e.name === examName);
 
-    // Build a map of all students against their unique IDs
+    // Use filteredExams for the main loop to ensure we only process relevant data
     const matches = new Map();
-
-    allExams.forEach(exam => {
+    filteredExams.forEach(exam => {
         if (!exam.studentData || !Array.isArray(exam.studentData)) return;
-
-        // Skip if this exam is not the one filtered for (if examName filter is active)
-        if (examName && examName !== 'all' && exam.name !== examName) return;
 
         exam.studentData.forEach(s => {
             const uid = generateStudentUniqueId(

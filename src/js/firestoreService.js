@@ -394,7 +394,6 @@ export async function saveExam(examData) {
         const safeName = (examData.name || 'exam').trim().replace(/[\/\s\.]/g, '_');
         const safeSubject = (examData.subject || 'subject').trim().replace(/[\/\s\.]/g, '_');
         const docId = `${safeName}_${safeSubject}`;
-
         const docRef = doc(db, COLLECTIONS.exams, docId);
         await setDoc(docRef, {
             ...examData,
@@ -407,8 +406,9 @@ export async function saveExam(examData) {
         });
 
         console.log('Exam saved with ID:', docId);
-        // Invalidate cache on new save
+        // Invalidate both memory and persistent caches
         _cache.exams = null;
+        localStorage.removeItem('ems_cache_persistent');
         return true;
     } catch (error) {
         console.error('পরীক্ষা সেভ করতে সমস্যা:', error);
@@ -417,17 +417,37 @@ export async function saveExam(examData) {
 }
 
 /**
- * Get all saved exams (with memory caching to optimize reads)
+ * Get all saved exams (with memory and persistent caching to optimize reads)
  * @returns {Promise<Array>} - Array of exam documents ordered by date
  */
 export async function getSavedExams() {
-    // Return cached results if valid (to save billable reads)
     const now = Date.now();
+    const CACHE_KEY = 'ems_cache_persistent';
+    const PERSISTENT_DURATION = 30 * 60 * 1000; // 30 minutes
+
+    // 1. Try Memory Cache (Fastest)
     if (_cache.exams && now < _cache.examsExpiry) {
-        console.log('Returning cached exams (Read Optimization Active)');
+        console.log('Returning memory-cached exams (Ultra Fast)');
         return _cache.exams;
     }
 
+    // 2. Try LocalStorage Cache (Persistence across refreshes)
+    try {
+        const localData = localStorage.getItem(CACHE_KEY);
+        if (localData) {
+            const parsed = JSON.parse(localData);
+            if (now - parsed.timestamp < PERSISTENT_DURATION) {
+                console.log('Returning persistent-cached exams (Disk Cache)');
+                _cache.exams = parsed.data;
+                _cache.examsExpiry = now + _cache.CACHE_DURATION;
+                return parsed.data;
+            }
+        }
+    } catch (e) {
+        console.warn('LocalStorage cache read failed:', e);
+    }
+
+    // 3. Fetch from Firestore (Fallback)
     try {
         console.log('Fetching fresh exams from Firestore (Cache expired or empty)');
         const examsRef = collection(db, COLLECTIONS.exams);
@@ -439,14 +459,55 @@ export async function getSavedExams() {
             ...doc.data()
         }));
 
-        // Update Cache
+        // Update Memory Cache
         _cache.exams = exams;
         _cache.examsExpiry = now + _cache.CACHE_DURATION;
+
+        // Update LocalStorage Cache
+        try {
+            localStorage.setItem(CACHE_KEY, JSON.stringify({
+                data: exams,
+                timestamp: now
+            }));
+        } catch (e) {
+            console.warn('LocalStorage cache write failed:', e);
+        }
 
         return exams;
     } catch (error) {
         console.error('পরীক্ষার তালিকা লোড করতে সমস্যা:', error);
         return [];
+    }
+}
+
+/**
+ * Get exams matching specific criteria (Class, Session)
+ * Optimized for Public Search page to reduce read costs
+ * @param {string} cls - Class filter
+ * @param {string} session - Session filter
+ * @returns {Promise<Array>} - Filtered exam documents
+ */
+export async function getExamsByCriteria(cls, session) {
+    if (!cls && !session) return getSavedExams();
+
+    try {
+        console.log(`Fetching filtered exams for Class: ${cls}, Session: ${session} (Cost Optimization)`);
+        const examsRef = collection(db, COLLECTIONS.exams);
+        
+        let q = query(examsRef);
+        if (cls) q = query(q, where('class', '==', cls));
+        if (session) q = query(q, where('session', '==', session));
+        q = query(q, orderBy('createdAt', 'desc'));
+
+        const snapshot = await getDocs(q);
+        return snapshot.docs.map(doc => ({
+            docId: doc.id,
+            ...doc.data()
+        }));
+    } catch (error) {
+        console.error('ফিল্টার করা পরীক্ষার তালিকা লোড করতে সমস্যা:', error);
+        // Fallback to local cache if query fails (e.g. index not yet built)
+        return getSavedExams();
     }
 }
 
@@ -458,8 +519,9 @@ export async function getSavedExams() {
 export async function deleteExam(docId) {
     try {
         await deleteDoc(doc(db, COLLECTIONS.exams, docId));
-        // Invalidate cache on delete
+        // Invalidate both memory and persistent caches
         _cache.exams = null;
+        localStorage.removeItem('ems_cache_persistent');
         return true;
     } catch (error) {
         console.error('পরীক্ষা মুছতে সমস্যা:', error);
@@ -480,8 +542,9 @@ export async function updateExam(docId, updates) {
             ...updates,
             updatedAt: serverTimestamp(),
         });
-        // Invalidate cache on update
+        // Invalidate both memory and persistent caches
         _cache.exams = null;
+        localStorage.removeItem('ems_cache_persistent');
         return true;
     } catch (error) {
         console.error('পরীক্ষা আপডেট করতে সমস্যা:', error);
