@@ -2153,8 +2153,8 @@ body.is-super-admin .admin-only:not(.app-page) {
 
 .collapse-container {
   max-height: 2500px;
-  /* Increased to prevent clipping on mobile */
-  overflow: hidden;
+  overflow-y: hidden;
+  overflow-x: visible;
   transition: max-height var(--transition-normal) cubic-bezier(0.4, 0, 0.2, 1),
     opacity var(--transition-normal) ease;
   padding: 0 12px 4px 12px;
@@ -2249,235 +2249,251 @@ body.is-super-admin .admin-only:not(.app-page) {
 }
 
 .dark-mode .section-toggle-header:hover {
+  background: rgba(255, 255, 255, 0.03);
+}
 
-  /* Default Exam Card Styling */
-  .default-exam-card {
-    border: 2px solid #f1c40f !important;
-    /* Golden Border */
-    box-shadow: 0 0 20px rgba(241, 196, 15, 0.4) !important;
-    position: relative;
-    overflow: hidden;
-    background: linear-gradient(to bottom right, var(--card-bg), rgba(241, 196, 15, 0.05)) !important;
-    transform: scale(1.02);
-    /* Slightly larger */
-    z-index: 1;
+/* Default Exam Card Styling */
+.default-exam-card {
+  border: 2px solid #f1c40f !important;
+  box-shadow: 0 0 20px rgba(241, 196, 15, 0.4) !important;
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(to bottom right, var(--card-bg), rgba(241, 196, 15, 0.05)) !important;
+  transform: scale(1.02);
+  z-index: 1;
+}
+
+.default-exam-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 4px;
+  background: linear-gradient(90deg, #f1c40f, #f39c12);
+}
+
+/* Pulse Animation for Default Card */
+@keyframes defaultPulse {
+  0% {
+    box-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
   }
-
-  .default-exam-card::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 4px;
-    background: linear-gradient(90deg, #f1c40f, #f39c12);
+  50% {
+    box-shadow: 0 0 25px rgba(241, 196, 15, 0.6);
   }
-
-  /* Pulse Animation for Default Card */
-  @keyframes defaultPulse {
-    0% {
-      box-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
-    }
-
-    50% {
-      box-shadow: 0 0 25px rgba(241, 196, 15, 0.6);
-    }
-
-    100% {
-      box-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
-    }
+  100% {
+    box-shadow: 0 0 15px rgba(241, 196, 15, 0.4);
   }
+}
 
-  .default-exam-card {
-    animation: defaultPulse 2s infinite;
-  }
+.default-exam-card {
+  animation: defaultPulse 2s infinite;
+}
 
-  .default-badge {
-    position: absolute;
-    top: 10px;
-    right: -30px;
-    background: #f1c40f;
-    color: #fff;
-    font-size: 0.7em;
-    padding: 5px 30px;
-    transform: rotate(45deg);
-    font-weight: bold;
-    z-index: 10;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
-    pointer-events: none;
-    text-transform: uppercase;
-    letter-spacing: 1px;
-  }
+.default-badge {
+  position: absolute;
+  top: 10px;
+  right: -30px;
+  background: #f1c40f;
+  color: #fff;
+  font-size: 0.7em;
+  padding: 5px 30px;
+  transform: rotate(45deg);
+  font-weight: bold;
+  z-index: 10;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+  pointer-events: none;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+}
 
-  .set-default-exam-btn {
-    transition: all 0.2s ease;
-  }
+.set-default-exam-btn {
+  transition: all 0.2s ease;
+}
 
-  .set-default-exam-btn:hover {
-    transform: scale(1.1);
-  }
+.set-default-exam-btn:hover {
+  transform: scale(1.1);
+}
 
-  /* =========================================
+/* =========================================
    Data Management Responsive
    ========================================= */
 
-  /* Tablet (≤ 768px) */
-  @media (max-width: 768px) {
-    .data-management-card .dm-controls {
-      gap: 6px;
-      padding: 8px 10px;
-    }
-
-    .dm-btn {
-      padding: 7px 10px;
-      font-size: 0.8rem;
-      gap: 5px;
-    }
-
-    .dm-search {
-      min-width: 120px;
-      order: 10;
-    }
+/* Tablet (≤ 768px) */
+@media (max-width: 768px) {
+  .data-management-card .dm-controls {
+    gap: 6px;
+    padding: 8px 10px;
   }
 
-  /* Mobile (≤ 576px) */
-  /* ======================================================
-     ULTIMATE TABLE RESPONSIVENESS FIX
-     Forces horizontal scroll on all tables using min-widths
-     ====================================================== */
-  
-  /* Global robust table container scroll */
+  .dm-btn {
+    padding: 7px 10px;
+    font-size: 0.8rem;
+    gap: 5px;
+  }
+
+  .dm-search {
+    min-width: 120px;
+    order: 10;
+  }
+}
+
+/* ======================================================
+   PROFESSIONAL TABLE RESPONSIVENESS (v8 — MOBILE FIX)
+   Horizontal scrolling for all tables on mobile screens.
+   These rules are now TOP-LEVEL (not nested) so they apply correctly.
+   ====================================================== */
+
+/* Base table-container: always allow horizontal scroll */
+.table-container {
+  width: 100%;
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  display: block;
+  position: relative;
+}
+
+/* On mobile, enforce scrolling and override any parent overflow:hidden */
+@media (max-width: 768px) {
   .table-container {
     width: 100% !important;
     max-width: 100% !important;
-    overflow-x: scroll !important; /* Explicitly force scroll mechanism */
-    -webkit-overflow-scrolling: touch !important; /* Smooth scrolling for iOS Safari */
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch !important;
     display: block !important;
     position: relative !important;
-    margin-bottom: 25px !important;
+    margin-bottom: 20px !important;
     border-radius: var(--radius-md) !important;
     border: 1px solid var(--border-color) !important;
-    box-shadow: inset 0 0 10px rgba(0,0,0,0.03) !important;
-    /* Ensure no parent clips the scrollbar */
-    z-index: 10 !important;
+    box-shadow: inset 0 0 12px rgba(0,0,0,0.02) !important;
+    z-index: 5 !important;
   }
 
-  /* Force table content to be wider than the container */
   .data-table {
-    width: max-content !important;
-    min-width: 100% !important;
+    width: 100% !important;
+    min-width: max-content !important;
     table-layout: auto !important;
-    border-collapse: separate !important;
+    border-collapse: collapse !important;
     border-spacing: 0 !important;
+    margin: 0 !important;
   }
 
-  /* Cell-level minimal widths to guarantee overflow */
   .data-table th,
   .data-table td {
-    min-width: 120px !important; /* Base width for most columns */
-    padding: 14px 18px !important;
+    padding: 10px 14px !important;
     white-space: nowrap !important;
-    font-size: 0.95rem !important;
-    box-sizing: border-box !important;
+    font-size: 0.9rem !important;
+    text-align: left !important;
+    border-bottom: 1px solid var(--border-color) !important;
   }
 
-  /* Specific column adjustments for Name and Group */
+  /* Name column needs stable space */
   .data-table th:nth-child(2),
   .data-table td:nth-child(2) {
-    min-width: 280px !important; /* Name column must be wide for full names */
-    text-align: left !important;
-  }
-  
-  .data-table th:nth-child(3),
-  .data-table td:nth-child(3) {
-    min-width: 150px !important; /* Group column (Science, etc) */
+    min-width: 220px !important;
   }
 
-  /* Visible Scrollbar Styles for better UX */
+  /* Professional Scrollbar */
   .table-container::-webkit-scrollbar {
-    height: 12px !important;
-    display: block !important;
+    height: 8px !important;
   }
   .table-container::-webkit-scrollbar-thumb {
-    background-color: var(--primary, #3b82f6) !important;
+    background-color: #cbd5e1 !important;
     border-radius: 10px !important;
-    border: 3px solid white !important;
   }
   .table-container::-webkit-scrollbar-track {
-    background: #f1f1f1 !important;
-    border-radius: 10px !important;
+    background: transparent !important;
   }
 
-  /* Ensure DASHBOARD card allows children to overflow */
-  #performanceSection, 
-  .card,
-  #tableView,
+  /* CRITICAL: Override overflow:hidden on parent containers so table can scroll */
   .collapse-container:not(.collapsed) {
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+  }
+
+  #chartSectionCollapse:not(.collapsed) {
+    overflow-x: visible !important;
+    overflow-y: visible !important;
+  }
+
+  /* Cards must not clip table scroll */
+  .card {
     overflow: visible !important;
   }
+}
 
-  /* Tablet/Desktop Tweaks (optional, but consistent) */
-  @media (max-width: 1200px) {
-    .container {
-      padding: 10px !important;
-      max-width: 100% !important;
-    }
+/* Tablet/Desktop container tweaks */
+@media (max-width: 1200px) {
+  .container {
+    padding: 10px !important;
+    max-width: 100% !important;
+  }
+}
+
+/* Mobile Overrides for other elements */
+@media (max-width: 576px) {
+  .data-management-card .dm-controls {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 8px !important;
+    padding: 10px !important;
   }
 
-  /* Specific Mobile Overrides for other elements */
-  @media (max-width: 576px) {
-    .data-management-card .dm-controls {
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-      padding: 10px;
-    }
-
-    .dm-search {
-      width: 100%;
-      min-width: 100%;
-      order: -1;
-    }
-
-    .dm-upload-wrapper,
-    .dm-btn {
-      width: 100% !important;
-      justify-content: center !important;
-      padding: 10px !important;
-    }
-
-    /* Stats Grid for Mobile */
-    .stats {
-      display: grid !important;
-      grid-template-columns: 1fr 1fr !important;
-      gap: 10px !important;
-      padding: 0 !important;
-    }
-
-    .stat-card {
-      padding: 12px !important;
-    }
-
-    .stat-value {
-      font-size: 1.1rem !important;
-    }
+  .dm-search {
+    grid-column: 1 / -1 !important;
+    width: 100% !important;
+    min-width: 100% !important;
+    order: -1 !important;
   }
 
-  @media (max-width: 400px) {
-    .stats {
-      grid-template-columns: 1fr !important;
-    }
+  .dm-upload-wrapper,
+  .dm-btn {
+    width: 100% !important;
+    justify-content: center !important;
+    padding: 10px !important;
   }
 
-  .saved-exams-section {
+  .dm-upload-wrapper {
+    grid-column: span 1;
+  }
+
+  .dm-upload-wrapper label {
+    width: 100% !important;
+    justify-content: center !important;
+  }
+
+  /* Stats Grid for Mobile */
+  .stats {
+    display: grid !important;
+    grid-template-columns: 1fr 1fr !important;
+    gap: 10px !important;
+    padding: 0 !important;
+  }
+
+  .stat-card {
     padding: 12px !important;
-    margin-top: 10px !important;
   }
 
-  .saved-exams-section h3 {
-    font-size: 0.9rem;
-    margin-bottom: 10px !important;
+  .stat-value {
+    font-size: 1.1rem !important;
   }
+}
+
+@media (max-width: 400px) {
+  .stats {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+.saved-exams-section {
+  padding: 12px !important;
+  margin-top: 10px !important;
+}
+
+.saved-exams-section h3 {
+  font-size: 0.9rem;
+  margin-bottom: 10px !important;
 }
 
 /* Extra small (≤ 380px) — icon-only buttons */
@@ -4798,7 +4814,8 @@ body:not(.is-admin) .admin-only {
 }
 
 .collapse-container {
-  overflow: hidden;
+  overflow-y: hidden;
+  overflow-x: visible;
   transition: max-height 0.3s ease-out;
 }
 
