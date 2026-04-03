@@ -9312,6 +9312,23 @@ body.dark-mode .status-badge.absent {
   .re-pass-info {
     margin-left: 0;
     width: 100%;
+    flex-wrap: nowrap !important;
+    justify-content: space-between;
+    gap: 2px;
+  }
+  
+  .re-pass-info > i {
+    display: none; /* Hide leading circle on space-constrained mobile */
+  }
+
+  .re-pass-badge {
+    padding: 2px 4px;
+    font-size: 0.65rem;
+    gap: 2px;
+  }
+  
+  .re-pass-badge i {
+    font-size: 0.6rem;
   }
   
   .re-th-pass-hint {
