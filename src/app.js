@@ -51,7 +51,7 @@ import { initTeacherAssignmentUI, loadTeacherAssignmentData } from './js/modules
 import { initAccessRequestUI, loadAccessRequests, initAccessRequestNotifications } from './js/modules/accessRequestManager.js';
 import { initStudentManager, loadStudents } from './js/modules/studentManager.js';
 import { initResultEntryManager, populateREDropdowns } from './js/modules/resultEntryManager.js';
-import { initMarksheetManager, populateMSDropdowns } from './js/modules/marksheetManager.js';
+import { initMarksheetManager, populateMSDropdowns, subscribeToMarksheetSettings } from './js/modules/marksheetManager.js';
 import { initMarksheetRulesManager, populateMarksheetSettingsDropdowns } from './js/modules/marksheetRulesManager.js';
 import { initExamConfigManager, loadExamConfigs, populateExamNameDropdown } from './js/modules/examConfigManager.js';
 import { initAcademicSettingsManager } from './js/modules/academicSettingsManager.js';
@@ -124,6 +124,7 @@ async function init() {
         if (state.onSubjectConfigsUnsubscribe) state.onSubjectConfigsUnsubscribe();
         if (state.onAuthUnsubscribe) state.onAuthUnsubscribe();
         if (state.onAccessReqUnsubscribe) state.onAccessReqUnsubscribe();
+        if (state.onMarksheetSettingsUnsubscribe) state.onMarksheetSettingsUnsubscribe();
 
         const theme = await loadThemePreference();
         applyTheme(theme === 'dark', elements.themeToggle);
@@ -231,6 +232,12 @@ async function init() {
         // Subject Configs Sync
         state.onSubjectConfigsUnsubscribe = subscribeToSubjectConfigs(configs => {
             state.subjectConfigs = configs;
+            updateViews();
+        });
+
+        // Marksheet Settings Sync (College Name, Address, Logo)
+        state.onMarksheetSettingsUnsubscribe = await subscribeToMarksheetSettings((msData) => {
+            console.log('Marksheet settings updated, refreshing dashboard header...');
             updateViews();
         });
 
@@ -813,6 +820,45 @@ function initEventListeners() {
         }
     });
 
+    // ── Mobile Hamburger Menu ──
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+    const mobileMenuDrawer = document.getElementById('mobileMenuDrawer');
+    const mobileMenuClose = document.getElementById('mobileMenuClose');
+
+    function openMobileMenu() {
+        mobileMenuOverlay?.classList.add('active');
+        mobileMenuDrawer?.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeMobileMenu() {
+        mobileMenuOverlay?.classList.remove('active');
+        mobileMenuDrawer?.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    mobileMenuToggle?.addEventListener('click', openMobileMenu);
+    mobileMenuClose?.addEventListener('click', closeMobileMenu);
+    mobileMenuOverlay?.addEventListener('click', closeMobileMenu);
+
+    // Drawer items trigger their corresponding toolbar button
+    document.querySelectorAll('.mobile-drawer-item[data-trigger]').forEach(item => {
+        item.addEventListener('click', () => {
+            const targetId = item.dataset.trigger;
+            const targetEl = document.getElementById(targetId);
+            if (targetEl) {
+                // Special handling for file input — open native file dialog
+                if (targetEl.tagName === 'INPUT' && targetEl.type === 'file') {
+                    targetEl.click();
+                } else {
+                    targetEl.click();
+                }
+            }
+            closeMobileMenu();
+        });
+    });
+
     // Login Modal Logic
     elements.closeLoginModal?.addEventListener('click', () => elements.loginModal.classList.remove('active'));
 
@@ -980,9 +1026,15 @@ function initEventListeners() {
 
         elements.analysisStudentId.value = nextStudent.id;
         
-        // Preserve "All Subjects" state if currently selected
-        const isAllSubjects = elements.analysisSubjectSelect?.value === 'all';
-        handleAnalysis(nextStudent, { preserveAllSubjects: isAllSubjects });
+        // Preserve completely ALL UI states for the next view
+        const currentOptions = {
+            preserveExamSelect: elements.analysisExamSelect?.value,
+            preserveSubjectSelect: elements.analysisSubjectSelect?.value,
+            preserveSessionSelect: elements.analysisSessionSelect?.value,
+            preserveAllSubjects: elements.analysisSubjectSelect?.value === 'all'
+        };
+        
+        handleAnalysis(nextStudent, currentOptions);
     }
 
     // Analysis View
@@ -1188,16 +1240,22 @@ function initEventListeners() {
         elements.subjectSettingsModal.classList.add('active');
     });
 
-    // Saved Exams Section Toggle
-    elements.savedExamsToggle?.addEventListener('click', () => {
-        const isCollapsed = elements.savedExamsCollapse.style.display === 'none';
-        elements.savedExamsCollapse.style.display = isCollapsed ? 'block' : 'none';
+    // Saved Exams Section Toggle - ONLY via eye button
+    const toggleExamsBtn = document.getElementById('toggleExamsViewBtn');
+    if (toggleExamsBtn) {
+        toggleExamsBtn.addEventListener('click', (e) => {
+            const isCollapsed = elements.savedExamsCollapse.style.display === 'none';
+            elements.savedExamsCollapse.style.display = isCollapsed ? 'block' : 'none';
 
-        // Rotate icon
-        if (elements.savedExamsIcon) {
-            elements.savedExamsIcon.style.transform = isCollapsed ? 'rotate(180deg)' : 'rotate(0deg)';
-        }
-    });
+            // Update Eye icon and outer button class
+            if (elements.savedExamsIcon) {
+                elements.savedExamsIcon.className = isCollapsed ? 'fas fa-eye' : 'fas fa-eye-slash';
+            }
+            
+            toggleExamsBtn.classList.toggle('active', isCollapsed);
+            toggleExamsBtn.classList.toggle('inactive', !isCollapsed);
+        });
+    }
 
     elements.chartSectionToggle?.addEventListener('click', () => {
         const isCollapsed = elements.chartSectionCollapse.style.display === 'none';
@@ -1278,7 +1336,9 @@ function populateComparisonDropdowns(history, student, options = {}) {
     elements.analysisSessionSelect.innerHTML = '<option value="all">সকল সেশন</option>' +
         sessions.map(s => `<option value="${s}">${s}</option>`).join('');
 
-    if (student && student.session) {
+    if (options.preserveSessionSelect && Array.from(elements.analysisSessionSelect.options).some(o => o.value === options.preserveSessionSelect)) {
+        elements.analysisSessionSelect.value = options.preserveSessionSelect;
+    } else if (student && student.session) {
         elements.analysisSessionSelect.value = student.session;
     }
 
@@ -1300,30 +1360,47 @@ function populateComparisonDropdowns(history, student, options = {}) {
     elements.analysisExamSelect.innerHTML = '<option value="all">সকল পরীক্ষা (ক্রমানুসারে)</option>' +
         relevantExams.map(e => `<option value="${e.docId}">${e.name} (${e.subject})</option>`).join('');
 
-    // Pre-select current exam if it matches
-    const currentExam = state.savedExams.find(e => e.name === state.currentExamName && e.subject === state.currentSubject);
-    if (currentExam) {
-        elements.analysisExamSelect.value = currentExam.docId;
+    // Pre-select current exam if it matches OR preserve the explicitly requested exam
+    if (options.preserveExamSelect) {
+        if (options.preserveExamSelect !== 'all' && !Array.from(elements.analysisExamSelect.options).some(o => o.value === options.preserveExamSelect)) {
+            const missingExam = state.savedExams.find(e => e.docId === options.preserveExamSelect);
+            if (missingExam) {
+                elements.analysisExamSelect.add(new Option(`${missingExam.name} (${missingExam.subject})`, missingExam.docId));
+            }
+        }
+        elements.analysisExamSelect.value = options.preserveExamSelect;
     } else {
-        elements.analysisExamSelect.value = 'all';
+        const currentExam = state.savedExams.find(e => e.name === state.currentExamName && e.subject === state.currentSubject);
+        if (currentExam) {
+            elements.analysisExamSelect.value = currentExam.docId;
+        } else {
+            elements.analysisExamSelect.value = 'all';
+        }
     }
 
     // 3. Subjects
     populateAnalysisSubjectDropdown();
 
-    const targetSubject = student?.subject || state.currentSubject;
-    if (targetSubject && !options.preserveAllSubjects) {
-        const optionsArr = Array.from(elements.analysisSubjectSelect.options);
-        const hasSubject = optionsArr.some(opt => opt.value === targetSubject);
-        if (hasSubject) {
-            elements.analysisSubjectSelect.value = targetSubject;
+    if (options.preserveSubjectSelect) {
+        if (!Array.from(elements.analysisSubjectSelect.options).some(o => o.value === options.preserveSubjectSelect) && options.preserveSubjectSelect !== 'all') {
+            elements.analysisSubjectSelect.add(new Option(options.preserveSubjectSelect, options.preserveSubjectSelect));
         }
-    } else if (options.preserveAllSubjects) {
-        elements.analysisSubjectSelect.value = 'all';
+        elements.analysisSubjectSelect.value = options.preserveSubjectSelect;
+    } else {
+        const targetSubject = student?.subject || state.currentSubject;
+        if (targetSubject && !options.preserveAllSubjects) {
+            const optionsArr = Array.from(elements.analysisSubjectSelect.options);
+            const hasSubject = optionsArr.some(opt => opt.value === targetSubject);
+            if (hasSubject) {
+                elements.analysisSubjectSelect.value = targetSubject;
+            }
+        } else if (options.preserveAllSubjects) {
+            elements.analysisSubjectSelect.value = 'all';
+        }
     }
 
-    // Initialize context info text
-    updateAnalysisHeaderContext('exam', options);
+    // Initialize context info text WITHOUT triggering the 'exam' reset logic
+    updateAnalysisHeaderContext('init', options);
 }
 
 function populateAnalysisSubjectDropdown() {
@@ -1447,7 +1524,12 @@ function transitionToAnalysis(student) {
     });
 
     // 3. Perform analysis
-    handleAnalysis(student);
+    const currentOptions = {
+        preserveExamSelect: elements.analysisExamSelect?.value,
+        preserveSubjectSelect: elements.analysisSubjectSelect?.value,
+        preserveSessionSelect: elements.analysisSessionSelect?.value
+    };
+    handleAnalysis(student, currentOptions);
 
     // 4. Update UI - clear search results
     if (elements.globalSearchResults) elements.globalSearchResults.style.display = 'none';

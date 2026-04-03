@@ -3,6 +3,7 @@
  * @module uiComponents
  */
 import { state } from './modules/state.js';
+import { getMarksheetSettings } from './modules/marksheetManager.js';
 
 import {
   calculateGrade,
@@ -140,55 +141,106 @@ export function renderGroupStats(container, data, options = {}) {
   const circumference = 2 * Math.PI * radius;
   const offset = circumference - (overallPassRate / 100) * circumference;
 
+  // Get College Settings
+  const msSettings = getMarksheetSettings() || {};
+  const instName = msSettings.institutionName || 'শিক্ষা প্রতিষ্ঠানের নাম';
+  const instAddr = msSettings.institutionAddress || 'প্রতিষ্ঠানের ঠিকানা';
+  const logoUrl = msSettings.watermarkUrl || '';
+
+  // Categorized Results Calculation
+  const goodResults = (globalGrades['A+'] || 0) + (globalGrades['A'] || 0);
+  const mediumResults = (globalGrades['A-'] || 0) + (globalGrades['B'] || 0);
+  const weakResults = (globalGrades['C'] || 0) + (globalGrades['D'] || 0);
+
   let html = `
+    <!-- NEW: Reorganized College Identity Header with Title and Filters -->
+    <div class="dashboard-college-header-compact fade-in">
+       <!-- Left: Dashboard Title -->
+       <div class="dch-title-side">
+          <div class="vibrant-title-group">
+            <div class="vibrant-icon-wrapper-mini">
+               <i class="fas fa-chart-line"></i>
+            </div>
+            <h3 class="vibrant-main-title-mini">সার্বিক ফলাফল</h3>
+          </div>
+       </div>
+
+       <!-- Center: College Info -->
+       <div class="dch-content">
+          ${logoUrl ? `<div class="dch-logo-box"><img src="${logoUrl}" alt="Logo"></div>` : '<div class="dch-icon-box"><i class="fas fa-university"></i></div>'}
+          <div class="dch-info">
+             <h1 class="dch-name">${instName}</h1>
+             <p class="dch-addr">${instAddr}</p>
+          </div>
+       </div>
+
+       <!-- Right: Filter Badges -->
+       <div class="dch-filter-side">
+          <div class="vcd-labels-row-mini">
+              <span class="vcd-badge-mini cls">শ্রেণি: ${className}</span>
+              <span class="vcd-badge-mini ses">সেশন: ${sessionName}</span>
+              <span class="vcd-badge-mini exam-name">${examName}</span>
+              <span class="vcd-badge-mini sub-name">${subjectName}</span>
+          </div>
+       </div>
+    </div>
+
     <!-- Global Grade Summary Section - Premium Vibrant Design -->
     <div class="vibrant-performance-card fade-in">
-      <div class="vibrant-header-row">
-        <div class="vibrant-title-group">
-          <div class="vibrant-icon-wrapper">
-             <i class="fas fa-chart-pie"></i>
-          </div>
-          <div class="vibrant-text-info">
-            <h3 class="vibrant-main-title">সার্বিক গ্রেড পরিসংখ্যান</h3>
-            <p class="vibrant-subtitle">সকল গ্রুপ ও শিক্ষার্থীর সম্মিলিত ফলাফল</p>
-          </div>
+      <div class="vibrant-header-row-new">
+        <!-- New Col 1: Categorized Results Summary -->
+        <div class="categorized-summary-grid">
+           <div class="cat-stat-item total">
+              <span class="cs-label">মোট শিক্ষার্থী</span>
+              <span class="cs-value">${globalStats.totalStudents} <small>জন</small></span>
+           </div>
+           <div class="cat-stat-item participants">
+              <span class="cs-label">মোট পরীক্ষার্থী</span>
+              <span class="cs-value">${globalStats.participants} <small>জন</small></span>
+           </div>
+           <div class="cat-stat-item good">
+              <span class="cs-label">ভালো ফলাফল</span>
+              <span class="cs-value">${goodResults} <small>জন</small></span>
+           </div>
+           <div class="cat-stat-item medium">
+              <span class="cs-label">মাঝারি ফলাফল</span>
+              <span class="cs-value">${mediumResults} <small>জন</small></span>
+           </div>
+           <div class="cat-stat-item weak">
+              <span class="cs-label">দূর্বল ফলাফল</span>
+              <span class="cs-value">${weakResults} <small>জন</small></span>
+           </div>
         </div>
         
-        <!-- NEW: Exam & Subject Info + Circular Pass Rate -->
-        <div class="vibrant-center-details">
-           <div class="vcd-labels">
-              <div class="vcd-top-badges">
-                <span class="vcd-badge cls">শ্রেণি: ${className}</span>
-                <span class="vcd-badge ses">সেশন: ${sessionName}</span>
-              </div>
-              <span class="vcd-exam">${examName}</span>
-              <span class="vcd-subject">${subjectName}</span>
-           </div>
-           <div class="vcd-progress-container">
-              <svg class="vcd-svg" width="70" height="70">
-                <circle class="vcd-circle-bg" cx="35" cy="35" r="${radius}" />
-                <circle class="vcd-circle-fill" cx="35" cy="35" r="${radius}" 
-                  style="stroke-dasharray: ${circumference}; stroke-dashoffset: ${offset};" />
+        <!-- Col 2: Pass Rate & Basic Stats (Expert Refined) -->
+        <div class="vibrant-stats-side-premium">
+           <div class="vcd-progress-premium">
+              <svg class="vcd-svg-premium" viewBox="0 0 80 80" width="80" height="80">
+                <circle class="vcd-circle-bg" cx="40" cy="40" r="34" />
+                <circle class="vcd-circle-fill" cx="40" cy="40" r="34" 
+                  style="stroke-dasharray: 213.63; stroke-dashoffset: ${213.63 - (overallPassRate / 100) * 213.63};" />
               </svg>
-              <div class="vcd-progress-text">
-                 <span class="vcd-p-val">${overallPassRate}%</span>
-                 <span class="vcd-p-label">পাস</span>
+              <div class="vcd-progress-info">
+                 <span class="vcd-p-val-premium">${overallPassRate}%</span>
+                 <span class="vcd-p-label-premium">পাশের হার</span>
               </div>
            </div>
-        </div>
-
-        <div class="vibrant-meta-pills">
-           <div class="vibrant-meta-pill">
-              <span class="v-label">মোট শিক্ষার্থী</span>
-              <span class="v-value">${globalStats.totalStudents}</span>
-           </div>
-           <div class="vibrant-meta-pill highlight">
-              <span class="v-label">পরীক্ষার্থী</span>
-              <span class="v-value">${globalStats.participants}</span>
-           </div>
-           <div class="vibrant-meta-pill success">
-              <span class="v-label">মোট পাস</span>
-              <span class="v-value">${globalStats.passedStudents}</span>
+           
+           <div class="vibrant-meta-pills-premium">
+              <div class="v-pill-premium success">
+                 <div class="vp-icon-circle"><i class="fas fa-check"></i></div>
+                 <div class="vp-details">
+                    <span class="vp-label">পাস</span>
+                    <span class="vp-value">${globalStats.passedStudents} <small>জন</small></span>
+                 </div>
+              </div>
+              <div class="v-pill-premium danger">
+                 <div class="vp-icon-circle"><i class="fas fa-times"></i></div>
+                 <div class="vp-details">
+                    <span class="vp-label">অনুপস্থিত</span>
+                    <span class="vp-value">${globalStats.absentStudents} <small>জন</small></span>
+                 </div>
+              </div>
            </div>
         </div>
       </div>

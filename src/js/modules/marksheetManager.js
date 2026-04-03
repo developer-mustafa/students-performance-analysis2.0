@@ -61,6 +61,24 @@ export async function loadMarksheetSettings() {
 }
 
 /**
+ * Subscribe to marksheet settings changes
+ * @param {Function} callback - Callback function for settings updates
+ * @returns {Function} - Unsubscribe function
+ */
+export async function subscribeToMarksheetSettings(callback) {
+    const { doc, onSnapshot } = await import('firebase/firestore');
+    const { db } = await import('../firebase.js');
+    const docRef = doc(db, 'settings', 'marksheet_config');
+
+    return onSnapshot(docRef, (docSnap) => {
+        if (docSnap.exists()) {
+            Object.assign(marksheetSettings, docSnap.data());
+            if (callback) callback(marksheetSettings);
+        }
+    });
+}
+
+/**
  * Save marksheet settings to Firestore
  */
 async function saveMarksheetSettings(settings) {

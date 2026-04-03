@@ -176,9 +176,9 @@ export function updateNavVisibility() {
             else allowedRoles = [];
         }
         
-        // If student-results, it's public (allow null role)
+        // Allow public access to 'student-results' and 'dashboard'
         let visible = false;
-        if (page === 'student-results') {
+        if (page === 'student-results' || page === 'dashboard') {
             visible = true;
         } else {
             visible = role && allowedRoles.includes(role);
