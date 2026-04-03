@@ -1466,10 +1466,10 @@ export function renderStudentHistory(container, history, studentInfo) {
   ).length
     } পরীক্ষা
                     </span>
-                    
-                    <!-- Dynamic Context Info (Now inline with badges) -->
-                    <span id="analysisContextInfo" class="analysis-context-info"></span>
                 </div>
+                
+                <!-- Dynamic Context Info (Now sibling to badges block) -->
+                <span id="analysisContextInfo" class="analysis-context-info"></span>
             </div>
         </div>
     `;
@@ -1509,6 +1509,24 @@ export function renderCandidateResults(container, candidates, onSelect) {
 
   container.style.display = 'grid';
   container.className = 'search-results-grid'; // Ensure class is correct
+  
+  // Dynamically position the fixed container based on its previous sibling input
+  const inputEl = container.previousElementSibling;
+  if (inputEl && (inputEl.tagName === 'INPUT' || inputEl.type === 'text')) {
+    const rect = inputEl.getBoundingClientRect();
+    container.style.top = `${rect.bottom + 5}px`;
+    container.style.left = `${rect.left}px`;
+    
+    // Ensure it doesn't overflow screen right edge
+    const maxAvailableWidth = window.innerWidth - rect.left - 20;
+    const currentWidthStr = getComputedStyle(container).width;
+    const assumedWidth = parseInt(currentWidthStr) || 850;
+    if (assumedWidth > maxAvailableWidth) {
+        container.style.width = `${Math.min(850, maxAvailableWidth)}px`;
+    } else {
+        container.style.width = ''; // reset to css default
+    }
+  }
 
   container.innerHTML = `<button class="search-close-btn" aria-label="বন্ধ করুন">&times;</button>` + candidates.map(c => {
     const groupClass = getGroupClass(c.group);

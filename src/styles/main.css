@@ -434,13 +434,15 @@ input:focus {
 
 @media (max-width: 576px) {
   .theme-toggle {
-    width: 34px;
-    height: 34px;
-    font-size: 14px;
-    top: 15px;
-    right: 15px;
-    position: absolute;
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+    top: auto;     /* Remove top positioning */
+    bottom: 25px;  /* Move to bottom */
+    right: 25px;
+    position: fixed; /* Keep it fixed while scrolling */
     z-index: 1000;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* Stronger shadow for FAB */
   }
 }
 
@@ -5118,43 +5120,55 @@ body:not(.is-admin) .admin-only {
 /* ── Perfect Mobile Experience ── */
 @media (max-width: 900px) {
   .title-with-filters {
-    flex-direction: column;
+    flex-direction: row;
     align-items: flex-start;
+    flex-wrap: nowrap; /* Keep eye button and filter bar strictly inline */
     gap: 12px;
   }
 }
 
 @media (max-width: 768px) {
+  .title-with-filters {
+    gap: 6px; /* Tighter gap between eye button and filter bar */
+  }
+
   .saved-exams-filter-bar {
-    width: 100%;
-    gap: 10px;
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding-bottom: 6px;
-    /* Soft padding for scroll */
-    scrollbar-width: none;
-    /* Hide standard scrollbar Firefox */
-    -ms-overflow-style: none;
-    /* IE/Edge */
-    /* Add gradient mask for smooth edges */
-    -webkit-mask-image: linear-gradient(90deg, #000 95%, transparent);
-    mask-image: linear-gradient(90deg, #000 95%, transparent);
+    width: auto;
+    flex: 1; /* Takes the remaining space next to toggle button reliably */
+    display: flex;
+    flex-direction: row; /* Keep elements inline */
+    flex-wrap: wrap; /* Let session filter break to the second row */
+    gap: 6px; /* Tight gap to fit everything horizontally */
+    align-items: center; /* Vertically center with eye icon */
   }
 
-  .saved-exams-filter-bar::-webkit-scrollbar {
-    display: none;
-    /* Chrome/Safari */
-  }
-
-  .exams-count-badge,
   .class-filter-container {
-    flex-shrink: 0;
-    /* Prevent shrinking horizontally */
+    padding: 2px;
+    border-radius: 50px; /* Pill shape */
+    display: inline-flex;
+    flex-wrap: nowrap;
+    width: auto;
+  }
+
+  .session-filter-container {
+    flex-basis: 100%; /* Forces this container to jump to Row 2 */
+    margin-top: 2px;
+    flex-wrap: wrap; /* If there are too many sessions, let them wrap on row 2 */
+    border-radius: 12px;
+  }
+
+  .exams-count-badge {
+    padding: 4px 8px; /* Compact padding */
+    font-size: 0.70rem; /* Compact font */
+    height: fit-content;
+    white-space: nowrap;
+    margin: 0;
   }
 
   .class-filter-btn {
-    padding: 6px 14px;
-    font-size: 0.85rem;
+    padding: 4px 8px; /* Compact padding */
+    font-size: 0.70rem; /* Compact font */
+    white-space: nowrap;
   }
 }
 
@@ -5302,13 +5316,7 @@ body:not(.is-admin) .admin-only {
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 12px;
-  position: absolute;
-  top: calc(100% + 5px);
-  left: 0;
-  width: min(850px, 100%);
-  max-width: 95vw;
-  max-height: 400px;
-  overflow-y: auto;
+  position: fixed;
   z-index: 10005;
   background: var(--card-bg);
   padding: 12px;
@@ -5316,6 +5324,9 @@ body:not(.is-admin) .admin-only {
   box-shadow: 0 10px 40px rgba(0, 0, 0, 0.2);
   border: 1px solid var(--border-color);
   animation: dropdownFadeIn 0.2s ease-out;
+  max-height: 400px;
+  overflow-y: auto;
+  width: min(850px, 90vw);
 }
 
 .search-results-grid::-webkit-scrollbar {
@@ -5600,6 +5611,7 @@ body:not(.is-admin) .admin-only {
   display: flex;
   align-items: center;
   gap: 15px;
+  flex-wrap: wrap;
 }
 
 .student-name {
@@ -5607,6 +5619,7 @@ body:not(.is-admin) .admin-only {
   margin: 0;
   color: var(--text-color);
   font-weight: 700;
+  word-break: break-word;
 }
 
 .student-info-main .roll-badge {
@@ -5622,7 +5635,7 @@ body:not(.is-admin) .admin-only {
   justify-content: center;
   letter-spacing: 0.5px;
   border: 1px solid rgba(255, 255, 255, 0.3);
-  margin-left: 10px;
+  margin-left: 0;
 }
 
 .student-meta-block {
@@ -5630,6 +5643,16 @@ body:not(.is-admin) .admin-only {
   align-items: center;
   gap: 8px;
   flex-wrap: wrap;
+}
+
+@media (max-width: 576px) {
+  .student-name {
+    font-size: 1.25rem;
+  }
+  .student-info-main .roll-badge {
+    font-size: 1.1rem;
+    padding: 5px 15px;
+  }
 }
 
 .student-info-section {
@@ -5660,6 +5683,7 @@ body:not(.is-admin) .admin-only {
   display: flex;
   align-items: center;
   gap: 8px;
+  flex-wrap: wrap;
   font-size: 0.82rem;
   color: var(--text-color);
   width: fit-content;
@@ -5673,6 +5697,7 @@ body:not(.is-admin) .admin-only {
 .context-label {
   color: rgba(var(--text-color-rgb), 0.6);
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .context-value {
@@ -11094,13 +11119,13 @@ body.dark-mode .status-badge.absent {
 }
 
 .tc-export-wrapper {
-  position: absolute;
+  position: fixed;
   left: -9999px;
-  top: -9999px;
+  top: 0;
   width: 700px;
-  overflow: hidden;
+  overflow: visible;
   pointer-events: none;
-  opacity: 0;
+  opacity: 1;
   z-index: -1;
 }
 

@@ -179,14 +179,43 @@ export function initTeacherAssignmentUI() {
             
             setLoading(true, '#teacherInfoCardModal .config-modal-content');
             try {
-                // Render a fresh, fixed-width card into the hidden export container with export mode class
+                // Render a fresh, fixed-width card into the export container
                 const exportCardHtml = renderTeacherInfoCardHTML(currentExportData);
                 exportWrapper.innerHTML = exportCardHtml;
                 
-                // CRITICAL: Ensure the export card is strictly 700px for high-res landscape capture
                 const cardEl = exportWrapper.querySelector('.tc-card');
                 if (cardEl) {
                     cardEl.classList.add('tc-export-mode');
+                    
+                    // Force light-mode inline styles so dark mode doesn't cause blank/invisible content
+                    cardEl.style.background = '#ffffff';
+                    cardEl.style.color = '#1e293b';
+                    cardEl.style.border = '1px solid #e2e8f0';
+                    
+                    // Force light-mode on all inner elements for consistent export
+                    cardEl.querySelectorAll('.tc-name').forEach(el => { el.style.color = '#1e293b'; });
+                    cardEl.querySelectorAll('.tc-info-value').forEach(el => { el.style.color = '#334155'; });
+                    cardEl.querySelectorAll('.tc-info-label').forEach(el => { el.style.color = '#94a3b8'; });
+                    cardEl.querySelectorAll('.tc-info-item').forEach(el => { el.style.background = 'rgba(0,0,0,0.02)'; });
+                    cardEl.querySelectorAll('.tc-assignments-section').forEach(el => { el.style.background = 'rgba(67, 97, 238, 0.03)'; });
+                    cardEl.querySelectorAll('.tc-assign-subjects').forEach(el => { el.style.color = '#334155'; });
+                    cardEl.querySelectorAll('.tc-subjects-box').forEach(el => { 
+                        el.style.borderColor = '#cbd5e1';
+                        el.style.background = 'rgba(255, 255, 255, 0.5)';
+                    });
+                    cardEl.querySelectorAll('.tc-total-count-badge').forEach(el => {
+                        el.style.background = '#f1f4ff';
+                        el.style.borderColor = '#d1dbff';
+                    });
+                    cardEl.querySelectorAll('.tc-total-label').forEach(el => { el.style.color = '#64748b'; });
+                    cardEl.querySelectorAll('.tc-dev-credit').forEach(el => { el.style.color = '#64748b'; });
+                    cardEl.querySelectorAll('.tc-dev-name').forEach(el => { el.style.color = '#334155'; });
+                    cardEl.querySelectorAll('.tc-footer-area').forEach(el => { el.style.background = '#ffffff'; });
+                    cardEl.querySelectorAll('.tc-left-col').forEach(el => { el.style.borderRightColor = 'rgba(0,0,0,0.05)'; });
+                    cardEl.querySelectorAll('.tc-avatar-wrapper').forEach(el => { 
+                        el.style.background = '#ffffff';
+                        el.style.borderColor = '#ffffff';
+                    });
                 }
                 
                 // Ensure images are loaded before capture
@@ -196,13 +225,17 @@ export function initTeacherAssignmentUI() {
                     return new Promise(resolve => { img.onload = resolve; img.onerror = resolve; });
                 }));
 
-                const canvas = await html2canvas(exportWrapper, {
+                // Allow layout to settle (fonts, flexbox recalc) before capture
+                await new Promise(resolve => setTimeout(resolve, 300));
+
+                const canvas = await html2canvas(cardEl || exportWrapper, {
                     useCORS: true,
-                    scale: 2.5, // Even higher resolution for pro look
-                    backgroundColor: null,
+                    scale: 2.5,
+                    backgroundColor: '#ffffff',
                     width: 700,
                     windowWidth: 700,
-                    logging: false
+                    logging: false,
+                    allowTaint: true
                 });
 
                 const link = document.createElement('a');

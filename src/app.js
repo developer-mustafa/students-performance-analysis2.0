@@ -1326,32 +1326,27 @@ function initEventListeners() {
 function populateComparisonDropdowns(history, student, options = {}) {
     if (!elements.analysisSessionSelect || !elements.analysisSubjectSelect || !elements.analysisExamSelect) return;
 
-    // 1. Sessions (Strictly limited to student's current session)
+    // 1. Sessions (Extract from student history)
     let sessions = [...new Set(history.map(h => h.session || 'N/A'))].filter(Boolean);
-
-    if (student && student.session) {
-        sessions = sessions.filter(s => String(s).toLowerCase() === String(student.session).toLowerCase());
-    }
 
     elements.analysisSessionSelect.innerHTML = '<option value="all">সকল সেশন</option>' +
         sessions.map(s => `<option value="${s}">${s}</option>`).join('');
 
-    if (options.preserveSessionSelect && Array.from(elements.analysisSessionSelect.options).some(o => o.value === options.preserveSessionSelect)) {
-        elements.analysisSessionSelect.value = options.preserveSessionSelect;
-    } else if (student && student.session) {
-        elements.analysisSessionSelect.value = student.session;
+    const targetSession = options.preserveSessionSelect || state.currentExamSession || student?.session;
+    if (targetSession && Array.from(elements.analysisSessionSelect.options).some(o => o.value === targetSession)) {
+        elements.analysisSessionSelect.value = targetSession;
     }
 
     // 2. Exams for the Student's Class & Session (Dynamic Exam Options)
     const studentClass = student?.class || state.currentExamClass;
-    const studentSession = student?.session || state.currentExamSession;
+    const studentSession = elements.analysisSessionSelect.value !== 'all' ? elements.analysisSessionSelect.value : (state.currentExamSession || student?.session);
 
     const relevantExams = state.savedExams.filter(e => {
         let match = true;
-        if (studentClass) {
+        if (studentClass && studentClass !== 'all') {
             match = match && String(e.class || '').toLowerCase() === String(studentClass).toLowerCase();
         }
-        if (studentSession) {
+        if (studentSession && studentSession !== 'all') {
             match = match && String(e.session || '').toLowerCase() === String(studentSession).toLowerCase();
         }
         return match;
@@ -1371,7 +1366,7 @@ function populateComparisonDropdowns(history, student, options = {}) {
         elements.analysisExamSelect.value = options.preserveExamSelect;
     } else {
         const currentExam = state.savedExams.find(e => e.name === state.currentExamName && e.subject === state.currentSubject);
-        if (currentExam) {
+        if (currentExam && Array.from(elements.analysisExamSelect.options).some(o => o.value === currentExam.docId)) {
             elements.analysisExamSelect.value = currentExam.docId;
         } else {
             elements.analysisExamSelect.value = 'all';
@@ -1387,11 +1382,10 @@ function populateComparisonDropdowns(history, student, options = {}) {
         }
         elements.analysisSubjectSelect.value = options.preserveSubjectSelect;
     } else {
-        const targetSubject = student?.subject || state.currentSubject;
+        const targetSubject = state.currentSubject || student?.subject;
         if (targetSubject && !options.preserveAllSubjects) {
             const optionsArr = Array.from(elements.analysisSubjectSelect.options);
-            const hasSubject = optionsArr.some(opt => opt.value === targetSubject);
-            if (hasSubject) {
+            if (optionsArr.some(opt => opt.value === targetSubject)) {
                 elements.analysisSubjectSelect.value = targetSubject;
             }
         } else if (options.preserveAllSubjects) {
@@ -1684,6 +1678,19 @@ async function handleAnalysis(student, options = {}) {
         if (history.length > 0) {
             refreshAnalysisChart();
         }
+        
+        // Scroll into view smoothly after a short delay to allow rendering
+        setTimeout(() => {
+            const reportContent = document.getElementById('analysisReportContent');
+            if (reportContent) {
+                // Determine a slight offset calculation by using getBoundingClientRect
+                const topPos = reportContent.getBoundingClientRect().top + window.scrollY - 80;
+                window.scrollTo({
+                    top: topPos,
+                    behavior: 'smooth'
+                });
+            }
+        }, 100);
     } catch (error) {
         console.error('Analysis error:', error);
     } finally {
