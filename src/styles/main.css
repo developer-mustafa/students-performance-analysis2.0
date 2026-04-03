@@ -8857,12 +8857,15 @@ body:not(.dark-mode) .nav-btn {
 /* Premium Result Entry Header Info Area */
 .re-exam-info.modern-layout {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  padding: 16px;
+  padding: 10px 16px;
   background: var(--card-bg);
   border: 1px solid var(--border-color);
-  border-radius: 12px;
+  border-radius: 10px;
   margin-bottom: 16px;
   box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -2px rgba(0, 0, 0, 0.025);
   font-family: inherit;
@@ -8877,8 +8880,8 @@ body.dark-mode .re-exam-info.modern-layout {
 .re-exam-details-grid {
   display: flex;
   flex-wrap: wrap;
-  column-gap: 20px;
-  row-gap: 10px;
+  column-gap: 16px;
+  row-gap: 8px;
   align-items: center;
 }
 
@@ -8916,10 +8919,10 @@ body.dark-mode .re-info-item.highlight-new i { color: #fcd34d; }
   font-size: 0.85rem;
   background: rgba(100, 116, 139, 0.05);
   border: 1px solid rgba(100, 116, 139, 0.1);
-  padding: 6px 14px;
+  padding: 4px 10px;
   border-radius: 8px;
-  align-self: flex-start;
-  margin-top: 4px;
+  align-self: center;
+  margin-top: 0;
 }
 body.dark-mode .premium-legend { background: rgba(15, 23, 42, 0.5); border-color: rgba(71, 85, 105, 0.3); }
 
