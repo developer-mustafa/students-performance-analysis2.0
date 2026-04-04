@@ -100,30 +100,39 @@ export async function removeTeacherAssignment(docId) {
  * @param {string} uid
  * @returns {Promise<Array>}
  */
-export async function getMyAssignments(uid) {
+export async function getTeacherAssignmentsByUid(uid) {
     const all = await getTeacherAssignments();
     return all.filter(a => a.uid === uid);
 }
 
-// Alias for compatibility with resultEntryManager.js
-export const getTeacherAssignmentsByUid = getMyAssignments;
+/**
+ * Get the current teacher's assignments
+ * @param {string} uid
+ * @returns {Promise<Array>}
+ */
+export async function getMyAssignments(uid) {
+    return await getTeacherAssignmentsByUid(uid);
+}
 
 /**
- * Check if a teacher is authorized for a specific class/session/subject
- * @param {string} uid
- * @param {string} examClass
- * @param {string} examSession
- * @param {string} examSubject
- * @returns {Promise<boolean>}
+ * Check if the teacher is assigned to a specific exam
  */
-export async function isTeacherAuthorized(uid, examClass, examSession, examSubject) {
+export async function isTeacherAssignedToExam(uid, examClass, examSession, examSubject) {
     if (state.isAdmin || state.isSuperAdmin) return true;
-    const assignments = await getMyAssignments(uid);
+    const assignments = await getTeacherAssignmentsByUid(uid);
     return assignments.some(a =>
         a.assignedClass === examClass &&
         a.assignedSession === examSession &&
         a.assignedSubjects && a.assignedSubjects.includes(examSubject)
     );
+}
+
+/**
+ * Check if a teacher has ANY authorization for a class/session/subject
+ * Used as a more standard name in some modules
+ */
+export async function isTeacherAuthorized(uid, examClass, examSession, examSubject) {
+    return await isTeacherAssignedToExam(uid, examClass, examSession, examSubject);
 }
 
 export function initTeacherAssignmentUI() {
@@ -302,101 +311,282 @@ export function initTeacherAssignmentUI() {
                     return;
                 }
             } else {
-                const selectedTeacher = teacherSelect.options[teacherSelect.selectedIndex];
-                if (!selectedTeacher || !selectedTeacher.value) {
-                    showNotification('একজন টিচার নির্বাচন করুন', 'error');
-                    return;
-                }
+                const opt = teacherSelect.options[teacherSelect.selectedIndex];
                 teacherData = {
-                    uid: selectedTeacher.value,
-                    email: selectedTeacher.dataset.email || '',
-                    displayName: selectedTeacher.dataset.name || selectedTeacher.textContent,
-                    phone: selectedTeacher.dataset.phone || ''
+                    uid: selectedTeacherValue,
+                    email: opt.dataset.email,
+                    displayName: opt.dataset.name,
+                    phone: opt.dataset.phone
                 };
             }
 
             const assignedClass = classSelect.value;
             const assignedSession = sessionSelect.value;
-
-            if (!assignedClass || !assignedSession) {
-                showNotification('শ্রেণি ও সেশন দিন', 'error');
-                return;
-            }
-
-            // Get selected subjects
-            const checkedBoxes = document.querySelectorAll('#taSubjectChecklist input[type="checkbox"]:checked');
-            // We must filter out disabled ones if they are already assigned, OR we can just check all selected
-            // But we need to ensure we don't allow assigning to someone else.
-            const assignedSubjects = Array.from(checkedBoxes)
-                .filter(cb => !cb.disabled) // Only consider newly checked ones
+            const assignedSubjects = Array.from(document.querySelectorAll('#taSubjectChecklist input[type="checkbox"]:checked'))
                 .map(cb => cb.value);
 
-            if (assignedSubjects.length === 0) {
-                showNotification('কমপক্ষে একটি নতুন বিষয় নির্বাচন করুন', 'error');
+            if (!teacherData.uid || !assignedClass || !assignedSession || assignedSubjects.length === 0) {
+                showNotification('সকল তথ্য সঠিকভাবে পূরণ করুন', 'warning');
                 return;
             }
 
-            // Cross-validation: Check if any of the requested subjects are already assigned
-            // to ANY teacher for THIS class & session (excluding the current teacher if we want to update, 
-            // but actually Firestore docId is uid_class_session so it overrides if same teacher.
-            // If different teacher, we block it).
-            const allAssignments = await getTeacherAssignments();
-            const conflicts = [];
-
-            assignedSubjects.forEach(subj => {
-                const existing = allAssignments.find(a =>
-                    a.assignedClass === assignedClass &&
-                    a.assignedSession === assignedSession &&
-                    a.assignedSubjects && a.assignedSubjects.includes(subj) &&
-                    a.uid !== teacherData.uid
-                );
-                if (existing) {
-                    conflicts.push(`${subj} বিষয়টিতে ইতিমধ্যে ${existing.displayName || existing.email} কে অ্যাসাইন করা হয়েছে।`);
-                }
-            });
-
-            if (conflicts.length > 0) {
-                showNotification(conflicts.join('\n'), 'error');
-                return;
-            }
-
+            setLoading(true, '#teacherAssignmentPage .ta-form-column');
             const success = await assignTeacher({
                 ...teacherData,
                 assignedClass,
                 assignedSession,
                 assignedSubjects
             });
+            setLoading(false, '#teacherAssignmentPage .ta-form-column');
 
             if (success) {
-                await loadTeacherAssignmentData(); // Refresh page state
+                // Reset form
+                classSelect.value = '';
+                document.querySelectorAll('#taSubjectChecklist input[type="checkbox"]').forEach(cb => cb.checked = false);
+                await renderExistingAssignments();
             }
         });
     }
-}
 
-/**
- * Load the Teacher Assignment Page Data
- */
-export async function loadTeacherAssignmentData() {
-    try {
-        console.log("Loading Teacher Assignment Data...");
+    // High-res professional card preview generator for individual cards
+    window.addEventListener('click', async (e) => {
+        const cardBtn = e.target.closest('.ta-id-card-btn');
+        if (!cardBtn) return;
+        
+        const uid = cardBtn.dataset.uid;
+        setLoading(true, '#teacherAssignmentPage');
+        
+        try {
+            const allUsers = await getAllUsers();
+            const user = allUsers.find(u => u.uid === uid) || {};
+            const assignments = await getTeacherAssignments();
+            const teacherAssignments = assignments.filter(a => a.uid === uid);
+            
+            const { getSettings } = await import('../firestoreService.js');
+            const settings = await getSettings() || {};
+            const adSettings = settings.admitCard || {};
+            const instName = adSettings.instName || 'প্রতিষ্ঠানের নাম';
+            const instAddress = adSettings.instAddress || 'প্রতিষ্ঠানের ঠিকানা';
+            const logoUrl = adSettings.logoUrl || '';
+            const developerCredit = settings.developerCredit || null;
 
-        // Wait briefly for the page router to unhide the page and render the DOM
-        await new Promise(resolve => setTimeout(resolve, 150));
+            currentExportData = {
+                uid: uid,
+                name: user.displayName || 'Unnamed Teacher',
+                phone: user.phone || 'N/A',
+                email: user.email || 'N/A',
+                password: user.tempPassword || '******',
+                loginStatus: user.loginDisabled ? 'বন্ধ' : 'চালু',
+                assignments: teacherAssignments,
+                instName: instName,
+                instAddress: instAddress,
+                logoUrl: logoUrl,
+                developerCredit: developerCredit
+            };
 
-        const teacherSelect = document.getElementById('taTeacherSelect');
-        const checklist = document.getElementById('taSubjectChecklist');
-        const classSelect = document.getElementById('taClassSelect');
+            const container = document.getElementById('tcCardPreviewContainer');
+            container.innerHTML = renderTeacherInfoCardHTML(currentExportData);
+            document.getElementById('teacherInfoCardModal').classList.add('active');
 
-        if (!teacherSelect || !checklist || !classSelect) {
-            console.error("DOM Error: One or more Teacher assignment DOM elements not found.", { teacherSelect, checklist, classSelect });
+            // Set up copy info for this specific teacher in the modal
+            const copyBtn = document.getElementById('copyTeacherCardBtn');
+            if (copyBtn) {
+                copyBtn.onclick = () => {
+                    let infoText = `--- শিক্ষক তথ্য ---\n`;
+                    infoText += `নাম: ${user.displayName || 'No Name'}\n`;
+                    infoText += `ফোন: ${user.phone || 'N/A'}\n`;
+                    infoText += `イমেইল: ${user.email}\n`;
+                    if (user.tempPassword) infoText += `পাসওয়ার্ড: ${user.tempPassword}\n`;
+                    infoText += `লগইন স্ট্যাটাস: ${user.loginDisabled ? 'বন্ধ ⛔' : 'চালু ✅'}\n\n`;
+                    infoText += `অ্যাসাইনমেন্টসমূহ:\n`;
+                    teacherAssignments.forEach(asg => {
+                        infoText += `- ${asg.assignedClass} (${asg.assignedSession}): ${(asg.assignedSubjects || []).join(', ')}\n`;
+                    });
+                    
+                    infoText += `\nলাইভ সফটওয়্যার লিংক: ${window.location.origin}\n`;
+
+                    navigator.clipboard.writeText(infoText).then(() => {
+                        showNotification('শিক্ষকের তথ্য কপি করা হয়েছে! ✅');
+                    });
+                };
+            }
+        } catch (err) {
+            console.error('Modal load error:', err);
+        } finally {
+            setLoading(false, '#teacherAssignmentPage');
+        }
+    });
+
+    // Copy everything listener
+    window.addEventListener('click', async (e) => {
+        const copyAllBtn = e.target.closest('.ta-copy-info-btn');
+        if (!copyAllBtn) return;
+        
+        const uid = copyAllBtn.dataset.uid;
+        const allUsers = await getAllUsers();
+        const user = allUsers.find(u => u.uid === uid) || {};
+        const assignments = await getTeacherAssignments();
+        const teacherAssignments = assignments.filter(a => a.uid === uid);
+        
+        let infoText = `--- শিক্ষক তথ্য ---\n`;
+        infoText += `নাম: ${user.displayName || 'No Name'}\n`;
+        infoText += `ফোন: ${user.phone || 'N/A'}\n`;
+        infoText += `ইমেইল: ${user.email}\n`;
+        if (user.tempPassword) infoText += `পাসওয়ার্ড: ${user.tempPassword}\n`;
+        infoText += `লগইন স্ট্যাটাস: ${user.loginDisabled ? 'বন্ধ ⛔' : 'চালু ✅'}\n\n`;
+        infoText += `অ্যাসাইনমেন্টসমূহ:\n`;
+        teacherAssignments.forEach(asg => {
+            infoText += `- ${asg.assignedClass} (${asg.assignedSession}): ${(asg.assignedSubjects || []).join(', ')}\n`;
+        });
+        
+        infoText += `\nলাইভ সফটওয়্যার লিংক: ${window.location.origin}\n`;
+
+        navigator.clipboard.writeText(infoText).then(() => {
+            showNotification('শিক্ষকের সকল তথ্য কপি করা হয়েছে! ✅');
+        });
+    });
+
+    // Login Toggle listener for individual users
+    window.addEventListener('click', async (e) => {
+        const toggleTrack = e.target.closest('.ta-utoggle-track');
+        if (!toggleTrack) return;
+
+        const cb = toggleTrack.parentElement.querySelector('.ta-user-login-cb');
+        const uid = cb.dataset.uid;
+        const currentName = cb.dataset.name;
+        const newState = !cb.checked;
+
+        showConfirmModal(
+            `${currentName}-এর জন্য লগইন ${newState ? 'এনাবল' : 'ডিসেবল'} করতে চান?`,
+            async () => {
+                const success = await setUserLoginDisabled(uid, !newState);
+                if (success) {
+                    cb.checked = newState;
+                    const thumb = toggleTrack.querySelector('.ta-utoggle-thumb');
+                    const label = toggleTrack.closest('.ta-user-login-toggle').querySelector('.ta-ulogin-label');
+                    
+                    if (newState) {
+                        toggleTrack.style.background = "#4caf50";
+                        thumb.style.left = "18px";
+                        label.textContent = "চালু";
+                        label.style.color = "#4caf50";
+                    } else {
+                        toggleTrack.style.background = "#d32f2f";
+                        thumb.style.left = "2px";
+                        label.textContent = "বন্ধ";
+                        label.style.color = "#d32f2f";
+                    }
+                    showNotification(`লগইন ${newState ? 'চালু' : 'বন্ধ'} করা হয়েছে`);
+                }
+            },
+            "ইউজার লগইন কন্ট্রোল"
+        );
+    });
+
+    // Subject Edit Toggle
+    window.addEventListener('click', (e) => {
+        const editBtn = e.target.closest('.ta-edit-subj-btn');
+        if (!editBtn) return;
+        const idx = editBtn.dataset.idx;
+        const editDiv = document.getElementById(`ta-subj-edit-${idx}`);
+        const displayDiv = document.getElementById(`ta-subj-display-${idx}`);
+        
+        if (editDiv.style.display === 'none') {
+            editDiv.style.display = 'block';
+            displayDiv.style.display = 'none';
+        } else {
+            editDiv.style.display = 'none';
+            displayDiv.style.display = 'flex';
+        }
+    });
+
+    // Cancel Subject Edit
+    window.addEventListener('click', (e) => {
+        const cancelBtn = e.target.closest('.ta-cancel-subj-btn');
+        if (!cancelBtn) return;
+        const idx = cancelBtn.dataset.idx;
+        document.getElementById(`ta-subj-edit-${idx}`).style.display = 'none';
+        document.getElementById(`ta-subj-display-${idx}`).style.display = 'flex';
+    });
+
+    // Save Subject Edit
+    window.addEventListener('click', async (e) => {
+        const saveBtn = e.target.closest('.ta-save-subj-btn');
+        if (!saveBtn) return;
+        
+        const idx = saveBtn.dataset.idx;
+        const docId = saveBtn.dataset.docId;
+        const editDiv = document.getElementById(`ta-subj-edit-${idx}`);
+        const selectedSubjects = Array.from(editDiv.querySelectorAll('.ta-card-subj-cb:checked:not(:disabled)'))
+            .map(cb => cb.value);
+            
+        if (selectedSubjects.length === 0) {
+            showNotification('কমপক্ষে একটি বিষয় নির্বাচন করুন', 'warning');
             return;
         }
 
-        console.log("Fetching users for dropdown...");
+        setLoading(true, '#teacherAssignmentPage');
+        const success = await assignTeacher({
+            uid: saveBtn.dataset.uid,
+            email: saveBtn.dataset.email,
+            displayName: saveBtn.dataset.name,
+            assignedClass: saveBtn.dataset.class,
+            assignedSession: saveBtn.dataset.session,
+            assignedSubjects: selectedSubjects
+        });
+        setLoading(false, '#teacherAssignmentPage');
+
+        if (success) {
+            await renderExistingAssignments();
+        }
+    });
+
+    // Password Update Handler
+    window.addEventListener('click', async (e) => {
+        const editPassBtn = e.target.closest('.ta-edit-pass-btn');
+        if (!editPassBtn) return;
+
+        const uid = editPassBtn.dataset.uid;
+        const email = editPassBtn.dataset.email;
+        const oldPass = editPassBtn.dataset.old;
+        const newPass = prompt(`নতুন পাসওয়ার্ড প্রদান করুন (বর্তমান: ${oldPass}):`);
+
+        if (newPass && newPass.trim() !== '' && newPass !== oldPass) {
+            if (newPass.length < 6) {
+                showNotification('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে', 'error');
+                return;
+            }
+            setLoading(true, '#teacherAssignmentPage');
+            const success = await updateTeacherPassword(uid, newPass);
+            setLoading(false, '#teacherAssignmentPage');
+            if (success) {
+                showNotification('পাসওয়ার্ড আপডেট করা হয়েছে! ✅');
+                await renderExistingAssignments();
+            }
+        }
+    });
+}
+
+/**
+ * Load and populate initial data
+ */
+export async function loadTeacherAssignmentData() {
+    console.log("Loading teacher assignment data...");
+    try {
+        const teacherSelect = document.getElementById('taTeacherSelect');
+        const classSelect = document.getElementById('taClassSelect');
+        const checklist = document.getElementById('taSubjectChecklist');
+
+        if (!teacherSelect || !classSelect || !checklist) {
+            console.warn("One or more assignment UI elements missing.");
+            return;
+        }
+
+        setLoading(true, '#teacherAssignmentPage .ta-form-column');
         const users = await getAllUsers();
-        console.log("Users fetched:", users.length, users);
-        teacherSelect.innerHTML = '<option value="">টিচার নির্বাচন করুন</option><option value="new">+ নতুন টিচার যোগ করুন</option>';
+        setLoading(false, '#teacherAssignmentPage .ta-form-column');
+
+        teacherSelect.innerHTML = '<option value="">টিচার নির্বাচন করুন</option><option value="new">+ নতুন টিচার অ্যাকাউন্ট তৈরি করুন</option>';
         users.forEach(user => {
             if (user.role !== 'super_admin') {
                 const opt = document.createElement('option');
@@ -798,228 +988,12 @@ async function renderExistingAssignments() {
                 showNotification('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে', 'error');
                 return;
             }
-
-            if (confirm('আপনি কি নিশ্চিত যে এই শিক্ষকের পাসওয়ার্ড পরিবর্তন করতে চান?')) {
-                setLoading(true, '#teacherAssignmentPage .ta-list-column');
-                const result = await updateTeacherPassword(uid, email, oldPass, newPass.trim());
-                setLoading(false, '#teacherAssignmentPage .ta-list-column');
-
-                if (result.success) {
-                    showNotification('পাসওয়ার্ড সফলভাবে পরিবর্তন করা হয়েছে!');
-                    await renderExistingAssignments();
-                } else {
-                    showNotification('পাসওয়ার্ড পরিবর্তন করতে সমস্যা হয়েছে', 'error');
-                }
-            }
-        });
-    });
-
-    // Edit Subjects toggle handlers
-    listEl.querySelectorAll('.ta-edit-subj-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const idx = btn.dataset.idx;
-            const display = document.getElementById(`ta-subj-display-${idx}`);
-            const edit = document.getElementById(`ta-subj-edit-${idx}`);
-            if (display) display.style.display = 'none';
-            if (edit) edit.style.display = 'block';
-        });
-    });
-
-    // Cancel Subject Edit handlers
-    listEl.querySelectorAll('.ta-cancel-subj-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const idx = btn.dataset.idx;
-            const display = document.getElementById(`ta-subj-display-${idx}`);
-            const edit = document.getElementById(`ta-subj-edit-${idx}`);
-            if (display) display.style.display = 'flex';
-            if (edit) edit.style.display = 'none';
-        });
-    });
-
-    // Per-teacher login toggle handlers
-    listEl.querySelectorAll('.ta-user-login-cb').forEach(cb => {
-        const track = cb.closest('.ta-user-login-toggle').querySelector('.ta-utoggle-track');
-        const thumb = track.querySelector('.ta-utoggle-thumb');
-        const label = cb.closest('.ta-user-login-toggle').querySelector('.ta-ulogin-label');
-
-        // Make track clickable
-        track.addEventListener('click', (e) => {
-            e.preventDefault();
-            cb.checked = !cb.checked;
-            cb.dispatchEvent(new Event('change'));
-        });
-
-        cb.addEventListener('change', async () => {
-            const uid = cb.dataset.uid;
-            const name = cb.dataset.name;
-            const loginEnabled = cb.checked;
-            const disableLogin = !loginEnabled;
-
-            const confirmMsg = disableLogin
-                ? `${name} এর লগইন বন্ধ করতে চান?`
-                : `${name} এর লগইন চালু করতে চান?`;
-
-            showConfirmModal(
-                confirmMsg,
-                async () => {
-                    const success = await setUserLoginDisabled(uid, disableLogin);
-                    if (success) {
-                        // Update UI
-                        if (loginEnabled) {
-                            track.style.background = '#4caf50';
-                            thumb.style.left = '18px';
-                            label.textContent = 'চালু';
-                            label.style.color = '#4caf50';
-                        } else {
-                            track.style.background = '#d32f2f';
-                            thumb.style.left = '2px';
-                            label.textContent = 'বন্ধ';
-                            label.style.color = '#d32f2f';
-                        }
-                        showNotification(loginEnabled ? `${name} এর লগইন চালু করা হয়েছে ✅` : `${name} এর লগইন বন্ধ করা হয়েছে ⛔`);
-                    } else {
-                        cb.checked = !cb.checked;
-                        showNotification('সেটিংস পরিবর্তন করতে সমস্যা হয়েছে', 'error');
-                    }
-                },
-                name,
-                loginEnabled ? "টিচার এখন লগইন করতে পারবেন।" : "টিচার আর লগইন করতে পারবেন না।"
-            );
-        });
-    });
-
-    // Search filter for assignment list
-    const searchInput = document.getElementById('taAssignSearch');
-    if (searchInput) {
-        searchInput.addEventListener('input', () => {
-            const query = searchInput.value.toLowerCase().trim();
-            const cards = listEl.querySelectorAll('.ta-assignment-card');
-            let visibleCount = 0;
-            cards.forEach(card => {
-                const name = (card.querySelector('.ta-name')?.textContent || '').toLowerCase();
-                const detail = (card.querySelector('.ta-detail')?.textContent || '').toLowerCase();
-                const matches = name.includes(query) || detail.includes(query);
-                card.style.display = matches ? '' : 'none';
-                if (matches) visibleCount++;
-            });
-        });
-    }
-
-    // Save updated Subjects handlers
-    listEl.querySelectorAll('.ta-save-subj-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const idx = btn.dataset.idx;
-            const docId = btn.dataset.docId;
-            const editSection = document.getElementById(`ta-subj-edit-${idx}`);
-            const checkedBoxes = editSection.querySelectorAll('.ta-card-subj-cb:checked');
-            const newSubjects = Array.from(checkedBoxes).map(cb => cb.value);
-
-            if (newSubjects.length === 0) {
-                showNotification('কমপক্ষে একটি বিষয় নির্বাচন করুন', 'error');
-                return;
-            }
-
-            try {
-                const docRef = doc(db, COLLECTION_NAME, docId);
-                await setDoc(docRef, {
-                    assignedSubjects: newSubjects,
-                    updatedAt: serverTimestamp()
-                }, { merge: true });
-
-                showNotification('বিষয় সফলভাবে আপডেট করা হয়েছে! ✅');
+            setLoading(true, '#teacherAssignmentPage');
+            const success = await updateTeacherPassword(uid, newPass);
+            setLoading(false, '#teacherAssignmentPage');
+            if (success) {
+                showNotification('পাসওয়ার্ড আপডেট করা হয়েছে! ✅');
                 await renderExistingAssignments();
-            } catch (error) {
-                console.error('বিষয় আপডেট করতে সমস্যা:', error);
-                showNotification('বিষয় আপডেট করতে সমস্যা হয়েছে', 'error');
-            }
-        });
-    });
-
-    // Copy Full Info handlers
-    listEl.querySelectorAll('.ta-copy-info-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const uid = btn.dataset.uid;
-            const teacherAssignments = assignments.filter(asg => asg.uid === uid);
-            const user = allUsers.find(u => u.uid === uid);
-            
-            if (!user) return;
-
-            let infoText = `--- শিক্ষক তথ্য ---\n`;
-            infoText += `নাম: ${user.displayName || 'No Name'}\n`;
-            infoText += `ফোন: ${user.phone || 'N/A'}\n`;
-            infoText += `ইমেইল: ${user.email}\n`;
-            if (user.tempPassword) infoText += `পাসওয়ার্ড: ${user.tempPassword}\n`;
-            infoText += `লগইন স্ট্যাটাস: ${user.loginDisabled ? 'বন্ধ ⛔' : 'চালু ✅'}\n\n`;
-            infoText += `অ্যাসাইনমেন্টসমূহ:\n`;
-            
-            teacherAssignments.forEach(asg => {
-                infoText += `- ${asg.assignedClass} (${asg.assignedSession}): ${(asg.assignedSubjects || []).join(', ')}\n`;
-            });
-
-            navigator.clipboard.writeText(infoText).then(() => {
-                showNotification('শিক্ষকের সকল তথ্য কপি করা হয়েছে! ✅');
-            });
-        });
-    });
-
-    // View ID Card handlers
-    listEl.querySelectorAll('.ta-id-card-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const uid = btn.dataset.uid;
-            const teacherAssignments = assignments.filter(asg => asg.uid === uid);
-            const user = allUsers.find(u => u.uid === uid);
-            
-            if (!user) return;
-
-            const { getSettings } = await import('../firestoreService.js');
-            const settings = await getSettings() || {};
-            const adSettings = settings.admitCard || {};
-            const instName = adSettings.instName || 'প্রতিষ্ঠানের নাম';
-            const instAddress = adSettings.instAddress || 'প্রতিষ্ঠানের ঠিকানা';
-            const logoUrl = adSettings.logoUrl || '';
-            const developerCredit = settings.developerCredit || null;
-
-            // Store the data for export high-res captured download
-            currentExportData = {
-                uid: user.uid,
-                name: user.displayName || 'No Name',
-                phone: user.phone || 'N/A',
-                email: user.email,
-                password: user.tempPassword || '******',
-                loginStatus: user.loginDisabled ? 'বন্ধ' : 'চালু',
-                assignments: teacherAssignments,
-                instName: instName,
-                instAddress: instAddress,
-                logoUrl: logoUrl,
-                developerCredit: developerCredit
-            };
-
-            const cardHtml = renderTeacherInfoCardHTML(currentExportData);
-
-            document.getElementById('teacherCardPreview').innerHTML = cardHtml;
-            document.getElementById('teacherInfoCardModal').classList.add('active');
-
-            // Set up copy info for this specific teacher in the modal
-            const copyBtn = document.getElementById('copyTeacherCardBtn');
-            if (copyBtn) {
-                copyBtn.onclick = () => {
-                    let infoText = `--- শিক্ষক তথ্য ---\n`;
-                    infoText += `নাম: ${user.displayName || 'No Name'}\n`;
-                    infoText += `ফোন: ${user.phone || 'N/A'}\n`;
-                    infoText += `ইমেইল: ${user.email}\n`;
-                    if (user.tempPassword) infoText += `পাসওয়ার্ড: ${user.tempPassword}\n`;
-                    infoText += `লগইন স্ট্যাটাস: ${user.loginDisabled ? 'বন্ধ ⛔' : 'চালু ✅'}\n\n`;
-                    infoText += `অ্যাসাইনমেন্টসমূহ:\n`;
-                    teacherAssignments.forEach(asg => {
-                        infoText += `- ${asg.assignedClass} (${asg.assignedSession}): ${(asg.assignedSubjects || []).join(', ')}\n`;
-                    });
-                    
-                    infoText += `\nলাইভ সফটওয়্যার লিংক: ${window.location.origin}\n`;
-
-                    navigator.clipboard.writeText(infoText).then(() => {
-                        showNotification('শিক্ষকের তথ্য কপি করা হয়েছে! ✅');
-                    });
-                };
             }
         });
     });
@@ -1100,93 +1074,93 @@ function renderTeacherInfoCardHTML(data) {
         } else if (dev.enabled !== false) {
             devCreditHtml = `
                 <div class="tc-dev-credit">
-                    ${dev.text || 'Developed By:'} 
-                    <span class="tc-dev-name">${dev.name || 'Developer'}</span> | 
-                    ডেভেলপার প্রোফাইল লিংকঃ <a href="${dev.link || '#'}" target="_blank" style="color: var(--tc-theme-accent)">${dev.link || 'ভিজিট করুন'}</a>
+                    ${dev.text || 'Developed By:'} <span class="tc-dev-name">${dev.name || 'Mustafa Rahman'}</span>
                 </div>
             `;
         }
+    } else {
+        devCreditHtml = `
+            <div class="tc-dev-credit">
+                Developed by <span class="tc-dev-name">Mustafa Rahman</span>
+            </div>
+        `;
     }
 
     return `
-        <div class="tc-card" style="--tc-theme-start: ${theme.start}; --tc-theme-end: ${theme.end}; --tc-theme-accent: ${theme.accent}; --tc-theme-light: ${theme.light};">
-            <div class="tc-header" style="background: linear-gradient(135deg, var(--tc-theme-start), var(--tc-theme-end))">
-                <div class="tc-inst-name">${data.instName}</div>
-                <div class="tc-inst-address">${data.instAddress}</div>
+        <div class="tc-card" id="tc-card-${data.uid}">
+            <div class="tc-header" style="background: linear-gradient(135deg, ${theme.start}, ${theme.end});">
+                <div class="tc-logo-section">
+                    ${logoHtml}
+                </div>
+                <div class="tc-header-text">
+                    <h2 class="tc-inst-name">${data.instName}</h2>
+                    <p class="tc-inst-addr">${data.instAddress}</p>
+                </div>
             </div>
-            
-            <div class="tc-content-area">
-                <div class="tc-top-row">
-                    <div class="tc-left-col">
-                        <div class="tc-avatar-wrapper">
-                            ${logoHtml}
-                        </div>
-                        <div class="tc-personal-info">
-                            <div class="tc-name">${data.name}</div>
-                            <div class="tc-designation" style="color: var(--tc-theme-accent)">শিক্ষক</div>
+
+            <div class="tc-body">
+                <div class="tc-left-col">
+                    <div class="tc-avatar-wrapper" style="border-color: ${theme.start};">
+                        <div class="tc-avatar-placeholder" style="background: ${theme.light}; color: ${theme.accent};">
+                            ${data.name.charAt(0)}
                         </div>
                     </div>
+                    <div class="tc-info-summary">
+                        <h3 class="tc-name">${data.name}</h3>
+                        <p class="tc-status-badge ${data.loginStatus === 'চালু' ? 'active' : 'inactive'}">
+                            লগইন ${data.loginStatus}
+                        </p>
+                    </div>
                     
-                    <div class="tc-right-col">
-                        <div class="tc-info-list">
-                            <div class="tc-info-item">
-                                <span class="tc-info-label">ফোন নম্বর</span>
-                                <span class="tc-info-value">${data.phone}</span>
-                            </div>
-                            <div class="tc-info-item">
-                                <span class="tc-info-label">লগইন ইমেইল</span>
-                                <span class="tc-info-value">${data.email}</span>
-                            </div>
-                            <div class="tc-info-item">
-                                <span class="tc-info-label">পাসওয়ার্ড</span>
-                                <span class="tc-info-value">${data.password}</span>
-                            </div>
-                            <div class="tc-info-item">
-                                <span class="tc-info-label">লগইন স্ট্যাটাস</span>
-                                <span class="tc-info-value" style="color: ${data.loginStatus === 'চালু' ? '#22c55e' : '#ef4444'};">
-                                    ${data.loginStatus}
-                                </span>
-                            </div>
+                    <div class="tc-contact-list">
+                        <div class="tc-info-item">
+                            <span class="tc-info-label">ফোন</span>
+                            <span class="tc-info-value">${data.phone}</span>
+                        </div>
+                        <div class="tc-info-item">
+                            <span class="tc-info-label">ইমেইল</span>
+                            <span class="tc-info-value">${data.email}</span>
+                        </div>
+                        <div class="tc-info-item">
+                            <span class="tc-info-label">পাসওয়ার্ড</span>
+                            <span class="tc-info-value" style="font-family: monospace;">${data.password}</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="tc-assignments-section">
-                    <div class="tc-assign-header">
-                        <div style="display: flex; align-items: center; gap: 15px;">
-                            <span class="tc-assign-title" style="color: var(--tc-theme-accent)">
-                                <i class="fas fa-tasks"></i> অ্যাসাইনমেন্টসমূহ
-                            </span>
+                <div class="tc-right-col">
+                    <div class="tc-assignments-section">
+                        <div class="tc-section-header">
+                            <span class="tc-section-title"><i class="fas fa-briefcase"></i> অ্যাসাইনমেন্টসমূহ</span>
                             <div class="tc-total-count-badge">
-                                <span class="tc-total-label">মোট বিষয় সংখ্যা:</span>
-                                <span class="tc-total-value" style="color: var(--tc-theme-accent)">${totalSubjectsCount}টি</span>
+                                <span class="tc-total-label">মোট বিষয়</span>
+                                <span class="tc-total-num">${totalSubjectsCount}</span>
                             </div>
                         </div>
-                        <div class="tc-live-link">
-                            লাইভ সফটওয়্যার লিংক: <a href="${liveLink}" target="_blank" style="color: var(--tc-theme-accent)">${liveLink.replace(/^https?:\/\//, '')}</a>
+                        
+                        <div class="tc-assign-list-scroll">
+                            ${assignmentsHtml || '<div style="opacity:0.5; font-style:italic; grid-column: 1/-1; text-align: center; padding: 20px;">কোনো অ্যাসাইনমেন্ট পাওয়া যায়নি</div>'}
                         </div>
-                    </div>
-                    <div class="tc-assign-grid">
-                        ${assignmentsHtml || '<div style="opacity:0.5; font-style:italic; grid-column: 1/-1; text-align: center;">কোনো বিষয় নেই</div>'}
                     </div>
                 </div>
             </div>
-            
+
             <div class="tc-footer-area">
+                <div class="tc-live-link">
+                    <i class="fas fa-globe"></i> সফটওয়্যার লিংক: ${liveLink}
+                </div>
                 ${devCreditHtml}
-                <div class="tc-footer-line" style="background: linear-gradient(90deg, var(--tc-theme-start), var(--tc-theme-end))"></div>
             </div>
         </div>
     `;
 }
 
 /**
- * Print Bulk Teacher Cards (4x2 grid on A4)
+ * Print Bulk Teacher Cards (2x3 grid on A4 Landscape)
  */
 async function printBulkTeacherCards() {
     setLoading(true, '#teacherAssignmentPage');
     try {
-        const assignments = await getTeacherAssignments();
         const allUsers = await getAllUsers();
         const { getSettings } = await import('../firestoreService.js');
         const settings = await getSettings() || {};
@@ -1196,7 +1170,8 @@ async function printBulkTeacherCards() {
         const logoUrl = adSettings.logoUrl || '';
         const developerCredit = settings.developerCredit || null;
 
-        // Group assignments by teacher (UID)
+        // Get assignments and unique teacher IDs
+        const assignments = await getTeacherAssignments();
         const teachersMap = new Map();
         assignments.forEach(asg => {
             if (!teachersMap.has(asg.uid)) {
@@ -1205,10 +1180,14 @@ async function printBulkTeacherCards() {
             teachersMap.get(asg.uid).push(asg);
         });
 
+        const teacherUids = Array.from(teachersMap.keys()).sort((a, b) => {
+            const uA = allUsers.find(u => u.uid === a) || {};
+            const uB = allUsers.find(u => u.uid === b) || {};
+            return (uA.displayName || '').localeCompare(uB.displayName || '');
+        });
+
         const bulkContainer = document.getElementById('bulkTeacherCardsContainer');
         bulkContainer.innerHTML = '';
-        
-        const teacherUids = Array.from(teachersMap.keys());
         
         if (teacherUids.length === 0) {
             showNotification('কোনো শিক্ষক তথ্য পাওয়া যায়নি', 'warning');
@@ -1220,7 +1199,10 @@ async function printBulkTeacherCards() {
         let currentGrid;
         
         teacherUids.forEach((uid, index) => {
-            // Every 6 cards, create a new A4 page
+            const user = allUsers.find(u => u.uid === uid) || {};
+            const tAssignments = teachersMap.get(uid) || [];
+
+            // Every 6 cards, create a new A4 page (2x3 grid)
             if (index % 6 === 0) {
                 currentPage = document.createElement('div');
                 currentPage.className = 'a4-landscape-page tc-print-page';
@@ -1246,24 +1228,19 @@ async function printBulkTeacherCards() {
                 }
 
                 footer.innerHTML = `
-                    <span style="font-weight: 500;">মুদ্রণে: ${instName}</span>
-                    <span style="opacity:0.7; font-size: 0.85em;">${devText}</span>
-                    <span style="font-weight: 500;">পৃষ্ঠা ${pageNum} / ${totalPages}</span>
+                    <span style="font-weight: 700; color: #1e293b;">মুদ্রণে: ${instName}</span>
+                    <span style="opacity:0.8; font-size: 0.9em; font-weight: 500;">${devText}</span>
+                    <span style="font-weight: 700; color: #1e293b;">পৃষ্ঠা ${pageNum} / ${totalPages}</span>
                 `;
                 currentPage.appendChild(footer);
-                
                 bulkContainer.appendChild(currentPage);
             }
 
-            const user = allUsers.find(u => u.uid === uid);
-            if (!user) return;
-
-            const tAssignments = teachersMap.get(uid);
             const cardHtml = renderTeacherInfoCardHTML({
                 uid: uid,
-                name: user.displayName || 'No Name',
+                name: user.displayName || 'শিক্ষকের নাম পাওয়া যায়নি',
                 phone: user.phone || 'N/A',
-                email: user.email,
+                email: user.email || 'N/A',
                 password: user.tempPassword || '******',
                 loginStatus: user.loginDisabled ? 'বন্ধ' : 'চালু',
                 assignments: tAssignments,
@@ -1273,25 +1250,27 @@ async function printBulkTeacherCards() {
                 developerCredit: developerCredit
             });
 
-        const cardWrapper = document.createElement('div');
+            const cardWrapper = document.createElement('div');
             cardWrapper.innerHTML = cardHtml;
-            currentGrid.appendChild(cardWrapper.firstElementChild);
+            const finalCard = cardWrapper.firstElementChild;
+            
+            // Expert touch: force dimensions and styling for print quality
+            if (finalCard) {
+                finalCard.classList.add('tc-print-optimized');
+                if (currentGrid) {
+                    currentGrid.appendChild(finalCard);
+                }
+            }
         });
 
-        // Add print mode class
+        // Add print mode class and trigger print
         document.body.classList.add('tc-print-mode');
-
-        window.onafterprint = () => {
-            document.body.classList.remove('tc-print-mode');
-        };
+        window.onafterprint = () => document.body.classList.remove('tc-print-mode');
 
         setTimeout(() => {
             window.print();
-            // Fallback if onafterprint doesn't fire immediately
-            setTimeout(() => {
-                document.body.classList.remove('tc-print-mode');
-            }, 1000);
-        }, 500);
+            setTimeout(() => document.body.classList.remove('tc-print-mode'), 1000);
+        }, 800);
 
     } catch (err) {
         console.error('Bulk print error:', err);

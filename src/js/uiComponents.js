@@ -157,11 +157,31 @@ export function renderGroupStats(container, data, options = {}) {
     <div class="dashboard-college-header-compact fade-in">
        <!-- Left: Dashboard Title -->
        <div class="dch-title-side">
-          <div class="vibrant-title-group">
-            <div class="vibrant-icon-wrapper-mini">
-               <i class="fas fa-chart-line"></i>
-            </div>
-            <h3 class="vibrant-main-title-mini">সার্বিক ফলাফল</h3>
+          <div class="header-mini-stats-group" style="display: flex; gap: 8px;">
+             <!-- Pass -->
+             <div class="h-stat-pill" style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                <div style="color: #10b981; font-size: 1.1rem;"><i class="fas fa-check-circle"></i></div>
+                <div style="display: flex; flex-direction: column;">
+                   <span style="font-size: 0.65rem; font-weight: 800; color: #64748b; line-height: 1.1; margin-bottom: 2px;">পাস</span>
+                   <span style="font-size: 1.05rem; font-weight: 900; color: #10b981; line-height: 1;">${globalStats.passedStudents} <small style="font-size:0.7rem;">জন</small></span>
+                </div>
+             </div>
+             <!-- Fail -->
+             <div class="h-stat-pill" style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                <div style="color: #ef4444; font-size: 1.1rem;"><i class="fas fa-times-circle"></i></div>
+                <div style="display: flex; flex-direction: column;">
+                   <span style="font-size: 0.65rem; font-weight: 800; color: #64748b; line-height: 1.1; margin-bottom: 2px;">ফেল</span>
+                   <span style="font-size: 1.05rem; font-weight: 900; color: #ef4444; line-height: 1;">${globalStats.failedStudents} <small style="font-size:0.7rem;">জন</small></span>
+                </div>
+             </div>
+             <!-- Absent -->
+             <div class="h-stat-pill" style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
+                <div style="color: #f59e0b; font-size: 1.1rem;"><i class="fas fa-user-minus"></i></div>
+                <div style="display: flex; flex-direction: column;">
+                   <span style="font-size: 0.65rem; font-weight: 800; color: #64748b; line-height: 1.1; margin-bottom: 2px;">অনুপস্থিত</span>
+                   <span style="font-size: 1.05rem; font-weight: 900; color: #f59e0b; line-height: 1;">${globalStats.absentStudents} <small style="font-size:0.7rem;">জন</small></span>
+                </div>
+             </div>
           </div>
        </div>
 
@@ -213,33 +233,16 @@ export function renderGroupStats(container, data, options = {}) {
         </div>
         
         <!-- Col 2: Pass Rate & Basic Stats (Expert Refined) -->
-        <div class="vibrant-stats-side-premium">
-           <div class="vcd-progress-premium">
-              <svg class="vcd-svg-premium" viewBox="0 0 80 80" width="80" height="80">
-                <circle class="vcd-circle-bg" cx="40" cy="40" r="34" />
+        <div class="vibrant-stats-side-premium" style="display: flex; justify-content: center; align-items: center; padding: 0 10px;">
+           <div class="vcd-progress-premium" style="position: relative; display: flex; align-items: center; justify-content: center;">
+              <svg class="vcd-svg-premium" viewBox="0 0 80 80" width="80" height="80" style="transform: rotate(-90deg);">
+                <circle class="vcd-circle-bg" cx="40" cy="40" r="34" style="fill: none; stroke: var(--border-color); stroke-width: 6;" />
                 <circle class="vcd-circle-fill" cx="40" cy="40" r="34" 
-                  style="stroke-dasharray: 213.63; stroke-dashoffset: ${213.63 - (overallPassRate / 100) * 213.63};" />
+                  style="fill: none; stroke: #10b981; stroke-width: 6; stroke-linecap: round; stroke-dasharray: 213.63; stroke-dashoffset: ${213.63 - (overallPassRate / 100) * 213.63}; transition: stroke-dashoffset 1s ease-out;" />
               </svg>
-              <div class="vcd-progress-info">
-                 <span class="vcd-p-val-premium">${overallPassRate}%</span>
-                 <span class="vcd-p-label-premium">পাশের হার</span>
-              </div>
-           </div>
-           
-           <div class="vibrant-meta-pills-premium">
-              <div class="v-pill-premium success">
-                 <div class="vp-icon-circle"><i class="fas fa-check"></i></div>
-                 <div class="vp-details">
-                    <span class="vp-label">পাস</span>
-                    <span class="vp-value">${globalStats.passedStudents} <small>জন</small></span>
-                 </div>
-              </div>
-              <div class="v-pill-premium danger">
-                 <div class="vp-icon-circle"><i class="fas fa-times"></i></div>
-                 <div class="vp-details">
-                    <span class="vp-label">অনুপস্থিত</span>
-                    <span class="vp-value">${globalStats.absentStudents} <small>জন</small></span>
-                 </div>
+              <div class="vcd-progress-info" style="position: absolute; display: flex; flex-direction: column; align-items: center;">
+                 <span class="vcd-p-val-premium" style="font-size: 1.25rem; font-weight: 900; line-height: 1; color: var(--heading-color);">${overallPassRate}%</span>
+                 <span class="vcd-p-label-premium" style="font-size: 0.55rem; font-weight: 700; color: var(--text-muted); text-transform: uppercase; margin-top: 2px;">পাশের হার</span>
               </div>
            </div>
         </div>
