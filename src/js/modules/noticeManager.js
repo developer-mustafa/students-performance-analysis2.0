@@ -537,8 +537,8 @@ function renderBulletin() {
     elements.noticeScroller.style.animation = 'none';
     requestAnimationFrame(() => {
         const scrollWidth = elements.noticeScroller.scrollWidth / 2;
-        const speed = 45; // pixels per second (natural reading speed)
-        const duration = Math.max(scrollWidth / speed, 20);
+        const speed = 45; // Fixed pixels per second for constant reading speed
+        const duration = scrollWidth / speed; 
         elements.noticeScroller.style.animation = `noticeMarqueeSlide ${duration}s linear infinite`;
     });
 }
