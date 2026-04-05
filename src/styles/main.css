@@ -3763,10 +3763,10 @@ body.is-super-admin .admin-only:not(.app-page) {
   width: 60px;
   height: 60px;
   border: 5px solid rgba(67, 97, 238, 0.1);
-  /* Light primary */
   border-radius: 50%;
   border-top: 5px solid var(--primary);
-  animation: spin 1s linear infinite, pulse 2s ease-in-out infinite alternate;
+  /* Use a single animation that handles both rotate and scale to avoid conflicts */
+  animation: professional-spin 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
   box-shadow: 0 0 15px rgba(67, 97, 238, 0.2);
 }
 
@@ -3775,23 +3775,22 @@ body.is-super-admin .admin-only:not(.app-page) {
   font-weight: 600;
   color: var(--heading-color);
   letter-spacing: 0.5px;
+  margin-top: 10px;
   animation: fadeIn 1.5s ease-in-out infinite alternate;
 }
 
-@keyframes pulse {
+@keyframes professional-spin {
   0% {
-    transform: scale(1);
-    box-shadow: 0 0 15px rgba(67, 97, 238, 0.2);
+    transform: rotate(0deg) scale(1);
+    box-shadow: 0 0 10px rgba(67, 97, 238, 0.2);
   }
-
   50% {
-    transform: scale(1.05);
-    box-shadow: 0 0 25px rgba(67, 97, 238, 0.5);
+    transform: rotate(180deg) scale(1.05);
+    box-shadow: 0 0 20px rgba(67, 97, 238, 0.4);
   }
-
   100% {
-    transform: scale(1);
-    box-shadow: 0 0 15px rgba(67, 97, 238, 0.2);
+    transform: rotate(360deg) scale(1);
+    box-shadow: 0 0 10px rgba(67, 97, 238, 0.2);
   }
 }
 
