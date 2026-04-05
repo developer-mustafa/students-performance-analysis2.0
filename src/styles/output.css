@@ -4479,7 +4479,7 @@ body.is-super-admin .admin-only:not(.app-page) {
 
 @media (max-width: 400px) {
   .stats {
-    grid-template-columns: 1fr !important;
+    grid-template-columns: 1fr 1fr !important;
   }
 }
 
@@ -21655,6 +21655,16 @@ body.sr-bulk-printing-active .print-only {
 
   100% {
     transform: translateX(-100%);
+  }
+}
+
+@keyframes noticeMarqueeSlide {
+  0% {
+    transform: translateX(0);
+  }
+
+  100% {
+    transform: translateX(-50%);
   }
 }
 

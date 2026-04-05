@@ -3,8 +3,8 @@
  * Handles notice board, news bulletin, and sidebar headline history.
  */
 
-import { saveNotice, getNotices, deleteNotice, subscribeToNotices } from '../firestoreService.js';
-import { formatDateBengali, showNotification } from '../utils.js';
+import { saveNotice, getNotices, deleteNotice, subscribeToNotices, subscribeToSettings, updateSettings } from '../firestoreService.js';
+import { formatDateBengali, showNotification, convertToEnglishDigits } from '../utils.js';
 import { navigateTo } from './pageRouter.js';
 
 let state = {
@@ -15,7 +15,7 @@ let state = {
     sidebarPerPage: 5,
     searchTerm: '',
     dateFilter: '',
-    bulletinEnabled: localStorage.getItem('bulletinEnabled') !== 'false',
+    bulletinEnabled: true, // Default to true, will be updated from Firestore
     userRole: null,
     isAdmin: false,
     currentNoticeId: null, // Track currently viewed notice for comments
@@ -33,18 +33,28 @@ export async function initNoticeManager() {
     initDOMElements();
     setupEventListeners();
     
-    // Initial data fetch
-    state.notices = await getNotices();
-    renderNotices();
-    renderSidebarHistory();
     updateBulletinVisibility();
     
-    // Subscribe to real-time updates
+    // Subscribe to global settings (bulletin visibility)
+    subscribeToSettings((settings) => {
+        if (settings && typeof settings.bulletinEnabled !== 'undefined') {
+            state.bulletinEnabled = settings.bulletinEnabled;
+            updateBulletinVisibility();
+            
+            // If toggle exists, update its checked state
+            if (elements.bulletinToggle) {
+                elements.bulletinToggle.checked = state.bulletinEnabled;
+            }
+        }
+    });
+
+    // Subscribe to real-time updates (This already provides initial data immediately)
     subscribeToNotices((notices) => {
         state.notices = notices;
         renderNotices();
         renderSidebarHistory();
         renderBulletin();
+        updateBulletinVisibility();
     });
 }
 
@@ -118,12 +128,32 @@ function setupEventListeners() {
         if (elements.noticeDateClear) elements.noticeDateClear.style.display = 'none';
     });
 
-    // Bulletin Toggle
-    elements.bulletinToggle?.addEventListener('change', (e) => {
-        state.bulletinEnabled = e.target.checked;
-        localStorage.setItem('bulletinEnabled', state.bulletinEnabled);
-        updateBulletinVisibility();
+    // Bulletin Toggle (Global persistence via Firestore)
+    elements.bulletinToggle?.addEventListener('change', async (e) => {
+        const isEnabled = e.target.checked;
+        state.bulletinEnabled = isEnabled;
+        
+        // Save to global settings
+        const success = await updateSettings({ bulletinEnabled: isEnabled });
+        if (success) {
+            updateBulletinVisibility();
+        } else {
+            // Revert on failure
+            e.target.checked = !isEnabled;
+            state.bulletinEnabled = !isEnabled;
+            showNotification('বুলেটিন স্ট্যাটাস পরিবর্তন করা সম্ভব হয়নি', 'error');
+        }
     });
+
+    // Pause on Hover Logic
+    if (elements.noticeScroller) {
+        elements.noticeScroller.addEventListener('mouseenter', () => {
+            elements.noticeScroller.style.animationPlayState = 'paused';
+        });
+        elements.noticeScroller.addEventListener('mouseleave', () => {
+            elements.noticeScroller.style.animationPlayState = 'running';
+        });
+    }
 
     // Bulletin Navigation
     if (elements.noticeBulletinWrapper) {
@@ -139,11 +169,13 @@ function setupEventListeners() {
     });
 
     const closeModals = () => {
-       document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
+        document.querySelectorAll('.modal').forEach(m => m.classList.remove('active'));
     };
 
+    // Support both ID specific and generic class based closing
     elements.closeNoticeModalBtn?.addEventListener('click', closeModals);
     elements.closeDetailModalBtn?.addEventListener('click', closeModals);
+    document.querySelectorAll('.close-modal').forEach(btn => btn.addEventListener('click', closeModals));
 
     // Comment Submission
     elements.noticeCommentForm?.addEventListener('submit', handleCommentSubmit);
@@ -248,18 +280,19 @@ function renderNotices() {
 
     if (filtered.length === 0) {
         elements.noticeContainer.innerHTML = `
-            <div class="col-span-full py-20 flex flex-col items-center justify-center text-slate-400 bg-white/50 dark:bg-slate-800/50 rounded-2xl border border-dashed border-slate-200 dark:border-slate-700">
-                <i class="fas fa-search text-3xl mb-3 opacity-20"></i>
-                <p class="text-sm font-medium">কোনো নোটিশ পাওয়া যায়নি</p>
+            <div class="notice-empty-state">
+                <i class="fas fa-search"></i>
+                <p>কোনো নোটিশ পাওয়া যায়নি</p>
             </div>
         `;
         if (elements.noticePagination) elements.noticePagination.innerHTML = '';
         return;
     }
 
-    const totalPages = Math.ceil(filtered.length / 2);
-    const start = (state.currentPage - 1) * 2;
-    const paginated = filtered.slice(start, start + 2);
+    const ITEMS_PER_PAGE = 2;
+    const totalPages = Math.ceil(filtered.length / ITEMS_PER_PAGE);
+    const start = (state.currentPage - 1) * ITEMS_PER_PAGE;
+    const paginated = filtered.slice(start, start + ITEMS_PER_PAGE);
 
     elements.noticeContainer.innerHTML = paginated.map((notice, idx) => {
         const date = notice.createdAt?.toDate ? notice.createdAt.toDate() : new Date();
@@ -267,41 +300,41 @@ function renderNotices() {
         const noticeNoBng = bng(filtered.length - (start + idx));
 
         return `
-            <div class="group h-full bg-white dark:bg-slate-800 rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 shadow-sm hover:shadow-md transition-all duration-300 flex flex-col relative" data-id="${notice.docId}" style="animation: noticeCardIn 0.4s ease ${idx * 0.05}s backwards">
-                <div class="h-1 bg-gradient-to-r from-indigo-500 to-purple-500 opacity-60"></div>
-                <div class="p-5 flex flex-col flex-1 gap-3">
-                    <div class="flex items-center justify-between gap-3">
-                        <span class="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 rounded-lg text-[14px] font-black border border-indigo-100 dark:border-indigo-500/20 shrink-0 tracking-tighter shadow-sm">
-                             <i class="fas fa-hashtag text-[12px] opacity-70"></i> নোটিশ নং: ${noticeNoBng}
+            <div class="notice-card group" data-id="${notice.docId}" style="animation: noticeCardIn 0.4s ease ${idx * 0.05}s backwards">
+                <div class="notice-card-highlight"></div>
+                <div class="notice-card-content">
+                    <div class="notice-card-header">
+                        <span class="notice-badge">
+                             <i class="fas fa-hashtag"></i> নোটিশ নং: ${noticeNoBng}
                         </span>
                         
                         ${state.isAdmin ? `
-                        <div class="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity no-print">
-                            <button class="notice-edit-btn w-7 h-7 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 hover:text-indigo-600 transition-colors flex items-center justify-center p-0 border-0" data-id="${notice.docId}"><i class="fas fa-edit text-xs"></i></button>
-                            <button class="notice-delete-btn w-7 h-7 rounded bg-slate-100 dark:bg-slate-700 text-slate-500 hover:text-red-600 transition-colors flex items-center justify-center p-0 border-0" data-id="${notice.docId}"><i class="fas fa-trash-alt text-xs"></i></button>
+                        <div class="notice-admin-actions">
+                            <button class="notice-edit-btn" data-id="${notice.docId}"><i class="fas fa-edit"></i></button>
+                            <button class="notice-delete-btn" data-id="${notice.docId}"><i class="fas fa-trash-alt"></i></button>
                         </div>
                         ` : ''}
                     </div>
 
-                    <div class="flex-1 min-w-0">
-                        <div class="flex items-center gap-2 text-slate-500 dark:text-indigo-400/80 text-[14px] mb-2 font-black uppercase tracking-tight">
-                            <i class="far fa-calendar-alt text-indigo-500/60 text-[13px]"></i> ${formattedDate}
+                    <div class="notice-card-body">
+                        <div class="notice-date">
+                            <i class="far fa-calendar-alt"></i> ${formattedDate}
                         </div>
-                        <h3 class="text-[22px] font-black text-slate-800 dark:text-slate-100 mb-2.5 leading-tight line-clamp-1 group-hover:text-indigo-600 transition-colors cursor-pointer notice-title">${notice.title}</h3>
-                        <p class="text-[16px] text-slate-600 dark:text-slate-400 leading-relaxed line-clamp-3 break-words mb-4">${notice.content}</p>
+                        <h3 class="notice-title" data-title="${notice.title}">${notice.title}</h3>
+                        <p class="notice-excerpt">${notice.content}</p>
                     </div>
 
-                    <div class="flex items-center justify-between pt-4 border-t border-slate-50 dark:border-slate-700/50 mt-auto">
-                        <div class="flex items-center gap-5 shrink-0">
-                            <div class="flex items-center gap-2 text-[13px] font-black text-slate-500 dark:text-slate-400">
-                                <i class="far fa-eye text-indigo-500/80 text-[13px]"></i> <span>${bng(notice.views || 0)}</span>
+                    <div class="notice-footer mt-auto">
+                        <div class="notice-stats">
+                            <div class="stat-item">
+                                <i class="far fa-eye"></i> <span>${bng(notice.views || 0)}</span>
                             </div>
-                            <div class="flex items-center gap-2 text-[13px] font-black text-slate-500 dark:text-slate-400 border-l border-slate-200 dark:border-slate-700/50 pl-4">
-                                <i class="far fa-comment-dots text-indigo-500/80 text-[13px]"></i> <span>${bng(notice.comments?.length || 0)}</span>
+                            <div class="stat-item border-left">
+                                <i class="far fa-comment-dots"></i> <span>${bng(notice.comments?.length || 0)}</span>
                             </div>
                         </div>
-                        <button class="notice-read-more px-5 py-2 bg-indigo-50 dark:bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 text-[14px] font-black rounded-lg hover:bg-indigo-600 hover:text-white transition-all transform hover:-translate-y-0.5 shadow-md active:scale-95 border-0 cursor-pointer flex items-center gap-2 group/btn" data-id="${notice.docId}">
-                             বিস্তারিত <i class="fas fa-arrow-right text-[12px] group-hover/btn:translate-x-1 transition-transform"></i>
+                        <button class="notice-read-more" data-id="${notice.docId}">
+                             বিস্তারিত <i class="fas fa-arrow-right"></i>
                         </button>
                     </div>
                 </div>
@@ -326,7 +359,7 @@ function renderSidebarHistory() {
     const twoDaysInMs = 2 * 24 * 60 * 60 * 1000;
 
     if (recentNotices.length === 0) {
-        elements.sidebarNoticeList.innerHTML = '<li class="py-5 text-center text-sm text-gray-400 dark:text-gray-500 italic">কোনো নোটিশ নেই</li>';
+        elements.sidebarNoticeList.innerHTML = '<li class="sidebar-empty">কোনো নোটিশ নেই</li>';
         return;
     }
 
@@ -348,22 +381,20 @@ function renderSidebarHistory() {
                 const noticeNo = (state.notices.length - (i % recentNotices.length));
 
                 return `
-                    <div class="bulletin-item p-2.5 hover:bg-slate-50 dark:hover:bg-indigo-500/5 transition-colors border-b border-slate-50 dark:border-slate-800/50 last:border-b-0 cursor-pointer group sidebar-notice-item" data-id="${n.docId}">
-                        <div class="flex items-center gap-3 w-full">
-                            <div class="w-13 h-10 rounded-xl bg-indigo-50 dark:bg-indigo-500/10 text-indigo-700 dark:text-indigo-400 flex flex-col items-center justify-center shrink-0 border border-indigo-200/50 dark:border-indigo-500/20 shadow-sm relative overflow-hidden group-hover:scale-105 transition-transform px-1">
-                                <div class="text-[8px] font-black opacity-60 leading-none mb-0.5 whitespace-nowrap uppercase">নোটিশ নং</div>
-                                <div class="text-[17px] font-black leading-none mt-0.5">${bng(noticeNo)}</div>
+                    <div class="bulletin-item sidebar-notice-item" data-id="${n.docId}">
+                        <div class="sidebar-item-number">
+                            <div class="num-label">নং</div>
+                            <div class="num-val">${bng(noticeNo)}</div>
+                        </div>
+                        <div class="sidebar-item-content">
+                            <div class="sidebar-item-header">
+                                <span class="sidebar-notice-title">${n.title}</span>
+                                ${isNew ? '<span class="new-dot pulse"></span>' : ''}
                             </div>
-                            <div class="flex-1 min-w-0">
-                                <div class="flex flex-wrap items-center gap-1.5 mb-1.5">
-                                    <span class="block text-[16px] font-black text-slate-700 dark:text-slate-100 line-clamp-1 group-hover:text-indigo-600 transition-colors tracking-tight leading-snug">${n.title}</span>
-                                    ${isNew ? '<span class="flex-shrink-0 w-2 h-2 rounded-full bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)] pulse"></span>' : ''}
-                                </div>
-                                <div class="flex items-center gap-5 text-[12.5px] font-black text-slate-400 dark:text-slate-500">
-                                    <span class="opacity-80 flex items-center gap-2"><i class="far fa-calendar-alt text-[12px]"></i> ${shortDate}</span>
-                                    <div class="flex items-center gap-2 border-l border-slate-100 dark:border-slate-800/50 pl-4">
-                                        <i class="far fa-eye opacity-50 text-[12px]"></i> ${bng(n.views || 0)}
-                                    </div>
+                            <div class="sidebar-item-meta">
+                                <span class="sidebar-notice-date"><i class="far fa-calendar-alt"></i> ${shortDate}</span>
+                                <div class="sidebar-views">
+                                    <i class="far fa-eye"></i> ${bng(n.views || 0)}
                                 </div>
                             </div>
                         </div>
@@ -383,30 +414,46 @@ function renderGenericPagination(container, total, current, onPageChange) {
         return;
     }
 
-    let html = '';
-    for (let i = 1; i <= total; i++) {
-        const isActive = current === i;
-        html += `<button class="page-btn w-8 h-8 rounded-lg border text-xs font-semibold cursor-pointer transition-all flex items-center justify-center p-0 ${
-            isActive
-                ? 'bg-indigo-600 text-white border-indigo-600 shadow-md shadow-indigo-500/30'
-                : 'bg-white dark:bg-slate-800 text-gray-600 dark:text-gray-300 border-black/[0.06] dark:border-white/[0.08] hover:border-indigo-500 hover:text-indigo-600 hover:-translate-y-0.5'
-        }">${i}</button>`;
-    }
-    container.innerHTML = `<div class="flex gap-1.5 items-center">${html}</div>`;
+    const prevDisabled = current <= 1;
+    const nextDisabled = current >= total;
 
-    container.querySelectorAll('.page-btn').forEach((btn, idx) => {
-        btn.addEventListener('click', () => onPageChange(idx + 1));
-    });
+    container.innerHTML = `
+        <div class="notice-pagination-nav">
+            <button class="notice-page-nav-btn prev ${prevDisabled ? 'disabled' : ''}" ${prevDisabled ? 'disabled' : ''}>
+                <i class="fas fa-chevron-left"></i> <span>পূর্ববর্তী</span>
+            </button>
+            <span class="notice-page-indicator">${bng(current)} / ${bng(total)}</span>
+            <button class="notice-page-nav-btn next ${nextDisabled ? 'disabled' : ''}" ${nextDisabled ? 'disabled' : ''}>
+                <span>পরবর্তী</span> <i class="fas fa-chevron-right"></i>
+            </button>
+        </div>
+    `;
+
+    const prevBtn = container.querySelector('.notice-page-nav-btn.prev');
+    const nextBtn = container.querySelector('.notice-page-nav-btn.next');
+
+    if (prevBtn && !prevDisabled) {
+        prevBtn.addEventListener('click', () => onPageChange(current - 1));
+    }
+    if (nextBtn && !nextDisabled) {
+        nextBtn.addEventListener('click', () => onPageChange(current + 1));
+    }
 }
 
 function filterNotices() {
     let filtered = state.notices;
     if (state.searchTerm) {
         const query = state.searchTerm.toLowerCase();
-        filtered = filtered.filter(n => 
-            n.title.toLowerCase().includes(query) || 
-            n.content.toLowerCase().includes(query)
-        );
+        const engQuery = typeof convertToEnglishDigits === 'function' ? convertToEnglishDigits(query) : query;
+        const queryIsNum = /^\d+$/.test(engQuery);
+
+        filtered = filtered.filter((n, idx) => {
+            const noticeNo = (state.notices.length - state.notices.indexOf(n)).toString();
+            const textMatch = n.title.toLowerCase().includes(query) || 
+                             n.content.toLowerCase().includes(query);
+            const numMatch = queryIsNum && noticeNo === engQuery;
+            return textMatch || numMatch;
+        });
     }
     if (state.dateFilter) {
         filtered = filtered.filter(n => {
@@ -419,25 +466,91 @@ function filterNotices() {
 
 /**
  * Header Marquee Render
+ * Format: নোটিশ নং-১০, ৫ এপ্রিল: হেডলাইন
+ * Latest first, smooth right-to-left infinite scroll
+ * Max 7 notices, each with unique badge color
  */
 function renderBulletin() {
     if (!elements.noticeScroller) return;
-    const important = state.notices.filter(n => n.important).slice(0, 5);
-    if (important.length === 0) {
-        elements.noticeScroller.innerHTML = '<span>আপাতত কোনো গুরুত্বপূর্ণ আপডেট নেই</span>';
+
+    // Sort notices: latest first
+    const sorted = [...state.notices].sort((a, b) => {
+        const dateA = a.createdAt?.toDate ? a.createdAt.toDate() : new Date(0);
+        const dateB = b.createdAt?.toDate ? b.createdAt.toDate() : new Date(0);
+        return dateB - dateA;
+    });
+
+    // Take only latest 7
+    const latest7 = sorted.slice(0, 7);
+
+    if (latest7.length === 0) {
+        elements.noticeScroller.innerHTML = '<span style="color: var(--text-muted); font-size: 0.85rem;">আপাতত কোনো নোটিশ নেই</span>';
+        elements.noticeScroller.style.animation = 'none';
         return;
     }
-    const html = important.map(n => `
-        <a class="notice-marquee-item" data-id="${n.docId}">
-            <i class="fas fa-bullhorn fa-shake"></i> ${n.title}
-        </a>
-    `).join('');
-    elements.noticeScroller.innerHTML = html + html; 
+
+    // 7 unique vivid badge colors
+    const badgeColors = [
+        'linear-gradient(135deg, #ef4444, #dc2626)', // Red
+        'linear-gradient(135deg, #f59e0b, #d97706)', // Amber
+        'linear-gradient(135deg, #10b981, #059669)', // Emerald
+        'linear-gradient(135deg, #3b82f6, #2563eb)', // Blue
+        'linear-gradient(135deg, #8b5cf6, #7c3aed)', // Violet
+        'linear-gradient(135deg, #ec4899, #db2777)', // Pink
+        'linear-gradient(135deg, #06b6d4, #0891b2)', // Cyan
+    ];
+
+    // Bengali month names
+    const bnMonths = ['জানুয়ারি','ফেব্রুয়ারি','মার্চ','এপ্রিল','মে','জুন','জুলাই','আগস্ট','সেপ্টেম্বর','অক্টোবর','নভেম্বর','ডিসেম্বর'];
+
+    const totalNotices = state.notices.length;
+
+    const items = latest7.map((n, idx) => {
+        const date = n.createdAt?.toDate ? n.createdAt.toDate() : new Date();
+        const day = bng(date.getDate());
+        const month = bnMonths[date.getMonth()];
+        // Notice number: totalNotices for latest, totalNotices-1 for second, etc.
+        const noticeNo = bng(totalNotices - idx);
+        const bgColor = badgeColors[idx % badgeColors.length];
+
+        return `<a class="notice-marquee-item" data-id="${n.docId}" style="
+            display: inline-flex; align-items: center; gap: 8px;
+            white-space: nowrap; margin-right: 60px; cursor: pointer;
+            font-size: 0.85rem; font-weight: 600; color: var(--text-color);
+            text-decoration: none; transition: color 0.2s;
+        ">
+            <span style="
+                background: ${bgColor};
+                color: white; padding: 2px 10px; border-radius: 4px;
+                font-size: 0.75rem; font-weight: 700; white-space: nowrap;
+                box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+            ">নোটিশ নং-${noticeNo}</span>
+            <span style="color: var(--text-muted); font-size: 0.8rem;">${day} ${month}:</span>
+            <span style="font-weight: 700;">${n.title}</span>
+        </a>`;
+    }).join('');
+
+    // Duplicate for seamless infinite loop
+    elements.noticeScroller.innerHTML = items + items;
+
+    // Calculate animation duration based on content width
+    elements.noticeScroller.style.animation = 'none';
+    requestAnimationFrame(() => {
+        const scrollWidth = elements.noticeScroller.scrollWidth / 2;
+        const speed = 45; // pixels per second (natural reading speed)
+        const duration = Math.max(scrollWidth / speed, 20);
+        elements.noticeScroller.style.animation = `noticeMarqueeSlide ${duration}s linear infinite`;
+    });
 }
 
 function updateBulletinVisibility() {
     if (elements.noticeBulletinWrapper) {
         elements.noticeBulletinWrapper.style.display = state.bulletinEnabled ? 'flex' : 'none';
+    }
+    const statusText = document.getElementById('bulletinStatusText');
+    if (statusText) {
+        statusText.textContent = state.bulletinEnabled ? 'অন' : 'অফ';
+        statusText.style.color = state.bulletinEnabled ? '#22c55e' : '#ef4444';
     }
 }
 
@@ -467,11 +580,36 @@ async function showNoticeDetails(notice) {
     if (document.getElementById('commentListCount')) document.getElementById('commentListCount').textContent = bng(notice.comments?.length || 0);
     if (document.getElementById('noticeAuthorInitial')) document.getElementById('noticeAuthorInitial').textContent = (notice.author || 'M').charAt(0).toUpperCase();
 
+    // Populate Print Only Header
+    const printAuthor = document.getElementById('printNoticeDetailAuthor');
+    const printDate = document.getElementById('printNoticeDetailDate');
+    const printNo = document.getElementById('printNoticeDetailNo');
+    const printTag = document.getElementById('printNoticeDetailTag');
+    const printInst = document.getElementById('printInstitutionName');
+    const printAddr = document.getElementById('printInstitutionAddr');
+
+    if (printAuthor) printAuthor.textContent = notice.author || 'কর্তৃপক্ষ';
+    if (printDate) printDate.textContent = formattedDate;
+    if (printNo) printNo.textContent = bng(noticeNo);
+    
+    // Get Inst Info
+    try {
+        const { getMarksheetSettings } = await import('./marksheetManager.js');
+        const msSettings = getMarksheetSettings() || {};
+        if (printInst) printInst.textContent = msSettings.institutionName || 'শিক্ষার্থী পারফরম্যান্স এনালাইসিস';
+        if (printAddr) printAddr.textContent = msSettings.institutionAddress || 'অটোমেটেড নোটিশ ম্যানেজমেন্ট সিস্টেম';
+    } catch (e) {
+        console.warn('Could not load marksheet settings for print header');
+    }
+
     // Tag styling
     const tag = document.getElementById('noticeDetailTag');
     if (tag) {
-        tag.textContent = notice.important ? 'জরুরি নোটিশ' : 'নোটিশ বোর্ড';
+        const tagName = notice.important ? 'জরুরি নোটিশ' : 'নোটিশ বোর্ড';
+        tag.textContent = tagName;
+        if (printTag) printTag.textContent = tagName;
         tag.className = notice.important ? 'bg-red-500 text-white px-3 py-1 rounded-full text-[10px] font-black shadow-lg shadow-red-500/30' : 'bg-indigo-500/10 text-indigo-600 dark:text-indigo-400 px-3 py-1 rounded-full text-[10px] font-bold border border-indigo-500/20';
+        if (printTag) printTag.className = notice.important ? 'bg-red-600 text-white px-4 py-1.5 rounded-lg text-xs font-black mb-2 inline-block' : 'bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-xs font-black mb-2 inline-block';
     }
 
     // Comment Auth Logic
@@ -488,8 +626,12 @@ async function showNoticeDetails(notice) {
     renderComments(notice.comments || []);
     elements.noticeDetailModal?.classList.add('active');
 
-    // Increment View Count
-    incrementViewCount(notice.docId);
+    // Increment View Count (Optimized: Check session to avoid duplicate writes)
+    const viewedKey = `viewed_notice_${notice.docId}`;
+    if (!sessionStorage.getItem(viewedKey)) {
+        incrementViewCount(notice.docId);
+        sessionStorage.setItem(viewedKey, 'true');
+    }
 }
 
 function renderComments(comments) {

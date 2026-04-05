@@ -318,14 +318,17 @@
           </div>
 
           <!-- --- DYNAMIC NOTICE BULLETIN (MARQUEE) --- -->
-          <div id="noticeBulletinWrapper" class="notice-bulletin-wrapper cursor-pointer" style="display: none;">
-            <div class="notice-bulletin-label">
-              <i class="fas fa-bullhorn"></i> <span>সর্বশেষ নোটিশ:</span>
+          <div id="noticeBulletinWrapper" class="dashboard-marquee-wrapper" style="display: none; align-items: center; width: 100%; height: 42px; background: var(--container-bg, white); border: 1px solid rgba(67, 97, 238, 0.15); border-radius: 50px; overflow: hidden; margin-top: 15px; box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);">
+            
+            <!-- Badge -->
+            <div style="flex-shrink: 0; background: linear-gradient(135deg, var(--primary, #4361ee), #3b82f6); color: white; border-radius: 50px; font-weight: bold; font-size: 0.85rem; padding: 0 16px; height: 100%; display: flex; align-items: center; gap: 6px; box-shadow: 2px 0 8px rgba(67, 97, 238, 0.2); z-index: 2;">
+              <i class="fas fa-bullhorn"></i> <span class="hidden-mobile">সর্বশেষ নোটিশ:</span>
             </div>
-            <div class="notice-bulletin-content" id="noticeBulletinContent">
-              <!-- Notices will scroll here dynamically -->
-              <div class="notice-scroller" id="noticeScroller">
-                <span class="notice-item-placeholder">লোড হচ্ছে...</span>
+            
+            <!-- Scrolling Area -->
+            <div style="flex: 1; overflow: hidden; position: relative; height: 100%; display: flex; align-items: center; background: transparent;">
+              <div class="notice-scroller" id="noticeScroller" style="display: inline-flex; white-space: nowrap; align-items: center; padding-left: 10px;">
+                <span class="notice-item-placeholder" style="font-size: 0.85rem; color: var(--text-color); font-weight: 500;">লোড হচ্ছে...</span>
               </div>
             </div>
           </div>
@@ -604,81 +607,76 @@
     </div><!-- END #dashboardPage -->
 
     <!-- ========== PAGE: NOTICES ========== -->
-    <div id="noticesPage" class="app-page px-3 sm:px-4 lg:px-6 pt-0 pb-4 mx-auto w-full max-w-[1600px]" style="display: none;">
+    <div id="noticesPage" class="app-page notice-page-wrapper" style="display: none;">
       
-      <!-- Integrated Layout: 3:2 Split using 5-Column Grid (Professional Density) -->
-      <div class="flex flex-col lg:grid lg:grid-cols-5 gap-5 items-start pt-2">
+      <div class="notice-layout-wrapper">
         
-        <!-- Left: Main Section (Toolbar + Notice Grid) - 3/5 Space -->
-        <div class="lg:col-span-3 min-w-0 w-full">
-          <!-- Single-Line Ultra-Compact Professional Toolbar -->
-          <div class="bg-white dark:bg-slate-800 rounded-xl px-3 py-2 mb-3 shadow-sm border border-slate-200 dark:border-slate-700 flex flex-wrap lg:flex-nowrap items-center gap-3">
-            <div class="flex items-center gap-2 shrink-0 pr-2 border-r border-slate-100 dark:border-slate-700/50">
-              <div class="w-7 h-7 bg-indigo-50 dark:bg-indigo-500/10 rounded-lg flex items-center justify-center text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-500/20">
-                <i class="fas fa-bullhorn text-xs"></i>
+        <div class="notice-feed-column">
+          <!-- Notice Toolbar (Custom CSS controlled - no conflicting Tailwind layout) -->
+          <div class="notice-controls-bar">
+            <div class="notice-toolbar-title">
+              <div class="notice-toolbar-icon">
+                <i class="fas fa-bullhorn"></i>
               </div>
-              <h1 class="text-[18px] font-black text-slate-800 dark:text-slate-100 leading-none tracking-tight whitespace-nowrap">নোটিশ বোর্ড</h1>
+              <h1>নোটিশ বোর্ড</h1>
             </div>
 
-            <!-- Integrated Search & Filter Row (Stable Density) -->
-            <div class="flex-1 flex items-center gap-2 min-w-[280px]">
-              <div class="flex-1 flex items-center bg-slate-50 dark:bg-slate-900/40 h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 focus-within:border-indigo-500/50 focus-within:bg-white dark:focus-within:bg-slate-800 transition-all">
-                <i class="fas fa-search text-slate-400 shrink-0 text-[12px]"></i>
-                <input type="text" id="noticeSearchInput" class="flex-1 bg-transparent border-0 px-2.5 text-[15px] font-bold text-slate-800 dark:text-slate-100 placeholder-slate-400 focus:outline-none" placeholder="খুঁজুন...">
-                <button id="noticeSearchClear" class="w-6 h-6 rounded-full bg-slate-200/50 dark:bg-slate-700 flex items-center justify-center text-slate-500 hover:bg-red-50 hover:text-red-500 transition-colors hidden">
-                  <i class="fas fa-times text-[10px]"></i>
+            <div class="notice-toolbar-filters">
+              <div class="notice-search-input-wrap">
+                <i class="fas fa-search"></i>
+                <input type="text" id="noticeSearchInput" placeholder="নোটিশ নং বা শিরোনাম দিয়ে খুঁজুন...">
+                <button id="noticeSearchClear" class="notice-clear-btn hidden">
+                  <i class="fas fa-times"></i>
                 </button>
               </div>
-              <div class="w-40 flex items-center bg-slate-50 dark:bg-slate-900/40 h-8.5 px-3 rounded-lg border border-slate-200 dark:border-slate-700 focus-within:border-indigo-500/50 focus-within:bg-white dark:focus-within:bg-slate-800 transition-all shrink-0">
-                <i class="fas fa-calendar text-slate-400 shrink-0 text-[12px]"></i>
-                <input type="date" id="noticeDateFilter" class="bg-transparent border-0 px-1.5 text-[14px] font-bold text-slate-700 dark:text-slate-200 focus:outline-none cursor-pointer w-full">
-                <button id="noticeDateClear" class="w-6 h-6 rounded-full bg-slate-200/50 dark:bg-slate-700 flex items-center justify-center text-slate-500 hover:bg-red-50 hover:text-red-500 transition-colors hidden">
-                  <i class="fas fa-times text-[10px]"></i>
+              <div class="notice-date-filter">
+                <i class="fas fa-calendar"></i>
+                <input type="date" id="noticeDateFilter">
+                <button id="noticeDateClear" class="notice-clear-btn hidden">
+                  <i class="fas fa-times"></i>
                 </button>
               </div>
             </div>
 
-            <!-- Action Buttons Section -->
-            <div class="flex items-center gap-2 pl-3 border-l border-slate-100 dark:border-slate-700/50 shrink-0 ml-auto">
-              <div class="flex items-center gap-2.5 px-3 py-1.5 bg-slate-50 dark:bg-slate-900/50 rounded-lg text-[11px] font-black text-slate-700 dark:text-slate-300 border border-slate-100 dark:border-slate-700/50 shadow-sm">
-                <span class="hidden sm:inline-block opacity-80 uppercase tracking-tighter">বুলেটিন</span>
-                <label class="toggle-switch transform scale-[0.55] m-0 origin-right">
+            <div class="notice-toolbar-actions">
+              <div class="bulletin-toggle-wrapper">
+                <span>বুলেটিন: <span id="bulletinStatusText" style="font-weight: bold;">অন</span></span>
+                <label class="toggle-switch" style="transform: scale(0.55); margin: 0; transform-origin: right;">
                   <input type="checkbox" id="bulletinToggle" checked>
                   <span class="slider round"></span>
                 </label>
               </div>
-              <button id="addNoticeBtn" class="super-admin-only flex items-center gap-1 px-2.5 py-1.5 bg-indigo-600 text-white rounded-lg text-[10px] font-bold hover:bg-indigo-700 transition-all shadow-sm active:scale-95" style="display: none;">
-                <i class="fas fa-plus text-[8px]"></i> <span>নতুন</span>
+              <button id="addNoticeBtn" class="notice-add-btn super-admin-only" style="display: none;">
+                <i class="fas fa-plus"></i> <span>নতুন</span>
               </button>
             </div>
           </div>
 
           <!-- Primary Feed Grid (Sitting High) -->
-          <div id="noticeContainer" class="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div class="loading-placeholder col-span-full grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-              <div class="bg-white dark:bg-slate-800 rounded-xl h-48 animate-pulse"></div>
-              <div class="bg-white dark:bg-slate-800 rounded-xl h-48 animate-pulse [animation-delay:0.15s]"></div>
-              <div class="bg-white dark:bg-slate-800 rounded-xl h-48 animate-pulse [animation-delay:0.3s]"></div>
+          <div id="noticeContainer" class="notice-grid-container">
+            <div class="loading-placeholder notice-loading-grid">
+              <div class="notice-skeleton-card"></div>
+              <div class="notice-skeleton-card delay-1"></div>
+              <div class="notice-skeleton-card delay-2"></div>
             </div>
           </div>
-          <div id="noticePagination" class="flex justify-center gap-1 mt-4 py-2"></div>
+          <div id="noticePagination" class="notice-main-pagination"></div>
         </div>
 
-        <!-- Right: Sidebar (Notice Panel) - 2/5 Space -->
-        <aside class="notice-sidebar lg:col-span-2 flex flex-col gap-3 lg:sticky lg:top-4 w-full shrink-0">
-          <!-- Recent Headlines (Ultra-Compact) -->
-          <div class="bg-white dark:bg-slate-800 rounded-xl overflow-hidden shadow-sm border border-slate-200 dark:border-slate-700">
-            <div class="bg-gradient-to-r from-indigo-600 to-indigo-700 text-white px-3 py-2 flex items-center justify-between">
-              <div class="flex items-center gap-2 font-bold text-[10px]">
-                <i class="fas fa-clock opacity-80"></i>
-                <span class="tracking-tight leading-none">সাম্প্রতিক নোটিশসমূহ</span>
+        <!-- Right: Sidebar (Notice Panel) -->
+        <aside class="notice-sidebar">
+          <div class="sidebar-headlines-card">
+            <div class="sidebar-headlines-header">
+              <div class="sidebar-headlines-title">
+                <i class="fas fa-clock"></i>
+                <span>সাম্প্রতিক নোটিশসমূহ</span>
               </div>
-              <span id="sidebarTotalCount" class="bg-white/20 px-2 py-0.5 rounded-full text-[9px] font-bold">০টি</span>
+              <span id="sidebarTotalCount" class="sidebar-headlines-count">০টি</span>
             </div>
-            <ul id="sidebarNoticeList" class="list-none p-0 m-0 h-[380px] overflow-hidden">
+            <ul id="sidebarNoticeList" class="sidebar-notice-list">
               <!-- Content rendered via JS -->
             </ul>
-            <div id="sidebarPagination" class="flex justify-center gap-1 px-4 py-2.5 border-t border-black/[0.04] dark:border-white/[0.04]"></div>
+            <div id="sidebarPagination" class="sidebar-pagination"></div>
           </div>
         </aside>
       </div>
@@ -734,6 +732,36 @@
     <div id="noticeDetailModal" class="modal !fixed !inset-0 !z-[1000] p-4 flex items-center justify-center transition-all duration-300 bg-slate-900/60 backdrop-blur-sm opacity-0 invisible [&.active]:opacity-100 [&.active]:visible">
        <div class="modal-content !relative !bg-white dark:!bg-slate-800 !rounded-2xl !shadow-[0_20px_60px_-15px_rgba(0,0,0,0.4)] !w-full !max-w-2xl !p-0 !border-0 overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]" id="printTarget">
           
+          <!-- PRINT ONLY HEADER (Visible only on A4 print) -->
+          <div id="noticePrintHeader" class="hidden print:block print:mb-8 print:border-b-2 print:border-indigo-600 print:pb-6">
+             <div class="flex justify-between items-start mb-6">
+                <div>
+                   <h1 class="text-3xl font-black text-indigo-900 mb-1" id="printInstitutionName">শিক্ষার্থী পারফরম্যান্স এনালাইসিস</h1>
+                   <p class="text-sm text-slate-600" id="printInstitutionAddr">অটোমেটেড নোটিশ ম্যানেজমেন্ট সিস্টেম</p>
+                </div>
+                <div class="text-right">
+                   <div class="bg-indigo-600 text-white px-4 py-1.5 rounded-lg text-xs font-black mb-2 inline-block" id="printNoticeDetailTag">নোটিশ বোর্ড</div>
+                   <div class="text-[10px] font-black text-slate-400 uppercase tracking-widest">রেফারেন্স নং: <span id="printNoticeDetailNo" class="text-slate-800">---</span></div>
+                </div>
+             </div>
+             <div class="grid grid-cols-2 gap-4 border-y border-slate-100 py-4">
+                <div class="flex items-center gap-3">
+                   <i class="fas fa-user-tie text-indigo-600"></i>
+                   <div>
+                      <div class="text-[9px] font-bold text-slate-400 uppercase">প্রকাশক / পোস্টকারী</div>
+                      <div class="text-[13px] font-black text-slate-800" id="printNoticeDetailAuthor">কর্তৃপক্ষ</div>
+                   </div>
+                </div>
+                <div class="flex items-center gap-3">
+                   <i class="far fa-calendar-alt text-indigo-600"></i>
+                   <div>
+                      <div class="text-[9px] font-bold text-slate-400 uppercase">প্রকাশের সময় ও তারিখ</div>
+                      <div class="text-[13px] font-black text-slate-800" id="printNoticeDetailDate">---</div>
+                   </div>
+                </div>
+             </div>
+          </div>
+
           <!-- Header (Hidden on Print) -->
           <div class="px-6 py-4 border-b border-black/5 dark:border-white/[0.05] flex justify-between items-center bg-gray-50/50 dark:bg-slate-800/80 shrink-0 no-print">
              <div class="flex items-center gap-3">
