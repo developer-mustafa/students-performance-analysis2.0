@@ -1,5 +1,5 @@
 /* Google Fonts - must be first */
-@import url('https://fonts.googleapis.com/css2?family=Hind+Siliguri:wght@300;400;500;600;700&display=swap');
+/* Main Stylesheet for Students Performance Analysis */
 
 /* Tailwind CSS */
 @tailwind base;
@@ -3067,7 +3067,44 @@ body.is-super-admin .admin-only:not(.app-page) {
   font-size: 0.9rem;
 }
 
-/* Group Badge Styles */
+/* Font Optimization */
+@font-face {
+  font-family: 'Inter';
+  font-display: swap;
+}
+
+/* Skeleton Loader System */
+.skeleton {
+  background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
+  background-size: 200% 100%;
+  animation: skeleton-pulse 1.5s infinite linear;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.skeleton-text {
+  height: 12px;
+  margin-bottom: 8px;
+  width: 100%;
+}
+
+.skeleton-title {
+  height: 20px;
+  margin-bottom: 12px;
+  width: 60%;
+}
+
+.skeleton-card {
+  height: 120px;
+  margin-bottom: 15px;
+}
+
+@keyframes skeleton-pulse {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Base Styles End */
 .group-badge {
   display: inline-flex;
   align-items: center;

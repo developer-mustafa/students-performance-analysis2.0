@@ -23,6 +23,36 @@ import { FAILING_THRESHOLD, MAX_CHART_ENTRIES, MAX_TABLE_ENTRIES, GROUP_NAMES } 
 import { captureElementAsImage } from './dataService.js';
 
 /**
+ * Render skeleton loading states
+ * @param {HTMLElement} container - Target container
+ * @param {string} type - Type of skeleton (stats, group, table)
+ * @param {number} count - Number of skeleton items
+ */
+export function renderSkeletons(container, type = 'stats', count = 5) {
+  if (!container) return;
+  let html = '';
+  
+  if (type === 'stats') {
+    for (let i = 0; i < count; i++) {
+      html += `
+        <div class="stat-card skeleton" style="min-height: 100px; display: flex; flex-direction: column; justify-content: center; align-items: center;">
+          <div class="skeleton-title" style="width: 40%; height: 25px; margin-bottom: 12px;"></div>
+          <div class="skeleton-text" style="width: 60%; height: 15px;"></div>
+        </div>
+      `;
+    }
+  } else if (type === 'group') {
+    html = `
+      <div class="group-stat-card skeleton" style="height: 250px; grid-column: 1 / -1;"></div>
+      <div class="group-stat-card skeleton" style="height: 180px;"></div>
+      <div class="group-stat-card skeleton" style="height: 180px;"></div>
+    `;
+  }
+  
+  container.innerHTML = html;
+}
+
+/**
  * Render statistics cards
  * @param {HTMLElement} container - Stats container element
  * @param {Array} data - Student data array
