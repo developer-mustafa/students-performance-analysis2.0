@@ -14,6 +14,7 @@ import {
 import { state } from './state.js';
 import { showNotification, convertToEnglishDigits } from '../utils.js';
 import { compressImage } from '../imageUtils.js';
+import { generateStudentUniqueId } from './studentResultsManager.js';
 import { loadMarksheetRules, currentMarksheetRules } from './marksheetRulesManager.js';
 
 let marksheetSettings = {
@@ -418,9 +419,18 @@ async function generateMarksheets() {
     // ------------------------------------------
 
     const previewArea = document.getElementById('marksheetPreview');
-    previewArea.innerHTML = studentsArray.map(student =>
-        renderSingleMarksheet(student, displaySubjects, examDisplayName, session, null, rules, allOptSubs)
-    ).join('');
+    let marksheetsHtml = '';
+    const subjectConfigs = await getExamConfigs() || {};
+    
+    for (const student of studentsArray) {
+        marksheetsHtml += await renderSingleMarksheet(student, displaySubjects, examDisplayName, session, null, rules, allOptSubs, allExams, subjectConfigs);
+    }
+    previewArea.innerHTML = marksheetsHtml;
+
+    // Render QRs after HTML is set
+    setTimeout(async () => {
+        await renderMarksheetQRCodes(previewArea);
+    }, 100);
 
     // Load developer credit settings before rendering
     state.developerCredit = await getSettings('developerCredit');
@@ -453,7 +463,131 @@ async function generateMarksheets() {
     renderSubjectVisibilityToggles();
 }
 
-export function renderSingleMarksheet(student, subjects, examDisplayName, selectedSession, customSettings = null, rules = null, allOptSubs = []) {
+/**
+ * Calculate merit rank for a student across all relevant exams
+ */
+async function getStudentExamsHistory(student, allExams, cls, session, rules, subjectConfigs) {
+    const studentHistory = [];
+    if (!allExams || !Array.isArray(allExams)) return [];
+
+    const examSessions = [...new Set(allExams.filter(e => e.class === cls && e.session === session).map(e => e.name))];
+    
+    for (const examName of examSessions) {
+        const sessionExams = allExams.filter(e => e.class === cls && e.session === session && e.name === examName);
+        const subjects = [...new Set(sessionExams.map(e => e.subject).filter(Boolean))];
+        
+        const studentsInSession = new Map();
+        sessionExams.forEach(ex => {
+            if (!ex.studentData) return;
+            ex.studentData.forEach(s => {
+                const key = `${s.id}_${s.group || ''}`;
+                if (!studentsInSession.has(key)) {
+                    studentsInSession.set(key, { id: s.id, name: s.name, group: s.group || '', subjects: {} });
+                }
+                studentsInSession.get(key).subjects[ex.subject] = s;
+            });
+        });
+
+        const results = [];
+        studentsInSession.forEach(st => {
+            let totalMarks = 0;
+            let totalGPA = 0;
+            let compulsoryGPA = 0;
+            let compulsoryCount = 0;
+            let optionalBonus = 0;
+            let allPassed = true;
+            let visibleCount = 0;
+
+            subjects.forEach(subj => {
+                const data = st.subjects[subj];
+                if (!data) return;
+                
+                const sTotal = data.total || 0;
+                totalMarks += sTotal;
+                
+                const config = subjectConfigs?.[subj] || { total: 100 };
+                const maxTotal = parseInt(config.total) || 100;
+                const pct = maxTotal > 0 ? (sTotal / maxTotal) * 100 : 0;
+                
+                const grade = getLetterGrade(pct);
+                const gp = getGradePoint(pct);
+                
+                let isFail = grade === 'F';
+                if (data.written !== undefined && config.writtenPass !== undefined && data.written < config.writtenPass) isFail = true;
+                if (data.mcq !== undefined && config.mcqPass !== undefined && data.mcq < config.mcqPass) isFail = true;
+                if (data.practical !== undefined && config.practicalPass !== undefined && data.practical < config.practicalPass) isFail = true;
+
+                const studentGroup = st.group || '';
+                const optKey = Object.keys(rules?.optionalSubjects || {}).find(k => k.toLowerCase().includes(studentGroup.toLowerCase()) || studentGroup.toLowerCase().includes(k.toLowerCase())) || studentGroup;
+                const optSubs = (rules?.optionalSubjects?.[optKey] || []).map(os => String(os).trim().toLowerCase());
+                const isOptional = optSubs.some(os => subj.toLowerCase().includes(os) || os.includes(subj.toLowerCase()));
+
+                if (isOptional) {
+                    if (!isFail && gp > 2.00) optionalBonus = Math.max(optionalBonus, gp - 2.00);
+                } else {
+                    compulsoryGPA += gp;
+                    compulsoryCount++;
+                    if (isFail) allPassed = false;
+                }
+                totalGPA += gp;
+                visibleCount++;
+            });
+
+            let finalGPA = 0;
+            if (compulsoryCount > 0) {
+                finalGPA = Math.min(5.00, (compulsoryGPA + optionalBonus) / compulsoryCount);
+            } else if (visibleCount > 0) {
+                finalGPA = totalGPA / visibleCount;
+            }
+
+            results.push({
+                key: `${st.id}_${st.group || ''}`,
+                gpa: allPassed ? finalGPA : -1,
+                total: totalMarks,
+                allPassed: allPassed,
+                displayGPA: finalGPA.toFixed(2)
+            });
+        });
+
+        results.sort((a, b) => {
+            if (a.allPassed && !b.allPassed) return -1;
+            if (!a.allPassed && b.allPassed) return 1;
+            if (a.allPassed) {
+                if (b.gpa !== a.gpa) return b.gpa - a.gpa;
+                return b.total - a.total;
+            }
+            return b.total - a.total;
+        });
+
+        const studentRankIdx = results.findIndex(r => r.key === `${student.id}_${student.group || ''}`);
+        if (studentRankIdx !== -1) {
+            studentHistory.push({
+                name: examName,
+                gpa: results[studentRankIdx].allPassed ? results[studentRankIdx].displayGPA : results[studentRankIdx].displayGPA + ' (F)',
+                rank: studentRankIdx + 1
+            });
+        }
+    }
+    return studentHistory;
+}
+
+
+/**
+ * Helper to get CSS class for marks if failing
+ */
+const getMarkClass = (mark, passMark) => {
+    if (!mark || mark === '-') return '';
+    const m = parseFloat(mark) || 0;
+    const p = parseFloat(passMark) || 0;
+    return (p > 0 && m < p) ? 'ms-mark-fail' : '';
+};
+
+
+export async function renderSingleMarksheet(student, subjects, examDisplayName, selectedSession, customSettings = null, rules = null, allOptSubs = [], allExams = [], subjectConfigs = {}) {
+
+    const history = await getStudentExamsHistory(student, allExams, student.class, selectedSession, rules, subjectConfigs);
+    const uid = student.uniqueId || generateStudentUniqueId(student.name, student.class, selectedSession, student.id, student.group);
+
     /**
      * Helper to normalize Bengali text for resilient matching
      * Normalizes Unicode variations and removes spaces/case
@@ -499,15 +633,7 @@ export function renderSingleMarksheet(student, subjects, examDisplayName, select
         return groupName;
     };
 
-    /**
-     * Helper to get CSS class for marks if failing
-     */
-    const getMarkClass = (mark, passMark) => {
-        if (!mark || mark === '-') return '';
-        const m = parseFloat(mark) || 0;
-        const p = parseFloat(passMark) || 0;
-        return (p > 0 && m < p) ? 'ms-mark-fail' : '';
-    };
+
 
     const ms = customSettings || marksheetSettings;
     const hiddenSet = new Set((ms.hiddenSubjects || []).map(s => norm(s)));
@@ -1024,6 +1150,44 @@ export function renderSingleMarksheet(student, subjects, examDisplayName, select
                     </div>
                 </div>
 
+                <!-- Extra Sections: History, Comments, QR -->
+                <div class="ms-extra-grid">
+                    <div class="ms-extra-box ms-history-column">
+                        <span class="ms-extra-title">সকল পরীক্ষার ফলাফল হিস্টোরী</span>
+                        <table class="ms-history-table">
+                            <thead>
+                                <tr>
+                                    <th style="width:50%">পরীক্ষার নাম</th>
+                                    <th>GPA</th>
+                                    <th>মেধাক্রম</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                ${history.length > 0 ? history.map(h => `
+                                    <tr>
+                                        <td>${h.name}</td>
+                                        <td>${h.gpa}</td>
+                                        <td style="text-align:center;">${h.rank}</td>
+                                    </tr>
+                                `).join('') : '<tr><td colspan="3" style="text-align:center; opacity:0.5; padding: 10px 0;">হিস্টোরি নেই</td></tr>'}
+                            </tbody>
+                        </table>
+                    </div>
+                    
+                    <div class="ms-extra-box ms-comments-box">
+                        <span class="ms-extra-title">মন্তব্য:</span>
+                        <div style="flex:1;"></div>
+                    </div>
+                    
+                    <div class="ms-extra-box ms-qr-column">
+                        <div class="ms-qr-canvas-wrapper">
+                            <canvas class="ms-mr-qr-canvas" data-uid="${uid}" data-exam="${examDisplayName}" data-name="${student.name}"></canvas>
+                        </div>
+                        <div class="ms-qr-uid">ID No. ${uid}</div>
+                    </div>
+                </div>
+
+
                 <!-- Signatures -->
                 <div class="ms-flex-spacer"></div>
                 <div class="ms-signatures-section">
@@ -1074,7 +1238,7 @@ export function getGradeFromGP(gp) {
 /**
  * Update Live Preview in Marksheet Settings Modal
  */
-function updateSettingsLivePreview() {
+async function updateSettingsLivePreview() {
     const previewContainer = document.getElementById('msSettingsLivePreview');
     if (!previewContainer) return;
 
@@ -1109,8 +1273,13 @@ function updateSettingsLivePreview() {
         }
     };
 
-    const html = renderSingleMarksheet(mockStudent, currentSettings, '২০২৫-২০২৬', 'অর্ধ-বার্ষিক পরীক্ষা ২০২৬');
+    const html = await renderSingleMarksheet(mockStudent, currentSettings, '২০২৫-২০২৬', 'অর্ধ-বার্ষিক পরীক্ষা ২০২৬');
     previewContainer.innerHTML = html;
+    
+    // Render QRs in preview
+    setTimeout(async () => {
+        await renderMarksheetQRCodes(previewContainer);
+    }, 100);
 
     // Hide non-printable action buttons in preview
     const actions = previewContainer.querySelectorAll('.ms-actions-float');
@@ -1154,7 +1323,7 @@ function initMarksheetSettingsModal() {
     /**
      * Update Live Preview in Settings
      */
-    const updateSettingsLivePreview = () => {
+    const updateSettingsLivePreview = async () => {
         const previewContainer = document.getElementById('msSettingsLivePreview');
         if (!previewContainer) return;
 
@@ -1180,15 +1349,21 @@ function initMarksheetSettingsModal() {
         const mockSubjects = Object.keys(MOCK_PREVIEW_STUDENT.subjects);
 
         // Render the preview
-        const html = renderSingleMarksheet(MOCK_PREVIEW_STUDENT, mockSubjects, 'অর্ধ-বার্ষিক পরীক্ষা ২০২৬', '২০২৫-২০২৬', currentSettings);
+        const html = await renderSingleMarksheet(MOCK_PREVIEW_STUDENT, mockSubjects, 'অর্ধ-বার্ষিক পরীক্ষা ২০২৬', '২০২৫-২০২৬', currentSettings);
 
         // Use a wrapper to keep the scale separate from the content
         previewContainer.innerHTML = html;
+
+        // Render QRs in preview
+        setTimeout(async () => {
+            await renderMarksheetQRCodes(previewContainer);
+        }, 100);
 
         // Hide non-printable action buttons in preview
         const actions = previewContainer.querySelectorAll('.ms-actions-float');
         actions.forEach(a => a.style.display = 'none');
     };
+
 
     // Add listeners to all form controls for live preview
     const controls = form.querySelectorAll('input, select, textarea');
@@ -1833,3 +2008,33 @@ export function applyCombinedPaperLogic(studentsArray, currentSubjects, rules, a
 
     return groupedSubjects;
 }
+
+/**
+ * Render QR Codes for all generated marksheets
+ */
+async function renderMarksheetQRCodes(container) {
+    const canvases = container.querySelectorAll('.ms-mr-qr-canvas');
+    if (!canvases.length) return;
+
+    for (const canvas of canvases) {
+        try {
+            const uid = canvas.dataset.uid;
+            const exam = canvas.dataset.exam;
+            const name = canvas.dataset.name;
+            const liveLink = window.location.origin + window.location.pathname + '#student-results?uid=' + uid + '&exam=' + encodeURIComponent(exam);
+            const qrData = `Student Marksheet Verification\nID: ${uid}\nName: ${name}\nExam: ${exam}\nLink: ${liveLink}`;
+
+            await QRCode.toCanvas(canvas, qrData, {
+                width: 150,
+                margin: 0,
+                color: { dark: '#1e293b', light: '#ffffff' },
+                errorCorrectionLevel: 'M'
+            });
+            canvas.style.width = '100px';
+            canvas.style.height = '100px';
+        } catch (err) {
+            console.error('Marksheet QR generation failed:', err);
+        }
+    }
+}
+

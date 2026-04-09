@@ -21292,3 +21292,86 @@ a.sidebar-contact-item:hover {
   }
   #appContainer, .app-container { display: block !important; width: 100% !important; }
 }
+
+
+/* Marksheet Extra Sections (History, Comments, QR) */
+.ms-extra-grid {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr 1fr !important;
+  gap: 10px !important;
+  margin-top: 15px !important;
+  width: 100% !important;
+}
+
+.ms-extra-box {
+  border: 1px solid #e2e8f0 !important;
+  border-radius: 6px !important;
+  padding: 8px !important;
+  min-height: 140px !important;
+  background: #fff !important;
+}
+
+.ms-extra-title {
+  font-size: 0.75rem !important;
+  font-weight: 800 !important;
+  color: var(--ms-primary, #4361ee) !important;
+  margin-bottom: 6px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  padding-bottom: 4px !important;
+  display: block !important;
+}
+
+.ms-history-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  font-size: 0.65rem !important;
+}
+
+.ms-history-table th,
+.ms-history-table td {
+  padding: 2px 4px !important;
+  border-bottom: 1px solid #f1f5f9 !important;
+  text-align: left !important;
+}
+
+.ms-history-table th {
+  font-weight: 700 !important;
+  color: #64748b !important;
+}
+
+.ms-comments-box {
+  background: #fdfdfd !important;
+  display: flex !important;
+  flex-direction: column !important;
+}
+
+.ms-qr-column {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+.ms-qr-canvas-wrapper {
+  background: #fff !important;
+  padding: 4px !important;
+  border-radius: 4px !important;
+  margin-bottom: 4px !important;
+}
+
+.ms-qr-uid {
+  font-family: monospace !important;
+  font-size: 0.7rem !important;
+  font-weight: 700 !important;
+  color: #1e293b !important;
+  margin-top: 4px !important;
+}
+
+/* Print safety for extra blocks */
+@media print {
+  .ms-extra-box {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}

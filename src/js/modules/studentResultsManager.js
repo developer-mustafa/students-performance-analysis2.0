@@ -80,7 +80,7 @@ window.__srCopyFeedback = () => {
  * @param {string} text - Bengali text
  * @returns {string} - Transliterated English text (lowercase, no spaces)
  */
-function transliterateBangla(text) {
+export function transliterateBangla(text) {
     if (!text) return '';
     let result = '';
     const str = String(text);
@@ -102,7 +102,7 @@ function transliterateBangla(text) {
  * Extract first N characters from a Bengali/mixed string
  * Counts only consonants and standalone vowels (not matras)
  */
-function extractBengaliChars(text, count, fromEnd = false) {
+export function extractBengaliChars(text, count, fromEnd = false) {
     if (!text) return '';
     const str = String(text).replace(/\s+/g, '');
     // Bengali matras (dependent vowels) — should be attached to previous consonant
@@ -131,7 +131,7 @@ function extractBengaliChars(text, count, fromEnd = false) {
 /**
  * Generate a deterministic 6-character hex hash from a string
  */
-function generateShortHash(str) {
+export function generateShortHash(str) {
     let h1 = 0xdeadbeef, h2 = 0x41c6ce57;
     for (let i = 0, ch; i < str.length; i++) {
         ch = str.charCodeAt(i);
@@ -154,7 +154,7 @@ function generateShortHash(str) {
  * @param {string} group - Group name
  * @returns {string} - Professional Unique ID string
  */
-function generateStudentUniqueId(name, cls, session, roll, group) {
+export function generateStudentUniqueId(name, cls, session, roll, group) {
     const first3 = extractBengaliChars(name, 3, false);
     const namePrefix = transliterateBangla(first3).toUpperCase().padEnd(3, 'X').substring(0, 3);
 
@@ -664,6 +664,29 @@ export async function initStudentResultsManager() {
             setTimeout(() => clearBtn.classList.remove('sr-reset-anim'), 400);
         });
     }
+
+    // --- QR Redirect Logic ---
+    const checkQRParams = () => {
+        const hash = window.location.hash || '';
+        if (hash.includes('student-results?uid=')) {
+            const paramsString = hash.split('?')[1];
+            const params = new URLSearchParams(paramsString);
+            const uid = params.get('uid');
+            const exam = params.get('exam');
+            
+            if (uid && searchInput) {
+                searchInput.value = uid;
+                if (clearBtn) clearBtn.style.display = 'flex';
+                
+                // If exam info is present, we could potentially auto-select or highlight it. 
+                // For now, let's trigger search immediately.
+                setTimeout(handleSearch, 300);
+            }
+        }
+    };
+
+    checkQRParams();
+    window.addEventListener('hashchange', checkQRParams);
 
     // Generator Reset Btn
     const genResetBtn = document.getElementById('srGenResetBtn');
