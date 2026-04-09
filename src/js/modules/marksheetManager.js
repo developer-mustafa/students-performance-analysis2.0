@@ -31,6 +31,7 @@ let marksheetSettings = {
     typography: 'default',
     rowDensity: 'normal',
     hiddenSubjects: [],
+    historyExams: [],
     signatures: [
         { label: 'শ্রেণি শিক্ষক', url: '' },
         { label: 'পরীক্ষা কমিটি', url: '' },
@@ -471,7 +472,12 @@ async function getStudentExamsHistory(student, allExams, cls, session, rules, su
     const studentHistory = [];
     if (!allExams || !Array.isArray(allExams)) return [];
 
-    const examSessions = [...new Set(allExams.filter(e => e.class === cls && e.session === session).map(e => e.name))];
+    let examSessions = [...new Set(allExams.filter(e => e.class === cls && e.session === session).map(e => e.name))];
+    
+    // Filter by manual settings if any configured
+    if (marksheetSettings.historyExams && marksheetSettings.historyExams.length > 0) {
+        examSessions = examSessions.filter(name => marksheetSettings.historyExams.includes(name));
+    }
     
     for (const examName of examSessions) {
         const sessionExams = allExams.filter(e => e.class === cls && e.session === session && e.name === examName);
@@ -1449,6 +1455,10 @@ function initMarksheetSettingsModal() {
 
             // Initial Preview Load
             updateSettingsLivePreview();
+            
+            // Render checklists
+            renderSubjectVisibilityToggles();
+            renderHistoryExamsChecklist();
 
             if (modal) modal.classList.add('active');
         });
@@ -1465,10 +1475,12 @@ function initMarksheetSettingsModal() {
         });
     }
 
-    // Initialize Subject Toggles visibility
+    // Initialize Checklists
     renderSubjectVisibilityToggles();
+    renderHistoryExamsChecklist();
 
     if (closeBtn) {
+
         closeBtn.addEventListener('click', () => { if (modal) modal.classList.remove('active'); });
     }
 
@@ -1553,6 +1565,7 @@ function initMarksheetSettingsModal() {
                 watermarkUrl: marksheetSettings.watermarkUrl || '',
                 watermarkOpacity: parseInt(document.getElementById('msWatermarkOpacity').value) / 100,
                 hiddenSubjects: marksheetSettings.hiddenSubjects || [],
+                historyExams: marksheetSettings.historyExams || [],
                 signatures: signatures.length > 0 ? signatures : [
                     { label: 'শ্রেণি শিক্ষক', url: '' },
                     { label: 'পরীক্ষা কমিটি', url: '' },
@@ -1896,6 +1909,57 @@ export async function initMarksheetManager() {
 
     initMarksheetSettingsModal();
     await populateMSDropdowns();
+}
+
+/**
+ * Render Exam History checklist in settings modal
+ */
+async function renderHistoryExamsChecklist() {
+    const container = document.getElementById('msHistoryChecklist');
+    if (!container) return;
+
+    try {
+        const exams = await getSavedExams();
+        const uniqueExamNames = [...new Set(exams.map(e => e.name).filter(Boolean))].sort();
+
+        if (uniqueExamNames.length === 0) {
+            container.innerHTML = '<p style="opacity: 0.6; font-size: 0.9rem;">কোনো পরীক্ষা পাওয়া যায়নি।</p>';
+            return;
+        }
+
+        const selectedHistory = new Set(marksheetSettings.historyExams || []);
+
+        container.innerHTML = uniqueExamNames.map(examName => {
+            return `
+            <label style="display: flex; align-items: center; gap: 10px; padding: 10px; background: var(--bg-color); border: 1px solid var(--border-color); border-radius: 6px; cursor: pointer; transition: all 0.2s;">
+                <input type="checkbox" class="ms-history-toggle" data-val="${examName}" ${selectedHistory.has(examName) ? 'checked' : ''} style="width: 18px; height: 18px;">
+                <span style="font-size: 0.9rem; font-weight: 600;">${examName}</span>
+            </label>`;
+        }).join('');
+
+        // Add listeners
+        container.querySelectorAll('.ms-history-toggle').forEach(checkbox => {
+            checkbox.addEventListener('change', () => {
+                const val = checkbox.dataset.val;
+                if (!marksheetSettings.historyExams) marksheetSettings.historyExams = [];
+                
+                if (checkbox.checked) {
+                    if (!marksheetSettings.historyExams.includes(val)) {
+                        marksheetSettings.historyExams.push(val);
+                    }
+                } else {
+                    marksheetSettings.historyExams = marksheetSettings.historyExams.filter(e => e !== val);
+                }
+                
+                // Note: live preview for history is tricky as it's not in the mock data usually
+                // but we can refresh the main UI if needed.
+            });
+        });
+
+    } catch (err) {
+        console.error("Failed to load exams for checklist", err);
+        container.innerHTML = '<p style="color:red;">ডাটা লোড করতে ব্যর্থ হয়েছে</p>';
+    }
 }
 
 /**
