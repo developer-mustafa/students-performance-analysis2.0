@@ -3104,6 +3104,36 @@ body.is-super-admin .admin-only:not(.app-page) {
   100% { background-position: -200% 0; }
 }
 
+/* Universal Mobile Responsiveness Enhancements */
+@media (max-width: 768px) {
+  .card, .stat-card, .group-stat-card {
+    padding: 15px !important;
+    margin-bottom: 15px !important;
+  }
+  
+  /* Force tables to be scrollable on small screens */
+  .table-responsive, 
+  .student-table-wrapper, 
+  #savedExamsList,
+  .group-stats-grid {
+    overflow-x: auto !important;
+    -webkit-overflow-scrolling: touch;
+    width: 100%;
+    display: block;
+  }
+
+  table {
+    min-width: 600px; /* Ensure table doesn't get squashed */
+  }
+
+  /* Adjust Modal padding for mobile */
+  .modal-content {
+    padding: 15px !important;
+    margin: 10px !important;
+    width: calc(100% - 20px) !important;
+  }
+}
+
 /* Base Styles End */
 .group-badge {
   display: inline-flex;
