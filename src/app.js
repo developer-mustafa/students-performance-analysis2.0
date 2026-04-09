@@ -393,6 +393,8 @@ async function init() {
         showNotification('অ্যাপ্লিকেশন শুরু করতে সমস্যা হয়েছে', 'error');
     } finally {
         setLoading(false);
+        // Force a view update after loading is complete to replace skeletons with real data
+        updateViews();
     }
 }
 
