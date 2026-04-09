@@ -1350,11 +1350,21 @@ async function handleBulkPrint() {
         // Add a class to body to trigger print styles, then print
         document.body.classList.add('sr-bulk-printing-active');
 
+        // Dynamically inject @page rule to avoid CSS conflicts with other print modes
+        let printPageStyle = document.getElementById('srBulkPrintPageStyle');
+        if (!printPageStyle) {
+            printPageStyle = document.createElement('style');
+            printPageStyle.id = 'srBulkPrintPageStyle';
+            document.head.appendChild(printPageStyle);
+        }
+        printPageStyle.innerHTML = '@page { size: A4 portrait; margin: 5mm; }';
+
         setTimeout(() => {
             window.print();
 
             // Cleanup
             document.body.classList.remove('sr-bulk-printing-active');
+            if (printPageStyle) printPageStyle.innerHTML = '';
             printContainer.innerHTML = '';
 
             btn.innerHTML = originalText;

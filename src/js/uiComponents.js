@@ -1317,7 +1317,7 @@ export function renderSavedExamsList(container, exams, options = {}) {
   // Attach Listeners
   container.querySelectorAll('.exam-card').forEach((card, index) => {
     const exam = paginatedExams[index];
-    card.querySelector('.load-btn').addEventListener('click', () => onLoad && onLoad(exam));
+    card.querySelector('.load-btn')?.addEventListener('click', () => onLoad && onLoad(exam));
     card.querySelector('.pin-checkbox')?.addEventListener('change', (e) => {
       e.stopPropagation();
       // Only trigger if checked (we don't "un-set" via toggle in this global logic)

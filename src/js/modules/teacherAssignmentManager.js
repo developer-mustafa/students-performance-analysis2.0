@@ -1277,11 +1277,27 @@ async function printBulkTeacherCards() {
 
         // Add print mode class and trigger print
         document.body.classList.add('tc-print-mode');
-        window.onafterprint = () => document.body.classList.remove('tc-print-mode');
+
+        // Dynamically inject @page rule to avoid CSS conflicts with other print modes
+        let tcPrintPageStyle = document.getElementById('tcPrintPageStyle');
+        if (!tcPrintPageStyle) {
+            tcPrintPageStyle = document.createElement('style');
+            tcPrintPageStyle.id = 'tcPrintPageStyle';
+            document.head.appendChild(tcPrintPageStyle);
+        }
+        tcPrintPageStyle.innerHTML = '@page { size: A4 landscape; margin: 0; }';
+
+        window.onafterprint = () => {
+            document.body.classList.remove('tc-print-mode');
+            if (tcPrintPageStyle) tcPrintPageStyle.innerHTML = '';
+        };
 
         setTimeout(() => {
             window.print();
-            setTimeout(() => document.body.classList.remove('tc-print-mode'), 1000);
+            setTimeout(() => {
+                document.body.classList.remove('tc-print-mode');
+                if (tcPrintPageStyle) tcPrintPageStyle.innerHTML = '';
+            }, 1000);
         }, 800);
 
     } catch (err) {
