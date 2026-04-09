@@ -2661,6 +2661,25 @@
                   </div>
                 </div>
 
+                <!-- Marksheet Exam History Settings -->
+                <div class="config-tab-content" id="ms-history">
+                  <div class="form-header">
+                    <h3><i class="fas fa-history"></i> পরীক্ষার ফলাফল হিস্টোরী কনফিগার</h3>
+                    <p>মার্কশীটের নিচের অংশে কোন কোন পরীক্ষার রেকর্ড দেখাবেন তা এখান থেকে সিলেক্ট করুন। (সর্বোচ্চ ৩-৪টি সাজানো বাঞ্ছনীয়)</p>
+                  </div>
+                  
+                  <div class="ms-history-selection-box">
+                    <div id="msHistoryChecklist" class="checklist-container" style="max-height: 250px; overflow-y: auto; border: 1px solid var(--border-color); padding: 15px; border-radius: 8px; background: var(--container-bg); display: grid; grid-template-columns: 1fr; gap: 10px;">
+                      <!-- Exam checkboxes will be populated via JS -->
+                      <div class="ms-loading-spinner" style="text-align: center; padding: 20px; opacity: 0.5;">
+                        <i class="fas fa-spinner fa-spin"></i> ডাটা লোড হচ্ছে...
+                      </div>
+                    </div>
+                  </div>
+                  <p style="margin-top: 10px; font-size: 0.8rem; color: var(--primary);">* শুধুমাত্র এখানে সিলেক্ট করা পরীক্ষাগুলোই মার্কশীটের হিস্টোরী অংশে দৃশ্যমান হবে।</p>
+                </div>
+
+
                 <!-- Appearance Settings -->
                 <div class="config-tab-content" id="ms-appearance">
                   <div class="form-header">
