@@ -233,9 +233,13 @@ function setupEventListeners() {
         }
     });
 
-    // Print
+    // Print (scoped: add body class so only notice print CSS rules activate)
     elements.printNoticeBtn?.addEventListener('click', () => {
+        document.body.classList.add('notice-printing');
         window.print();
+        setTimeout(() => {
+            document.body.classList.remove('notice-printing');
+        }, 500);
     });
 }
 
