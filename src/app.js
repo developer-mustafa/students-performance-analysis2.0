@@ -32,7 +32,7 @@ import { FAILING_THRESHOLD } from './js/constants.js';
 import {
     applyTheme,
     renderStats, renderGroupStats, renderFailedStudents, printFailedStudents, printAllStudents, renderTable, toggleTheme,
-    renderSavedExamsList, renderStudentHistory, renderCandidateResults
+    renderSavedExamsList, renderStudentHistory, renderCandidateResults, renderSkeletons
 } from './js/uiComponents.js';
 import {
     subscribeToDataUpdates, isFirestoreOnline, downloadDemoTemplate, saveDataToStorage,
@@ -102,6 +102,10 @@ async function init() {
 
     initDOMReferences();
     setLoading(true);
+    
+    // Show Professional Skeletons while fetching initial data
+    renderSkeletons(elements.statsContainer, 'stats');
+    renderSkeletons(elements.groupStatsContainer, 'group');
 
     try {
         // Cleanup existing listeners if any (safety for HMR)
