@@ -26,6 +26,7 @@ export const elements = {
     groupStatsHeaderMeta: null,
     jsonFileInput: null,
     downloadTemplateBtn: null,
+    installAppBtn: null,
     saveAnalysisBtn: null,
     savedExamsList: null,
     saveExamModal: null,
@@ -145,6 +146,7 @@ export function initDOMReferences() {
     elements.groupStatsHeaderMeta = document.getElementById('groupStatsHeaderMeta');
     elements.jsonFileInput = document.getElementById('jsonFileInput');
     elements.downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
+    elements.installAppBtn = document.getElementById('installAppBtn');
     elements.saveAnalysisBtn = document.getElementById('saveAnalysisBtn');
     elements.savedExamsList = document.getElementById('savedExamsList');
     elements.saveExamModal = document.getElementById('saveExamModal');

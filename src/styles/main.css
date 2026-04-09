@@ -3134,6 +3134,19 @@ body.is-super-admin .admin-only:not(.app-page) {
   }
 }
 
+.dm-install {
+  background: linear-gradient(135deg, #2563eb, #1e40af);
+  color: white !important;
+  border: none;
+  box-shadow: 0 4px 12px rgba(37, 99, 235, 0.2);
+}
+
+.dm-install:hover {
+  background: linear-gradient(135deg, #1e40af, #1e3a8a);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(37, 99, 235, 0.3);
+}
+
 /* Base Styles End */
 .group-badge {
   display: inline-flex;

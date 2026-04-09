@@ -1843,6 +1843,43 @@ function updateNavRolls(student) {
     }
 }
 
+// --- PWA Installation Logic ---
+let deferredPrompt;
+window.addEventListener('beforeinstallprompt', (e) => {
+    // Prevent the mini-infobar from appearing on mobile
+    e.preventDefault();
+    // Stash the event so it can be triggered later.
+    deferredPrompt = e;
+    // Update UI notify the user they can install the PWA
+    if (elements.installAppBtn) {
+        elements.installAppBtn.style.display = 'inline-flex';
+    }
+});
+
+if (elements.installAppBtn) {
+    elements.installAppBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+        // Show the install prompt
+        deferredPrompt.prompt();
+        // Wait for the user to respond to the prompt
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User response to the install prompt: ${outcome}`);
+        // We've used the prompt, and can't use it again, throw it away
+        deferredPrompt = null;
+        // Hide the install button
+        elements.installAppBtn.style.display = 'none';
+    });
+}
+
+window.addEventListener('appinstalled', (event) => {
+    console.log('👍', 'appinstalled', event);
+    // Hide the install button
+    if (elements.installAppBtn) {
+        elements.installAppBtn.style.display = 'none';
+    }
+    showNotification('অ্যাপটি সফলভাবে ইনস্টল হয়েছে!');
+});
+
 if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', init);
 } else {
