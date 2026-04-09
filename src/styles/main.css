@@ -3231,15 +3231,13 @@ body.is-super-admin .admin-only:not(.app-page) {
 }
 
 /* =========================================
-   Print Styles
+   Print Styles (Analysis/Chart Page ONLY)
+   These rules are SCOPED to avoid destroying
+   Admit Card, Seat Plan, Marksheet, & ID Card prints.
    ========================================= */
 @media print {
-  @page {
-    size: landscape;
-    margin: 1cm;
-  }
 
-  /* Hide non-essential elements */
+  /* Hide non-essential elements — safe for all prints */
   .header-controls,
   .controls,
   .view-toggle button,
@@ -3247,45 +3245,31 @@ body.is-super-admin .admin-only:not(.app-page) {
   .inline-search-wrapper,
   #adminToggle,
   .saved-exams-section,
-  .failed-students,
   .group-stats-card,
   #historyChart canvas,
   #saveAnalysisBtn,
   #downloadTemplateBtn,
-  .json-upload,
-  footer {
+  .json-upload {
     display: none !important;
   }
 
-  /* Hide the inputs/selects that are not relevant to the printed report */
-  .controls select,
-  .controls input {
+  /* SCOPED: Only apply destructive resets when NO specific print mode is active */
+  body:not(.ac-printing):not(.sr-bulk-printing-active):not(.ms-printing):not(.ms-printing-single):not(.tc-print-mode):not(.notice-printing) .controls select,
+  body:not(.ac-printing):not(.sr-bulk-printing-active):not(.ms-printing):not(.ms-printing-single):not(.tc-print-mode):not(.notice-printing) .controls input {
     display: none !important;
   }
 
-  /* Hide Admin/Search/Upload/Download buttons */
-  .header button,
-  .header input,
-  .json-upload,
-  #downloadTemplateBtn,
-  #saveAnalysisBtn,
-  #loadSampleData,
-  #clearData {
+  body:not(.ac-printing):not(.sr-bulk-printing-active):not(.ms-printing):not(.ms-printing-single):not(.tc-print-mode):not(.notice-printing) .header button,
+  body:not(.ac-printing):not(.sr-bulk-printing-active):not(.ms-printing):not(.ms-printing-single):not(.tc-print-mode):not(.notice-printing) .header input,
+  body:not(.ac-printing):not(.sr-bulk-printing-active):not(.ms-printing):not(.ms-printing-single):not(.tc-print-mode):not(.notice-printing) #loadSampleData,
+  body:not(.ac-printing):not(.sr-bulk-printing-active):not(.ms-printing):not(.ms-printing-single):not(.tc-print-mode):not(.notice-printing) #clearData {
     display: none !important;
   }
 
-  /* Base modal responsiveness */
-  @media (max-width: 480px) {
-    .modal-content {
-      width: 90% !important;
-      margin: 20% auto !important;
-    }
-  }
-
-  /* Make sure the main card takes full width */
-  body,
-  .container,
-  .card {
+  /* SCOPED: Full-width card layout — ONLY for chart/analysis page print */
+  body:not(.ac-printing):not(.sr-bulk-printing-active):not(.ms-printing):not(.ms-printing-single):not(.tc-print-mode):not(.notice-printing),
+  body:not(.ac-printing):not(.sr-bulk-printing-active):not(.ms-printing):not(.ms-printing-single):not(.tc-print-mode):not(.notice-printing) .container,
+  body:not(.ac-printing):not(.sr-bulk-printing-active):not(.ms-printing):not(.ms-printing-single):not(.tc-print-mode):not(.notice-printing) .card {
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
@@ -3298,7 +3282,6 @@ body.is-super-admin .admin-only:not(.app-page) {
   /* Chart Canvas Size - Ensure it fits */
   .chart-container {
     height: 500px !important;
-    /* Fixed height for print */
     page-break-inside: avoid;
   }
 
@@ -3306,46 +3289,37 @@ body.is-super-admin .admin-only:not(.app-page) {
     max-width: 100% !important;
   }
 
-  /* Force light theme colors for print */
-  * {
+  /* SCOPED: Force light theme — ONLY for chart/analysis print, NOT for styled prints */
+  body:not(.ac-printing):not(.sr-bulk-printing-active):not(.ms-printing):not(.ms-printing-single):not(.tc-print-mode):not(.notice-printing) * {
     color: #000 !important;
-    background: transparent !important;
     box-shadow: none !important;
     text-shadow: none !important;
   }
 
-  /* Header adjustments */
-  /* Hide Header completely */
-  .header {
+  /* SCOPED: Hide Header — only for default analysis page */
+  body:not(.ac-printing):not(.sr-bulk-printing-active):not(.ms-printing):not(.ms-printing-single):not(.tc-print-mode):not(.notice-printing) .header {
     display: none !important;
   }
 
-  /* Card Header Adjustments */
-  /* Hide Card Header for strict data print */
-  .card-header {
+  body:not(.ac-printing):not(.sr-bulk-printing-active):not(.ms-printing):not(.ms-printing-single):not(.tc-print-mode):not(.notice-printing) .card-header {
     display: none !important;
   }
 
-  .card-title {
+  body:not(.ac-printing):not(.sr-bulk-printing-active):not(.ms-printing):not(.ms-printing-single):not(.tc-print-mode):not(.notice-printing) .card-title {
     font-size: 18pt !important;
     text-align: center !important;
   }
 
-  /* View Toggle - Hide buttons */
-  .view-toggle {
+  body:not(.ac-printing):not(.sr-bulk-printing-active):not(.ms-printing):not(.ms-printing-single):not(.tc-print-mode):not(.notice-printing) .view-toggle {
     display: none !important;
   }
 
-  /* Stats Container - Compact for Print */
-  /* Hide Stats Container */
-  .stats-container {
+  body:not(.ac-printing):not(.sr-bulk-printing-active):not(.ms-printing):not(.ms-printing-single):not(.tc-print-mode):not(.notice-printing) .stats-container {
     display: none !important;
   }
 
-  /* Watermark / Footer */
-  /* Watermark / Footer */
-  /* Hide watermark for strict print */
-  body::after {
+  /* Watermark for analysis page */
+  body:not(.ac-printing):not(.sr-bulk-printing-active):not(.ms-printing):not(.ms-printing-single):not(.tc-print-mode):not(.notice-printing)::after {
     display: none !important;
   }
 }
@@ -11635,16 +11609,10 @@ body.dark-mode .status-badge.absent {
   box-sizing: border-box;
 }
 
-@page {
-  size: A4 landscape;
-  margin: 0;
-}
+/* NOTE: @page rule moved inside @media print block below to avoid global override */
 
 @media print {
-  @page {
-    size: A4 landscape;
-    margin: 0;
-  }
+  /* @page rule is injected dynamically by JS (teacherAssignmentManager) to avoid global conflicts */
 
   /* Hide everything except the bulk print wrapper */
   body.tc-print-mode .app-container,
@@ -12586,10 +12554,7 @@ body.is-super-admin td.admin-only {
     print-color-adjust: exact !important;
   }
 
-  @page {
-    size: A4 portrait;
-    margin: 0;
-  }
+  /* @page rule moved to JS (marksheetManager/studentResultsManager) to avoid global conflicts */
 
   /* Universal Reset - Absolute No-Sprawl */
   body.ms-printing,
@@ -15436,14 +15401,15 @@ input:checked+.toggle-slider:before {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 40px;
-  height: 40px;
+  width: 55px;
+  height: 55px;
+  margin-right: -4px;
   background: transparent;
 }
 
 .ac-logo {
-  width: 32px !important;
-  height: 32px !important;
+  width: 48px !important;
+  height: 48px !important;
   object-fit: contain;
   aspect-ratio: 1 / 1;
   /* Force perfect square */
@@ -15451,7 +15417,8 @@ input:checked+.toggle-slider:before {
 
 .ac-header-text {
   text-align: center;
-  flex: 1;
+  flex: 0 1 auto;
+  padding-right: 20px; /* offset logo to visually center text */
   min-width: 0;
   display: flex;
   flex-direction: column;
@@ -15945,7 +15912,7 @@ input:checked+.toggle-slider:before {
 .sp-pill-header {
   display: flex;
   align-items: stretch;
-  border: 1.5px solid var(--grp-color, #10b981);
+  border: 2px solid var(--grp-color, #10b981);
   border-radius: 50px;
   background: #fff;
   overflow: hidden;
@@ -15957,9 +15924,9 @@ input:checked+.toggle-slider:before {
 
 .ac-pill-left,
 .sp-pill-left {
-  padding: 8px 15px;
+  padding: 6px 18px;
   font-weight: 800;
-  font-size: 1rem;
+  font-size: 0.88rem;
   background-color: var(--grp-color, #10b981);
   color: #fff !important;
   text-transform: uppercase;
@@ -15969,17 +15936,19 @@ input:checked+.toggle-slider:before {
   box-shadow: inset 0 0 0 1000px var(--grp-color, #10b981) !important;
   display: flex;
   align-items: center;
+  white-space: nowrap;
 }
 
 .ac-pill-right,
 .sp-pill-right {
-  padding: 8px 20px;
+  padding: 6px 20px;
   font-weight: 800;
-  font-size: 1rem;
+  font-size: 0.82rem;
   color: var(--grp-text, #059669) !important;
   letter-spacing: -0.1px;
   display: flex;
   align-items: center;
+  white-space: nowrap;
   background: #fff;
   box-shadow: inset 0 0 0 1000px #fff !important;
   -webkit-print-color-adjust: exact !important;
@@ -16123,14 +16092,15 @@ input:checked+.toggle-slider:before {
   }
 
   .ac-logo-container {
-    width: 32px;
-    height: 32px;
+    width: 45px;
+    height: 45px;
+    margin-right: -2px;
     flex-shrink: 0;
   }
 
   .ac-logo {
-    width: 26px !important;
-    height: 26px !important;
+    width: 40px !important;
+    height: 40px !important;
   }
 
   .ac-header-text h3 {
@@ -18116,6 +18086,7 @@ body.dark-mode .sr-not-found-icon {
   }
 
   /* Step 3: Simply show the bulk print container */
+  /* @page rule injected dynamically by JS (studentResultsManager) to avoid global conflicts */
   #srBulkPrintContainer {
     display: block !important;
     width: 100% !important;
@@ -18124,10 +18095,6 @@ body.dark-mode .sr-not-found-icon {
     padding: 0 !important;
   }
 
-  @page {
-    size: A4 portrait;
-    margin: 5mm;
-  }
 
   .sr-bp-page {
     width: 100% !important;
@@ -20787,23 +20754,24 @@ a.sidebar-contact-item:hover {
 
 /* =========================================
    NOTICE PAGE — Print Styles
+   SCOPED: Only apply when body has .notice-printing class
    ========================================= */
 @media print {
-  /* Hide EVERYTHING by default */
-  body > *:not(#noticeDetailModal), 
-  #app, 
-  nav, 
-  header, 
-  main, 
-  footer, 
-  .no-print {
+  /* Hide EVERYTHING — ONLY when printing a notice */
+  body.notice-printing > *:not(#noticeDetailModal),
+  body.notice-printing #app,
+  body.notice-printing nav,
+  body.notice-printing header,
+  body.notice-printing main,
+  body.notice-printing footer,
+  body.notice-printing .no-print {
     display: none !important;
   }
 
-  /* Force modal to be visible and correctly positioned for print */
-  #noticeDetailModal {
+  /* Force modal to be visible — ONLY when printing a notice */
+  body.notice-printing #noticeDetailModal {
     display: block !important;
-    position: static !important; /* Static for printing */
+    position: static !important;
     opacity: 1 !important;
     visibility: visible !important;
     width: 100% !important;
@@ -20815,8 +20783,8 @@ a.sidebar-contact-item:hover {
     overflow: visible !important;
   }
 
-  /* The actual content container */
-  .modal-content, #printTarget {
+  body.notice-printing .modal-content,
+  body.notice-printing #printTarget {
     display: block !important;
     position: static !important;
     width: 100% !important;
@@ -20829,8 +20797,7 @@ a.sidebar-contact-item:hover {
     overflow: visible !important;
   }
 
-  /* Body settings */
-  body {
+  body.notice-printing {
     background: white !important;
     width: 100% !important;
     height: auto !important;
@@ -20838,15 +20805,11 @@ a.sidebar-contact-item:hover {
     margin: 0 !important;
   }
 
-  .sidebar-scrollbar {
+  body.notice-printing .sidebar-scrollbar {
     overflow: visible !important;
   }
 
-  .no-print {
-    display: none !important;
-  }
-
-  .notice-view-title {
+  body.notice-printing .notice-view-title {
     font-size: 22pt !important;
   }
 }
@@ -21011,4 +20974,290 @@ a.sidebar-contact-item:hover {
   .notice-add-btn span {
     display: inline-block;
   }
+}
+
+/* =========================================
+   Universal Print Fixes
+   ========================================= */
+
+@media print {
+  /* 0. Universal Hiding Strategy & Resets */
+  body.tc-print-mode .container-fluid,
+  body.ac-printing .loading-overlay, body.tc-print-mode .loading-overlay, body.ms-printing .loading-overlay, body.ms-printing-single .loading-overlay {
+    display: none !important;
+  }
+
+  body.ac-printing, body.tc-print-mode, body.ms-printing, body.ms-printing-single {
+    background: white !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    height: auto !important;
+    width: 100% !important;
+    min-height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Reset the entire app container tree to avoid clipping and positioning context issues */
+  body.ac-printing .container-fluid, body.ms-printing .container-fluid, body.ms-printing-single .container-fluid,
+  body.ac-printing .row, body.ms-printing .row, body.ms-printing-single .row,
+  body.ac-printing .col-md-10, body.ms-printing .col-md-10, body.ms-printing-single .col-md-10,
+  body.ac-printing .main-content, body.ms-printing .main-content, body.ms-printing-single .main-content,
+  body.ac-printing .app-page, body.ms-printing .app-page, body.ms-printing-single .app-page,
+  body.ac-printing .card, body.ms-printing .card, body.ms-printing-single .card,
+  body.ac-printing .marksheet-preview-wrapper, body.ms-printing .marksheet-preview-wrapper, body.ms-printing-single .marksheet-preview-wrapper {
+    position: static !important;
+    transform: none !important;
+    overflow: visible !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    border: none !important;
+    background: transparent !important;
+    box-shadow: none !important;
+    height: auto !important;
+    min-height: auto !important;
+    width: 100% !important;
+  }
+
+  /* -------------------------------------
+     1. Admit Card / Seat Plan Print
+     ------------------------------------- */
+  body.ac-printing .sidebar-container,
+  body.ac-printing .sidebar,
+  body.ac-printing .navbar,
+  body.ac-printing .top-navbar,
+  body.ac-printing .header,
+  body.ac-printing .card-header,
+  body.ac-printing .ac-compact-filters,
+  body.ac-printing .ac-compact-actions,
+  body.ac-printing .preview-header,
+  body.ac-printing .controls,
+  body.ac-printing .view-toggle,
+  body.ac-printing .no-print {
+    display: none !important;
+  }
+
+  body.ac-printing #admitCardPreview {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.ac-printing .ac-page {
+    box-shadow: none !important;
+    page-break-after: always;
+    break-after: page;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    position: relative;
+    margin: 0 !important;
+    overflow: visible !important;
+    background: white !important;
+    border: none !important;
+    font-size: var(--ac-base-font-size, 14px);
+    line-height: normal;
+  }
+
+  body.ac-printing .ac-page-portrait {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+  }
+
+  body.ac-printing .ac-page-landscape {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+  }
+
+  body.ac-printing .ac-page:last-child {
+    page-break-after: avoid;
+    break-after: auto;
+  }
+
+  /* -------------------------------------
+     2. Teacher ID Card Bulk Print
+     ------------------------------------- */
+  body.tc-print-mode .sidebar,
+  body.tc-print-mode .navbar,
+  body.tc-print-mode .top-bar,
+  body.tc-print-mode .header,
+  body.tc-print-mode .card-header,
+  body.tc-print-mode .ta-form-column,
+  body.tc-print-mode .ta-controls-bar,
+  body.tc-print-mode .no-print {
+    display: none !important;
+  }
+
+  body.tc-print-mode #bulkTeacherCardsContainer {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.tc-print-mode .tc-print-page {
+    page-break-after: always;
+    break-after: page;
+    width: 297mm !important; /* A4 landscape */
+    height: 209mm !important;
+    margin: 0 !important;
+    padding: 10mm !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    flex-direction: column !important;
+    background: white !important;
+  }
+
+  body.tc-print-mode .tc-print-page:last-child {
+    page-break-after: avoid;
+    break-after: auto;
+  }
+
+  body.tc-print-mode .tc-bulk-grid {
+    display: grid !important;
+    grid-template-columns: repeat(3, 1fr) !important;
+    grid-template-rows: repeat(2, 1fr) !important;
+    gap: 15px !important;
+    flex-grow: 1 !important;
+  }
+
+  body.tc-print-mode .tc-card {
+    box-shadow: none !important;
+    border: 1px solid #ddd !important;
+    page-break-inside: avoid;
+    break-inside: avoid;
+    height: 100% !important;
+  }
+
+  body.tc-print-mode .tc-print-footer {
+    display: flex !important;
+    justify-content: space-between !important;
+    margin-top: auto !important;
+    padding-top: 10px !important;
+    font-size: 10pt !important;
+  }
+
+  /* -------------------------------------
+     3. Marksheet Print
+     ------------------------------------- */
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body.ms-printing .sidebar-container,
+  body.ms-printing .sidebar,
+  body.ms-printing .navbar,
+  body.ms-printing .top-navbar,
+  body.ms-printing .top-bar,
+  body.ms-printing .header-controls,
+  body.ms-printing .card-header,
+  body.ms-printing .result-entry-selectors,
+  body.ms-printing .data-management-card,
+  body.ms-printing .page-nav-tabs,
+  body.ms-printing .preview-header,
+  body.ms-printing .dm-marksheet-controls,
+  body.ms-printing .ms-print-actions,
+  body.ms-printing .app-page:not(#marksheetPage),
+  body.ms-printing .no-print,
+  body.ms-printing .dm-btn,
+  body.ms-printing .marksheet-view-settings,
+  body.ms-printing .empty-state-msg {
+    display: none !important;
+  }
+
+  body.ms-printing .marksheet-preview-wrapper,
+  body.ms-printing .marksheet-preview-area {
+    display: block !important;
+    visibility: visible !important;
+    position: relative !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: transparent !important;
+  }
+
+  body.ms-printing .ms-page {
+    visibility: visible !important;
+    page-break-after: always;
+    break-after: page;
+    margin: 0 auto !important;
+    box-shadow: none !important;
+    background: white !important;
+    border: none !important;
+    padding: 0 !important;
+    transform: none !important;
+  }
+
+  body.ms-printing .ms-page:last-child {
+    page-break-after: avoid;
+    break-after: auto;
+  }
+
+  /* Marksheet Single Print */
+  body.ms-printing-single .sidebar,
+  body.ms-printing-single .navbar,
+  body.ms-printing-single .top-bar,
+  body.ms-printing-single .header-controls,
+  body.ms-printing-single .data-management-card,
+  body.ms-printing-single .page-nav-tabs,
+  body.ms-printing-single .preview-header,
+  body.ms-printing-single .dm-marksheet-controls,
+  body.ms-printing-single .ms-print-actions,
+  body.ms-printing-single .no-print,
+  body.ms-printing-single .dm-btn,
+  body.ms-printing-single .marksheet-view-settings,
+  body.ms-printing-single .empty-state-msg,
+  body.ms-printing-single .result-entry-selectors,
+  body.ms-printing-single .card-header,
+  body.ms-printing-single .sr-tabs,
+  body.ms-printing-single .sr-search-section,
+  body.ms-printing-single .sr-top-header-bar,
+  body.ms-printing-single .sr-gen-section,
+  body.ms-printing-single #srPreviewHeader,
+  body.ms-printing-single .ms-page:not(.ms-single-active) {
+    display: none !important;
+    height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.ms-printing-single .ms-page.ms-single-active {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 210mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+    border: none !important;
+    page-break-after: avoid !important;
+    transform: none !important;
+    --ms-main-scale: 1 !important;
+  }
+}
+
+/* Universal Print Overrides */
+@media print {
+  html, body, #appContainer, .app-container, .main-content, .container-fluid, .content-wrapper, .card, .card-body {
+    height: auto !important;
+    min-height: auto !important;
+    max-height: none !important;
+    overflow: visible !important;
+    position: static !important;
+  }
+  #appContainer, .app-container { display: block !important; width: 100% !important; }
 }
