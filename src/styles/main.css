@@ -15910,7 +15910,7 @@ input:checked+.toggle-slider:before {
 .sp-pill-header {
   display: flex;
   align-items: stretch;
-  border: 1.5px solid var(--grp-color, #10b981);
+  border: 2px solid var(--grp-color, #10b981);
   border-radius: 50px;
   background: #fff;
   overflow: hidden;
@@ -15922,9 +15922,9 @@ input:checked+.toggle-slider:before {
 
 .ac-pill-left,
 .sp-pill-left {
-  padding: 6px 15px;
+  padding: 6px 18px;
   font-weight: 800;
-  font-size: 0.9rem;
+  font-size: 0.88rem;
   background-color: var(--grp-color, #10b981);
   color: #fff !important;
   text-transform: uppercase;
@@ -15934,15 +15934,19 @@ input:checked+.toggle-slider:before {
   box-shadow: inset 0 0 0 1000px var(--grp-color, #10b981) !important;
   display: flex;
   align-items: center;
+  white-space: nowrap;
 }
 
 .ac-pill-right,
 .sp-pill-right {
-  font-size: 1rem;
+  padding: 6px 20px;
+  font-weight: 800;
+  font-size: 0.82rem;
   color: var(--grp-text, #059669) !important;
   letter-spacing: -0.1px;
   display: flex;
   align-items: center;
+  white-space: nowrap;
   background: #fff;
   box-shadow: inset 0 0 0 1000px #fff !important;
   -webkit-print-color-adjust: exact !important;
