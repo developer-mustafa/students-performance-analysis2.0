@@ -21034,7 +21034,9 @@ a.sidebar-contact-item:hover {
   body.ac-printing #admitCardPreview {
     display: block !important;
     visibility: visible !important;
-    position: relative !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
     width: 100% !important;
     margin: 0 !important;
     padding: 0 !important;
