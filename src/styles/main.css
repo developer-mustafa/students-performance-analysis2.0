@@ -12343,29 +12343,59 @@ body.is-super-admin td.admin-only {
 
 /* Grade Scale */
 .ms-grade-scale {
-  margin: 4px 0;
-  padding: 3px 6px;
-  background: #fafafa;
-  border: 1px dashed #ccc;
-  border-radius: 4px;
+  margin: 10px 0 4px;
+  padding: 4px 10px;
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 6px;
 }
 
-.ms-grade-scale-title {
-  font-size: 0.7rem;
-  font-weight: 700;
-  color: #888;
-  margin: 0 0 4px;
-  text-align: center;
-}
-
-.ms-grade-scale-grid {
+.ms-grade-scale-wrapper {
   display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  gap: 4px 14px;
-  font-size: 0.68rem;
-  color: #666;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
 }
+
+.ms-gs-title {
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: #475569;
+  white-space: nowrap;
+}
+
+.ms-grade-badges {
+  flex: 1;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: nowrap;
+  gap: 4px;
+}
+
+.ms-gs-item {
+  font-size: 0.65rem;
+  padding: 2px 6px;
+  border-radius: 4px;
+  white-space: nowrap;
+  border: 1px solid #e2e8f0;
+  background: white;
+  color: #334155;
+}
+
+.ms-gs-item strong {
+  color: #1e293b;
+  margin-right: 2px;
+}
+
+/* Grade Specific Highlights */
+.ms-gs-item.gs-ap { border-color: #86efac; background: #f0fdf4; color: #166534; }
+.ms-gs-item.gs-a  { border-color: #bbf7d0; background: #f0fdf4; color: #166534; }
+.ms-gs-item.gs-am { border-color: #d9f99d; background: #f7fee7; color: #3f6212; }
+.ms-gs-item.gs-b  { border-color: #fef08a; background: #fefce8; color: #854d0e; }
+.ms-gs-item.gs-c  { border-color: #fed7aa; background: #fff7ed; color: #9a3412; }
+.ms-gs-item.gs-d  { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
+.ms-gs-item.gs-f  { border-color: #fca5a5; background: #fef2f2; color: #b91c1c; }
 
 /* Signatures */
 .ms-signatures-section {

@@ -1010,15 +1010,17 @@ export function renderSingleMarksheet(student, subjects, examDisplayName, select
 
                 <!-- Grade Scale Reference -->
                 <div class="ms-grade-scale">
-                    <p class="ms-grade-scale-title">গ্রেডিং স্কেল</p>
-                    <div class="ms-grade-scale-grid">
-                        <span>A+ (৮০-১০০) = ৫.০০</span>
-                        <span>A (৭০-৭৯) = ৪.০০</span>
-                        <span>A- (৬০-৬৯) = ৩.৫০</span>
-                        <span>B (৫০-৫৯) = ৩.০০</span>
-                        <span>C (৪০-৪৯) = ২.০০</span>
-                        <span>D (৩৩-৩৯) = ১.০০</span>
-                        <span>F (০-৩২) = ০.০০</span>
+                    <div class="ms-grade-scale-wrapper">
+                        <span class="ms-gs-title">গ্রেডিং স্কেলঃ</span>
+                        <div class="ms-grade-badges">
+                            <span class="ms-gs-item gs-ap"><strong>A+</strong> (৮০-১০০) ৫.০০</span>
+                            <span class="ms-gs-item gs-a"><strong>A</strong> (৭০-৭৯) ৪.০০</span>
+                            <span class="ms-gs-item gs-am"><strong>A-</strong> (৬০-৬৯) ৩.৫০</span>
+                            <span class="ms-gs-item gs-b"><strong>B</strong> (৫০-৫৯) ৩.০০</span>
+                            <span class="ms-gs-item gs-c"><strong>C</strong> (৪০-৪৯) ২.০০</span>
+                            <span class="ms-gs-item gs-d"><strong>D</strong> (৩৩-৩৯) ১.০০</span>
+                            <span class="ms-gs-item gs-f"><strong>F</strong> (০-৩২) ০.০০</span>
+                        </div>
                     </div>
                 </div>
 
