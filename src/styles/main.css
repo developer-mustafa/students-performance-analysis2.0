@@ -12496,6 +12496,8 @@ body.is-super-admin td.admin-only {
   border: 1px solid #e2e8f0;
   background: white;
   color: #334155;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
 }
 
 .ms-gs-item strong {
@@ -12504,13 +12506,13 @@ body.is-super-admin td.admin-only {
 }
 
 /* Grade Specific Highlights */
-.ms-gs-item.gs-ap { border-color: #86efac; background: #f0fdf4; color: #166534; }
-.ms-gs-item.gs-a  { border-color: #bbf7d0; background: #f0fdf4; color: #166534; }
-.ms-gs-item.gs-am { border-color: #d9f99d; background: #f7fee7; color: #3f6212; }
-.ms-gs-item.gs-b  { border-color: #fef08a; background: #fefce8; color: #854d0e; }
-.ms-gs-item.gs-c  { border-color: #fed7aa; background: #fff7ed; color: #9a3412; }
-.ms-gs-item.gs-d  { border-color: #fecaca; background: #fef2f2; color: #991b1b; }
-.ms-gs-item.gs-f  { border-color: #fca5a5; background: #fef2f2; color: #b91c1c; }
+.ms-gs-item.gs-ap { border-color: #86efac !important; background: #f0fdf4 !important; color: #166534 !important; }
+.ms-gs-item.gs-a  { border-color: #bbf7d0 !important; background: #f0fdf4 !important; color: #166534 !important; }
+.ms-gs-item.gs-am { border-color: #d9f99d !important; background: #f7fee7 !important; color: #3f6212 !important; }
+.ms-gs-item.gs-b  { border-color: #fef08a !important; background: #fefce8 !important; color: #854d0e !important; }
+.ms-gs-item.gs-c  { border-color: #fed7aa !important; background: #fff7ed !important; color: #9a3412 !important; }
+.ms-gs-item.gs-d  { border-color: #fecaca !important; background: #fef2f2 !important; color: #991b1b !important; }
+.ms-gs-item.gs-f  { border-color: #fca5a5 !important; background: #fef2f2 !important; color: #b91c1c !important; }
 
 /* Signatures */
 .ms-signatures-section {
@@ -14872,24 +14874,34 @@ body.is-super-admin td.admin-only {
 }
 
 .ms-header-pill {
-  display: flex;
+  display: inline-flex !important;
   justify-content: center;
   align-items: center;
-  gap: 30px;
-  border: 1.2px solid #c5a059;
-  /* Elegant Bronze/Gold */
-  border-radius: 10px;
-  padding: 4px 15px;
-  max-width: 650px;
-  margin: 6px auto;
-  background: transparent;
+  gap: 15px !important;
+  border: 1.5px solid #c5a059 !important; /* Elegant Gold/Bronze */
+  border-radius: 50px !important; /* Perfect Pill */
+  padding: 6px 30px !important;
+  margin: 10px auto 15px !important;
+  background-color: #fffdf8 !important; /* Soft warm tint */
+  max-width: max-content !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
+}
+
+.ms-pill-divider {
+  width: 5px !important;
+  height: 5px !important;
+  background-color: #c5a059 !important; /* Gold Dot */
+  border-radius: 50% !important;
+  -webkit-print-color-adjust: exact !important;
+  print-color-adjust: exact !important;
 }
 
 .ms-pill-left,
 .ms-pill-right {
-  font-weight: 800;
-  font-size: 1.1rem;
-  color: #1a1a1a;
+  font-weight: 800 !important;
+  font-size: 1.15rem !important;
+  color: #2d1804 !important; /* Deep Premium Warm Dark */
 }
 
 /* 2. Themes */
@@ -21421,7 +21433,7 @@ a.sidebar-contact-item:hover {
 /* Marksheet Extra Sections (History, Comments, QR) */
 .ms-extra-grid {
   display: grid !important;
-  grid-template-columns: 1fr 1fr 1fr !important;
+  grid-template-columns: 1.35fr 0.8fr 0.85fr !important;
   gap: 10px !important;
   margin-top: 15px !important;
   width: 100% !important;

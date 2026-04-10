@@ -4,12 +4,12 @@
  * @module marksheetManager
  */
 
-import { 
-    getSavedExams, 
-    getExamConfigs, 
+import {
+    getSavedExams,
+    getExamConfigs,
     getSettings,
     getStudentLookupMap,
-    generateStudentDocId 
+    generateStudentDocId
 } from '../firestoreService.js';
 import { state } from './state.js';
 import { showNotification, convertToEnglishDigits } from '../utils.js';
@@ -169,7 +169,7 @@ export async function populateMSDropdowns() {
         const studentSelect = document.getElementById('msStudent');
         if (studentSelect) {
             studentSelect.innerHTML = '<option value="all">সকল শিক্ষার্থী</option>';
-            
+
             // Get lookup map for names
             getStudentLookupMap().then(lookupMap => {
                 [...studentMap.values()].sort((a, b) => {
@@ -188,7 +188,7 @@ export async function populateMSDropdowns() {
                     });
                     const latest = lookupMap.get(studentKey);
                     const displayName = latest ? (latest.name || s.name) : s.name;
-                    
+
                     studentSelect.innerHTML += `<option value="${s.id}_${s.group}">${s.id} - ${displayName}</option>`;
                 });
             });
@@ -382,15 +382,15 @@ async function generateMarksheets() {
     let studentsArray = [...studentAgg.values()]
         .filter(s => s.status !== false)
         .sort((a, b) => {
-        // Primary sort: Group Alphabetically
-        const groupA = a.group.toLowerCase();
-        const groupB = b.group.toLowerCase();
-        if (groupA < groupB) return -1;
-        if (groupA > groupB) return 1;
+            // Primary sort: Group Alphabetically
+            const groupA = a.group.toLowerCase();
+            const groupB = b.group.toLowerCase();
+            if (groupA < groupB) return -1;
+            if (groupA > groupB) return 1;
 
-        // Secondary sort: Roll number
-        return (parseInt(convertToEnglishDigits(String(a.id))) || 0) - (parseInt(convertToEnglishDigits(String(b.id))) || 0);
-    });
+            // Secondary sort: Roll number
+            return (parseInt(convertToEnglishDigits(String(a.id))) || 0) - (parseInt(convertToEnglishDigits(String(b.id))) || 0);
+        });
 
     if (studentSelection !== 'all') {
         studentsArray = studentsArray.filter(s => `${s.id}_${s.group}` === studentSelection);
@@ -422,7 +422,7 @@ async function generateMarksheets() {
     const previewArea = document.getElementById('marksheetPreview');
     let marksheetsHtml = '';
     const subjectConfigs = await getExamConfigs() || {};
-    
+
     for (const student of studentsArray) {
         marksheetsHtml += await renderSingleMarksheet(student, displaySubjects, examDisplayName, session, null, rules, allOptSubs, allExams, subjectConfigs);
     }
@@ -476,16 +476,16 @@ async function getStudentExamsHistory(student, allExams, cls, session, rules, su
     if (!allExams || !Array.isArray(allExams)) return [];
 
     let examSessions = [...new Set(allExams.filter(e => e.class === cls && e.session === session).map(e => e.name))];
-    
+
     // Filter by manual settings if any configured
     if (marksheetSettings.historyExams && marksheetSettings.historyExams.length > 0) {
         examSessions = examSessions.filter(name => marksheetSettings.historyExams.includes(name));
     }
-    
+
     for (const examName of examSessions) {
         const sessionExams = allExams.filter(e => e.class === cls && e.session === session && e.name === examName);
         const subjects = [...new Set(sessionExams.map(e => e.subject).filter(Boolean))];
-        
+
         const studentsInSession = new Map();
         sessionExams.forEach(ex => {
             if (!ex.studentData) return;
@@ -511,17 +511,17 @@ async function getStudentExamsHistory(student, allExams, cls, session, rules, su
             subjects.forEach(subj => {
                 const data = st.subjects[subj];
                 if (!data) return;
-                
+
                 const sTotal = data.total || 0;
                 totalMarks += sTotal;
-                
+
                 const config = subjectConfigs?.[subj] || { total: 100 };
                 const maxTotal = parseInt(config.total) || 100;
                 const pct = maxTotal > 0 ? (sTotal / maxTotal) * 100 : 0;
-                
+
                 const grade = getLetterGrade(pct);
                 const gp = getGradePoint(pct);
-                
+
                 let isFail = grade === 'F';
                 if (data.written !== undefined && config.writtenPass !== undefined && data.written < config.writtenPass) isFail = true;
                 if (data.mcq !== undefined && config.mcqPass !== undefined && data.mcq < config.mcqPass) isFail = true;
@@ -552,6 +552,7 @@ async function getStudentExamsHistory(student, allExams, cls, session, rules, su
 
             results.push({
                 key: `${st.id}_${st.group || ''}`,
+                group: st.group || '',
                 gpa: allPassed ? finalGPA : -1,
                 total: totalMarks,
                 allPassed: allPassed,
@@ -569,12 +570,18 @@ async function getStudentExamsHistory(student, allExams, cls, session, rules, su
             return b.total - a.total;
         });
 
-        const studentRankIdx = results.findIndex(r => r.key === `${student.id}_${student.group || ''}`);
+        const studentGroup = student.group || '';
+        const studentRankIdx = results.findIndex(r => r.key === `${student.id}_${studentGroup}`);
+
+        const groupResults = results.filter(r => r.group === studentGroup);
+        const groupRankIdx = groupResults.findIndex(r => r.key === `${student.id}_${studentGroup}`);
+
         if (studentRankIdx !== -1) {
             studentHistory.push({
                 name: examName,
                 gpa: results[studentRankIdx].allPassed ? results[studentRankIdx].displayGPA : results[studentRankIdx].displayGPA + ' (F)',
-                rank: studentRankIdx + 1
+                rank: studentRankIdx + 1,
+                groupRank: groupRankIdx !== -1 ? groupRankIdx + 1 : '-'
             });
         }
     }
@@ -980,6 +987,13 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
 
     const overallGrade = allPassed ? getGradeFromGP(parseFloat(avgGPA)) : 'F';
 
+    // Synchronize history table GPA to exactly match the current marksheet's calculated GPA
+    history.forEach(h => {
+        if (h.name === examDisplayName) {
+            h.gpa = overallGrade === 'F' ? `${avgGPA} (F)` : avgGPA;
+        }
+    });
+
     // ... (rest of the function for grand gpa if needed)
 
     // Footer and other parts...
@@ -1069,9 +1083,12 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                         </div>
                     </div>
                     
-                    <div class="ms-header-pill">
-                        <div class="ms-pill-left">${ms.headerLine1 || 'পরীক্ষার ফলাফল পত্র'}</div>
-                        <div class="ms-pill-right">${examDisplayName} (${selectedSession})</div>
+                    <div class="ms-header-pill-container" style="text-align:center;">
+                        <div class="ms-header-pill">
+                            <div class="ms-pill-left">${ms.headerLine1 || 'পরীক্ষার ফলাফল মার্কশীট'}</div>
+                            <div class="ms-pill-divider"></div>
+                            <div class="ms-pill-right">${examDisplayName} (${selectedSession})</div>
+                        </div>
                     </div>
                 </div>
 
@@ -1148,15 +1165,15 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                 <!-- Grade Scale Reference -->
                 <div class="ms-grade-scale">
                     <div class="ms-grade-scale-wrapper">
-                        <span class="ms-gs-title">গ্রেডিং স্কেলঃ</span>
+                        <span class="ms-gs-title" style="letter-spacing: 0.5px;">GRADING SCALE :</span>
                         <div class="ms-grade-badges">
-                            <span class="ms-gs-item gs-ap"><strong>A+</strong> (৮০-১০০) ৫.০০</span>
-                            <span class="ms-gs-item gs-a"><strong>A</strong> (৭০-৭৯) ৪.০০</span>
-                            <span class="ms-gs-item gs-am"><strong>A-</strong> (৬০-৬৯) ৩.৫০</span>
-                            <span class="ms-gs-item gs-b"><strong>B</strong> (৫০-৫৯) ৩.০০</span>
-                            <span class="ms-gs-item gs-c"><strong>C</strong> (৪০-৪৯) ২.০০</span>
-                            <span class="ms-gs-item gs-d"><strong>D</strong> (৩৩-৩৯) ১.০০</span>
-                            <span class="ms-gs-item gs-f"><strong>F</strong> (০-৩২) ০.০০</span>
+                            <span class="ms-gs-item gs-ap"><strong>A+</strong> (80-100) 5.00</span>
+                            <span class="ms-gs-item gs-a"><strong>A</strong> (70-79) 4.00</span>
+                            <span class="ms-gs-item gs-am"><strong>A-</strong> (60-69) 3.50</span>
+                            <span class="ms-gs-item gs-b"><strong>B</strong> (50-59) 3.00</span>
+                            <span class="ms-gs-item gs-c"><strong>C</strong> (40-49) 2.00</span>
+                            <span class="ms-gs-item gs-d"><strong>D</strong> (33-39) 1.00</span>
+                            <span class="ms-gs-item gs-f"><strong>F</strong> (0-32) 0.00</span>
                         </div>
                     </div>
                 </div>
@@ -1164,23 +1181,25 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                 <!-- Extra Sections: History, Comments, QR -->
                 <div class="ms-extra-grid">
                     <div class="ms-extra-box ms-history-column">
-                        <span class="ms-extra-title">সকল পরীক্ষার ফলাফল হিস্টোরী</span>
+                        <span class="ms-extra-title">পরীক্ষার ফলাফল ইতিহাস ও মেরিট পজিশন</span>
                         <table class="ms-history-table">
                             <thead>
                                 <tr>
-                                    <th style="width:50%">পরীক্ষার নাম</th>
-                                    <th>GPA</th>
-                                    <th>মেধাক্রম</th>
+                                    <th style="width:40%; text-align:left;">পরীক্ষার নাম</th>
+                                    <th style="text-align:center !important;">GPA</th>
+                                    <th style="text-align:center !important;" title="সমন্বিত মেধাক্রম">সমন্বিত</th>
+                                    <th style="text-align:center !important;" title="বিভাগীয় মেধাক্রম">বিভাগীয়</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 ${history.length > 0 ? history.map(h => `
                                     <tr>
-                                        <td>${h.name}</td>
-                                        <td>${h.gpa}</td>
-                                        <td style="text-align:center;">${h.rank}</td>
+                                        <td style="text-align:left; white-space:nowrap;">${h.name}</td>
+                                        <td style="text-align:center !important; font-weight:600;">${h.gpa}</td>
+                                        <td style="text-align:center !important; font-weight:700; color:var(--ms-primary, #4361ee) !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;"><span style="font-size: 0.9em; color:#64748b !important; font-weight:500;">Rank -</span> ${h.rank}</td>
+                                        <td style="text-align:center !important; font-weight:700; color:#16a34a !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;"><span style="font-size: 0.9em; color:#64748b !important; font-weight:500;">Rank -</span> ${h.groupRank}</td>
                                     </tr>
-                                `).join('') : '<tr><td colspan="3" style="text-align:center; opacity:0.5; padding: 10px 0;">হিস্টোরি নেই</td></tr>'}
+                                `).join('') : '<tr><td colspan="4" style="text-align:center; opacity:0.5; padding: 10px 0;">হিস্টোরি নেই</td></tr>'}
                             </tbody>
                         </table>
                     </div>
@@ -1290,7 +1309,7 @@ async function updateSettingsLivePreview() {
 
     const html = await renderSingleMarksheet(mockStudent, currentSettings, '২০২৫-২০২৬', 'অর্ধ-বার্ষিক পরীক্ষা ২০২৬');
     previewContainer.innerHTML = html;
-    
+
     // Render QRs in preview
     setTimeout(async () => {
         await renderMarksheetQRCodes(previewContainer);
@@ -1459,7 +1478,7 @@ function initMarksheetSettingsModal() {
 
             // Initial Preview Load
             updateSettingsLivePreview();
-            
+
             // Render checklists
             renderSubjectVisibilityToggles();
             renderHistoryExamsChecklist();
@@ -1946,7 +1965,7 @@ async function renderHistoryExamsChecklist() {
             checkbox.addEventListener('change', () => {
                 const val = checkbox.dataset.val;
                 if (!marksheetSettings.historyExams) marksheetSettings.historyExams = [];
-                
+
                 if (checkbox.checked) {
                     if (!marksheetSettings.historyExams.includes(val)) {
                         marksheetSettings.historyExams.push(val);
@@ -1954,7 +1973,7 @@ async function renderHistoryExamsChecklist() {
                 } else {
                     marksheetSettings.historyExams = marksheetSettings.historyExams.filter(e => e !== val);
                 }
-                
+
                 // Note: live preview for history is tricky as it's not in the mock data usually
                 // but we can refresh the main UI if needed.
             });
@@ -2107,7 +2126,7 @@ export async function renderMarksheetQRCodes(container) {
 
             // 2. Convert Canvas to High-Quality Image
             const qrImageUrl = canvas.toDataURL("image/png", 1.0);
-            
+
             // 3. Inject optimized image
             const wrapper = canvas.parentElement;
             if (wrapper) {
@@ -2118,7 +2137,7 @@ export async function renderMarksheetQRCodes(container) {
                 img.style.height = '130px';
                 img.style.display = 'block';
                 img.style.imageRendering = 'pixelated'; // Prevent blurring
-                
+
                 // Clear and update
                 wrapper.innerHTML = '';
                 wrapper.appendChild(img);
