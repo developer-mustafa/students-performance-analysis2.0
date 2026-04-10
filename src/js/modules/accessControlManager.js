@@ -30,6 +30,14 @@ const AccessControlManager = {
         document.getElementById('acDeadlineEnabled')?.addEventListener('change', (e) => {
             this.handleDeadlineToggle(e.target.checked);
         });
+
+        // Result Publication Deadline
+        document.getElementById('acResultPublishEnabled')?.addEventListener('change', (e) => {
+            this.handleResultDeadlineToggle(e.target.checked);
+        });
+        document.getElementById('acSaveResultDeadlineBtn')?.addEventListener('click', () => {
+            this.handleSaveResultDeadline();
+        });
     },
 
     subscribeToUpdates() {
@@ -63,6 +71,19 @@ const AccessControlManager = {
             deadlineToggle.checked = state.accessControl.deadlineEnabled || false;
             const lbl = document.getElementById('acDeadlineLabel');
             if (lbl) lbl.textContent = deadlineToggle.checked ? 'অন' : 'অফ';
+        }
+
+        // Result Publication update fields
+        const resultDeadlineInput = document.getElementById('acResultDeadline');
+        const resultDeadlineToggle = document.getElementById('acResultPublishEnabled');
+        
+        if (resultDeadlineInput && state.accessControl.resultPublishDeadline) {
+            resultDeadlineInput.value = state.accessControl.resultPublishDeadline;
+        }
+        if (resultDeadlineToggle) {
+            resultDeadlineToggle.checked = state.accessControl.resultPublishEnabled || false;
+            const lbl = document.getElementById('acResultPublishLabel');
+            if (lbl) lbl.textContent = resultDeadlineToggle.checked ? 'অন' : 'অফ';
         }
     },
 
@@ -162,6 +183,17 @@ const AccessControlManager = {
         const deadline = document.getElementById('acEntryDeadline').value;
         await updateAccessControlSettings({ entryDeadline: deadline });
         showNotification('ডেডলাইন আপডেট করা হয়েছে');
+    },
+
+    async handleResultDeadlineToggle(enabled) {
+        await updateAccessControlSettings({ resultPublishEnabled: enabled });
+        showNotification(enabled ? 'ফলাফল পাবলিশিং অন করা হয়েছে' : 'ফলাফল পাবলিশিং অফ করা হয়েছে');
+    },
+
+    async handleSaveResultDeadline() {
+        const deadline = document.getElementById('acResultDeadline').value;
+        await updateAccessControlSettings({ resultPublishDeadline: deadline });
+        showNotification('ফলাফল পাবলিশ ডেডলাইন আপডেট করা হয়েছে');
     },
 
     async renderTeacherList() {

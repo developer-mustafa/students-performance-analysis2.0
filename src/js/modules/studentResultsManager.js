@@ -939,6 +939,179 @@ async function populateSrDropdowns() {
     }
 }
 
+function showRestrictionMessage(previewArea, msg, searchBtn) {
+    if(!previewArea) return;
+    previewArea.innerHTML = `
+        <div class="sr-restriction-msg" style="padding:30px 20px; text-align:center; background:linear-gradient(135deg, #ffffff 0%, #f8fafc 100%); border:1px solid #e2e8f0; border-radius:12px; box-shadow:0 10px 25px rgba(0,0,0,0.05); margin: 20px auto; max-width: 500px;">
+            <div style="font-size:2.8rem; color:#f59e0b; margin-bottom:12px;"><i class="fas fa-lock"></i></div>
+            <h3 style="color:#0f172a; font-weight:800; margin-bottom:8px; font-size:1.3rem;">ফলাফল স্থগিত রয়েছে</h3>
+            <p style="color:#475569; line-height:1.6; font-size:0.95rem; margin:0;">${msg}</p>
+        </div>
+    `;
+    if (searchBtn) {
+        searchBtn.innerHTML = '<i class="fas fa-search"></i> <span>সার্চ</span>';
+        searchBtn.disabled = false;
+    }
+}
+
+function renderTimerCountDown(previewArea, deadlineDate, searchBtn) {
+    if(!previewArea) return;
+    previewArea.innerHTML = `
+        <div class="sr-restriction-msg" style="padding:30px 20px; text-align:center; background:linear-gradient(135deg, #ffffff 0%, #f0f9ff 100%); border:1px solid #bae6fd; border-radius:12px; box-shadow:0 10px 30px rgba(14,165,233,0.1); margin: 20px auto; max-width: 500px;">
+            <div style="font-size:2.8rem; color:#0ea5e9; margin-bottom:12px; animation: pulse 1.5s infinite;"><i class="fas fa-hourglass-half"></i></div>
+            <h3 style="color:#0f172a; font-weight:800; margin-bottom:8px; font-size:1.3rem;">আর মাত্র কয়েক মুহূর্ত...</h3>
+            <p style="color:#475569; margin-bottom: 20px; font-size:0.95rem;">ধৈর্য ধরুন, ফলাফল এখনই উন্মুক্ত হতে যাচ্ছে!</p>
+            <div id="srDynamicTimer" style="font-size:2.5rem; font-weight:900; color:#0369a1; font-variant-numeric: tabular-nums; letter-spacing:2px;">--:--</div>
+        </div>
+        <style>
+            @keyframes pulse {
+                0% { transform: scale(1); opacity: 1; }
+                50% { transform: scale(1.1); opacity: 0.8; }
+                100% { transform: scale(1); opacity: 1; }
+            }
+        </style>
+    `;
+    
+    if (searchBtn) {
+        searchBtn.innerHTML = '<i class="fas fa-search"></i> <span>সার্চ</span>';
+        searchBtn.disabled = false;
+    }
+
+    if (window.srTimerInterval) clearInterval(window.srTimerInterval);
+    
+    window.srTimerInterval = setInterval(() => {
+        const now = new Date();
+        const diffMs = deadlineDate - now;
+        
+        if (diffMs <= 0) {
+            clearInterval(window.srTimerInterval);
+            const timerEl = document.getElementById('srDynamicTimer');
+            if (timerEl) timerEl.innerHTML = "উন্মুক্ত হচ্ছে...";
+            
+            // Automatically trigger search again
+            const input = document.getElementById('srSearchInput');
+            if (input && input.value) {
+                setTimeout(() => window.srDirectSearch(input.value), 1000);
+            }
+            return;
+        }
+        
+        const m = Math.floor(diffMs / 60000);
+        const s = Math.floor((diffMs % 60000) / 1000);
+        
+        const mStr = new Intl.NumberFormat('bn-BD', { minimumIntegerDigits: 2 }).format(m);
+        const sStr = new Intl.NumberFormat('bn-BD', { minimumIntegerDigits: 2 }).format(s);
+        
+        const timerEl = document.getElementById('srDynamicTimer');
+        if (timerEl) timerEl.innerText = `${mStr}:${sStr}`;
+        else clearInterval(window.srTimerInterval);
+    }, 1000);
+}
+
+function checkResultPublicationAccess(previewArea, searchBtn) {
+    const isSuperAdmin = state.currentUser?.role === 'super_admin';
+    if (isSuperAdmin) return true; // Super admins bypass completely
+
+    const ac = state.accessControl || {};
+    
+    // Check if explicitly turned off completely
+    if (ac.resultPublishEnabled === false || ac.resultPublishEnabled === undefined) {
+        showRestrictionMessage(previewArea, "দুঃখিত, ফলাফল তৈরী করা প্রক্রিয়াধীন বা এখনো ফলাফল ঘোষনা করা হয়নি। ধৈর্য ধরুন।", searchBtn);
+        return false;
+    }
+
+    // Check if there is an active deadline in the future
+    if (ac.resultPublishEnabled && ac.resultPublishDeadline) {
+        const deadlineDate = new Date(ac.resultPublishDeadline);
+        const now = new Date();
+        const diffMs = deadlineDate - now;
+
+        if (diffMs > 0) {
+            // Deadline is in the future
+            if (diffMs <= 5 * 60 * 1000) {
+                // Within 5 minutes, show dynamic countdown!
+                renderTimerCountDown(previewArea, deadlineDate, searchBtn);
+                return false;
+            } else {
+                // Beyond 5 minutes, show the formatted text message
+                const days = ['রবিবার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার', 'শনিবার'];
+                const day = days[deadlineDate.getDay()];
+                
+                let hours = deadlineDate.getHours();
+                const minutes = deadlineDate.getMinutes();
+                let ampmText = 'রাত';
+                if (hours >= 6 && hours < 12) ampmText = 'সকাল';
+                else if (hours >= 12 && hours < 15) ampmText = 'দুপুর';
+                else if (hours >= 15 && hours < 18) ampmText = 'বিকাল';
+                else if (hours >= 18 && hours < 20) ampmText = 'সন্ধ্যা';
+
+                hours = hours % 12;
+                hours = hours ? hours : 12; 
+                
+                const hBn = new Intl.NumberFormat('bn-BD').format(hours);
+                const mBn = new Intl.NumberFormat('bn-BD', { minimumIntegerDigits: 2 }).format(minutes);
+                
+                // Date logic
+                const dayObj = deadlineDate.getDate();
+                const monthNames = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+                const monthObj = monthNames[deadlineDate.getMonth()];
+                const yearObj = deadlineDate.getFullYear();
+                
+                const dayBn = new Intl.NumberFormat('bn-BD').format(dayObj);
+                const yearBn = new Intl.NumberFormat('bn-BD', { useGrouping: false }).format(yearObj);
+                const dateStr = `${dayBn} ${monthObj} ${yearBn}`;
+
+                const clsSel = document.getElementById('srSearchClass');
+                const sessionSel = document.getElementById('srSearchSession');
+                const examSel = document.getElementById('srSearchExam');
+
+                const clsVal = clsSel?.value;
+                const sessionVal = sessionSel?.value;
+                const examVal = examSel?.value;
+
+                let specificText = '';
+                if (clsVal && sessionVal && examVal && examVal !== 'all') {
+                    const clsLabel = clsSel.options[clsSel.selectedIndex].text;
+                    const sessionLabel = sessionSel.options[sessionSel.selectedIndex].text;
+                    const examLabel = examSel.options[examSel.selectedIndex].text;
+                    specificText = `<div style="font-weight:700; color:#1e293b; margin-bottom:10px; font-size:1.1rem; background: #f1f5f9; display: inline-block; padding: 4px 15px; border-radius: 50px;">${clsLabel} (${sessionLabel}) — ${examLabel}</div><br>`;
+                }
+
+                const msg = `
+                    ${specificText}
+                    আপনার কাঙ্ক্ষিত ফলাফলটি এখনো প্রকাশ করা হয়নি।<br>
+                    নির্ধারিত সময় সাপেক্ষে স্বয়ংক্রিয়ভাবে ফলাফল উন্মুক্ত করা হবে, অনুগ্রহ করে ধৈর্য ধরুন।
+                    
+                    <div style="margin-top: 20px; padding: 15px 20px; background: #f8fafc; border-radius: 12px; border: 1px dashed #cbd5e1; display: inline-flex; flex-direction: column; gap: 12px; text-align: left; box-shadow: inset 0 2px 4px rgba(0,0,0,0.02); width: 100%; max-width: 380px;">
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="min-width: 38px; height: 38px; border-radius: 50%; background: #e0f2fe; color: #0284c7; display: flex; align-items: center; justify-content: center; font-size: 1.15rem;">
+                                <i class="fas fa-calendar-alt"></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">প্রকাশের তারিখ</div>
+                                <div style="font-size: 1rem; color: #0f172a; font-weight: 800;">${dateStr}</div>
+                            </div>
+                        </div>
+                        <div style="width: 100%; height: 1px; background: #e2e8f0;"></div>
+                        <div style="display: flex; align-items: center; gap: 15px;">
+                            <div style="min-width: 38px; height: 38px; border-radius: 50%; background: #ede9fe; color: #7c3aed; display: flex; align-items: center; justify-content: center; font-size: 1.15rem;">
+                                <i class="fas fa-clock"></i>
+                            </div>
+                            <div>
+                                <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">প্রকাশের সময়</div>
+                                <div style="font-size: 1rem; color: #0f172a; font-weight: 800;">${day} ${ampmText} ${hBn}:${mBn} টা</div>
+                            </div>
+                        </div>
+                    </div>
+                `;
+                showRestrictionMessage(previewArea, msg, searchBtn);
+                return false;
+            }
+        }
+    }
+    return true; // allowed
+}
+
 /**
  * Handle unique ID search
  */
@@ -974,6 +1147,18 @@ async function handleSearch() {
     if (resultArea) resultArea.style.display = 'block';
 
     const previewArea = document.getElementById('srMarksheetPreview');
+    
+    // First: Check access control deadline guard before processing any result
+    if (!checkResultPublicationAccess(previewArea, searchBtn)) {
+        if (resultArea) resultArea.style.display = 'block';
+        setTimeout(() => {
+            if (previewArea) {
+                previewArea.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        }, 150);
+        return; // Stopped by deadline check
+    }
+
     if (previewArea) {
         previewArea.innerHTML = '<div class="sr-loading"><i class="fas fa-spinner fa-spin"></i> খুঁজছে...</div>';
     }

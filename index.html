@@ -1423,6 +1423,24 @@
                   class="fas fa-ban"></i> নিস্ক্রিয়</button>
             </div>
           </div>
+
+          <!-- Result Publication Control -->
+          <div style="background: var(--bg-color); padding: 12px; border-radius: var(--radius-md); border: 1px solid var(--border-color); margin-top: 12px;">
+            <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+              <span style="font-size: 0.85rem; font-weight:700;"><i class="fas fa-bullhorn" style="color:var(--info);margin-right:4px;"></i> ফলাফল পাবলিশ ডেডলাইন</span>
+              <label class="ac-toggle-pill" style="margin:0;">
+                <input type="checkbox" id="acResultPublishEnabled">
+                <span class="ac-toggle-track"></span>
+                <span class="ac-toggle-lbl" id="acResultPublishLabel">অফ</span>
+              </label>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <input type="datetime-local" id="acResultDeadline" class="ac-dl-input" style="flex:1;">
+              <button id="acSaveResultDeadlineBtn" class="dm-btn dm-save" title="সেভ করুন"><i class="fas fa-save"></i></button>
+            </div>
+            <p class="ac-hint" style="margin-top:6px; font-size:0.75rem;"><i class="fas fa-info-circle"></i> নির্ধারিত সময়ের পূর্বে ফলাফল পাবলিক হবে না। সম্পূর্ণ বন্ধ রাখতে 'অফ' করে সেভ করুন।</p>
+          </div>
+          
         </div>
 
         <!-- Card 2: Tab Access -->
@@ -1865,15 +1883,15 @@
           transition: 0.3s;
         }
 
-        #acDeadlineEnabled:checked~.ac-toggle-track {
+        .ac-toggle-pill input:checked~.ac-toggle-track {
           background: var(--success);
         }
 
-        #acDeadlineEnabled:checked~.ac-toggle-track::before {
+        .ac-toggle-pill input:checked~.ac-toggle-track::before {
           transform: translateX(18px);
         }
 
-        #acDeadlineEnabled {
+        .ac-toggle-pill input {
           display: none;
         }
 
