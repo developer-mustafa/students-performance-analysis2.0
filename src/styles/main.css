@@ -21676,7 +21676,10 @@ a.sidebar-contact-item:hover {
   width: 100% !important;
 }
 
+/* Ensure boxes don't overflow their grid columns on small screens */
 .ms-extra-box {
+  min-width: 0 !important;
+  overflow: hidden !important;
   border: 1px solid #e2e8f0 !important;
   border-radius: 6px !important;
   padding: 8px !important;
@@ -21755,6 +21758,7 @@ a.sidebar-contact-item:hover {
   font-weight: 700 !important;
   color: #1e293b !important;
   margin-top: 4px !important;
+  word-break: break-all !important;
 }
 
 /* Print safety for extra blocks */

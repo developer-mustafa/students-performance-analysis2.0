@@ -1368,7 +1368,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                             <tbody>
                                 ${history.length > 0 ? history.map(h => `
                                     <tr>
-                                        <td style="text-align:left; white-space:nowrap;">${h.name}</td>
+                                        <td style="text-align:left; vertical-align:middle;">${h.name}</td>
                                         <td style="text-align:center !important; font-weight:600;">${h.gpa}</td>
                                         <td style="text-align:center !important; font-weight:700; color:var(--ms-primary, #4361ee) !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;"><span style="font-size: 0.9em; color:#64748b !important; font-weight:500;">Rank -</span> ${h.rank}</td>
                                         <td style="text-align:center !important; font-weight:700; color:#16a34a !important; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;"><span style="font-size: 0.9em; color:#64748b !important; font-weight:500;">Rank -</span> ${h.groupRank}</td>
