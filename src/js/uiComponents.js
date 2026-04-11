@@ -227,10 +227,14 @@ export function renderGroupStats(container, data, options = {}) {
        <!-- Right: Filter Badges -->
        <div class="dch-filter-side">
           <div class="vcd-labels-row-mini">
-              <span class="vcd-badge-mini cls">শ্রেণি: ${className}</span>
-              <span class="vcd-badge-mini ses">সেশন: ${sessionName}</span>
-              <span class="vcd-badge-mini exam-name">${examName}</span>
-              <span class="vcd-badge-mini sub-name">${subjectName}</span>
+              <div class="vcd-row-group">
+                  <span class="vcd-badge-mini cls">শ্রেণি: ${className}</span>
+                  <span class="vcd-badge-mini ses">সেশন: ${sessionName}</span>
+              </div>
+              <div class="vcd-row-group">
+                  <span class="vcd-badge-mini exam-name">${examName}</span>
+                  <span class="vcd-badge-mini sub-name">${subjectName}</span>
+              </div>
           </div>
        </div>
     </div>
