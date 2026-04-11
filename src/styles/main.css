@@ -21906,7 +21906,7 @@ a.sidebar-contact-item:hover {
 .rpt-pill-left {
   background: #1e40af !important;
   color: #ffffff !important;
-  padding: 7px 22px;
+  padding: 7px 24px;
   font-weight: 800;
   font-size: 0.82rem;
   letter-spacing: 0.3px;
@@ -22195,41 +22195,41 @@ a.sidebar-contact-item:hover {
   print-color-adjust: exact;
 }
 
-/* Grade Color Variants */
-.rpt-g-aplus { border-color: #10b981; }
-.rpt-g-aplus .rpt-grade-letter { color: #10b981; }
-.rpt-g-aplus .rpt-grade-count,
-.rpt-g-aplus .rpt-grade-label { background: #10b981; box-shadow: inset 0 0 0 1000px #10b981; }
+/* Grade Color Variants - Softened/Lighter Design */
+.rpt-g-aplus { border-color: #10b981; background: #ecfdf5 !important; }
+.rpt-g-aplus .rpt-grade-letter { color: #065f46; border-bottom-color: #d1fae5; }
+.rpt-g-aplus .rpt-grade-count { color: #059669 !important; }
+.rpt-g-aplus .rpt-grade-label { background: #10b981 !important; color: #ffffff !important; }
 
-.rpt-g-a { border-color: #22c55e; }
-.rpt-g-a .rpt-grade-letter { color: #22c55e; }
-.rpt-g-a .rpt-grade-count,
-.rpt-g-a .rpt-grade-label { background: #22c55e; box-shadow: inset 0 0 0 1000px #22c55e; }
+.rpt-g-a { border-color: #22c55e; background: #f0fdf4 !important; }
+.rpt-g-a .rpt-grade-letter { color: #166534; border-bottom-color: #dcfce7; }
+.rpt-g-a .rpt-grade-count { color: #16a34a !important; }
+.rpt-g-a .rpt-grade-label { background: #22c55e !important; color: #ffffff !important; }
 
-.rpt-g-aminus { border-color: #84cc16; }
-.rpt-g-aminus .rpt-grade-letter { color: #84cc16; }
-.rpt-g-aminus .rpt-grade-count,
-.rpt-g-aminus .rpt-grade-label { background: #84cc16; box-shadow: inset 0 0 0 1000px #84cc16; }
+.rpt-g-aminus { border-color: #84cc16; background: #f7fee7 !important; }
+.rpt-g-aminus .rpt-grade-letter { color: #3f6212; border-bottom-color: #ecfccb; }
+.rpt-g-aminus .rpt-grade-count { color: #65a30d !important; }
+.rpt-g-aminus .rpt-grade-label { background: #84cc16 !important; color: #ffffff !important; }
 
-.rpt-g-b { border-color: #3b82f6; }
-.rpt-g-b .rpt-grade-letter { color: #3b82f6; }
-.rpt-g-b .rpt-grade-count,
-.rpt-g-b .rpt-grade-label { background: #3b82f6; box-shadow: inset 0 0 0 1000px #3b82f6; }
+.rpt-g-b { border-color: #3b82f6; background: #eff6ff !important; }
+.rpt-g-b .rpt-grade-letter { color: #1e40af; border-bottom-color: #dbeafe; }
+.rpt-g-b .rpt-grade-count { color: #2563eb !important; }
+.rpt-g-b .rpt-grade-label { background: #3b82f6 !important; color: #ffffff !important; }
 
-.rpt-g-c { border-color: #f59e0b; }
-.rpt-g-c .rpt-grade-letter { color: #f59e0b; }
-.rpt-g-c .rpt-grade-count,
-.rpt-g-c .rpt-grade-label { background: #f59e0b; box-shadow: inset 0 0 0 1000px #f59e0b; }
+.rpt-g-c { border-color: #f59e0b; background: #fffbeb !important; }
+.rpt-g-c .rpt-grade-letter { color: #92400e; border-bottom-color: #fef3c7; }
+.rpt-g-c .rpt-grade-count { color: #d97706 !important; }
+.rpt-g-c .rpt-grade-label { background: #f59e0b !important; color: #ffffff !important; }
 
-.rpt-g-d { border-color: #f97316; }
-.rpt-g-d .rpt-grade-letter { color: #f97316; }
-.rpt-g-d .rpt-grade-count,
-.rpt-g-d .rpt-grade-label { background: #f97316; box-shadow: inset 0 0 0 1000px #f97316; }
+.rpt-g-d { border-color: #f97316; background: #fff7ed !important; }
+.rpt-g-d .rpt-grade-letter { color: #9a3412; border-bottom-color: #ffedd5; }
+.rpt-g-d .rpt-grade-count { color: #ea580c !important; }
+.rpt-g-d .rpt-grade-label { background: #f97316 !important; color: #ffffff !important; }
 
-.rpt-g-f { border-color: #ef4444; }
-.rpt-g-f .rpt-grade-letter { color: #ef4444; }
-.rpt-g-f .rpt-grade-count,
-.rpt-g-f .rpt-grade-label { background: #ef4444; box-shadow: inset 0 0 0 1000px #ef4444; }
+.rpt-g-f { border-color: #ef4444; background: #fef2f2 !important; }
+.rpt-g-f .rpt-grade-letter { color: #991b1b; border-bottom-color: #fee2e2; }
+.rpt-g-f .rpt-grade-count { color: #dc2626 !important; }
+.rpt-g-f .rpt-grade-label { background: #ef4444 !important; color: #ffffff !important; }
 
 /* Footer */
 .rpt-footer {
@@ -22387,6 +22387,19 @@ a.sidebar-contact-item:hover {
     page-break-inside: avoid;
     margin-bottom: 15px !important;
     background: transparent !important;
+  }
+
+  body.printing-report .rpt-pill-left {
+    background: #1e40af !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+  }
+
+  body.printing-report .rpt-summary-table thead th,
+  body.printing-report .rpt-subject-table thead th {
+    background: #1e3a5f !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
   }
 
   body.printing-report .rpt-section-title {

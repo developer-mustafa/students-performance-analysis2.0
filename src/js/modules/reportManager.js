@@ -157,11 +157,18 @@ export async function generateReport() {
                 });
             }
 
-            const curSub = studentAgg.get(rollKey).subjects[exam.subject] || { written: 0, mcq: 0, practical: 0, total: 0 };
-            curSub.written += Number(s.written) || 0;
-            curSub.mcq += Number(s.mcq) || 0;
-            curSub.practical += Number(s.practical) || 0;
-            curSub.total += Number(s.total) || 0;
+            const curSub = studentAgg.get(rollKey).subjects[exam.subject] || { written: null, mcq: null, practical: null, total: null, status: null };
+            
+            const hasVal = (v) => v !== undefined && v !== null && v !== '';
+            
+            if (hasVal(s.written)) curSub.written = (curSub.written === null ? 0 : curSub.written) + Number(s.written);
+            if (hasVal(s.mcq)) curSub.mcq = (curSub.mcq === null ? 0 : curSub.mcq) + Number(s.mcq);
+            if (hasVal(s.practical)) curSub.practical = (curSub.practical === null ? 0 : curSub.practical) + Number(s.practical);
+            if (hasVal(s.total)) curSub.total = (curSub.total === null ? 0 : curSub.total) + Number(s.total);
+            
+            // Maintain the database status as an exact fallback backup
+            if (s.status) curSub.status = s.status;
+            
             studentAgg.get(rollKey).subjects[exam.subject] = curSub;
         });
     });
@@ -174,7 +181,8 @@ export async function generateReport() {
     const overallGrades = { 'A+': 0, 'A': 0, 'A-': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0 };
     let gT = 0, gE = 0, gP = 0, gF = 0;
 
-    const optSubsObj = rules?.optionalSubjects || {};
+    const clsRules = rules[rptClass] || rules['All'] || { generalSubjects: [], groupSubjects: {}, optionalSubjects: {} };
+    const optSubsObj = clsRules.optionalSubjects || {};
     const considerOptFail = ms.reportConsiderOptional === true;
 
     const getCanonicalGroup = (grp) => {
@@ -199,8 +207,7 @@ export async function generateReport() {
         if (!groupStats.has(group)) groupStats.set(group, { total: 0, examinees: 0, pass: 0, fail: 0 });
         const gs = groupStats.get(group);
 
-        let participatedAllGeneral = true, participatedAllGroupMandatory = true, participatedOptional = false;
-        let hasAnyOptionalConfigured = false;
+        let hasParticipatedInAny = false;
         let allPassed = true;
         let cGPA = 0, cCount = 0, oBonus = 0;
 
@@ -209,28 +216,25 @@ export async function generateReport() {
             const optKey = getMappedKey(group, Object.keys(optSubsObj));
             const optList = (optSubsObj[optKey] || []).map(s => normalizeText(s));
             const isO = optList.some(os => normalizeText(subj).includes(os) || os.includes(normalizeText(subj)));
-            if (isO) hasAnyOptionalConfigured = true;
-
-            const isGeneral = (s) => {
-                const n = normalizeText(s);
-                return n.includes('বাংলা') || n.includes('ইংরেজি') || n.includes('english') || n.includes('bangla') || n.includes('ict') || n.includes('তথ্য');
-            };
 
             const isAbsentSub = !data || isAbsent(data);
 
             if (isAbsentSub) {
-                const groupSubjects = Array.from(allStudents)
+                // Dynamic Peer-Curriculum Enforcement: 
+                // If the student is absent, check if ANY other student in their exact group took this subject.
+                // If yes, it means this was a required subject for their group, and they missed it, thus triggering an overall fail.
+                const isMandatoryForGroup = Array.from(allStudents)
                     .filter(st => getCanonicalGroup(st.group) === group)
                     .some(st => st.subjects[subj] && !isAbsent(st.subjects[subj]));
 
-                if (isGeneral(subj)) participatedAllGeneral = false;
-                else if (groupSubjects && !isO) participatedAllGroupMandatory = false;
-                
-                if (!isO && (isGeneral(subj) || groupSubjects)) allPassed = false;
-                return;
+                if (isMandatoryForGroup && !isO) {
+                    allPassed = false;
+                }
+                return; // Skip calculating grade points since they missed it
             }
             
-            if (isO) participatedOptional = true;
+            // If they took the subject, they officially participated
+            hasParticipatedInAny = true;
 
             const config = specificConfigs.find(c => normalizeText(c.subjectName) === normalizeText(subj)) || null;
             const maxT = config ? (Number(config.total) || 100) : 100;
@@ -241,8 +245,12 @@ export async function generateReport() {
                 totalPass: config ? (Number(config.totalPass) || (maxT * 0.33)) : Math.ceil(maxT * 0.33)
             };
 
-            const status = determineStatus(data, opts);
-            const isF = status === 'ফেল';
+            const savedStatus = String(data.status || '').trim();
+            const calcStatus = determineStatus(data, opts);
+            const status = savedStatus || calcStatus;
+            
+            const isAbsentStat = status === 'অনুপস্থিত' || status === 'absent';
+            const isF = status === 'ফেল' || status === 'fail' || isAbsentStat;
             const sT = (Number(data.written) || 0) + (Number(data.mcq) || 0) + (Number(data.practical) || 0);
             const gp = getGradePoint(maxT > 0 ? (sT / maxT) * 100 : 0);
 
@@ -255,8 +263,7 @@ export async function generateReport() {
             }
         });
 
-        const isStrictExaminee = participatedAllGeneral && participatedAllGroupMandatory && (!hasAnyOptionalConfigured || participatedOptional);
-        if (!isStrictExaminee) return;
+        if (!hasParticipatedInAny) return;
 
         gs.examinees++;
         const finalGPA = cCount > 0 ? Math.min(5.00, (cGPA + oBonus) / cCount) : 0;
@@ -307,7 +314,10 @@ export async function generateReport() {
             </div>
 
             <div class="rpt-section">
-                <div class="rpt-section-title"><i class="fas fa-chart-bar"></i> সামগ্রিক ফলাফল পরিসংখ্যান</div>
+                <div class="rpt-section-title">
+                    <i class="fas fa-chart-bar"></i> সামগ্রিক ফলাফল পরিসংখ্যান
+                    <span style="font-size: 0.75rem; font-weight: normal; opacity: 0.8; margin-left: 8px;">(সকল বিষয়ের পাশ মার্ক বিবেচনায়)</span>
+                </div>
                 <div class="rpt-stats-grid">
                     <div class="rpt-stat-card rpt-stat-total">
                         <div class="rpt-stat-icon"><i class="fas fa-users"></i></div>
@@ -355,7 +365,10 @@ export async function generateReport() {
             </div>
 
             <div class="rpt-section">
-                <div class="rpt-section-title"><i class="fas fa-layer-group"></i> বিভাগভিত্তিক ফলাফল বিশ্লেষণ</div>
+                <div class="rpt-section-title">
+                    <i class="fas fa-layer-group"></i> বিভাগভিত্তিক ফলাফল বিশ্লেষণ
+                    <span style="font-size: 0.75rem; font-weight: normal; opacity: 0.8; margin-left: 8px;">(সকল বিষয়ের পাশ মার্ক বিবেচনায়)</span>
+                </div>
                 <table class="rpt-summary-table">
                     <thead>
                         <tr>
@@ -392,7 +405,10 @@ export async function generateReport() {
             </div>
 
             <div class="rpt-section">
-                <div class="rpt-section-title"><i class="fas fa-medal"></i> গ্রেডিং পরিসংখ্যান</div>
+                <div class="rpt-section-title">
+                    <i class="fas fa-medal"></i> গ্রেডিং পরিসংখ্যান
+                    <span style="font-size: 0.75rem; font-weight: normal; opacity: 0.8; margin-left: 8px;">(সকল বিষয়ের পাশ মার্ক বিবেচনায়)</span>
+                </div>
                 <div class="rpt-grade-grid">
                     ${['A+', 'A', 'A-', 'B', 'C', 'D', 'F'].map(grade => {
                 const count = overallGrades[grade] || 0;
@@ -416,112 +432,72 @@ export async function generateReport() {
                     <table class="rpt-subject-table">
                         <thead>
                             <tr>
-                                <th rowspan="2" style="text-align: left !important; padding-left: 20px !important; background: #f1f5f9 !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; font-weight: 900 !important;">বিষয়ের নাম</th>
-                                <th rowspan="2" style="background: #f1f5f9 !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; font-weight: 900 !important;">মোট</th>
-                                <th rowspan="2" style="background: #f1f5f9 !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; font-weight: 900 !important;">অনুপস্থিত</th>
-                                <th rowspan="2" style="background: #f1f5f9 !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; font-weight: 900 !important;">পরীক্ষার্থী</th>
-                                <th colspan="4" style="background: #f1f5f9 !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; font-weight: 900 !important;">Achievement</th>
-                                <th rowspan="2" style="background: #ecfdf5 !important; color: #065f46 !important; border: 1px solid #cbd5e1 !important; font-weight: 900 !important;">পাশ</th>
-                                <th rowspan="2" style="background: #f1f5f9 !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; font-weight: 900 !important;">হার</th>
-                                <th rowspan="2" style="background: #f1f5f9 !important; color: #0f172a !important; border: 1px solid #cbd5e1 !important; font-weight: 900 !important;">সর্বোচ্চ</th>
+                                <th rowspan="2" style="text-align: left !important; padding-left: 20px !important; background: #1e3a5f !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 950 !important;">বিষয়ের নাম</th>
+                                <th rowspan="2" style="background: #1e3a5f !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 950 !important;">মোট</th>
+                                <th rowspan="2" style="background: #1e3a5f !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 950 !important;">অনুপস্থিত</th>
+                                <th rowspan="2" style="background: #1e3a5f !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 950 !important;">পরীক্ষার্থী</th>
+                                <th colspan="4" style="background: #1e3a5f !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 950 !important;">Achievement</th>
+                                <th rowspan="2" style="background: #065f46 !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 950 !important;">পাশ</th>
+                                <th rowspan="2" style="background: #1e3a5f !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 950 !important;">হার</th>
+                                <th rowspan="2" style="background: #1e3a5f !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 950 !important;">সর্বোচ্চ</th>
                             </tr>
                             <tr>
-                                <th style="background: #e7f5ef !important; color: #065f46 !important;">উত্তম(A+,A)</th>
-                                <th style="background: #eff6ff !important; color: #1e40af !important;">মাঝারি(A-,B)</th>
-                                <th style="background: #fff7ed !important; color: #9a3412 !important;">দুর্বল(C,D)</th>
-                                <th style="background: #fef2f2 !important; color: #991b1b !important;">ফেল(F)</th>
+                                <th style="background: #065f46 !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 800 !important;">উত্তম(A+,A)</th>
+                                <th style="background: #1e40af !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 800 !important;">মাঝারি(A-,B)</th>
+                                <th style="background: #9a3412 !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 800 !important;">দুর্বল(C,D)</th>
+                                <th style="background: #991b1b !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 800 !important;">ফেল(F)</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${(() => {
-                // Subject-wise detailed results - uses calculateStatistics() exactly like dashboard exam cards
-                const categories = {
-                    general: { label: 'সাধারণ বিষয়', patterns: ['বাংলা', 'ইংরেজি', 'ইংরেজী', 'bangla', 'english', 'ict', 'তথ্য ও যোগাযোগ', 'তথ্য', 'গণিত', 'math', 'ইসলাম', 'islam', 'ধর্ম', 'religion', 'হিন্দুধর্ম', 'বৌদ্ধধর্ম', 'খ্রিস্ট', 'কৃষি', 'agriculture', 'শারীরিক', 'physical', 'চারু', 'কারু', 'সংগীত', 'music', 'কর্মমুখী', 'ক্যারিয়ার', 'career', 'বাংলাদেশ ও বিশ্বপরিচয়', 'বিশ্বপরিচয়', 'সাধারণ বিজ্ঞান', 'general science', 'বিজ্ঞান'], items: [] },
-                    science: { label: 'বিজ্ঞান বিভাগ', patterns: ['পদার্থ', 'রসায়', 'জীববি', 'জীব বি', 'উচ্চতরগণিত', 'উচ্চতর গণিত', 'physics', 'chemistry', 'biology', 'higher math', 'উচ্চতর'], items: [] },
-                    humanities: { label: 'মানবিক বিভাগ', patterns: ['ইতিহাস', 'পৌরনীতি', 'পৌরনীত', 'ভূগোল', 'অর্থনীতি', 'সমাজবিজ্ঞান', 'সমাজকর্ম', 'যুক্তিবিদ্যা', 'ইসলামের ইতিহাস', 'history', 'civics', 'economics', 'logic', 'geography', 'sociology', 'social'], items: [] },
-                    business: { label: 'ব্যবসায় শাখা', patterns: ['হিসাববিজ্ঞান', 'ব্যবসায়নীতি', 'ব্যবসায় সংগঠন', 'ফিনান্স', 'বাণিজ্য', 'মার্কেটিং', 'accounting', 'business', 'finance', 'marketing', 'ব্যাংকিং'], items: [] }
+                const generateRow = (subj) => {
+                    const examForSubj = relevantExams.find(e => e.subject === subj || e.subjectName === subj);
+                    if (!examForSubj || !examForSubj.studentData) return '';
+
+                    const cfg = specificConfigs.find(c => normalizeText(c.subjectName) === normalizeText(subj)) || null;
+                    const opts = {
+                        writtenPass: cfg ? (Number(cfg.writtenPass) || 0) : FAILING_THRESHOLD.written,
+                        mcqPass: cfg ? (Number(cfg.mcqPass) || 0) : FAILING_THRESHOLD.mcq,
+                        practicalPass: cfg ? (Number(cfg.practicalPass) || 0) : 0,
+                        totalPass: cfg ? (Number(cfg.totalPass) || 33) : 33
+                    };
+                    const mT = cfg ? (Number(cfg.total) || 100) : 100;
+
+                    const stats = calculateStatistics(examForSubj.studentData, opts);
+
+                    let excellent = 0, mid = 0, weak = 0, highest = 0;
+                    examForSubj.studentData.forEach(s => {
+                        if (isAbsent(s)) return;
+                        const sTotal = (Number(s.written) || 0) + (Number(s.mcq) || 0) + (Number(s.practical) || 0);
+                        const pct = mT > 0 ? (sTotal / mT) * 100 : 0;
+                        const grade = getLetterGrade(pct);
+                        const status = determineStatus(s, opts);
+                        if (status === 'পাস' || status === 'pass' || status === 'পাশ') {
+                            if (grade === 'A+' || grade === 'A') excellent++;
+                            else if (grade === 'A-' || grade === 'B') mid++;
+                            else weak++;
+                        }
+                        if (sTotal > highest) highest = sTotal;
+                    });
+
+                    const passRate = stats.participants > 0 ? ((stats.passedStudents / stats.participants) * 100).toFixed(1) : '0.0';
+
+                    return `<tr>
+                        <td style="text-align: left !important; padding-left: 20px !important; font-weight: 500; color: #334155;">${subj}</td>
+                        <td style="color: #475569; font-weight: 700; background: #f8fafc;">${convertToBengaliDigits(stats.totalStudents)}</td>
+                        <td style="color: #ef4444; font-weight: 700;">${convertToBengaliDigits(stats.absentStudents)}</td>
+                        <td style="color: #0f172a; font-weight: 800;">${convertToBengaliDigits(stats.participants)}</td>
+                        <td><span style="font-weight: 700;">${convertToBengaliDigits(excellent)}</span></td>
+                        <td><span style="font-weight: 700;">${convertToBengaliDigits(mid)}</span></td>
+                        <td><span style="font-weight: 700;">${convertToBengaliDigits(weak)}</span></td>
+                        <td style="color: #dc2626; font-weight: 700; background: #fef2f2;">${convertToBengaliDigits(stats.failedStudents)}</td>
+                        <td style="color: #166534; font-weight: 700; background: #f0fdf4;">${convertToBengaliDigits(stats.passedStudents)}</td>
+                        <td style="font-weight: 700; color: #475569;">${convertToBengaliDigits(passRate)}%</td>
+                        <td style="color: #4f46e5; font-weight: 700;">${convertToBengaliDigits(highest)}</td>
+                    </tr>`;
                 };
 
-                // Sort each subject into its category
-                subjects.forEach(subj => {
-                    const sn = normalizeText(subj);
-                    let placed = false;
-                    for (const key of ['science', 'humanities', 'business']) {
-                        if (categories[key].patterns.some(p => sn.includes(normalizeText(p)) || normalizeText(p).includes(sn))) {
-                            categories[key].items.push(subj);
-                            placed = true;
-                            break;
-                        }
-                    }
-                    if (!placed) categories.general.items.push(subj);
-                });
-
-                let rows = '';
-                Object.entries(categories).forEach(([key, cat]) => {
-                    if (cat.items.length === 0) return;
-                    
-                    let bg = '#f8fafc';
-                    
-                    // Simple, clean Category header row
-                    rows += `<tr class="rpt-cat-header">
-                        <td colspan="11" style="background: ${bg} !important; border: 1px solid #cbd5e1 !important; padding: 10px 15px !important; text-align: left !important; font-weight: 800 !important; font-size: 0.9rem !important; color: #1e293b !important;">
-                            <i class="fas fa-layer-group" style="margin-right: 6px; color: #64748b;"></i>${cat.label} 
-                            <span style="font-weight: 600; color: #64748b; font-size: 0.75rem; margin-left: 5px;">(${convertToBengaliDigits(cat.items.length)} টি বিষয়)</span>
-                        </td>
-                    </tr>`;
-
-                    cat.items.forEach(subj => {
-                        // Find the raw exam data for this subject - same source as dashboard card
-                        const examForSubj = relevantExams.find(e => e.subject === subj || e.subjectName === subj);
-                        if (!examForSubj || !examForSubj.studentData) return;
-
-                        // Get config for pass/fail thresholds
-                        const cfg = specificConfigs.find(c => normalizeText(c.subjectName) === normalizeText(subj)) || null;
-                        const opts = {
-                            writtenPass: cfg ? (Number(cfg.writtenPass) || 0) : FAILING_THRESHOLD.written,
-                            mcqPass: cfg ? (Number(cfg.mcqPass) || 0) : FAILING_THRESHOLD.mcq,
-                            practicalPass: cfg ? (Number(cfg.practicalPass) || 0) : 0,
-                            totalPass: cfg ? (Number(cfg.totalPass) || 33) : 33
-                        };
-                        const mT = cfg ? (Number(cfg.total) || 100) : 100;
-
-                        // Calculate overall stats identical to dashboard
-                        const stats = calculateStatistics(examForSubj.studentData, opts);
-
-                        // Achievement breakdown by standard Marksheet grades (percent-based evaluating the exact grade)
-                        let excellent = 0, mid = 0, weak = 0, highest = 0;
-                        examForSubj.studentData.forEach(s => {
-                            if (isAbsent(s)) return;
-                            const sTotal = (Number(s.written) || 0) + (Number(s.mcq) || 0) + (Number(s.practical) || 0);
-                            const pct = mT > 0 ? (sTotal / mT) * 100 : 0;
-                            const grade = getLetterGrade(pct);
-                            const status = determineStatus(s, opts);
-                            if (status === 'পাস' || status === 'pass' || status === 'পাশ') {
-                                if (grade === 'A+' || grade === 'A') excellent++;
-                                else if (grade === 'A-' || grade === 'B') mid++;
-                                else weak++;
-                            }
-                            if (sTotal > highest) highest = sTotal;
-                        });
-
-                        const passRate = stats.participants > 0 ? ((stats.passedStudents / stats.participants) * 100).toFixed(1) : '0.0';
-
-                        rows += `<tr>
-                            <td style="text-align: left !important; padding-left: 15px !important; font-weight: 600; color: #334155;">${subj}</td>
-                            <td style="color: #475569; font-weight: 700; background: #f8fafc;">${convertToBengaliDigits(stats.totalStudents)}</td>
-                            <td style="color: #ef4444; font-weight: 700;">${convertToBengaliDigits(stats.absentStudents)}</td>
-                            <td style="color: #0f172a; font-weight: 800;">${convertToBengaliDigits(stats.participants)}</td>
-                            <td><span style="font-weight: 700;">${convertToBengaliDigits(excellent)}</span></td>
-                            <td><span style="font-weight: 700;">${convertToBengaliDigits(mid)}</span></td>
-                            <td><span style="font-weight: 700;">${convertToBengaliDigits(weak)}</span></td>
-                            <td style="color: #dc2626; font-weight: 700; background: #fef2f2;">${convertToBengaliDigits(stats.failedStudents)}</td>
-                            <td style="color: #166534; font-weight: 700; background: #f0fdf4;">${convertToBengaliDigits(stats.passedStudents)}</td>
-                            <td style="font-weight: 700; color: #475569;">${convertToBengaliDigits(passRate)}%</td>
-                            <td style="color: #4f46e5; font-weight: 700;">${convertToBengaliDigits(highest)}</td>
-                        </tr>`;
-                    });
-                });
-                return rows;
+                return subjects.map(subj => generateRow(subj)).join('');
             })()}
                         </tbody>
                     </table>
