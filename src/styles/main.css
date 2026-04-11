@@ -7361,9 +7361,17 @@ body:not(.dark-mode) .current-roll-display {
 
 .vcd-labels-row-mini {
   display: flex;
+  flex-direction: column;
   gap: 8px;
-  flex-wrap: wrap;
   justify-content: flex-end;
+  align-items: flex-end;
+}
+
+.vcd-row-group {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  flex-wrap: nowrap;
 }
 
 .vcd-badge-mini {
@@ -7746,6 +7754,11 @@ body:not(.dark-mode) .current-roll-display {
   }
 
   .vcd-labels-row-mini {
+    align-items: center;
+    justify-content: center;
+  }
+
+  .vcd-row-group {
     justify-content: center;
   }
 
@@ -16154,8 +16167,8 @@ input:checked+.toggle-slider:before {
 .sp-has-watermark .sp-card-inner::before {
   content: '';
   position: absolute;
-  top: 60%;
-  left: 60%;
+  top: 62%;
+  left: 50%;
   /* Consistent with admit card */
   transform: translate(-50%, -50%);
   width: 50mm;

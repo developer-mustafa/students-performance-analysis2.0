@@ -1014,14 +1014,14 @@ function checkResultPublicationAccess(previewArea, searchBtn) {
 
     const ac = state.accessControl || {};
     
-    // Check if explicitly turned off completely
-    if (ac.resultPublishEnabled === false || ac.resultPublishEnabled === undefined) {
+    // 1. Check Master Switch (Global Result Status)
+    if (ac.globalResultDisabled === true) {
         showRestrictionMessage(previewArea, "দুঃখিত, ফলাফল তৈরী করা প্রক্রিয়াধীন বা এখনো ফলাফল ঘোষনা করা হয়নি। ধৈর্য ধরুন।", searchBtn);
         return false;
     }
 
-    // Check if there is an active deadline in the future
-    if (ac.resultPublishEnabled && ac.resultPublishDeadline) {
+    // 2. Check Scheduled Deadline (Only if Toggle is ON)
+    if (ac.resultPublishEnabled === true && ac.resultPublishDeadline) {
         const deadlineDate = new Date(ac.resultPublishDeadline);
         const now = new Date();
         const diffMs = deadlineDate - now;

@@ -262,6 +262,7 @@ async function init() {
              state.onMarksheetSettingsUnsubscribe = await subscribeToMarksheetSettings((msData) => {
                 console.log('Marksheet settings updated, refreshing dashboard header...');
                 updateProfileUI(state.auth?.currentUser, state.isAdmin, state.isSuperAdmin, state.userRole);
+                updateViews();
             });
         };
         initMarksheetSettingsSub();

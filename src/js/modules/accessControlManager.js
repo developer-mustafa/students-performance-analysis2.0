@@ -38,6 +38,10 @@ const AccessControlManager = {
         document.getElementById('acSaveResultDeadlineBtn')?.addEventListener('click', () => {
             this.handleSaveResultDeadline();
         });
+
+        // Global Result Status Buttons
+        document.getElementById('acResultOk')?.addEventListener('click', () => this.handleGlobalResult(false));
+        document.getElementById('acResultNo')?.addEventListener('click', () => this.handleGlobalResult(true));
     },
 
     subscribeToUpdates() {
@@ -58,6 +62,7 @@ const AccessControlManager = {
     async renderUI() {
         this.renderTabAccess();
         this.renderGlobalStatus();
+        this.renderGlobalResultStatus();
         await this.renderTeacherList();
         
         // Update deadline fields
@@ -167,6 +172,22 @@ const AccessControlManager = {
             statusText.style.color = entryDisabled ? '#ef4444' : '#10b981';
             statusText.style.fontWeight = '700';
         }
+
+        // Highlight active buttons
+        const okBtn = document.getElementById('acAllSikshokOk');
+        const noBtn = document.getElementById('acAllSikshokNo');
+        if (okBtn && noBtn) {
+            if (entryDisabled) {
+                okBtn.style.opacity = '0.5';
+                noBtn.style.opacity = '1';
+                noBtn.style.boxShadow = '0 0 10px rgba(239, 68, 68, 0.3)';
+            } else {
+                okBtn.style.opacity = '1';
+                okBtn.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.3)';
+                noBtn.style.opacity = '0.5';
+                noBtn.style.boxShadow = 'none';
+            }
+        }
     },
 
     async handleGlobalEntry(disabled) {
@@ -176,7 +197,7 @@ const AccessControlManager = {
 
     async handleDeadlineToggle(enabled) {
         await updateAccessControlSettings({ deadlineEnabled: enabled });
-        showNotification(enabled ? 'ডেডলাইন সক্রিয় করা হয়েছে' : 'ডেডলাইন নিস্ক্রিয় করা হয়েছে');
+        showNotification(enabled ? 'এন্ট্রি ডেডলাইন সক্রিয় করা হয়েছে' : 'এন্ট্রি ডেডলাইন নিস্ক্রিয় করা হয়েছে');
     },
 
     async handleSaveDeadline() {
@@ -187,13 +208,48 @@ const AccessControlManager = {
 
     async handleResultDeadlineToggle(enabled) {
         await updateAccessControlSettings({ resultPublishEnabled: enabled });
-        showNotification(enabled ? 'ফলাফল পাবলিশিং অন করা হয়েছে' : 'ফলাফল পাবলিশিং অফ করা হয়েছে');
+        showNotification(enabled ? 'ফলাফল শিডিউল পাবলিশ অন করা হয়েছে' : 'ফলাফল শিডিউল পাবলিশ অফ করা হয়েছে');
     },
 
     async handleSaveResultDeadline() {
         const deadline = document.getElementById('acResultDeadline').value;
         await updateAccessControlSettings({ resultPublishDeadline: deadline });
         showNotification('ফলাফল পাবলিশ ডেডলাইন আপডেট করা হয়েছে');
+    },
+
+    async handleGlobalResult(disabled) {
+        await updateAccessControlSettings({ globalResultDisabled: disabled });
+        showNotification(disabled ? 'ফলাফল ড্রাফট মোডে রাখা হয়েছে (পাবলিকলি বন্ধ)' : 'ফলাফল সবার জন্য উন্মুক্ত করা হয়েছে');
+    },
+
+    renderGlobalResultStatus() {
+        const statusText = document.getElementById('acResultStatusText');
+        const resultsDisabled = state.accessControl.globalResultDisabled;
+        
+        if (statusText) {
+            statusText.innerText = resultsDisabled 
+                ? 'বর্তমানে জনসাধারণের জন্য ফলাফল বন্ধ আছে' 
+                : 'ফলাফল জনসাধারণের জন্য উন্মুক্ত আছে';
+            statusText.style.color = resultsDisabled ? '#ef4444' : '#10b981';
+            statusText.style.fontWeight = '700';
+        }
+
+        // Highlight active buttons
+        const okBtn = document.getElementById('acResultOk');
+        const noBtn = document.getElementById('acResultNo');
+        if (okBtn && noBtn) {
+            if (resultsDisabled) {
+                okBtn.style.opacity = '0.5';
+                okBtn.style.boxShadow = 'none';
+                noBtn.style.opacity = '1';
+                noBtn.style.boxShadow = '0 0 10px rgba(239, 68, 68, 0.3)';
+            } else {
+                okBtn.style.opacity = '1';
+                okBtn.style.boxShadow = '0 0 10px rgba(16, 185, 129, 0.3)';
+                noBtn.style.opacity = '0.5';
+                noBtn.style.boxShadow = 'none';
+            }
+        }
     },
 
     async renderTeacherList() {
