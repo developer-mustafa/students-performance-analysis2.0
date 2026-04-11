@@ -464,6 +464,45 @@ export async function generateReport() {
                     const mT = cfg ? (Number(cfg.total) || 100) : 100;
 
                     const stats = calculateStatistics(examForSubj.studentData, opts);
+                    
+                    // Specific Logic for General Subjects (Bangla, English, ICT)
+                    const sn = normalizeText(subj);
+                    const isGeneral = (rules.generalSubjects || []).some(gs => normalizeText(gs) === sn) || 
+                                     sn.includes('বাংলা') || sn.includes('ইংরেজি') || sn.includes('ict') || sn.includes('তথ্য ও যোগাযোগ');
+
+                    if (isGeneral) {
+                        const masterCount = masterStudents.length;
+                        stats.totalStudents = masterCount;
+                        stats.participants = masterCount; 
+                        
+                        let manualAbsent = 0;
+                        let actualFail = 0;
+                        let actualPass = 0;
+                        
+                        masterStudents.forEach(ms => {
+                            const rid = String(ms.id).trim();
+                            const rec = examForSubj.studentData.find(s => String(s.id || s.roll).trim() === rid);
+                            
+                            // Definition of Absent: No record or No marks in all criteria
+                            const hasMarks = rec && (rec.written || rec.mcq || rec.practical);
+                            const markedAbsent = rec && (rec.status === 'absent' || rec.status === 'অনুপস্থিত');
+
+                            if (!rec || !hasMarks || markedAbsent) {
+                                manualAbsent++;
+                            } else {
+                                const status = determineStatus(rec, opts);
+                                if (status === 'পাশ' || status === 'pass' || status === 'পাস') {
+                                    actualPass++;
+                                } else {
+                                    actualFail++;
+                                }
+                            }
+                        });
+                        
+                        stats.absentStudents = manualAbsent;
+                        stats.failedStudents = actualFail;
+                        stats.passedStudents = actualPass;
+                    }
 
                     let excellent = 0, mid = 0, weak = 0, highest = 0;
                     examForSubj.studentData.forEach(s => {
