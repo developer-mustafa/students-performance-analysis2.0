@@ -1503,7 +1503,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                 </div>
 
                 <!-- Footer with safe flexible inline layout -->
-                <div class="ms-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding: 6px 0 2px 0;">
+                <div class="ms-footer" style="display: flex; justify-content: space-between; align-items: center; margin-top: 5px; padding: 8px 0 10px 0;">
                     <span style="white-space: nowrap;">জেনারেটেড তারিখ: ${todayDate}</span>
                     <div style="text-align: center; white-space: nowrap; padding: 0 4px;">
                         ${getDeveloperCreditHtml('ms-dev-credit')}
