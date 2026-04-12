@@ -1405,32 +1405,32 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                         <span class="ms-gs-title" style="letter-spacing: 0.5px;">GRADING SCALE :</span>
                         <div class="ms-grade-badges">
                             <div class="ms-gs-item gs-ap">
-                                <div class="ms-gs-top"><strong>A+</strong> (80-100) 5.00</div>
-                                <div class="ms-gs-bottom"><strong><!--GS_AP--></strong> জন</div>
+                                <div class="ms-gs-top" style="font-size: 0.62rem;"><strong>A+</strong> <span style="font-weight: 500;">(80-100)</span> <strong>5.00</strong></div>
+                                <div class="ms-gs-bottom" style="font-size: 0.68rem; font-weight: 800;"><strong><!--GS_AP--></strong> জন</div>
                             </div>
                             <div class="ms-gs-item gs-a">
-                                <div class="ms-gs-top"><strong>A</strong> (70-79) 4.00</div>
-                                <div class="ms-gs-bottom"><strong><!--GS_A--></strong> জন</div>
+                                <div class="ms-gs-top" style="font-size: 0.62rem;"><strong>A</strong> <span style="font-weight: 500;">(70-79)</span> <strong>4.00</strong></div>
+                                <div class="ms-gs-bottom" style="font-size: 0.68rem; font-weight: 800;"><strong><!--GS_A--></strong> জন</div>
                             </div>
                             <div class="ms-gs-item gs-am">
-                                <div class="ms-gs-top"><strong>A-</strong> (60-69) 3.50</div>
-                                <div class="ms-gs-bottom"><strong><!--GS_AM--></strong> জন</div>
+                                <div class="ms-gs-top" style="font-size: 0.62rem;"><strong>A-</strong> <span style="font-weight: 500;">(60-69)</span> <strong>3.50</strong></div>
+                                <div class="ms-gs-bottom" style="font-size: 0.68rem; font-weight: 800;"><strong><!--GS_AM--></strong> জন</div>
                             </div>
                             <div class="ms-gs-item gs-b">
-                                <div class="ms-gs-top"><strong>B</strong> (50-59) 3.00</div>
-                                <div class="ms-gs-bottom"><strong><!--GS_B--></strong> জন</div>
+                                <div class="ms-gs-top" style="font-size: 0.62rem;"><strong>B</strong> <span style="font-weight: 500;">(50-59)</span> <strong>3.00</strong></div>
+                                <div class="ms-gs-bottom" style="font-size: 0.68rem; font-weight: 800;"><strong><!--GS_B--></strong> জন</div>
                             </div>
                             <div class="ms-gs-item gs-c">
-                                <div class="ms-gs-top"><strong>C</strong> (40-49) 2.00</div>
-                                <div class="ms-gs-bottom"><strong><!--GS_C--></strong> জন</div>
+                                <div class="ms-gs-top" style="font-size: 0.62rem;"><strong>C</strong> <span style="font-weight: 500;">(40-49)</span> <strong>2.00</strong></div>
+                                <div class="ms-gs-bottom" style="font-size: 0.68rem; font-weight: 800;"><strong><!--GS_C--></strong> জন</div>
                             </div>
                             <div class="ms-gs-item gs-d">
-                                <div class="ms-gs-top"><strong>D</strong> (33-39) 1.00</div>
-                                <div class="ms-gs-bottom"><strong><!--GS_D--></strong> জন</div>
+                                <div class="ms-gs-top" style="font-size: 0.62rem;"><strong>D</strong> <span style="font-weight: 500;">(33-39)</span> <strong>1.00</strong></div>
+                                <div class="ms-gs-bottom" style="font-size: 0.68rem; font-weight: 800;"><strong><!--GS_D--></strong> জন</div>
                             </div>
                             <div class="ms-gs-item gs-f">
-                                <div class="ms-gs-top"><strong>F</strong> (0-32) 0.00</div>
-                                <div class="ms-gs-bottom" style="color: #dc2626 !important;"><strong><!--GS_F--></strong> জন</div>
+                                <div class="ms-gs-top" style="font-size: 0.62rem;"><strong>F</strong> <span style="font-weight: 500;">(0-32)</span> <strong>0.00</strong></div>
+                                <div class="ms-gs-bottom" style="font-size: 0.68rem; font-weight: 800; color: #dc2626 !important;"><strong><!--GS_F--></strong> জন</div>
                             </div>
                         </div>
                     </div>
