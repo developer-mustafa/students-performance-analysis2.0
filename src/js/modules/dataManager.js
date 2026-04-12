@@ -237,7 +237,17 @@ export async function handleSaveExam(examData) {
     setLoading(true);
     try {
         // Get subject-specific configuration for accurate stats
-        const subjectConfig = state.subjectConfigs[examData.subject] || {};
+        let subjectConfig = state.subjectConfigs[examData.subject] || {};
+        
+        // Fuzzy matching if exact match fails
+        if (!subjectConfig || Object.keys(subjectConfig).length === 0) {
+            const normalizedName = normalizeText(examData.subject);
+            const matchedKey = Object.keys(state.subjectConfigs || {})
+                .find(key => key !== 'updatedAt' && normalizeText(key) === normalizedName);
+            subjectConfig = matchedKey ? state.subjectConfigs[matchedKey] : {};
+            if (matchedKey) console.log(`[Data Manager] ⚡ Fuzzy matched subject "${examData.subject}" with config key "${matchedKey}"`);
+        }
+
         const statsOptions = {
             writtenPass: (subjectConfig.writtenPass !== undefined && subjectConfig.writtenPass !== '') ? Number(subjectConfig.writtenPass) : undefined,
             mcqPass: (subjectConfig.mcqPass !== undefined && subjectConfig.mcqPass !== '') ? Number(subjectConfig.mcqPass) : undefined,

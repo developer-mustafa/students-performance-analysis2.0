@@ -1183,25 +1183,47 @@
             </div>
           </div>
 
+          <!-- Alternative Subjects Card (Electives) -->
+          <div class="card ms-settings-card">
+            <div class="card-header" style="background: rgba(156, 39, 176, 0.1);">
+              <h4 style="margin:0; font-size: 1rem;"><i class="fas fa-exchange-alt"></i> বিকল্প বিষয় (Alternative Subjects)</h4>
+            </div>
+            <div class="card-body">
+              <p style="font-size: 0.75rem; color: #666; margin-bottom: 10px;">যেকোনো ২টি বিষয় সেট করুন যার মধ্যে একটি থাকলে অন্যটি শো করবে না।</p>
+              <div class="form-group" style="margin-bottom: 10px;">
+                <label style="font-size: 0.7rem;">বিষয়-১ (Subject 1)</label>
+                <select id="msSetAltSubject1" class="form-control"></select>
+              </div>
+              <div class="input-group" style="display:flex; gap: 8px; margin-bottom: 15px; flex-direction: column;">
+                <label style="font-size: 0.7rem;">বিষয়-২ (Subject 2)</label>
+                <div style="display: flex; gap: 8px; width: 100%;">
+                    <select id="msSetAltSubject2" class="form-control" style="flex:1;"></select>
+                    <button id="msSetAltAddBtn" class="dm-btn dm-save"><i class="fas fa-plus"></i></button>
+                </div>
+              </div>
+              <div id="msSetAltList" class="ms-settings-list" style="max-height: 200px; overflow-y: auto;"></div>
+            </div>
+          </div>
+
           <!-- Paper Mapping Card -->
-          <div class="card ms-settings-card" style="grid-column: 1 / -1;">
+          <div class="card ms-settings-card" style="grid-column: 2 / -1;">
             <div class="card-header" style="background: rgba(33, 150, 243, 0.1);">
               <h4 style="margin:0; font-size: 1rem;"><i class="fas fa-link"></i> উভয় পত্র ম্যাপিং (Combined Paper
                 Mapping)</h4>
             </div>
             <div class="card-body">
               <div class="mapping-inputs"
-                style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; margin-bottom: 20px;">
+                style="display: grid; grid-template-columns: 1fr 1fr 1fr auto; gap: 10px; margin-bottom: 15px;">
                 <div class="m-input">
-                  <label style="font-size: 0.8rem; display:block;">প্রথম পত্র (Paper 1)</label>
+                  <label style="font-size: 0.7rem; display:block;">প্রথম পত্র (Paper 1)</label>
                   <select id="msSetCombPaper1" class="form-control"></select>
                 </div>
                 <div class="m-input">
-                  <label style="font-size: 0.8rem; display:block;">দ্বিতীয় পত্র (Paper 2)</label>
+                  <label style="font-size: 0.7rem; display:block;">দ্বিতীয় পত্র (Paper 2)</label>
                   <select id="msSetCombPaper2" class="form-control"></select>
                 </div>
                 <div class="m-input">
-                  <label style="font-size: 0.8rem; display:block;">সম্মিলিত নাম (Combined Name)</label>
+                  <label style="font-size: 0.7rem; display:block;">সম্মিলিত নাম (Combined Name)</label>
                   <input type="text" id="msSetCombCombinedName" class="form-control" placeholder="উদা: বাংলা বা ইংরেজি">
                 </div>
                 <div class="m-input" style="display: flex; align-items: flex-end;">
@@ -1210,7 +1232,7 @@
                 </div>
               </div>
               <div id="msSetCombList" class="mapping-list-grid"
-                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(250px, 1fr)); gap: 10px;"></div>
+                style="display: grid; grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); gap: 10px;"></div>
             </div>
           </div>
 
@@ -2886,6 +2908,19 @@
                     </div>
                     <label class="ac-sw">
                       <input type="checkbox" id="msShowGradeScale" checked>
+                      <span class="ac-sw-sl"></span>
+                    </label>
+                  </div>
+
+                  <div
+                    style="background: linear-gradient(135deg, rgba(156, 39, 176, 0.05), rgba(103, 58, 183, 0.05)); padding: 15px; border-radius: 12px; border: 1px solid rgba(156, 39, 176, 0.2); display: flex; justify-content: space-between; align-items: center;">
+                    <div>
+                      <h4 style="margin: 0; font-size: 1rem; color: #7b1fa2;"><i class="fas fa-graduation-cap" style="margin-right: 5px;"></i>বোর্ড স্ট্যান্ডার্ড (ঐচ্ছিক বিষয়)</h4>
+                      <p style="margin: 5px 0 0; font-size: 0.75rem; opacity: 0.7;">চালু থাকলে: ঐচ্ছিক বিষয়ে ফেল করলেও পাশ + বোনাস GP যুক্ত হবে। বন্ধ থাকলে: সাধারণ নিয়মে + "অপশনাল সহ GPA" দেখাবে।
+                      </p>
+                    </div>
+                    <label class="ac-sw">
+                      <input type="checkbox" id="msBoardStandardOptional">
                       <span class="ac-sw-sl"></span>
                     </label>
                   </div>

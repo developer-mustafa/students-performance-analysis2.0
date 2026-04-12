@@ -436,45 +436,86 @@ async function loadExamForEntry() {
     const matchingExams = exams.filter(e => {
         const eCls = normalizeText(e.class || '');
         const eSess = normalizeSession(e.session || '');
-        const eGroup = normalizeText(e.group || '');
-
-        const classMatch = eCls === normCls;
-        const sessionMatch = eSess === normSession;
-
-        // If we are looking for 'all', we accept any group
-        const groupMatch = normGroup === 'all' || eGroup === normGroup ||
-            (eGroup.includes(normGroup)) || (normGroup.includes(eGroup));
-
-        return classMatch && sessionMatch &&
-            e.subject === subject &&
-            e.name === examName &&
-            groupMatch;
+        return eCls === normCls && eSess === normSession && e.subject === subject && e.name === examName;
     });
 
-    // --- AGGREGATION LOGIC ---
-    // Instead of just picking one, we fetch the complete student list for this Class/Session
+    // --- SMART FILTERING: ALTERNATIVE SUBJECTS (Electives) ---
+    let excludedStudentIds = new Set();
+    try {
+        const rulesMap = await loadMarksheetRules();
+        const rules = rulesMap[cls] || rulesMap['All'] || {};
+        if (rules.alternativePairs && rules.alternativePairs.length > 0) {
+            const normSubject = normalizeText(subject).replace(/\s+/g, '');
+            const pair = rules.alternativePairs.find(p => 
+                normalizeText(p.sub1).replace(/\s+/g, '') === normSubject || 
+                normalizeText(p.sub2).replace(/\s+/g, '') === normSubject
+            );
+
+            if (pair) {
+                const partnerSub = normalizeText(pair.sub1).replace(/\s+/g, '') === normSubject ? pair.sub2 : pair.sub1;
+                const partnerExam = exams.find(e => 
+                    normalizeText(e.class || '') === normCls && 
+                    normalizeSession(e.session || '') === normSession &&
+                    e.name === examName && 
+                    e.subject === partnerSub
+                );
+
+                if (partnerExam && partnerExam.students) {
+                    partnerExam.students.forEach(s => {
+                        const hasMarks = (s.written !== null && s.written !== '' && s.written > 0) || 
+                                       (s.mcq !== null && s.mcq !== '' && s.mcq > 0) || 
+                                       (s.practical !== null && s.practical !== '' && s.practical > 0);
+                        if (hasMarks) {
+                            const sRoll = convertToEnglishDigits(String(s.id || '').trim().replace(/^0+/, '')) || '0';
+                            const sGroup = normalizeGroupName(s.group || '');
+                            excludedStudentIds.add(`${sRoll}_${sGroup}`);
+                        }
+                    });
+                }
+            }
+        }
+    } catch (e) {
+        console.warn('Error applying alternative subject filter:', e);
+    }
+
+    // --- AGGREGATION LOGIC (Unified for all Groups) ---
+    // We fetch the complete student list for this Class/Session. 
+    // We no longer filter by Group here to ensure we keep the master list intact when saving.
     const allStudentsList = await getUnifiedStudents();
     const studentsForClass = allStudentsList.filter(s => {
         const sCls = normalizeText(s.class || '');
         const sSess = normalizeSession(s.session || '');
-        const sGroup = normalizeText(s.group || '');
 
         const classMatch = sCls === normCls;
         const sessionMatch = sSess === normSession;
-        const groupMatch = normGroup === 'all' || sGroup === normGroup ||
-            (sGroup.includes(normGroup)) || (normGroup.includes(sGroup));
 
-        return classMatch && sessionMatch && groupMatch;
+        return classMatch && sessionMatch;
     });
 
     if (studentsForClass.length === 0) {
-        showNotification(`${cls} শ্রেণি, ${session} সেশনে কোনো শিক্ষার্থী পাওয়া যায়নি। আগে শিক্ষার্থী যোগ করুন।`, 'warning');
+        showNotification(`${cls} শ্রেণি, ${session} সেশনে কোনো শিক্ষার্থী পাওয়া যায়নি। আগে শিক্ষার্থী যোগ করুন।`, 'warning');
         return;
     }
 
     // Prepare master data structure for students
     const lookupMap = await getStudentLookupMap();
-    let mergedStudentData = studentsForClass.map(s => {
+    let mergedStudentData = studentsForClass
+        .filter(s => {
+            // Check status from registry first - if inactive, exclude
+            const studentKey = generateStudentDocId({
+                id: s.id,
+                group: s.group,
+                class: cls,
+                session: session
+            });
+            const registryInfo = lookupMap.get(studentKey);
+            if (registryInfo && registryInfo.status === false) return false;
+
+            const sRoll = convertToEnglishDigits(String(s.id || '').trim().replace(/^0+/, '')) || '0';
+            const sGroup = normalizeGroupName(s.group || '');
+            return !excludedStudentIds.has(`${sRoll}_${sGroup}`);
+        })
+        .map(s => {
         const studentKey = generateStudentDocId({
             id: s.id,
             group: s.group,
@@ -543,7 +584,13 @@ async function loadExamForEntry() {
 
         showExamInfo(currentExamDoc, currentExamDoc.studentCount);
         const config = getSubjectConfig(subject);
-        renderRETable(currentExamDoc.studentData, config);
+
+        // Filter students for display based on selected group
+        const displayStudents = currentExamDoc.studentData.filter(s => {
+            const sGroup = normalizeText(s.group || '');
+            return normGroup === 'all' || sGroup === normGroup || sGroup.includes(normGroup) || normGroup.includes(sGroup);
+        });
+        renderRETable(displayStudents, config);
     } else {
         // --- NEW EXAM ---
         isNewExam = true;
@@ -581,7 +628,13 @@ async function loadExamForEntry() {
 
         showExamInfo(currentExamDoc, currentExamDoc.studentCount, true);
         const config = getSubjectConfig(subject);
-        renderRETable(currentExamDoc.studentData, config);
+
+        // Filter students for display based on selected group
+        const displayStudents = currentExamDoc.studentData.filter(s => {
+            const sGroup = normalizeText(s.group || '');
+            return normGroup === 'all' || sGroup === normGroup || sGroup.includes(normGroup) || normGroup.includes(sGroup);
+        });
+        renderRETable(displayStudents, config);
     }
 
     // Show table, hide empty state
@@ -662,11 +715,24 @@ function showExamInfo(exam, count, isNew = false) {
  * Get subject config helper
  */
 function getSubjectConfig(subjectName) {
-    const found = state.subjectConfigs?.[subjectName];
+    let found = state.subjectConfigs?.[subjectName];
+    
+    // Fuzzy matching if exact match fails
+    if (!found) {
+        const normalizedCurrent = normalizeText(subjectName);
+        const matchedKey = Object.keys(state.subjectConfigs || {})
+            .find(key => key !== 'updatedAt' && normalizeText(key) === normalizedCurrent);
+        if (matchedKey) {
+            found = state.subjectConfigs[matchedKey];
+            console.log(`[RE Config] ⚡ Fuzzy matched "${subjectName}" with config key "${matchedKey}"`);
+        }
+    }
+
     if (found) {
         console.log(`[RE Config] ✅ Found config for "${subjectName}":`, JSON.stringify(found));
         return found;
     }
+
     console.warn(`[RE Config] ⚠️ No config found for "${subjectName}". Available keys:`, Object.keys(state.subjectConfigs || {}));
     return {
         total: 100, written: 100, writtenPass: 33, mcq: 0, mcqPass: 0, practical: 0, practicalPass: 0

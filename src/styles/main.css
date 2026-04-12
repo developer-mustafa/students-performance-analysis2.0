@@ -10833,19 +10833,27 @@ body.dark-mode .status-badge.absent {
 
 @media (max-width: 768px) {
   .marksheet-preview-area {
-    padding: 20px 0;
-    --ms-main-scale: 0.45;
-    overflow: hidden !important;
-    display: block !important;
+    padding: 15px 0 !important;
+    --ms-main-scale: 0.58;
+    overflow-x: auto !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    justify-content: flex-start !important;
+    -webkit-overflow-scrolling: touch;
+    scroll-behavior: smooth;
   }
 
   .marksheet-preview-area .ms-page {
     transform: scale(var(--ms-main-scale)) !important;
-    transform-origin: top left !important;
-    margin: 0 !important;
-    /* Mathematically center the scaled element: 50% of parent minus half of scaled width (210mm) */
-    margin-left: calc(50% - (210mm * var(--ms-main-scale)) / 2) !important;
-    margin-bottom: calc(-297mm * (1 - var(--ms-main-scale))) !important;
+    transform-origin: top center !important;
+    /* Shrink the box visually to match the scaled width */
+    margin-left: calc((210mm * (1 - var(--ms-main-scale))) / -2) !important;
+    margin-right: calc((210mm * (1 - var(--ms-main-scale))) / -2) !important;
+    /* Adjust height similarly */
+    margin-bottom: calc(-297mm * (1 - var(--ms-main-scale)) + 20px) !important;
+    flex-shrink: 0;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.3) !important;
   }
 
   .marksheet-main-preview-header .zoom-control span {

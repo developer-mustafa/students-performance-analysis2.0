@@ -123,6 +123,9 @@ export async function generateReport() {
 
     const rawAllStudents = await getUnifiedStudents();
     const masterStudents = rawAllStudents.filter(s => {
+        // Exclude inactive students
+        if (s.status === false) return false;
+
         const sCls = normalizeText(s.class || s.currentClass || '');
         const sSes = normalizeText(s.session || s.academicSession || '');
         const classMatch = sCls === clsNorm || sCls.includes(clsNorm) || clsNorm.includes(sCls);

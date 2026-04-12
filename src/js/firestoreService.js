@@ -410,11 +410,14 @@ export async function getAllExams() {
  */
 export async function saveExam(examData) {
     try {
-        // Create a unique ID based on exam name and subject
-        // Sanitize to be safe for Firestore ID (replace non-alphanumeric with _)
-        const safeName = (examData.name || 'exam').trim().replace(/[\/\s\.]/g, '_');
-        const safeSubject = (examData.subject || 'subject').trim().replace(/[\/\s\.]/g, '_');
-        const docId = `${safeName}_${safeSubject}`;
+        // Create a unique ID based on Class, Session, Exam Name and Subject
+        // Standardizes the ID: CLASS_SESSION_EXAMNAME_SUBJECT
+        const sCls = normalizeText(examData.class || 'class');
+        const sSess = normalizeText(examData.session || 'session');
+        const sName = (examData.name || 'exam').trim().replace(/[\/\s\.]/g, '_');
+        const sSubject = (examData.subject || 'subject').trim().replace(/[\/\s\.]/g, '_');
+        
+        const docId = `EXAM_${sCls}_${sSess}_${sName}_${sSubject}`.toUpperCase();
         const docRef = doc(db, COLLECTIONS.exams, docId);
         await setDoc(docRef, {
             ...examData,

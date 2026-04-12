@@ -153,6 +153,20 @@ export const populateMarksheetSettingsDropdowns = async (targetCls = null) => {
             }
         }
     });
+
+    // Populate Alternative Subject Dropdowns
+    ['msSetAltSubject1', 'msSetAltSubject2'].forEach(id => {
+        const sel = document.getElementById(id);
+        if (sel) {
+            const currentVal = sel.value;
+            const subHtml = [`<option value="">বিষয় নির্বাচন করুন</option>`];
+            allUniqueSubjects.forEach(s => subHtml.push(`<option value="${s}">${s}</option>`));
+            sel.innerHTML = subHtml.join('');
+            if (currentVal && allUniqueSubjects.includes(currentVal)) {
+                sel.value = currentVal;
+            }
+        }
+    });
 };
 
 // Helper to get current class rules
@@ -163,7 +177,8 @@ const getClassRules = (cls) => {
             combinedSubjects: [],
             optionalSubjects: {},
             generalSubjects: [],
-            groupSubjects: {}
+            groupSubjects: {},
+            alternativePairs: []
         };
     }
     // Ensure all properties exist for backward compatibility
@@ -171,6 +186,7 @@ const getClassRules = (cls) => {
     if (!currentMarksheetRules[cls].groupSubjects) currentMarksheetRules[cls].groupSubjects = {};
     if (!currentMarksheetRules[cls].optionalSubjects) currentMarksheetRules[cls].optionalSubjects = {};
     if (!currentMarksheetRules[cls].combinedSubjects) currentMarksheetRules[cls].combinedSubjects = [];
+    if (!currentMarksheetRules[cls].alternativePairs) currentMarksheetRules[cls].alternativePairs = [];
 
     return currentMarksheetRules[cls];
 };
@@ -194,6 +210,7 @@ export const refreshMarksheetRulesUI = () => {
     renderGroupSubList(groupSubList, rules.groupSubjects);
     renderOptionalList(optList, rules.optionalSubjects);
     renderCombinedList(combList, rules.combinedSubjects);
+    renderAlternativeList(document.getElementById('msSetAltList'), rules.alternativePairs);
 };
 
 export async function initMarksheetRulesManager() {
@@ -417,6 +434,57 @@ export async function initMarksheetRulesManager() {
             );
         }
     });
+
+    // Add Alternative Pair
+    const altAddBtn = document.getElementById('msSetAltAddBtn');
+    const altSub1 = document.getElementById('msSetAltSubject1');
+    const altSub2 = document.getElementById('msSetAltSubject2');
+    const altListCont = document.getElementById('msSetAltList');
+
+    if (altAddBtn) {
+        altAddBtn.addEventListener('click', async () => {
+            const s1 = altSub1.value;
+            const s2 = altSub2.value;
+
+            if (!s1 || !s2) return showNotification('উভয় বিষয় নির্বাচন করুন', 'warning');
+            if (s1 === s2) return showNotification('একই বিষয় দুবার হতে পারে না', 'warning');
+
+            const rules = getClassRules(selectedClass);
+            const exists = rules.alternativePairs.some(p => (p.sub1 === s1 && p.sub2 === s2) || (p.sub1 === s2 && p.sub2 === s1));
+
+            if (!exists) {
+                rules.alternativePairs.push({ sub1: s1, sub2: s2 });
+                await saveMarksheetRules({ [selectedClass]: rules });
+                renderAlternativeList(altListCont, rules.alternativePairs);
+                showNotification('বিকল্প বিষয় জোড়া যোগ করা হয়েছে');
+            } else {
+                showNotification('এই জোড়া আগে যোগ করা হয়েছে', 'warning');
+            }
+        });
+    }
+
+    if (altListCont) {
+        altListCont.addEventListener('click', (e) => {
+            const delBtn = e.target.closest('.delete-alt-btn');
+            if (delBtn) {
+                const index = delBtn.dataset.index;
+                const rules = getClassRules(selectedClass);
+                const pair = rules.alternativePairs[index];
+
+                showConfirmModal(
+                    `আপনি কি নিশ্চিতভাবে এই বিকল্প জোড়াটি মুছে ফেলতে চান?`,
+                    async () => {
+                        rules.alternativePairs.splice(index, 1);
+                        await saveMarksheetRules({ [selectedClass]: rules });
+                        renderAlternativeList(altListCont, rules.alternativePairs);
+                        showNotification('জোড়াটি মুছে ফেলা হয়েছে', 'success');
+                    },
+                    `${pair.sub1} ↔ ${pair.sub2}`,
+                    'বিকল্প বিষয় জোড়া'
+                );
+            }
+        });
+    }
 }
 
 function renderGeneralList(container, list) {
@@ -478,6 +546,21 @@ function renderCombinedList(container, combinedSubjects) {
                 <div class="ms-settings-mapping-subtext">${rule.paper1} + ${rule.paper2}</div>
             </div>
             <button class="btn-danger delete-comb-btn" data-index="${idx}" style="padding: 5px 10px;"><i class="fas fa-trash"></i></button>
+        </div>
+    `).join('');
+}
+
+function renderAlternativeList(container, list) {
+    if (!container) return;
+    if (!list || list.length === 0) return container.innerHTML = '<p style="color: #888; text-align: center;">কোনো জোড়া নেই</p>';
+
+    container.innerHTML = list.map((p, i) => `
+        <div class="ms-settings-item" style="border-left: 3px solid #9c27b0;">
+            <div style="flex: 1;">
+                <div style="font-size: 0.85rem; font-weight: bold;">${p.sub1}</div>
+                <div style="font-size: 0.7rem; color: #777;">বিকল্প: ${p.sub2}</div>
+            </div>
+            <button class="btn-danger delete-alt-btn" data-index="${i}" style="padding: 2px 8px;"><i class="fas fa-times"></i></button>
         </div>
     `).join('');
 }

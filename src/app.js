@@ -569,6 +569,10 @@ function renderSavedExams() {
             elements.editExamClass.value = exam.class || '';
             elements.editExamSession.value = exam.session || '';
 
+            // Fix: Dynamically import required functions to prevent "is not defined" ReferenceErrors
+            const { populateExamNameDropdown } = await import('./js/modules/examConfigManager.js');
+            const { populateSubjectDropdown } = await import('./js/modules/classMappingManager.js');
+
             // Populate exam names based on class & session
             await populateExamNameDropdown(elements.editExamName, exam.class, exam.session);
             elements.editExamName.value = exam.name;
