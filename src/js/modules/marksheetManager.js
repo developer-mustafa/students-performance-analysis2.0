@@ -593,9 +593,14 @@ async function generateMarksheets() {
         console.error("QR rendering failed in main flow:", qrErr);
     }
 
-    // Show bulk print button
+    // Show bulk print buttons
     const bulkBtn = document.getElementById('msPrintAllBtn');
+    const presentBtn = document.getElementById('msPrintPresentBtn');
+    const absentBtn = document.getElementById('msPrintAbsentBtn');
+    
     if (bulkBtn) bulkBtn.style.display = 'inline-flex';
+    if (presentBtn) presentBtn.style.display = 'inline-flex';
+    if (absentBtn) absentBtn.style.display = 'inline-flex';
 
     showNotification(`${displayItems.length} জন শিক্ষার্থীর মার্কশীট তৈরি হয়েছে ✅`);
 
@@ -1268,8 +1273,19 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
         return `<div class="${className}" style="margin: 0; padding: 0; display: inline-block;">${content.trim()}</div>`;
     }
 
+    // Determine if student is absent (no marks in any subject)
+    const hasAnyMarks = Object.values(student.subjects || {}).some(data =>
+        ((data.written || 0) > 0 || (data.mcq || 0) > 0 || (data.practical || 0) > 0 || (data.total || 0) > 0)
+    );
+    const isAbsentMark = !hasAnyMarks;
+
     return `
-        <div class="ms-page font-${ms.fontSize || 'medium'} theme-${ms.theme || 'classic'} border-${ms.borderStyle || 'double'} typography-${ms.typography || 'default'} density-${ms.rowDensity || 'normal'}" id="ms_page_${student.id}_${student.group}" style="--ms-primary: ${ms.primaryColor || '#4361ee'};">
+        <div class="ms-page font-${ms.fontSize || 'medium'} theme-${ms.theme || 'classic'} border-${ms.borderStyle || 'double'} typography-${ms.typography || 'default'} density-${ms.rowDensity || 'normal'}" 
+             id="ms_page_${student.id}_${student.group}" 
+             data-student-id="${student.id}"
+             data-student-group="${student.group}"
+             data-is-absent="${isAbsentMark}"
+             style="--ms-primary: ${ms.primaryColor || '#4361ee'};">
             
             <div class="ms-actions-float no-print">
                 <button class="ms-btn-action ms-btn-print-single" onclick="window.printSingleMarksheet('ms_page_${student.id}_${student.group}')">
@@ -2124,19 +2140,31 @@ window.printSingleMarksheet = function (containerId) {
 };
 
 /**
- * Bulk Print - Opens an isolated print window with all marksheets
+ * Bulk Print - Opens an isolated print window with all or filtered marksheets
+ * @param {string} filter - 'all', 'absent', or 'present'
  */
-function bulkPrint() {
+function bulkPrint(filter = 'all') {
     const previewArea = document.getElementById('marksheetPreview');
     if (!previewArea) return;
 
-    const allPages = previewArea.querySelectorAll('.ms-page');
+    let allPages = Array.from(previewArea.querySelectorAll('.ms-page'));
+    
+    // Filter logic
+    if (filter === 'absent') {
+        allPages = allPages.filter(p => p.getAttribute('data-is-absent') === 'true');
+    } else if (filter === 'present') {
+        allPages = allPages.filter(p => p.getAttribute('data-is-absent') === 'false');
+    }
+
     if (allPages.length === 0) {
-        showNotification('প্রিন্ট করার জন্য কোনো মার্কশীট নেই', 'error');
+        const msg = filter === 'absent' ? 'কোনো অনুপস্থিত শিক্ষার্থীর মার্কশীট নেই' : 
+                    filter === 'present' ? 'কোনো উপস্থিত শিক্ষার্থীর মার্কশীট নেই' : 
+                    'প্রিন্ট করার জন্য কোনো মার্কশীট নেই';
+        showNotification(msg, 'error');
         return;
     }
 
-    const marksheetHtmlArray = Array.from(allPages).map(p => p.outerHTML);
+    const marksheetHtmlArray = allPages.map(p => p.outerHTML);
     const htmlContent = buildMarksheetPrintDocument(marksheetHtmlArray);
     const printWindow = window.open('', '_blank', 'width=900,height=700');
     if (!printWindow) {
@@ -2156,9 +2184,20 @@ export async function initMarksheetManager() {
         generateBtn.addEventListener('click', generateMarksheets);
     }
 
+    // Print Buttons
     const printAllBtn = document.getElementById('msPrintAllBtn');
     if (printAllBtn) {
-        printAllBtn.addEventListener('click', bulkPrint);
+        printAllBtn.onclick = () => bulkPrint('all');
+    }
+
+    const printPresentBtn = document.getElementById('msPrintPresentBtn');
+    if (printPresentBtn) {
+        printPresentBtn.onclick = () => bulkPrint('present');
+    }
+
+    const printAbsentBtn = document.getElementById('msPrintAbsentBtn');
+    if (printAbsentBtn) {
+        printAbsentBtn.onclick = () => bulkPrint('absent');
     }
 
     const resetBtn = document.getElementById('msResetBtn');
