@@ -12485,8 +12485,8 @@ body.is-super-admin td.admin-only {
 .ms-exam-summary-tbl {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.62rem;
-  line-height: 1.2;
+  font-size: 0.75rem;
+  line-height: 1.4;
   border: 1.5px solid #94a3b8;
   border-radius: 4px;
   overflow: hidden;
@@ -12495,11 +12495,11 @@ body.is-super-admin td.admin-only {
 .ms-exam-summary-tbl caption {
   caption-side: top;
   text-align: center;
-  font-size: 0.66rem;
+  font-size: 0.82rem;
   font-weight: 700;
   color: #1e3a5f;
-  padding: 3px 0 2px;
-  letter-spacing: 0.3px;
+  padding: 5px 0 4px;
+  letter-spacing: 0.5px;
   background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
   border: 1.5px solid #94a3b8;
   border-bottom: none;
@@ -12513,19 +12513,19 @@ body.is-super-admin td.admin-only {
 .ms-exam-summary-tbl thead th {
   color: #ffffff !important;
   font-weight: 700;
-  font-size: 0.58rem;
-  padding: 3px 4px;
+  font-size: 0.72rem;
+  padding: 6px 4px;
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.2);
   white-space: nowrap;
-  letter-spacing: 0.2px;
+  letter-spacing: 0.3px;
   -webkit-print-color-adjust: exact !important;
   print-color-adjust: exact !important;
 }
 
 .ms-exam-summary-tbl tbody td,
 .ms-exam-summary-tbl tfoot td {
-  padding: 2.5px 4px;
+  padding: 5px 6px;
   text-align: center;
   border: 1px solid #d1d5db;
   font-weight: 600;
@@ -12555,7 +12555,7 @@ body.is-super-admin td.admin-only {
 .ms-exam-summary-tbl tfoot td {
   font-weight: 800 !important;
   color: #1e3a5f !important;
-  font-size: 0.6rem;
+  font-size: 0.72rem;
 }
 
 .ms-exam-summary-tbl tfoot td:first-child {

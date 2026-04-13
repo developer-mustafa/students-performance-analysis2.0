@@ -21,6 +21,7 @@ import {
 } from './utils.js';
 import { FAILING_THRESHOLD, MAX_CHART_ENTRIES, MAX_TABLE_ENTRIES, GROUP_NAMES } from './constants.js';
 import { captureElementAsImage } from './dataService.js';
+import { generateStudentDocId } from './firestoreService.js';
 
 /**
  * Render skeleton loading states
@@ -1229,7 +1230,8 @@ export function renderSavedExamsList(container, exams, options = {}) {
     onPageChange = null,
     onFilterChange = null,
     onSessionFilterChange = null,
-    subjectConfigs = {}
+    subjectConfigs = {},
+    studentLookupMap = null
   } = options;
 
   // Render count and filters
@@ -1273,9 +1275,24 @@ export function renderSavedExamsList(container, exams, options = {}) {
     const date = exam.date || (exam.createdAt?.toDate ? formatDateBengali(exam.createdAt.toDate()) : 'N/A');
 
     // Dynamically recalculate stats based on CURRENT config for better sync
+    // Filter out disabled/inactive students from the count
     const config = (subjectConfigs && subjectConfigs[exam.subject]) || {};
-    const dynamicStats = (exam.studentData && exam.studentData.length > 0)
-      ? calculateStatistics(exam.studentData, {
+    let activeStudentData = exam.studentData || [];
+    if (studentLookupMap && activeStudentData.length > 0) {
+      activeStudentData = activeStudentData.filter(s => {
+        const studentKey = generateStudentDocId({
+          id: s.id,
+          group: s.group || '',
+          class: exam.class || '',
+          session: exam.session || ''
+        });
+        const lookupEntry = studentLookupMap.get(studentKey);
+        // Exclude only if explicitly disabled (status === false)
+        return !(lookupEntry && lookupEntry.status === false);
+      });
+    }
+    const dynamicStats = (activeStudentData.length > 0)
+      ? calculateStatistics(activeStudentData, {
         writtenPass: (config.writtenPass !== undefined && config.writtenPass !== '') ? Number(config.writtenPass) : undefined,
         mcqPass: (config.mcqPass !== undefined && config.mcqPass !== '') ? Number(config.mcqPass) : undefined,
         practicalPass: (config.practicalPass !== undefined && config.practicalPass !== '') ? Number(config.practicalPass) : 0,

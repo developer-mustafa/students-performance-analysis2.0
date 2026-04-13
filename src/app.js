@@ -39,7 +39,7 @@ import {
     loadThemePreference, saveThemePreference, captureElementAsImage
 } from './js/dataService.js';
 import { getChartTitle } from './js/chartModule.js';
-import { getSavedExams, subscribeToSettings, getSettings, subscribeToSubjectConfigs, getSubjectConfigs } from './js/firestoreService.js';
+import { getSavedExams, subscribeToSettings, getSettings, subscribeToSubjectConfigs, getSubjectConfigs, getStudentLookupMap } from './js/firestoreService.js';
 
 
 import { initPageRouter, updateNavVisibility } from './js/modules/pageRouter.js';
@@ -93,6 +93,40 @@ function recalculateStudentData(studentData, subjectName) {
     return studentData;
 }
 
+/**
+ * Filter out disabled/inactive students from exam data.
+ * Uses the student lookup map to check status.
+ * @param {Array} studentData - Array of student data from an exam
+ * @param {string} examClass - The class of the exam
+ * @param {string} examSession - The session of the exam
+ * @returns {Promise<Array>} - Filtered student data (only active students)
+ */
+async function filterActiveStudents(studentData, examClass, examSession) {
+    if (!studentData || studentData.length === 0) return studentData;
+    try {
+        if (!state._studentLookupMap) {
+            state._studentLookupMap = await getStudentLookupMap();
+        }
+        const lookupMap = state._studentLookupMap;
+        if (!lookupMap || lookupMap.size === 0) return studentData;
+
+        const { generateStudentDocId } = await import('./js/firestoreService.js');
+        return studentData.filter(s => {
+            const key = generateStudentDocId({
+                id: s.id,
+                group: s.group || '',
+                class: examClass || '',
+                session: examSession || ''
+            });
+            const entry = lookupMap.get(key);
+            return !(entry && entry.status === false);
+        });
+    } catch (e) {
+        console.warn('filterActiveStudents failed, returning unfiltered:', e);
+        return studentData;
+    }
+}
+
 async function init() {
     // Prevent multiple initializations from HMR if already initialized
     if (state.isInitialized && state.onDataUpdateUnsubscribe) {
@@ -139,6 +173,7 @@ async function init() {
             const loadedExam = exams.find(e => e.docId === loadedExamId);
             if (loadedExam) {
                 state.studentData = recalculateStudentData(loadedExam.studentData || [], loadedExam.subject);
+                state.studentData = await filterActiveStudents(state.studentData, loadedExam.class, loadedExam.session);
                 state.currentExamName = loadedExam.name;
                 state.currentSubject = loadedExam.subject;
                 state.currentExamSession = loadedExam.session;
@@ -158,6 +193,7 @@ async function init() {
             const defaultExam = exams.find(e => e.docId === state.defaultExamId);
             if (defaultExam) {
                 state.studentData = recalculateStudentData(defaultExam.studentData || [], defaultExam.subject);
+                state.studentData = await filterActiveStudents(state.studentData, defaultExam.class, defaultExam.session);
                 state.currentExamName = defaultExam.name;
                 state.currentSubject = defaultExam.subject;
                 state.currentExamSession = defaultExam.session;
@@ -237,6 +273,10 @@ async function init() {
                     const pinnedExam = state.savedExams.find(e => e.docId === state.defaultExamId);
                     if (pinnedExam) {
                         state.studentData = recalculateStudentData(pinnedExam.studentData || [], pinnedExam.subject);
+                        filterActiveStudents(state.studentData, pinnedExam.class, pinnedExam.session).then(filtered => {
+                            state.studentData = filtered;
+                            updateViews();
+                        });
                         state.currentExamName = pinnedExam.name;
                         state.currentSubject = pinnedExam.subject;
                         state.currentExamSession = pinnedExam.session;
@@ -322,8 +362,10 @@ async function init() {
             }
             if (pageId === 'marksheet-settings') {
                 const { initMarksheetRulesManager, populateMarksheetSettingsDropdowns } = await import('./js/modules/marksheetRulesManager.js');
+                const { initStudentMappingUI } = await import('./js/modules/marksheetManager.js');
                 if (!initializedModules.has('marksheet-rules')) {
                     initMarksheetRulesManager();
+                    initStudentMappingUI();
                     initializedModules.add('marksheet-rules');
                 }
                 await populateMarksheetSettingsDropdowns();
@@ -390,6 +432,7 @@ async function init() {
                 const updatedExam = state.savedExams.find(e => e.docId === loadedExamId);
                 if (updatedExam) {
                     state.studentData = updatedExam.studentData || [];
+                    state.studentData = await filterActiveStudents(state.studentData, updatedExam.class, updatedExam.session);
                     updateViews();
                 }
             }
@@ -508,7 +551,17 @@ function updateViews() {
 }
 
 function renderSavedExams() {
-    renderSavedExamsList(elements.savedExamsList, state.savedExams, {
+    // Load the student lookup map for disabled student filtering
+    const doRender = async () => {
+      if (!state._studentLookupMap) {
+        try {
+          state._studentLookupMap = await getStudentLookupMap();
+        } catch (e) {
+          console.warn('Failed to load student lookup map for exam cards:', e);
+          state._studentLookupMap = new Map();
+        }
+      }
+      renderSavedExamsList(elements.savedExamsList, state.savedExams, {
         currentPage: state.savedExamsCurrentPage,
         perPage: state.savedExamsPerPage,
         currentExamId: state.defaultExamId,
@@ -517,6 +570,7 @@ function renderSavedExams() {
         sessionFilter: state.savedExamsSessionFilter,
         paginationContainer: elements.savedExamsPagination,
         subjectConfigs: state.subjectConfigs,
+        studentLookupMap: state._studentLookupMap,
         onPageChange: (page) => {
             state.savedExamsCurrentPage = page;
             renderSavedExams();
@@ -597,6 +651,8 @@ function renderSavedExams() {
             );
         }
     });
+    };
+    doRender();
 }
 
 function initEventListeners() {
@@ -1417,6 +1473,11 @@ function initEventListeners() {
 
         if (exam) {
             state.studentData = recalculateStudentData(exam.studentData || [], exam.subject);
+            filterActiveStudents(state.studentData, exam.class, exam.session).then(filtered => {
+                state.studentData = filtered;
+                updateViews();
+                renderSavedExams();
+            });
             state.currentExamName = exam.name;
             state.currentSubject = exam.subject;
             state.currentExamSession = exam.session;

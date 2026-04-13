@@ -1183,30 +1183,86 @@
             </div>
           </div>
 
-          <!-- Alternative Subjects Card (Electives) -->
-          <div class="card ms-settings-card">
-            <div class="card-header" style="background: rgba(156, 39, 176, 0.1);">
-              <h4 style="margin:0; font-size: 1rem;"><i class="fas fa-exchange-alt"></i> বিকল্প বিষয় (Alternative Subjects)</h4>
-            </div>
-            <div class="card-body">
-              <p style="font-size: 0.75rem; color: #666; margin-bottom: 10px;">যেকোনো ২টি বিষয় সেট করুন যার মধ্যে একটি থাকলে অন্যটি শো করবে না।</p>
-              <div class="form-group" style="margin-bottom: 10px;">
-                <label style="font-size: 0.7rem;">বিষয়-১ (Subject 1)</label>
-                <select id="msSetAltSubject1" class="form-control"></select>
+          <!-- Grouped 2-Column Responsive Layout -->
+          <div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+            
+            <!-- Alternative Subjects Card (Electives) -->
+            <div class="card ms-settings-card">
+              <div class="card-header" style="background: rgba(156, 39, 176, 0.1);">
+                <h4 style="margin:0; font-size: 1rem;"><i class="fas fa-exchange-alt"></i> বিকল্প বিষয় (Alternative Subjects)</h4>
               </div>
-              <div class="input-group" style="display:flex; gap: 8px; margin-bottom: 15px; flex-direction: column;">
-                <label style="font-size: 0.7rem;">বিষয়-২ (Subject 2)</label>
-                <div style="display: flex; gap: 8px; width: 100%;">
-                    <select id="msSetAltSubject2" class="form-control" style="flex:1;"></select>
-                    <button id="msSetAltAddBtn" class="dm-btn dm-save"><i class="fas fa-plus"></i></button>
+              <div class="card-body">
+                <p style="font-size: 0.75rem; color: #666; margin-bottom: 10px;">যেকোনো ২টি বিষয় সেট করুন যার মধ্যে একটি থাকলে অন্যটি শো করবে না।</p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; align-items: start;">
+                  <!-- Left side: Inputs -->
+                  <div>
+                    <div class="form-group" style="margin-bottom: 10px;">
+                      <label style="font-size: 0.7rem;">বিষয়-১ (Subject 1)</label>
+                      <select id="msSetAltSubject1" class="form-control"></select>
+                    </div>
+                    <div class="input-group" style="display:flex; gap: 8px; margin-bottom: 15px; flex-direction: column;">
+                      <label style="font-size: 0.7rem;">বিষয়-২ (Subject 2)</label>
+                      <div style="display: flex; gap: 8px; width: 100%;">
+                          <select id="msSetAltSubject2" class="form-control" style="flex:1;"></select>
+                          <button id="msSetAltAddBtn" class="dm-btn dm-save"><i class="fas fa-plus"></i></button>
+                      </div>
+                    </div>
+                  </div>
+                  <!-- Right side: List -->
+                  <div id="msSetAltList" class="ms-settings-list" style="max-height: 250px; overflow-y: auto;"></div>
                 </div>
               </div>
-              <div id="msSetAltList" class="ms-settings-list" style="max-height: 200px; overflow-y: auto;"></div>
             </div>
+
+            <!-- Student-wise Subject Mapping Card (NEW) -->
+            <div class="card ms-settings-card" id="msSubjectMappingPanel">
+              <div class="card-header" style="background: rgba(var(--primary-rgb), 0.1); border-left: 4px solid var(--primary-color);">
+                <h4 style="margin:0; font-size: 1rem;"><i class="fas fa-user-tag"></i> নির্ধারিত বিষয় ম্যাপিং (Student Core Subjects)</h4>
+              </div>
+              <div class="card-body">
+                <p style="font-size: 0.75rem; color: #666; margin-bottom: 12px;">নির্দিষ্ট রোলের জন্য কোনো বিষয় নির্ধারিত থাকলে এখানে সেট করুন।</p>
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; align-items: start;">
+                  <!-- Left side: Inputs -->
+                  <div>
+                    <div class="form-group mb-2">
+                      <label style="font-size: 0.7rem;">বিষয় নির্বাচন করুন</label>
+                      <select id="msMapSubject" class="form-control"></select>
+                    </div>
+                    
+                    <div class="row g-2 mb-3">
+                      <div class="col-6">
+                        <label style="font-size: 0.7rem;">গ্রুপ</label>
+                        <select id="msMapGroup" class="form-control">
+                          <option value="বিজ্ঞান গ্রুপ">বিজ্ঞান</option>
+                          <option value="ব্যবসায় গ্রুপ">ব্যবসায়</option>
+                          <option value="মানবিক গ্রুপ">মানবিক</option>
+                        </select>
+                      </div>
+                      <div class="col-6">
+                        <label style="font-size: 0.7rem;">রোল (উদা: 9, 12, 15)</label>
+                        <input type="text" id="msMapRolls" class="form-control" placeholder="রোল লিখুন">
+                      </div>
+                    </div>
+
+                    <button id="msMapAddBtn" class="dm-btn dm-save" style="width: 100%; justify-content: center;">
+                      <i class="fas fa-plus-circle"></i> ম্যাপিং যোগ করুন
+                    </button>
+                  </div>
+
+                  <!-- Right side: List -->
+                  <div>
+                    <div id="msMappingList" class="ms-settings-list" style="max-height: 250px; overflow-y: auto;">
+                      <!-- Mapping items will be loaded here -->
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
           </div>
 
           <!-- Paper Mapping Card -->
-          <div class="card ms-settings-card" style="grid-column: 2 / -1;">
+          <div class="card ms-settings-card" style="grid-column: 1 / -1;">
             <div class="card-header" style="background: rgba(33, 150, 243, 0.1);">
               <h4 style="margin:0; font-size: 1rem;"><i class="fas fa-link"></i> উভয় পত্র ম্যাপিং (Combined Paper
                 Mapping)</h4>

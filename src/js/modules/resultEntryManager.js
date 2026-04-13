@@ -511,8 +511,37 @@ async function loadExamForEntry() {
             const registryInfo = lookupMap.get(studentKey);
             if (registryInfo && registryInfo.status === false) return false;
 
-            const sRoll = convertToEnglishDigits(String(s.id || '').trim().replace(/^0+/, '')) || '0';
+            const sRoll = convertToEnglishDigits(String(s.id || s.roll || '').trim().replace(/^0+/, '')) || '0';
             const sGroup = normalizeGroupName(s.group || '');
+
+            // --- SUBJECT MAPPING FILTER (PRO) ---
+            const msSettings = JSON.parse(localStorage.getItem('pa_marksheet_settings') || '{}');
+            const allMappings = msSettings.subjectMapping || [];
+            
+            const cleanSub = (txt) => normalizeText(txt).replace(/\[.*?\]/g, '').replace(/\s+/g, '').trim();
+            const currentSubClean = cleanSub(subject);
+
+            // 1. Inclusion Logic: If THIS subject has a map, check if student is in it
+            const thisSubMap = allMappings.find(m => cleanSub(m.subject) === currentSubClean && normalizeGroupName(m.group) === sGroup);
+            const inThisSubMap = thisSubMap && (thisSubMap.rolls || []).map(r => String(r).replace(/^0+/, '').trim()).includes(String(sRoll));
+
+            if (thisSubMap && !inThisSubMap) return false; // Explicitly excluded from this subject
+
+            // 2. Proactive Exclusion: If student belongs to ANOTHER elective map and NOT this one, hide them
+            // This handles choices like Geography vs Economics, while allowing overlaps like Paper 1 + 2
+            const belongsToOtherElectiveMap = allMappings.some(m => {
+                const mapSubClean = cleanSub(m.subject);
+                const mapGroupNorm = normalizeGroupName(m.group);
+                if (mapGroupNorm !== sGroup) return false; // Different group context
+                if (mapSubClean === currentSubClean) return false; // Same subject
+                if (inThisSubMap) return false; // If they ARE mapped to this sub, don't exclude them
+                
+                // Finally, check if roll exists in this OTHER map
+                return (m.rolls || []).map(r => String(r).replace(/^0+/, '').trim()).includes(String(sRoll));
+            });
+
+            if (belongsToOtherElectiveMap) return false;
+
             return !excludedStudentIds.has(`${sRoll}_${sGroup}`);
         })
         .map(s => {
@@ -588,7 +617,10 @@ async function loadExamForEntry() {
         // Filter students for display based on selected group
         const displayStudents = currentExamDoc.studentData.filter(s => {
             const sGroup = normalizeText(s.group || '');
-            return normGroup === 'all' || sGroup === normGroup || sGroup.includes(normGroup) || normGroup.includes(sGroup);
+            const gText = normGroup === 'all' ? 'all' : normGroup.replace('গ্রুপ', '').replace('বিভাগ', '').trim();
+            const sText = sGroup.replace('গ্রুপ', '').replace('বিভাগ', '').trim();
+            
+            return normGroup === 'all' || sGroup === normGroup || sText === gText || sGroup.includes(gText) || normGroup.includes(sText);
         });
         renderRETable(displayStudents, config);
     } else {

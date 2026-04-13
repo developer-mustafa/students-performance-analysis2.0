@@ -10,12 +10,13 @@ import {
     getExamConfigs, 
     getSettings,
     getStudentLookupMap,
-    generateStudentDocId 
+    generateStudentDocId,
+    getSubjectConfigs
 } from '../firestoreService.js';
 import { state } from './state.js';
 import QRCode from 'qrcode';
 import html2canvas from 'html2canvas';
-import { showNotification, convertToEnglishDigits } from '../utils.js';
+import { showNotification, convertToEnglishDigits, normalizeText } from '../utils.js';
 import {
     renderSingleMarksheet,
     applyCombinedPaperLogic,
@@ -145,25 +146,55 @@ export function generateShortHash(str) {
 
 /**
  * Generate a unique student ID for public result lookup
- * Format: [First3_NameChars_English]-R[Roll]-[6_Digit_Hash] (e.g., MOH-R05-A7B2C9)
+ * NEW Format: MMMC-[Year]-[GroupCode]-[Roll] (e.g., MMMC-2026-S-105)
  * 
  * @param {string} name - Student name
- * @param {string} cls - Class
- * @param {string} session - Session
+ * @param {string} cls - Class (used for legacy / hash)
+ * @param {string} session - Session or Year
  * @param {string|number} roll - Roll number
  * @param {string} group - Group name
- * @returns {string} - Professional Unique ID string
+ * @returns {string} - Modern Unique ID string
  */
 export function generateStudentUniqueId(name, cls, session, roll, group) {
+    // 1. Prefix
+    const prefix = "MMMC";
+
+    // 2. Year: The year after the student's session (e.g., "2024-2025" -> 2026)
+    // This typically represents the HSC exam year and ensures the ID is permanent.
+    const sessionEng = convertToEnglishDigits(String(session || ''));
+    const yearMatches = sessionEng.match(/\d{4}/g);
+    const sessionLastYear = yearMatches ? parseInt(yearMatches.pop()) : new Date().getFullYear();
+    const year = sessionLastYear + 1;
+
+    // 3. Group Code
+    const gOrignial = String(group || '').toLowerCase();
+    const g = transliterateBangla(gOrignial).toLowerCase();
+    
+    let groupCode = 'G'; // General/Default
+    if (g.includes('sci') || gOrignial.includes('বিজ্ঞা')) {
+        groupCode = 'S';
+    } else if (g.includes('com') || g.includes('bus') || gOrignial.includes('ব্যবসায়')) {
+        groupCode = 'C';
+    } else if (g.includes('art') || g.includes('hum') || gOrignial.includes('মানবি')) {
+        groupCode = 'A';
+    }
+
+    // 4. Roll: Clean roll number (English digits only)
+    const rollPart = convertToEnglishDigits(String(roll || '').trim()).replace(/\D/g, '');
+
+    return `${prefix}-${year}-${groupCode}-${rollPart}`;
+}
+
+/**
+ * LEGACY ID GENERATOR (Internal use for backward compatibility)
+ * Format: [NAME]-R[ROLL]-[HASH]
+ */
+function generateLegacyStudentUniqueId(name, cls, session, roll, group) {
     const first3 = extractBengaliChars(name, 3, false);
     const namePrefix = transliterateBangla(first3).toUpperCase().padEnd(3, 'X').substring(0, 3);
-
     const rollPart = convertToEnglishDigits(String(roll || '').replace(/\s+/g, '')).padStart(2, '0');
-
-    // Hash the exact inputs
     const rawString = `${name}|${cls}|${session}|${roll}|${group}`;
     const hash = generateShortHash(rawString);
-
     return `${namePrefix}-R${rollPart}-${hash}`;
 }
 
@@ -203,10 +234,18 @@ async function searchByUniqueId(searchId, filters = {}) {
                 s.group || ''
             );
 
+            const legacyUid = generateLegacyStudentUniqueId(
+                s.name,
+                exam.class || s.class || '',
+                exam.session || s.session || '',
+                s.id,
+                s.group || ''
+            );
+
             // Match logic:
-            // 1. Exact Unique ID match (Always highest priority)
+            // 1. Exact Unique ID match (Check Modern then Legacy)
             // 2. Roll match (s.id) + Class + Session (If filters provided)
-            let isMatch = (uid === normalizedSearch);
+            let isMatch = (uid === normalizedSearch || legacyUid === normalizedSearch);
             
             if (!isMatch && selClass && selSession) {
                 const roll = convertToEnglishDigits(String(s.id || '').trim());
@@ -311,7 +350,8 @@ async function displayStudentMarksheet(studentResult) {
         if (exam.studentData) {
             const s = exam.studentData.find(st => String(st.id) === String(id) && (st.group || '') === group);
             if (s) {
-                studentAgg.subjects[exam.subject] = {
+                const subjKey = normalizeText(exam.subject).replace(/\s+/g, '') || exam.subject;
+                studentAgg.subjects[subjKey] = {
                     written: s.written || 0,
                     mcq: s.mcq || 0,
                     practical: s.practical || 0,
@@ -384,7 +424,10 @@ async function displayStudentMarksheet(studentResult) {
         examDisplayName = uniqueExamNames[0];
     }
 
-    const html = await renderSingleMarksheet(studentAgg, displaySubjects, examDisplayName, session, null, rules, allOptSubs);
+    const allExams = await getSavedExams();
+    const subjectConfigs = await getSubjectConfigs();
+
+    const html = await renderSingleMarksheet(studentAgg, displaySubjects, examDisplayName, session, null, rules, allOptSubs, allExams, subjectConfigs);
 
     previewArea.innerHTML = html;
 

@@ -154,12 +154,12 @@ export const populateMarksheetSettingsDropdowns = async (targetCls = null) => {
         }
     });
 
-    // Populate Alternative Subject Dropdowns
-    ['msSetAltSubject1', 'msSetAltSubject2'].forEach(id => {
+    // Populate Alternative Subject Dropdowns + Student Core Subject Mapping Dropdown
+    ['msSetAltSubject1', 'msSetAltSubject2', 'msMapSubject'].forEach(id => {
         const sel = document.getElementById(id);
         if (sel) {
             const currentVal = sel.value;
-            const subHtml = [`<option value="">বিষয় নির্বাচন করুন</option>`];
+            const subHtml = [`<option value="">বিষয় নির্বাচন করুন</option>`];
             allUniqueSubjects.forEach(s => subHtml.push(`<option value="${s}">${s}</option>`));
             sel.innerHTML = subHtml.join('');
             if (currentVal && allUniqueSubjects.includes(currentVal)) {
