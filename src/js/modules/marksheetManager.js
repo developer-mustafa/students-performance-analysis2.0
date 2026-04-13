@@ -1113,7 +1113,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                     cells += `<td class="ms-td-subject" rowspan="${papers.length}">
                         <div class="ms-subject-name-cell">
                             <span>${subjName}</span>
-                            ${isOptional ? '<div class="ms-optional-tag">(Optional Subject)</div>' : ''}
+                            ${isOptional ? `<div class="ms-optional-tag">(Optional Subject) - ${ms.boardStandardOptional ? 'Board standard' : 'very strict'}</div>` : ''}
                         </div>
                     </td>`;
                 }
@@ -1268,7 +1268,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                         <td class="ms-td-subject">
                             <div class="ms-subject-name-cell">
                                 <span>${subjName}</span>
-                                ${isOptional ? '<div class="ms-optional-tag">(Optional Subject)</div>' : ''}
+                                ${isOptional ? `<div class="ms-optional-tag">(Optional Subject) - ${ms.boardStandardOptional ? 'Board standard' : 'very strict'}</div>` : ''}
                             </div>
                         </td>
                         <td class="ms-td-subject">${subj}</td>
@@ -1299,7 +1299,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                         <td class="ms-td-subject">
                             <div class="ms-subject-name-cell">
                                 <span>${subj}</span>
-                                ${isOptional ? '<div class="ms-optional-tag">(Optional Subject)</div>' : ''}
+                                ${isOptional ? `<div class="ms-optional-tag">(Optional Subject) - ${ms.boardStandardOptional ? 'Board standard' : 'very strict'}</div>` : ''}
                             </div>
                         </td>
                         <td class="ms-td-num" style="font-weight: 600;">${highestMarks[sSubjKey] !== undefined ? highestMarks[sSubjKey] : '-'}</td>
@@ -1594,37 +1594,56 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                         <span class="ms-extra-title">পরীক্ষার ফলাফল ইতিহাস ও মেরিট পজিশন</span>
                         <div class="ms-history-grid-container" style="flex-grow: 1; display: flex; flex-direction: column; width: 100%;">
                             <!-- Header Row -->
-                            <div style="display: grid; grid-template-columns: 42% 14% 22% 22%; width: 100%; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 4px;">
+                            <div style="display: grid; grid-template-columns: 38% 18% 22% 22%; width: 100%; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 4px;">
                                 <div style="display: flex; align-items: flex-end; font-size: 0.75rem; font-weight: 700; color: #475569; text-align: left; padding: 2px;">পরীক্ষার নাম</div>
                                 <div style="display: flex; align-items: flex-end; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #475569; text-align: center; padding: 2px;">GPA</div>
                                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; font-size: 0.75rem; font-weight: 700; color: #475569; text-align: center; padding: 2px;" title="সমন্বিত">
-                                    <span>ক্লাস</span>
-                                    <span style="font-size:0.55rem; font-weight:800; color:#64748b; margin-top:2px; letter-spacing:0.3px;">RANK</span>
+                                    <span>র‍্যাঙ্ক</span>
+                                    <span style="font-size:0.55rem; font-weight:800; color:#64748b; margin-top:2px; letter-spacing:0.3px;">CLASS</span>
                                 </div>
                                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; font-size: 0.75rem; font-weight: 700; color: #475569; text-align: center; padding: 2px;" title="বিভাগীয়">
-                                    <span>বিভাগীয়</span>
-                                    <span style="font-size:0.55rem; font-weight:800; color:#64748b; margin-top:2px; letter-spacing:0.3px;">RANK</span>
+                                    <span>র‍্যাঙ্ক</span>
+                                    <span style="font-size:0.55rem; font-weight:800; color:#64748b; margin-top:2px; letter-spacing:0.3px;">GROUP</span>
                                 </div>
                             </div>
                             
                             <!-- Data Rows -->
                             <div style="display: flex; flex-direction: column; gap: 6px;">
-                                ${history.length > 0 ? history.map(h => `
-                                    <div style="display: grid; grid-template-columns: 42% 14% 22% 22%; width: 100%; border-bottom: 1px dashed #f1f5f9; padding: 6px 0; align-items: center;">
+                                ${history.length > 0 ? history.map(h => {
+                                    // Helper to get Rank Style
+                                    const getRankInfo = (rankVal) => {
+                                        if (rankVal === 'রেঙ্ক নেই' || rankVal === '-' || !rankVal) {
+                                            return { text: '-', bg: '#f1f5f9', color: '#94a3b8', border: '#e2e8f0' };
+                                        }
+                                        const r = parseInt(convertToEnglishDigits(String(rankVal)));
+                                        if (r === 1) return { text: '১ম', bg: '#f59e0b', color: '#ffffff', border: '#d97706' };
+                                        if (r === 2) return { text: '২য়', bg: '#4361ee', color: '#ffffff', border: '#3f37c9' };
+                                        if (r === 3) return { text: '৩য়', bg: '#10b981', color: '#ffffff', border: '#059669' };
+                                        
+                                        // Others use Purple as requested
+                                        const banglaNum = r.toLocaleString('bn-BD');
+                                        return { text: `${banglaNum}তম`, bg: 'rgba(139, 92, 246, 0.12)', color: '#7c3aed', border: 'rgba(139, 92, 246, 0.3)' };
+                                    };
+
+                                    const classRankInfo = getRankInfo(h.rank);
+                                    const groupRankInfo = getRankInfo(h.groupRank);
+
+                                    return `
+                                    <div style="display: grid; grid-template-columns: 38% 18% 22% 22%; width: 100%; border-bottom: 1px dashed #f1f5f9; padding: 6px 0; align-items: center;">
                                         <div style="font-size: 0.72rem; font-weight: 600; color: #334155; text-align: left; padding: 2px; white-space: normal; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.3;">${h.name}</div>
-                                        <div style="font-size: 0.8rem; font-weight: 700; color: #0f172a; text-align: center; padding: 2px;">${h.gpa}</div>
-                                        <div style="text-align: center; padding: 2px;">
-                                            <div style="display: inline-block; background: rgba(67, 97, 238, 0.08); color: var(--ms-primary, #4361ee); padding: 4px 6px; border-radius: 4px; font-size: ${h.rank === 'রেঙ্ক নেই' ? '0.68rem' : '0.85rem'}; font-weight: 800; line-height: 1; min-width: 38px; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
-                                                ${h.rank}${h.rank !== 'রেঙ্ক নেই' ? '<span style="font-size: 0.6rem; font-weight: 700; margin-left: 1px;">তম</span>' : ''}
+                                        <div style="font-size: 0.8rem; font-weight: 800; color: #0f172a; text-align: center; padding: 2px; white-space: nowrap;">${h.gpa}</div>
+                                        <div style="text-align: center; padding: 2px; display: flex; justify-content: center;">
+                                            <div style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: ${classRankInfo.bg}; color: ${classRankInfo.color}; border: 1.5px solid ${classRankInfo.border}; border-radius: 50%; font-size: ${classRankInfo.text.length > 2 ? '0.62rem' : '0.75rem'}; font-weight: 900; -webkit-print-color-adjust: exact; print-color-adjust: exact; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                                ${classRankInfo.text}
                                             </div>
                                         </div>
-                                        <div style="text-align: center; padding: 2px;">
-                                            <div style="display: inline-block; background: rgba(22, 163, 74, 0.08); color: #16a34a; padding: 4px 6px; border-radius: 4px; font-size: ${h.groupRank === 'রেঙ্ক নেই' ? '0.68rem' : '0.85rem'}; font-weight: 800; line-height: 1; min-width: 38px; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
-                                                ${h.groupRank}${h.groupRank !== 'রেঙ্ক নেই' && h.groupRank !== '-' ? '<span style="font-size: 0.6rem; font-weight: 700; margin-left: 1px;">তম</span>' : ''}
+                                        <div style="text-align: center; padding: 2px; display: flex; justify-content: center;">
+                                            <div style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: ${groupRankInfo.bg}; color: ${groupRankInfo.color}; border: 1.5px solid ${groupRankInfo.border}; border-radius: 50%; font-size: ${groupRankInfo.text.length > 2 ? '0.62rem' : '0.75rem'}; font-weight: 900; -webkit-print-color-adjust: exact; print-color-adjust: exact; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                                                ${groupRankInfo.text}
                                             </div>
                                         </div>
                                     </div>
-                                `).join('') : '<div style="text-align:center; font-size: 0.75rem; opacity:0.5; padding: 10px 0; width: 100%;">হিস্টোরি নেই</div>'}
+                                `;}).join('') : '<div style="text-align:center; font-size: 0.75rem; opacity:0.5; padding: 10px 0; width: 100%;">হিস্টোরি নেই</div>'}
                             </div>
                         </div>
                     </div>
