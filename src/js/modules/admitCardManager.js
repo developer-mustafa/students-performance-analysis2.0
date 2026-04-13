@@ -725,7 +725,7 @@ async function generateCards(type) {
     });
 
     let studentsArray = [...studentAgg.values()]
-        .filter(s => s.status !== false)
+        .filter(s => String(s.status) !== 'false')
         .sort((a, b) => {
         // Primary sort: Group Alphabetically
         const groupA = a.group.toLowerCase();

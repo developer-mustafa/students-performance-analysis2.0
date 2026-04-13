@@ -509,7 +509,7 @@ async function loadExamForEntry() {
                 session: session
             });
             const registryInfo = lookupMap.get(studentKey);
-            if (registryInfo && registryInfo.status === false) return false;
+            if (registryInfo && String(registryInfo.status) === 'false') return false;
 
             const sRoll = convertToEnglishDigits(String(s.id || s.roll || '').trim().replace(/^0+/, '')) || '0';
             const sGroup = normalizeGroupName(s.group || '');

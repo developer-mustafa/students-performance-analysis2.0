@@ -1275,20 +1275,48 @@ export function renderSavedExamsList(container, exams, options = {}) {
     const date = exam.date || (exam.createdAt?.toDate ? formatDateBengali(exam.createdAt.toDate()) : 'N/A');
 
     // Dynamically recalculate stats based on CURRENT config for better sync
-    // Filter out disabled/inactive students from the count
+    // Filter out disabled/inactive students and apply Subject Mapping from the count
     const config = (subjectConfigs && subjectConfigs[exam.subject]) || {};
     let activeStudentData = exam.studentData || [];
-    if (studentLookupMap && activeStudentData.length > 0) {
+    
+    // Get mappings to apply
+    const msSettings = getMarksheetSettings() || {};
+    const subjectMappings = msSettings.subjectMapping || [];
+    
+    if (activeStudentData.length > 0) {
       activeStudentData = activeStudentData.filter(s => {
-        const studentKey = generateStudentDocId({
-          id: s.id,
-          group: s.group || '',
-          class: exam.class || '',
-          session: exam.session || ''
-        });
-        const lookupEntry = studentLookupMap.get(studentKey);
-        // Exclude only if explicitly disabled (status === false)
-        return !(lookupEntry && lookupEntry.status === false);
+        // 1. Check if disabled globally (Inactive Student)
+        if (studentLookupMap) {
+          const studentKey = generateStudentDocId({
+            id: s.id,
+            group: s.group || '',
+            class: exam.class || '',
+            session: exam.session || ''
+          });
+          const lookupEntry = studentLookupMap.get(studentKey);
+          if (lookupEntry && lookupEntry.status === false) return false;
+        }
+        
+        // 2. Strict Subject Mapping Enforcement
+        if (subjectMappings.length > 0) {
+          const evalSubName = normalizeText(exam.subject).replace(/\[.*?\]/g, '').replace(/\\s+/g, '');
+          const sGroupNorm = normalizeText(s.group || '');
+          const sRollStr = String(s.id || s.roll || '').trim().replace(/^0+/, '');
+          
+          const thisSubMap = subjectMappings.find(m => {
+              const mapSubNorm = normalizeText(m.subject).replace(/\[.*?\]/g, '').replace(/\\s+/g, '');
+              const mapGroupNorm = normalizeText(m.group);
+              return mapSubNorm === evalSubName && 
+                     (sGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(sGroupNorm));
+          });
+
+          if (thisSubMap) {
+              const mappedRolls = thisSubMap.rolls.map(r => String(r).replace(/^0+/, ''));
+              if (!mappedRolls.includes(sRollStr)) return false;
+          }
+        }
+        
+        return true;
       });
     }
     const dynamicStats = (activeStudentData.length > 0)

@@ -94,23 +94,32 @@ function recalculateStudentData(studentData, subjectName) {
 }
 
 /**
- * Filter out disabled/inactive students from exam data.
- * Uses the student lookup map to check status.
+ * Filter out disabled/inactive students and apply strict subject mappings from exam data.
  * @param {Array} studentData - Array of student data from an exam
  * @param {string} examClass - The class of the exam
  * @param {string} examSession - The session of the exam
- * @returns {Promise<Array>} - Filtered student data (only active students)
+ * @param {string} examSubject - The subject of the exam
+ * @returns {Promise<Array>} - Filtered student data
  */
-async function filterActiveStudents(studentData, examClass, examSession) {
+async function filterActiveStudents(studentData, examClass, examSession, examSubject) {
     if (!studentData || studentData.length === 0) return studentData;
     try {
         if (!state._studentLookupMap) {
             state._studentLookupMap = await getStudentLookupMap();
         }
         const lookupMap = state._studentLookupMap;
-        if (!lookupMap || lookupMap.size === 0) return studentData;
+
+        // Fetch marksheetSettings to get subjectMapping 
+        let msSettings = {};
+        try {
+            const { getMarksheetSettings } = await import('./js/modules/marksheetManager.js');
+            msSettings = getMarksheetSettings() || {};
+        } catch(e) {}
+        const subjectMappings = msSettings.subjectMapping || [];
 
         const { generateStudentDocId } = await import('./js/firestoreService.js');
+        const { normalizeText } = await import('./js/utils.js');
+        
         return studentData.filter(s => {
             const key = generateStudentDocId({
                 id: s.id,
@@ -118,8 +127,30 @@ async function filterActiveStudents(studentData, examClass, examSession) {
                 class: examClass || '',
                 session: examSession || ''
             });
-            const entry = lookupMap.get(key);
-            return !(entry && entry.status === false);
+            const entry = lookupMap?.get(key);
+            // Check inactive status
+            if (entry && String(entry.status) === 'false') return false;
+
+            // Apply Subject Mappings 
+            if (examSubject && subjectMappings.length > 0) {
+                const evalSubName = normalizeText(examSubject).replace(/\[.*?\]/g, '').replace(/\\s+/g, '');
+                const sGroupNorm = normalizeText(s.group || '');
+                const sRollStr = String(s.id || s.roll || '').trim().replace(/^0+/, '');
+                
+                const thisSubMap = subjectMappings.find(m => {
+                    const mapSubNorm = normalizeText(m.subject).replace(/\[.*?\]/g, '').replace(/\\s+/g, '');
+                    const mapGroupNorm = normalizeText(m.group);
+                    return mapSubNorm === evalSubName && 
+                           (sGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(sGroupNorm));
+                });
+
+                if (thisSubMap) {
+                    const mappedRolls = thisSubMap.rolls.map(r => String(r).replace(/^0+/, ''));
+                    if (!mappedRolls.includes(sRollStr)) return false;
+                }
+            }
+
+            return true;
         });
     } catch (e) {
         console.warn('filterActiveStudents failed, returning unfiltered:', e);
@@ -173,7 +204,7 @@ async function init() {
             const loadedExam = exams.find(e => e.docId === loadedExamId);
             if (loadedExam) {
                 state.studentData = recalculateStudentData(loadedExam.studentData || [], loadedExam.subject);
-                state.studentData = await filterActiveStudents(state.studentData, loadedExam.class, loadedExam.session);
+                state.studentData = await filterActiveStudents(state.studentData, loadedExam.class, loadedExam.session, loadedExam.subject);
                 state.currentExamName = loadedExam.name;
                 state.currentSubject = loadedExam.subject;
                 state.currentExamSession = loadedExam.session;
@@ -193,7 +224,7 @@ async function init() {
             const defaultExam = exams.find(e => e.docId === state.defaultExamId);
             if (defaultExam) {
                 state.studentData = recalculateStudentData(defaultExam.studentData || [], defaultExam.subject);
-                state.studentData = await filterActiveStudents(state.studentData, defaultExam.class, defaultExam.session);
+                state.studentData = await filterActiveStudents(state.studentData, defaultExam.class, defaultExam.session, defaultExam.subject);
                 state.currentExamName = defaultExam.name;
                 state.currentSubject = defaultExam.subject;
                 state.currentExamSession = defaultExam.session;
@@ -273,7 +304,7 @@ async function init() {
                     const pinnedExam = state.savedExams.find(e => e.docId === state.defaultExamId);
                     if (pinnedExam) {
                         state.studentData = recalculateStudentData(pinnedExam.studentData || [], pinnedExam.subject);
-                        filterActiveStudents(state.studentData, pinnedExam.class, pinnedExam.session).then(filtered => {
+                        filterActiveStudents(state.studentData, pinnedExam.class, pinnedExam.session, pinnedExam.subject).then(filtered => {
                             state.studentData = filtered;
                             updateViews();
                         });
@@ -296,13 +327,14 @@ async function init() {
             updateViews();
         });
 
-        // Marksheet Settings Sync (College Name, Address, Logo)
+        // Marksheet Settings Sync (College Name, Address, Logo, Subject Mappings)
         const initMarksheetSettingsSub = async () => {
              const { subscribeToMarksheetSettings } = await import('./js/modules/marksheetManager.js');
              state.onMarksheetSettingsUnsubscribe = await subscribeToMarksheetSettings((msData) => {
-                console.log('Marksheet settings updated, refreshing dashboard header...');
+                console.log('Marksheet settings updated, refreshing dashboard header and exam cards...');
                 updateProfileUI(state.auth?.currentUser, state.isAdmin, state.isSuperAdmin, state.userRole);
                 updateViews();
+                renderSavedExams();
             });
         };
         initMarksheetSettingsSub();
@@ -432,7 +464,7 @@ async function init() {
                 const updatedExam = state.savedExams.find(e => e.docId === loadedExamId);
                 if (updatedExam) {
                     state.studentData = updatedExam.studentData || [];
-                    state.studentData = await filterActiveStudents(state.studentData, updatedExam.class, updatedExam.session);
+                    state.studentData = await filterActiveStudents(state.studentData, updatedExam.class, updatedExam.session, updatedExam.subject);
                     updateViews();
                 }
             }

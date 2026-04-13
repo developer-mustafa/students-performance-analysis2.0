@@ -194,8 +194,11 @@ export async function populateMSDropdowns() {
                         session: sessionSelect.value
                     });
                     const latest = lookupMap.get(studentKey);
+                    
+                    // Skip inactive students
+                    if (latest && String(latest.status) === 'false') return;
+                    
                     const displayName = latest ? (latest.name || s.name) : s.name;
-
                     studentSelect.innerHTML += `<option value="${s.id}_${s.group}">${s.id} - ${displayName}</option>`;
                 });
             });
@@ -400,7 +403,7 @@ async function generateMarksheets() {
 
     // ALL active students for the exam summary (unfiltered by group/student)
     const allStudentsForSummary = [...studentAgg.values()]
-        .filter(s => s.status !== false)
+        .filter(s => String(s.status) !== 'false')
         .sort((a, b) => {
             const groupA = a.group.toLowerCase();
             const groupB = b.group.toLowerCase();
