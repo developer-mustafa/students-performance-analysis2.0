@@ -527,21 +527,6 @@ async function loadExamForEntry() {
 
             if (thisSubMap && !inThisSubMap) return false; // Explicitly excluded from this subject
 
-            // 2. Proactive Exclusion: If student belongs to ANOTHER elective map and NOT this one, hide them
-            // This handles choices like Geography vs Economics, while allowing overlaps like Paper 1 + 2
-            const belongsToOtherElectiveMap = allMappings.some(m => {
-                const mapSubClean = cleanSub(m.subject);
-                const mapGroupNorm = normalizeGroupName(m.group);
-                if (mapGroupNorm !== sGroup) return false; // Different group context
-                if (mapSubClean === currentSubClean) return false; // Same subject
-                if (inThisSubMap) return false; // If they ARE mapped to this sub, don't exclude them
-                
-                // Finally, check if roll exists in this OTHER map
-                return (m.rolls || []).map(r => String(r).replace(/^0+/, '').trim()).includes(String(sRoll));
-            });
-
-            if (belongsToOtherElectiveMap) return false;
-
             return !excludedStudentIds.has(`${sRoll}_${sGroup}`);
         })
         .map(s => {
@@ -611,7 +596,6 @@ async function loadExamForEntry() {
         originalStudentData = JSON.parse(JSON.stringify(currentExamDoc.studentData));
         hasUnsavedChanges = false;
 
-        showExamInfo(currentExamDoc, currentExamDoc.studentCount);
         const config = getSubjectConfig(subject);
 
         // Filter students for display based on selected group
@@ -622,6 +606,8 @@ async function loadExamForEntry() {
             
             return normGroup === 'all' || sGroup === normGroup || sText === gText || sGroup.includes(gText) || normGroup.includes(sText);
         });
+        
+        showExamInfo(currentExamDoc, displayStudents);
         renderRETable(displayStudents, config);
     } else {
         // --- NEW EXAM ---
@@ -658,7 +644,6 @@ async function loadExamForEntry() {
         originalStudentData = JSON.parse(JSON.stringify(currentExamDoc.studentData));
         hasUnsavedChanges = false;
 
-        showExamInfo(currentExamDoc, currentExamDoc.studentCount, true);
         const config = getSubjectConfig(subject);
 
         // Filter students for display based on selected group
@@ -666,6 +651,8 @@ async function loadExamForEntry() {
             const sGroup = normalizeText(s.group || '');
             return normGroup === 'all' || sGroup === normGroup || sGroup.includes(normGroup) || normGroup.includes(sGroup);
         });
+        
+        showExamInfo(currentExamDoc, displayStudents, true);
         renderRETable(displayStudents, config);
     }
 
@@ -676,9 +663,9 @@ async function loadExamForEntry() {
 }
 
 /**
- * Show exam info bar
+ * Show exam info bar with advanced statistics
  */
-function showExamInfo(exam, count, isNew = false) {
+function showExamInfo(exam, displayStudents, isNew = false) {
     const infoEl = document.getElementById('reExamInfo');
     if (infoEl) {
         const config = getSubjectConfig(exam.subject);
@@ -688,9 +675,29 @@ function showExamInfo(exam, count, isNew = false) {
         const writtenPass = cfgNum(config.writtenPass);
         const mcqPass = cfgNum(config.mcqPass);
         const practicalPass = cfgNum(config.practicalPass);
-        const totalMax = cfgNum(config.total);
 
-        // Build pass mark badges — only show active criteria
+        // Calculate granular statistics based on displayStudents
+        let sciCount = 0;
+        let busCount = 0;
+        let humCount = 0;
+        let absentCount = 0;
+
+        displayStudents.forEach(s => {
+            const grp = normalizeText(s.group || '');
+            if (grp.includes('বিজ্ঞান') || grp.includes('science')) sciCount++;
+            else if (grp.includes('ব্যবসায়') || grp.includes('business') || grp.includes('commerce') || grp.includes('ব্যবসায়')) busCount++;
+            else if (grp.includes('মানবিক') || grp.includes('humanities') || grp.includes('arts')) humCount++;
+            
+            // Check absent (based on status or missing marks as per their internal logic, status = 'অনুপস্থিত')
+            if (s.status === 'অনুপস্থিত' || (!s.written && !s.mcq && !s.practical && !s.total)) {
+                // If the student doesn't have marks or explicitly marked absent, we increment
+                absentCount++; 
+            }
+        });
+
+        const totalEntry = displayStudents.length;
+
+        // Build pass mark badges
         let passMarkHtml = '';
         const badges = [];
         if (writtenMax > 0) badges.push(`<span class="re-pass-badge pass-written"><i class="fas fa-pen-nib"></i> লিখিত পাশ: ${convertToBengaliDigits(writtenPass)}/${convertToBengaliDigits(writtenMax)}</span>`);
@@ -707,13 +714,14 @@ function showExamInfo(exam, count, isNew = false) {
                 <div class="re-info-item"><i class="fas fa-book"></i> <span>${exam.subject}</span></div>
                 <div class="re-info-item"><i class="fas fa-file-alt"></i> <span>${exam.name}</span></div>
                 <div class="re-info-item"><i class="fas fa-school"></i> <span>${exam.class} | ${exam.session}</span></div>
-                <div class="re-info-item"><i class="fas fa-users"></i> <span>${count} জন শিক্ষার্থী</span></div>
+                <div class="re-info-item highlight-total"><i class="fas fa-users"></i> <span>মোট এন্ট্রি - ${convertToBengaliDigits(totalEntry)} জন</span></div>
             </div>
             
-            <div class="re-group-legend premium-legend">
-               <span class="legend-item sci"><i class="fas fa-circle"></i> বিজ্ঞান</span>
-               <span class="legend-item bus"><i class="fas fa-circle"></i> ব্যবসায়</span>
-               <span class="legend-item hum"><i class="fas fa-circle"></i> মানবিক</span>
+            <div class="re-group-legend premium-legend" style="display:flex; flex-wrap:wrap; gap:10px; align-items:center;">
+               <span class="legend-item sci"><i class="fas fa-vial"></i> বিজ্ঞান - ${convertToBengaliDigits(sciCount)} জন</span>
+               <span class="legend-item bus"><i class="fas fa-chart-pie"></i> ব্যবসায় - ${convertToBengaliDigits(busCount)} জন</span>
+               <span class="legend-item hum"><i class="fas fa-globe-asia"></i> মানবিক - ${convertToBengaliDigits(humCount)} জন</span>
+               <span class="legend-item absent" style="background:#fff5f5; color:#c53030; border:1px solid #feb2b2; padding:4px 10px; border-radius:6px; font-weight:600;"><i class="fas fa-user-times"></i> অনুপস্থিত - ${convertToBengaliDigits(absentCount)} জন</span>
             </div>
             
             <button id="toggleNamesBtn" class="re-toggle-name-btn ${hideNames ? 'active' : ''}">

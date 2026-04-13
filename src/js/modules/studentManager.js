@@ -455,7 +455,9 @@ export async function initStudentManager() {
                     'মানবিক গ্রুপ': 3
                 };
 
-                const sortedStudents = [...filteredStudents].sort((a, b) => {
+                const activeStudents = filteredStudents.filter(s => s.status !== false);
+
+                const sortedStudents = [...activeStudents].sort((a, b) => {
                     // 1. Sort by Session (Ascending: 2024-2025 before 2025-2026)
                     const sessA = String(a.session || '');
                     const sessB = String(b.session || '');

@@ -636,125 +636,195 @@ async function generateMarksheets() {
 }
 
 /**
- * Calculate merit rank for a student across all relevant exams
+ * Calculate merit rank for a student across all relevant exams.
+ * 
+ * ⚠️ CRITICAL MAINTENANCE NOTE:
+ * This function calculates GPA independently for ranking purposes.
+ * The same GPA calculation also exists in renderSingleMarksheet() (~line 1016+).
+ * If you change GPA logic here, you MUST also update renderSingleMarksheet()
+ * and vice versa, otherwise displayed GPA won't match ranking GPA.
+ * 
+ * Key shared functions: getGradePoint(), getLetterGrade(), getGradeFromGP()
+ * Key shared rules: optionalSubjects, writtenPass/mcqPass/practicalPass
  */
 async function getStudentExamsHistory(student, allExams, cls, session, rules, subjectConfigs) {
     const studentHistory = [];
     if (!allExams || !Array.isArray(allExams)) return [];
 
-    let examSessions = [...new Set(allExams.filter(e => e.class === cls && e.session === session).map(e => e.name))];
+    const norm = (txt) => (txt || '').trim().toLowerCase();
+    const toEng = (txt) => convertToEnglishDigits(String(txt || ''));
 
-    // Filter by manual settings if any configured
+    // Cache key includes hidden subjects so rank recalculates when subjects change
+    const hiddenKey = (marksheetSettings.hiddenSubjects || []).sort().join(',');
+    const cacheKeyBase = `${cls}_${session}_h${hiddenKey}`;
+    
+    let examSessions = [...new Set(allExams.filter(e => e.class === cls && e.session === session).map(e => e.name))];
     if (marksheetSettings.historyExams && marksheetSettings.historyExams.length > 0) {
         examSessions = examSessions.filter(name => marksheetSettings.historyExams.includes(name));
     }
 
     for (const examName of examSessions) {
-        const cacheKey = `${cls}_${session}_${examName}`;
+        const cacheKey = `${cacheKeyBase}_${examName}`;
         let results = _examRankCache.get(cacheKey);
 
         if (!results) {
             const sessionExams = allExams.filter(e => e.class === cls && e.session === session && e.name === examName);
-            const subjects = [...new Set(sessionExams.map(e => e.subject).filter(Boolean))];
+            // Filter out hidden subjects so ranking uses SAME subjects as marksheet display
+            const hiddenSet = new Set((marksheetSettings.hiddenSubjects || []).map(s => norm(s)));
+            const subjectsInSession = [...new Set(sessionExams.map(e => e.subject).filter(Boolean))]
+                .filter(subj => !hiddenSet.has(norm(subj)));
 
             const studentsInSession = new Map();
             sessionExams.forEach(ex => {
-            if (!ex.studentData) return;
-            ex.studentData.forEach(s => {
-                const key = `${s.id}_${s.group || ''}`;
-                if (!studentsInSession.has(key)) {
-                    studentsInSession.set(key, { id: s.id, name: s.name, group: s.group || '', subjects: {} });
+                if (!ex.studentData) return;
+                ex.studentData.forEach(s => {
+                    const sId = toEng(s.id);
+                    const sGroup = norm(s.group);
+                    const key = `${sId}_${sGroup}`;
+                    if (!studentsInSession.has(key)) {
+                        studentsInSession.set(key, { id: sId, name: s.name, group: sGroup, originalGroup: s.group, subjects: {} });
+                    }
+                    const currentSubs = studentsInSession.get(key).subjects;
+                    const existing = currentSubs[ex.subject];
+                    const hasBetterMarks = !existing || (parseFloat(s.total) || 0) > (parseFloat(existing.total) || 0);
+                    if (hasBetterMarks) {
+                        currentSubs[ex.subject] = s;
+                    }
+                });
+            });
+
+            const tempResults = [];
+            studentsInSession.forEach(st => {
+                let totalMarks = 0;
+                let totalGPA = 0;
+                let compulsoryGPA = 0;
+                let compulsoryCount = 0;
+                let optionalBonus = 0;
+                let allPassed = true;
+                let visibleCount = 0;
+                let failedCount = 0;
+                let allAbsent = true;
+
+                subjectsInSession.forEach(subj => {
+                    const data = st.subjects[subj];
+                    if (!data) return;
+
+                    const sTotal = parseFloat(data.total) || 0;
+                    totalMarks += sTotal;
+
+                    // A student is "present" if:
+                    // 1. They have marks > 0, OR
+                    // 2. Their status is NOT explicitly 'absent'/'অনুপস্থিত'
+                    // Note: 0 marks + empty status = present (scored 0 while attending)
+                    // Only explicit 'অনুপস্থিত' status = absent
+                    const status = (data.status || '').toLowerCase();
+                    if (sTotal > 0 || !(status === 'absent' || status === 'অনুপস্থিত')) {
+                        allAbsent = false;
+                    }
+
+                    const config = subjectConfigs?.[subj] || { total: 100 };
+                    const maxTotal = parseInt(config.total) || 100;
+                    const pct = maxTotal > 0 ? (sTotal / maxTotal) * 100 : 0;
+                    const gp = getGradePoint(pct);
+                    const grade = getLetterGrade(pct);
+
+                    let isFail = (grade === 'F');
+                    if (data.written !== undefined && config.writtenPass !== undefined && parseFloat(data.written) < parseFloat(config.writtenPass)) isFail = true;
+                    if (data.mcq !== undefined && config.mcqPass !== undefined && parseFloat(data.mcq) < parseFloat(config.mcqPass)) isFail = true;
+                    if (data.practical !== undefined && config.practicalPass !== undefined && parseFloat(data.practical) < parseFloat(config.practicalPass)) isFail = true;
+                    // Also check explicit fail status from data entry
+                    if (status === 'ফেল' || status === 'fail') isFail = true;
+
+                    const studentGroup = st.originalGroup || '';
+                    const optionalSubsObj = rules?.optionalSubjects || {};
+                    const optKey = Object.keys(optionalSubsObj).find(k => norm(k) === norm(studentGroup) || norm(k).includes(norm(studentGroup)) || norm(studentGroup).includes(norm(k))) || studentGroup;
+                    const optSubs = (optionalSubsObj[optKey] || []).map(os => norm(os));
+                    // Fix: Safer substring matching — require >60% length overlap to prevent
+                    // false matches like "গণিত" matching "উচ্চতর গণিত"
+                    const isOptional = optSubs.some(os => {
+                        const ns = norm(subj);
+                        if (ns === os) return true;
+                        const shorter = Math.min(ns.length, os.length);
+                        const longer = Math.max(ns.length, os.length);
+                        if (longer === 0 || shorter / longer < 0.6) return false;
+                        return ns.includes(os) || os.includes(ns);
+                    });
+
+                    if (isOptional) {
+                        if (!isFail && gp > 2.00) optionalBonus = Math.max(optionalBonus, gp - 2.00);
+                    } else {
+                        compulsoryGPA += gp;
+                        compulsoryCount++;
+                        if (isFail) {
+                            allPassed = false;
+                            failedCount++;
+                        }
+                    }
+                    totalGPA += gp;
+                    visibleCount++;
+                });
+
+                let finalGPA = 0;
+                if (compulsoryCount > 0) {
+                    finalGPA = Math.min(5.00, (compulsoryGPA + optionalBonus) / compulsoryCount);
+                } else if (visibleCount > 0) {
+                    finalGPA = totalGPA / visibleCount;
                 }
-                studentsInSession.get(key).subjects[ex.subject] = s;
-            });
-        });
 
-            results = [];
-        studentsInSession.forEach(st => {
-            let totalMarks = 0;
-            let totalGPA = 0;
-            let compulsoryGPA = 0;
-            let compulsoryCount = 0;
-            let optionalBonus = 0;
-            let allPassed = true;
-            let visibleCount = 0;
-
-            subjects.forEach(subj => {
-                const data = st.subjects[subj];
-                if (!data) return;
-
-                const sTotal = data.total || 0;
-                totalMarks += sTotal;
-
-                const config = subjectConfigs?.[subj] || { total: 100 };
-                const maxTotal = parseInt(config.total) || 100;
-                const pct = maxTotal > 0 ? (sTotal / maxTotal) * 100 : 0;
-
-                const grade = getLetterGrade(pct);
-                const gp = getGradePoint(pct);
-
-                let isFail = grade === 'F';
-                if (data.written !== undefined && config.writtenPass !== undefined && data.written < config.writtenPass) isFail = true;
-                if (data.mcq !== undefined && config.mcqPass !== undefined && data.mcq < config.mcqPass) isFail = true;
-                if (data.practical !== undefined && config.practicalPass !== undefined && data.practical < config.practicalPass) isFail = true;
-
-                const studentGroup = st.group || '';
-                const optKey = Object.keys(rules?.optionalSubjects || {}).find(k => k.toLowerCase().includes(studentGroup.toLowerCase()) || studentGroup.toLowerCase().includes(k.toLowerCase())) || studentGroup;
-                const optSubs = (rules?.optionalSubjects?.[optKey] || []).map(os => String(os).trim().toLowerCase());
-                const isOptional = optSubs.some(os => subj.toLowerCase().includes(os) || os.includes(subj.toLowerCase()));
-
-                if (isOptional) {
-                    if (!isFail && gp > 2.00) optionalBonus = Math.max(optionalBonus, gp - 2.00);
-                } else {
-                    compulsoryGPA += gp;
-                    compulsoryCount++;
-                    if (isFail) allPassed = false;
-                }
-                totalGPA += gp;
-                visibleCount++;
+                tempResults.push({
+                    key: `${st.id}_${st.group}`,
+                    id: st.id,
+                    group: st.group,
+                    gpa: allPassed ? finalGPA : -1,
+                    total: totalMarks,
+                    allPassed: allPassed,
+                    failedCount: failedCount,
+                    allAbsent: allAbsent,
+                    displayGPA: allPassed ? finalGPA.toFixed(2) : '0.00'
+                });
             });
 
-            let finalGPA = 0;
-            if (compulsoryCount > 0) {
-                finalGPA = Math.min(5.00, (compulsoryGPA + optionalBonus) / compulsoryCount);
-            } else if (visibleCount > 0) {
-                finalGPA = totalGPA / visibleCount;
-            }
+            tempResults.sort((a, b) => {
+                if (a.allAbsent !== b.allAbsent) return a.allAbsent ? 1 : -1;
+                if (a.allAbsent && b.allAbsent) return parseInt(a.id) - parseInt(b.id);
+                if (a.allPassed !== b.allPassed) return a.allPassed ? -1 : 1;
 
-            results.push({
-                key: `${st.id}_${st.group || ''}`,
-                group: st.group || '',
-                gpa: allPassed ? finalGPA : -1,
-                total: totalMarks,
-                allPassed: allPassed,
-                displayGPA: allPassed ? finalGPA.toFixed(2) : '0.00'
-            });
-        });
-
-            results.sort((a, b) => {
-                if (a.allPassed && !b.allPassed) return -1;
-                if (!a.allPassed && b.allPassed) return 1;
                 if (a.allPassed) {
-                    if (b.gpa !== a.gpa) return b.gpa - a.gpa;
-                    return b.total - a.total;
+                    const g1 = Number(a.gpa) || 0;
+                    const g2 = Number(b.gpa) || 0;
+                    if (Math.abs(g2 - g1) > 0.0001) return g2 - g1;
+                } else {
+                    if (a.failedCount !== b.failedCount) return a.failedCount - b.failedCount;
                 }
-                return b.total - a.total;
+
+                const t1 = Number(a.total) || 0;
+                const t2 = Number(b.total) || 0;
+                if (Math.abs(t2 - t1) > 0.01) return t2 - t1;
+
+                return (parseInt(a.id) || 0) - (parseInt(b.id) || 0);
             });
-            _examRankCache.set(cacheKey, results);
+
+            _examRankCache.set(cacheKey, tempResults);
+            results = tempResults;
         }
 
-        const studentGroup = student.group || '';
-        const studentRankIdx = results.findIndex(r => r.key === `${student.id}_${studentGroup}`);
-
+        const studentId = toEng(student.id);
+        const studentGroup = norm(student.group);
+        const searchKey = `${studentId}_${studentGroup}`;
+        
+        const studentRankIdx = results.findIndex(r => r.key === searchKey || (r.id === studentId && r.group === studentGroup));
         const groupResults = results.filter(r => r.group === studentGroup);
-        const groupRankIdx = groupResults.findIndex(r => r.key === `${student.id}_${studentGroup}`);
+        const groupRankIdx = groupResults.findIndex(r => r.key === searchKey || (r.id === studentId && r.group === studentGroup));
 
         if (studentRankIdx !== -1) {
+            const res = results[studentRankIdx];
+            const gRes = groupRankIdx !== -1 ? groupResults[groupRankIdx] : null;
+
             studentHistory.push({
                 name: examName,
-                gpa: results[studentRankIdx].allPassed ? results[studentRankIdx].displayGPA : '0.00',
-                rank: studentRankIdx + 1,
-                groupRank: groupRankIdx !== -1 ? groupRankIdx + 1 : '-'
+                gpa: res.allPassed ? res.displayGPA : '0.00',
+                rank: res.allAbsent ? 'রেঙ্ক নেই' : studentRankIdx + 1,
+                groupRank: (gRes && gRes.allAbsent) ? 'রেঙ্ক নেই' : (groupRankIdx !== -1 ? groupRankIdx + 1 : '-')
             });
         }
     }
@@ -867,28 +937,32 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                 const sSubjKey = normalizeText(name).replace(/\s+/g, '');
                 const data = student.subjects[sSubjKey];
 
-                // --- SUBJECT MAPPING OVERRIDE (NEW) ---
-                // If this student is explicitly mapped to this subject, they "have" it regardless of marks
                 const sRoll = String(student.id || '').trim().replace(/^0+/, '');
                 const sGroupNorm = normalizeText(student.group || '');
-                const isMapped = (ms.subjectMapping || []).some(m => {
-                    // Clean subject comparison
+                
+                // --- STRICT MAPPING ENFORCEMENT ---
+                const cleanName = normalizeText(name).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
+                const thisSubMap = (ms.subjectMapping || []).find(m => {
                     const mapSubNorm = normalizeText(m.subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
-                    const nameNorm = normalizeText(name).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
-                    if (mapSubNorm !== nameNorm) return false;
-
-                    // Group match: keyword-based (মানবিক গ্রুপ matches মানবিক গ্রুপ, মানবিক, etc.)
                     const mapGroupNorm = normalizeText(m.group);
-                    const groupMatch = sGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(sGroupNorm);
-                    if (!groupMatch) return false;
-
-                    // Roll match
-                    return m.rolls.map(r => String(r).replace(/^0+/, '')).includes(sRoll);
+                    return mapSubNorm === cleanName && 
+                           (sGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(sGroupNorm));
                 });
 
-                if (isMapped) return true;
+                if (thisSubMap) {
+                    // If a mapping exists for this subject, the student MUST be in it to "have" the subject.
+                    return thisSubMap.rolls.map(r => String(r).replace(/^0+/, '')).includes(sRoll);
+                }
 
-                return !!data;
+                // If no mapping exists, rely on exam data presence
+                // Only consider it valid if they have actual marks or explicit status, preventing ghost records
+                if (data) {
+                    const hasActualMarks = (data.written > 0 || data.mcq > 0 || data.practical > 0 || data.total > 0);
+                    const isExplicitlyAbsent = data.status === 'অনুপস্থিত' || data.status === 'absent';
+                    return hasActualMarks || isExplicitlyAbsent;
+                }
+
+                return false;
             };
             const papers = isObj ? (subjObj.papers || []) : [subjName];
 
@@ -903,14 +977,30 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
 
             // 1.5. Alternative Subject Logic (Electives)
             if (rules.alternativePairs && rules.alternativePairs.length > 0) {
-                const altPair = rules.alternativePairs.find(p => norm(p.sub1) === normSubjName || norm(p.sub2) === normSubjName);
-                if (altPair) {
-                    const partner = norm(altPair.sub1) === normSubjName ? altPair.sub2 : altPair.sub1;
-                    const hasMarks = checkMarks(subjName) || papers.some(p => checkMarks(p));
-                    const partnerHasMarks = checkMarks(partner);
+                const matchedPairs = rules.alternativePairs.filter(p => {
+                    const p1 = norm(p.sub1);
+                    const p2 = norm(p.sub2);
+                    if (p1 === normSubjName || p2 === normSubjName) return true;
+                    if (papers.some(paper => norm(paper) === p1 || norm(paper) === p2)) return true;
+                    return false;
+                });
 
-                    // If partner has marks and current one doesn't, hide it
-                    if (partnerHasMarks && !hasMarks) return false;
+                if (matchedPairs.length > 0) {
+                    let hasAnyPartnerMarks = false;
+                    const hasCurrentMarks = checkMarks(subjName) || papers.some(p => checkMarks(p));
+
+                    matchedPairs.forEach(altPair => {
+                        const p1 = norm(altPair.sub1);
+                        const isP1Current = p1 === normSubjName || papers.some(paper => norm(paper) === p1);
+                        const partner = isP1Current ? altPair.sub2 : altPair.sub1;
+                        
+                        if (checkMarks(partner)) {
+                            hasAnyPartnerMarks = true;
+                        }
+                    });
+
+                    // If any alternative partner is active (has marks or is mapped) and current is not, hide current
+                    if (hasAnyPartnerMarks && !hasCurrentMarks) return false;
                 }
             }
 
@@ -1501,13 +1591,13 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                                         <div style="font-size: 0.72rem; font-weight: 600; color: #334155; text-align: left; padding: 2px; white-space: normal; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.3;">${h.name}</div>
                                         <div style="font-size: 0.8rem; font-weight: 700; color: #0f172a; text-align: center; padding: 2px;">${h.gpa}</div>
                                         <div style="text-align: center; padding: 2px;">
-                                            <div style="display: inline-block; background: rgba(67, 97, 238, 0.08); color: var(--ms-primary, #4361ee); padding: 4px 6px; border-radius: 4px; font-size: 0.85rem; font-weight: 800; line-height: 1; min-width: 38px; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
-                                                ${h.rank}<span style="font-size: 0.6rem; font-weight: 700; margin-left: 1px;">তম</span>
+                                            <div style="display: inline-block; background: rgba(67, 97, 238, 0.08); color: var(--ms-primary, #4361ee); padding: 4px 6px; border-radius: 4px; font-size: ${h.rank === 'রেঙ্ক নেই' ? '0.68rem' : '0.85rem'}; font-weight: 800; line-height: 1; min-width: 38px; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                                                ${h.rank}${h.rank !== 'রেঙ্ক নেই' ? '<span style="font-size: 0.6rem; font-weight: 700; margin-left: 1px;">তম</span>' : ''}
                                             </div>
                                         </div>
                                         <div style="text-align: center; padding: 2px;">
-                                            <div style="display: inline-block; background: rgba(22, 163, 74, 0.08); color: #16a34a; padding: 4px 6px; border-radius: 4px; font-size: 0.85rem; font-weight: 800; line-height: 1; min-width: 38px; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
-                                                ${h.groupRank}<span style="font-size: 0.6rem; font-weight: 700; margin-left: 1px;">তম</span>
+                                            <div style="display: inline-block; background: rgba(22, 163, 74, 0.08); color: #16a34a; padding: 4px 6px; border-radius: 4px; font-size: ${h.groupRank === 'রেঙ্ক নেই' ? '0.68rem' : '0.85rem'}; font-weight: 800; line-height: 1; min-width: 38px; -webkit-print-color-adjust: exact; print-color-adjust: exact;">
+                                                ${h.groupRank}${h.groupRank !== 'রেঙ্ক নেই' && h.groupRank !== '-' ? '<span style="font-size: 0.6rem; font-weight: 700; margin-left: 1px;">তম</span>' : ''}
                                             </div>
                                         </div>
                                     </div>
