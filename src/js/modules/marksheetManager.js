@@ -458,8 +458,22 @@ async function generateMarksheets() {
     //         pass/fail determination (including hidden subjects, optional handling,
     //         combined papers, component pass marks, etc.)
     const allRenderedData = [];
+    const highestMarks = {};
     for (const student of allStudentsForSummary) {
-        const html = await renderSingleMarksheet(student, displaySubjects, examDisplayName, session, null, rules, allOptSubs, allExams, subjectConfigs, null, false);
+        for (const [subjKey, subjData] of Object.entries(student.subjects || {})) {
+            const hasMarks = (subjData.written || 0) > 0 || (subjData.mcq || 0) > 0 || (subjData.practical || 0) > 0 || (subjData.total || 0) > 0;
+            if (hasMarks) {
+                const curTotal = Number(subjData.total) || 0;
+                if (!highestMarks[subjKey] || curTotal > highestMarks[subjKey]) {
+                    highestMarks[subjKey] = curTotal;
+                }
+            }
+        }
+    }
+
+
+    for (const student of allStudentsForSummary) {
+        const html = await renderSingleMarksheet(student, displaySubjects, examDisplayName, session, null, rules, allOptSubs, allExams, subjectConfigs, null, false, highestMarks);
         allRenderedData.push({
             html,
             key: `${student.id}_${student.group}`,
@@ -846,7 +860,7 @@ const getMarkClass = (mark, passMark) => {
 };
 
 
-export async function renderSingleMarksheet(student, subjects, examDisplayName, selectedSession, customSettings = null, rules = null, allOptSubs = [], allExams = [], subjectConfigs = {}, examSummary = null, skipHeavyOps = false) {
+export async function renderSingleMarksheet(student, subjects, examDisplayName, selectedSession, customSettings = null, rules = null, allOptSubs = [], allExams = [], subjectConfigs = {}, examSummary = null, skipHeavyOps = false, highestMarks = {}) {
 
     const history = skipHeavyOps ? [] : await getStudentExamsHistory(student, allExams, student.class, selectedSession, rules, subjectConfigs);
     const uid = student.uniqueId || generateStudentUniqueId(student.name, student.class, selectedSession, student.id, student.group);
@@ -1105,6 +1119,8 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                 }
 
                 cells += `<td class="ms-td-subject">${paperName}</td>`;
+                const highMarkObj = highestMarks[pSubjKey] !== undefined ? highestMarks[pSubjKey] : '-';
+                cells += `<td class="ms-td-num" style="font-weight: 600;">${highMarkObj}</td>`;
                 cells += `<td class="ms-td-num">${maxTotal}</td>`;
                 cells += `<td class="ms-td-num ${getMarkClass(data.written, config.writtenPass)}">${data.written || '-'}</td>`;
                 cells += `<td class="ms-td-num ${getMarkClass(data.mcq, config.mcqPass)}">${data.mcq || '-'}</td>`;
@@ -1256,6 +1272,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                             </div>
                         </td>
                         <td class="ms-td-subject">${subj}</td>
+                        <td class="ms-td-num" style="font-weight: 600;">${highestMarks[sSubjKey] !== undefined ? highestMarks[sSubjKey] : '-'}</td>
                         <td class="ms-td-num">${maxTotal}</td>
                         <td class="ms-td-num ${getMarkClass(data.written, config.writtenPass)}">${data.written || '-'}</td>
                         <td class="ms-td-num ${getMarkClass(data.mcq, config.mcqPass)}">${data.mcq || '-'}</td>
@@ -1285,6 +1302,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                                 ${isOptional ? '<div class="ms-optional-tag">(Optional Subject)</div>' : ''}
                             </div>
                         </td>
+                        <td class="ms-td-num" style="font-weight: 600;">${highestMarks[sSubjKey] !== undefined ? highestMarks[sSubjKey] : '-'}</td>
                         <td class="ms-td-num">${maxTotal}</td>
                         <td class="ms-td-num ${getMarkClass(data.written, config.writtenPass)}">${data.written || '-'}</td>
                         <td class="ms-td-num ${getMarkClass(data.mcq, config.mcqPass)}">${data.mcq || '-'}</td>
@@ -1346,6 +1364,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
             <th class="ms-th-sl" style="background:#0d5e2e !important; color:#ffffff !important; -webkit-print-color-adjust:exact !important;">ক্রঃ</th>
             <th class="ms-th-subject" style="background:#0d5e2e !important; color:#ffffff !important; -webkit-print-color-adjust:exact !important;">বিষয়ের নাম</th>
             <th class="ms-th-subject" style="background:#0d5e2e !important; color:#ffffff !important; -webkit-print-color-adjust:exact !important;">পত্র সমূহ</th>
+            <th class="ms-th-num" style="background:#0d5e2e !important; color:#ffffff !important; -webkit-print-color-adjust:exact !important;">সর্বোচ্চ নম্বর</th>
             <th class="ms-th-num" style="background:#0d5e2e !important; color:#ffffff !important; -webkit-print-color-adjust:exact !important;">পূর্ণমান</th>
             <th class="ms-th-num" style="background:#0d5e2e !important; color:#ffffff !important; -webkit-print-color-adjust:exact !important;">CQ</th>
             <th class="ms-th-num" style="background:#0d5e2e !important; color:#ffffff !important; -webkit-print-color-adjust:exact !important;">MCQ</th>
@@ -1358,6 +1377,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
         <tr>
             <th class="ms-th-sl" style="background:#0d5e2e !important; color:#ffffff !important; -webkit-print-color-adjust:exact !important;">ক্রঃ</th>
             <th class="ms-th-subject" style="background:#0d5e2e !important; color:#ffffff !important; -webkit-print-color-adjust:exact !important;">বিষয়ের নাম</th>
+            <th class="ms-th-num" style="background:#0d5e2e !important; color:#ffffff !important; -webkit-print-color-adjust:exact !important;">সর্বোচ্চ নম্বর</th>
             <th class="ms-th-num" style="background:#0d5e2e !important; color:#ffffff !important; -webkit-print-color-adjust:exact !important;">পূর্ণমান</th>
             <th class="ms-th-num" style="background:#0d5e2e !important; color:#ffffff !important; -webkit-print-color-adjust:exact !important;">লিখিত</th>
             <th class="ms-th-num" style="background:#0d5e2e !important; color:#ffffff !important; -webkit-print-color-adjust:exact !important;">MCQ</th>
@@ -1486,7 +1506,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                         </tbody>
                         <tfoot>
                             <tr class="ms-row-total">
-                                <td colspan="${isCombinedMode ? 3 : 2}" class="ms-td-total-label">সর্বমোট</td>
+                                <td colspan="${isCombinedMode ? 4 : 3}" class="ms-td-total-label">সর্বমোট</td>
                                 <td class="ms-td-num">${maxGrand}</td>
                                 <td colspan="3"></td>
                                 <td class="ms-td-num ms-td-total">${grandTotal}</td>

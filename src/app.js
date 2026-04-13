@@ -1173,6 +1173,7 @@ function initEventListeners() {
 
     elements.closeContactModalBtn?.addEventListener('click', () => elements.contactModal.classList.remove('active'));
     elements.closeProfileIcon?.addEventListener('click', () => elements.profileModal.classList.remove('active'));
+    elements.closeProfileBtn?.addEventListener('click', () => elements.profileModal.classList.remove('active'));
 
     // Analysis View Navigation
     elements.prevRollBtn?.addEventListener('click', () => navigateRoll(-1));
