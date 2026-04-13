@@ -12217,8 +12217,8 @@ body.is-super-admin td.admin-only {
 
 /* Student Info Section */
 .ms-student-section {
-  margin: 2px 0;
-  padding: 4px 10px;
+  margin: 1px 0;
+  padding: 2px 10px;
   background: #f8fdf8;
   border: 1px solid #c8e6c9;
   border-radius: 4px;
@@ -12227,7 +12227,7 @@ body.is-super-admin td.admin-only {
 .ms-info-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 3px 20px;
+  gap: 1px 20px;
 }
 
 .ms-info-grid .ms-info-item:first-child {
@@ -12236,15 +12236,15 @@ body.is-super-admin td.admin-only {
 
 .ms-info-item {
   display: flex;
-  gap: 8px;
+  gap: 5px;
   align-items: baseline;
-  font-size: 0.88rem;
+  font-size: 0.8rem;
 }
 
 .ms-info-label {
   font-weight: 700;
   color: #333;
-  min-width: 70px;
+  min-width: 60px;
 }
 
 .ms-info-label::after {
@@ -12257,7 +12257,7 @@ body.is-super-admin td.admin-only {
 }
 
 .ms-info-name {
-  font-size: 1rem;
+  font-size: 0.9rem;
   font-weight: 700;
 }
 
@@ -12265,18 +12265,19 @@ body.is-super-admin td.admin-only {
 .ms-table {
   width: 100%;
   border-collapse: collapse;
-  margin: 2px 0;
-  font-size: 0.72rem;
+  margin: 1px 0;
+  font-size: 0.68rem;
   table-layout: auto;
 }
 
 .ms-table th,
 .ms-table td {
   border: 1px solid #555;
-  padding: 1.5px 1.5px;
+  padding: 1px 2px;
   text-align: center;
   vertical-align: middle;
   white-space: nowrap;
+  line-height: 1.2;
 }
 
 .ms-table thead tr th {
@@ -12302,8 +12303,8 @@ body.is-super-admin td.admin-only {
 
 .ms-table th {
   font-weight: 700;
-  font-size: 0.75rem;
-  padding: 4px 4px;
+  font-size: 0.7rem;
+  padding: 2px 3px;
   white-space: nowrap;
 }
 
@@ -12485,8 +12486,8 @@ body.is-super-admin td.admin-only {
 .ms-exam-summary-tbl {
   width: 100%;
   border-collapse: collapse;
-  font-size: 0.75rem;
-  line-height: 1.4;
+  font-size: 0.72rem;
+  line-height: 1.3;
   border: 1.5px solid #94a3b8;
   border-radius: 4px;
   overflow: hidden;
@@ -12495,10 +12496,10 @@ body.is-super-admin td.admin-only {
 .ms-exam-summary-tbl caption {
   caption-side: top;
   text-align: center;
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 700;
   color: #1e3a5f;
-  padding: 5px 0 4px;
+  padding: 3px 0 2px;
   letter-spacing: 0.5px;
   background: linear-gradient(135deg, #e8f5e9 0%, #f1f8e9 100%);
   border: 1.5px solid #94a3b8;
@@ -12513,8 +12514,8 @@ body.is-super-admin td.admin-only {
 .ms-exam-summary-tbl thead th {
   color: #ffffff !important;
   font-weight: 700;
-  font-size: 0.72rem;
-  padding: 6px 4px;
+  font-size: 0.68rem;
+  padding: 4px 2px;
   text-align: center;
   border: 1px solid rgba(255, 255, 255, 0.2);
   white-space: nowrap;
@@ -12525,7 +12526,7 @@ body.is-super-admin td.admin-only {
 
 .ms-exam-summary-tbl tbody td,
 .ms-exam-summary-tbl tfoot td {
-  padding: 5px 6px;
+  padding: 3px 4px;
   text-align: center;
   border: 1px solid #d1d5db;
   font-weight: 600;
