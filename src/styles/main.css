@@ -9968,17 +9968,19 @@ body:not(.dark-mode) .nav-btn {
 .page-nav-tabs {
   display: flex;
   gap: 4px;
-  padding: 6px 8px;
+  padding: 8px 12px;
   background: var(--card-bg);
   border-radius: 12px;
   border: 1px solid var(--border-color);
-  margin-top: 10px;
+  margin: 10px 0;
   overflow-x: auto;
   scrollbar-width: none;
   position: sticky;
-  top: 0;
-  z-index: 100;
-  backdrop-filter: blur(10px);
+  top: 10px;
+  z-index: 1100;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
 .page-nav-tabs::-webkit-scrollbar {
@@ -21745,11 +21747,44 @@ a.sidebar-contact-item:hover {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
   }
-  .ms-rank-1-class, .ms-rank-1-group { background: radial-gradient(circle at 30% 30%, #4ade80, #16a34a 60%, #15803d) !important; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; border: 1.2px solid #14532d !important; text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important; }
-  .ms-rank-2-class, .ms-rank-2-group { background: radial-gradient(circle at 30% 30%, #60a5fa, #2563eb 60%, #1d4ed8) !important; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; border: 1.2px solid #1e3a8a !important; text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important; }
-  .ms-rank-3-class, .ms-rank-3-group { background: radial-gradient(circle at 30% 30%, #fb923c, #ea580c 60%, #c2410c) !important; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; border: 1.2px solid #9a3412 !important; text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important; }
-  .ms-rank-gen-class { background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e2e8f0 40%, #cbd5e1 100%) !important; color: #1e293b !important; border: 1.2px solid #64748b !important; text-shadow: none !important; }
-  .ms-rank-gen-group { background: radial-gradient(circle at 30% 30%, #fef3c7 0%, #fde047 50%, #eab308 100%) !important; color: #0f172a !important; border: 1.2px solid #ca8a04 !important; text-shadow: none !important; }
+  .ms-rank-1-class, .ms-rank-1-group { 
+    background: #16a34a !important; 
+    background: radial-gradient(circle at 30% 30%, #4ade80, #16a34a 60%, #15803d) !important; 
+    color: #ffffff !important; 
+    -webkit-text-fill-color: #ffffff !important; 
+    border: 1.2px solid #14532d !important; 
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important; 
+  }
+  .ms-rank-2-class, .ms-rank-2-group { 
+    background: #2563eb !important; 
+    background: radial-gradient(circle at 30% 30%, #60a5fa, #2563eb 60%, #1d4ed8) !important; 
+    color: #ffffff !important; 
+    -webkit-text-fill-color: #ffffff !important; 
+    border: 1.2px solid #1e3a8a !important; 
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important; 
+  }
+  .ms-rank-3-class, .ms-rank-3-group { 
+    background: #ea580c !important; 
+    background: radial-gradient(circle at 30% 30%, #fb923c, #ea580c 60%, #c2410c) !important; 
+    color: #ffffff !important; 
+    -webkit-text-fill-color: #ffffff !important; 
+    border: 1.2px solid #9a3412 !important; 
+    text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important; 
+  }
+  .ms-rank-gen-class { 
+    background: #e2e8f0 !important; 
+    background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e2e8f0 40%, #cbd5e1 100%) !important; 
+    color: #1e293b !important; 
+    border: 1.2px solid #64748b !important; 
+    text-shadow: none !important; 
+  }
+  .ms-rank-gen-group { 
+    background: #fde047 !important; 
+    background: radial-gradient(circle at 30% 30%, #fef3c7 0%, #fde047 50%, #eab308 100%) !important; 
+    color: #0f172a !important; 
+    border: 1.2px solid #ca8a04 !important; 
+    text-shadow: none !important; 
+  }
 
   .ms-result-box,
   .ms-result-pass,

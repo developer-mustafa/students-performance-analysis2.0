@@ -404,8 +404,10 @@ async function init() {
             }
             if (pageId === 'admit-card') {
                 const { initAdmitCardManager, populateACDropdowns } = await import('./js/modules/admitCardManager.js');
+                const { initRoutineManager } = await import('./js/modules/routineManager.js');
                 if (!initializedModules.has('admit-card')) {
                     initAdmitCardManager();
+                    initRoutineManager();
                     initializedModules.add('admit-card');
                 }
                 await populateACDropdowns();
