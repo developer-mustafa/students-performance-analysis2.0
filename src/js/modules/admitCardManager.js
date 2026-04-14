@@ -9,6 +9,7 @@ import {
 import { state } from './state.js';
 import { showNotification, convertToEnglishDigits, convertToBengaliDigits } from '../utils.js';
 import { getRoutinesData, normalizeGroupName, fetchRoutines } from './routineManager.js';
+import { showLoading, hideLoading } from './uiManager.js';
 import { compressImage } from '../imageUtils.js';
 
 let acClassSelect, acSessionSelect, acExamNameSelect, acGroupSelect, acLayoutSelect, acOrientationSelect;
@@ -667,6 +668,8 @@ async function generateCards(type) {
         return;
     }
 
+    showLoading('শিক্ষার্থী তালিকা যাচাই করা হচ্ছে...', 'অপেক্ষা করুন...', 5);
+
     // Refresh routine data to ensure latest and handles normalization fixes
     await fetchRoutines();
 
@@ -791,7 +794,7 @@ async function generateCards(type) {
     const totalPages = Math.ceil(studentsArray.length / cardsPerPage);
     
     // Helper to generate HTML for all pages
-    const generatePagesHTML = (orientation) => {
+    const generatePagesHTML = async (orientation) => {
         let pagesHTML = '';
         
         // Dynamic Row Count Logic to prevent stretching on partially filled pages
@@ -816,14 +819,30 @@ async function generateCards(type) {
         const totalCardsPerPage = type === 'admit' ? effectiveLayoutSize : effectiveLayoutSize * 2;
         const rowCount = Math.ceil(totalCardsPerPage / cols);
 
+        admitCardPreview.innerHTML = ''; // Clear previous
+        
+        let hasRevealedUI = false;
+        let generatedCardsCount = 0;
+
         for (let i = 0; i < totalPages; i++) {
+            // Update Progress: Starts from 20% to 100%
+            const percent = 20 + Math.round((i / totalPages) * 80);
+            if (!hasRevealedUI) {
+                showLoading(`${isAdmit ? 'এডমিট কার্ড' : 'সীট প্ল্যান'} তৈরি হচ্ছে...`, `${studentsArray.length} জনের মধ্যে ${(i * cardsPerPage)} জন সম্পন্ন`, percent);
+            } else {
+                // If UI is already revealed, update a compact progress or standard notification (optional, silent is better to prevent blinking)
+                // But keep DOM updating progressive:
+            }
+
             const slice = studentsArray.slice(i * cardsPerPage, (i + 1) * cardsPerPage);
+            generatedCardsCount += slice.length;
+
             const cardsHtml = slice.map(student => {
                 if (type === 'admit') return renderAdmitCard(student, subjects, examName, configPack);
                 return renderSeatPlan(student, examName, configPack);
             }).join('');
 
-            pagesHTML += `
+            const pageHtml = `
                 <div class="ac-page ac-layout-${effectiveLayoutSize} ac-theme-${configPack.theme} ac-page-${orientation} ${type === 'seat' ? 'ac-page-seat' : ''}" 
                      style="--ac-watermark-url: url('${configPack.watermarkUrl}');
                             --ac-base-font-size: ${configPack.baseFontSize};
@@ -831,31 +850,56 @@ async function generateCards(type) {
                             --ac-table-font-size: ${configPack.tableFontSize};
                             --ac-rows: ${rowCount};">
                     ${cardsHtml}
-                </div>`.trim(); // Trim each page block
+                </div>`.trim();
+                
+            admitCardPreview.insertAdjacentHTML('beforeend', pageHtml);
+
+            if (generatedCardsCount >= 5 && !hasRevealedUI) {
+                hideLoading();
+                admitCardPreview.classList.remove('seat-plan-mode');
+                if (type === 'seat') admitCardPreview.classList.add('seat-plan-mode');
+                
+                acPreviewWrapper.style.display = 'block';
+                acEmptyStateMsg.style.display = 'none';
+                if (type === 'admit') {
+                    if (acPrintAllBtn) acPrintAllBtn.style.display = 'inline-flex';
+                    if (spPrintAllBtn) spPrintAllBtn.style.display = 'none';
+                } else {
+                    if (spPrintAllBtn) spPrintAllBtn.style.display = 'inline-flex';
+                    if (acPrintAllBtn) acPrintAllBtn.style.display = 'none';
+                }
+                
+                setTimeout(fitTitleScaling, 50);
+                hasRevealedUI = true;
+            }
+
+            // Yield to UI thread every page to keep it buttery smooth
+            await new Promise(r => setTimeout(r, 20));
         }
-        return pagesHTML.trim(); // Trim final combined string
+
+        if (!hasRevealedUI) {
+            // Fallback for < 5 students
+            hideLoading();
+            admitCardPreview.classList.remove('seat-plan-mode');
+            if (type === 'seat') admitCardPreview.classList.add('seat-plan-mode');
+            
+            acPreviewWrapper.style.display = 'block';
+            acEmptyStateMsg.style.display = 'none';
+            if (type === 'admit') {
+                if (acPrintAllBtn) acPrintAllBtn.style.display = 'inline-flex';
+                if (spPrintAllBtn) spPrintAllBtn.style.display = 'none';
+            } else {
+                if (spPrintAllBtn) spPrintAllBtn.style.display = 'inline-flex';
+                if (acPrintAllBtn) acPrintAllBtn.style.display = 'none';
+            }
+            setTimeout(fitTitleScaling, 50);
+        }
     };
 
-    // Initial render
-    admitCardPreview.innerHTML = generatePagesHTML(pageOrientation);
-
-    admitCardPreview.classList.remove('seat-plan-mode');
-    if (type === 'seat') admitCardPreview.classList.add('seat-plan-mode');
-
-    acPreviewWrapper.style.display = 'block';
-    acEmptyStateMsg.style.display = 'none';
-    if (type === 'admit') {
-        if (acPrintAllBtn) acPrintAllBtn.style.display = 'inline-flex';
-        if (spPrintAllBtn) spPrintAllBtn.style.display = 'none';
-    } else {
-        if (spPrintAllBtn) spPrintAllBtn.style.display = 'inline-flex';
-        if (acPrintAllBtn) acPrintAllBtn.style.display = 'none';
-    }
+    // Trigger chunked generation
+    await generatePagesHTML(pageOrientation);
 
     showNotification(`${studentsArray.length} জন শিক্ষার্থীর ${type === 'admit' ? 'এডমিট কার্ড' : 'সীট প্ল্যান'} তৈরি হয়েছে ✅`);
-
-    // Auto-scale titles to fit one line
-    setTimeout(fitTitleScaling, 50);
 }
 
 function getDeveloperCreditHtml(className) {

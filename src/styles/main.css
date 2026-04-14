@@ -16522,6 +16522,31 @@ input:checked+.toggle-slider:before {
     height: auto !important;
   }
 
+  /* Seat Plan Responsive Fixes */
+  .sp-card {
+    padding: 6px;
+    overflow: hidden;
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+  
+  .sp-card-inner {
+    padding: 6px;
+    overflow: hidden;
+    width: 100% !important;
+    box-sizing: border-box;
+  }
+  
+  .sp-table {
+     font-size: 0.9rem !important;
+  }
+  
+  .sp-table th, .sp-table td {
+     white-space: normal;
+     word-break: break-word;
+  }
+
   /* Admit Card */
   .ac-card {
     padding: 6px;
@@ -21713,6 +21738,66 @@ a.sidebar-contact-item:hover {
 }
 
 
+
+/* Print Overrides for Marksheet Visual Elements */
+@media print {
+  .ms-rank-badge {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  .ms-rank-1-class, .ms-rank-1-group { background: radial-gradient(circle at 30% 30%, #4ade80, #16a34a 60%, #15803d) !important; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; border: 1.2px solid #14532d !important; text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important; }
+  .ms-rank-2-class, .ms-rank-2-group { background: radial-gradient(circle at 30% 30%, #60a5fa, #2563eb 60%, #1d4ed8) !important; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; border: 1.2px solid #1e3a8a !important; text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important; }
+  .ms-rank-3-class, .ms-rank-3-group { background: radial-gradient(circle at 30% 30%, #fb923c, #ea580c 60%, #c2410c) !important; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; border: 1.2px solid #9a3412 !important; text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important; }
+  .ms-rank-gen-class { background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e2e8f0 40%, #cbd5e1 100%) !important; color: #1e293b !important; border: 1.2px solid #64748b !important; text-shadow: none !important; }
+  .ms-rank-gen-group { background: radial-gradient(circle at 30% 30%, #fef3c7 0%, #fde047 50%, #eab308 100%) !important; color: #0f172a !important; border: 1.2px solid #ca8a04 !important; text-shadow: none !important; }
+
+  .ms-result-box,
+  .ms-result-pass,
+  .ms-result-fail,
+  .ms-gs-item,
+  .ms-pill-left,
+  .ms-header-pill {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+
+/* Premium Rank Badges - Optimized for Screen & Print */
+.ms-rank-badge {
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    width: 34px !important;
+    height: 34px !important;
+    border-radius: 50% !important;
+    font-weight: 900 !important;
+    font-size: 0.65rem !important; /* Scaled down slightly to avoid border clipping */
+    letter-spacing: -0.3px !important; /* Help fit longer texts like ৮০তম */
+    padding: 2px !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: inset 0 2px 3px rgba(255,255,255,0.4), inset 0 -1px 3px rgba(0,0,0,0.1), 0 2px 4px rgba(0,0,0,0.15) !important;
+    line-height: 1 !important;
+    text-shadow: 0 1px 2px rgba(0,0,0,0.2) !important;
+}
+
+/* Rank Variants */
+/* First Rank (Class and Group) - Green with White Text */
+.ms-rank-1-class, .ms-rank-1-group { background: radial-gradient(circle at 30% 30%, #4ade80, #16a34a 60%, #15803d) !important; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; border: 1.2px solid #14532d !important; text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important; }
+
+/* Second Rank (Class and Group) - Blue with White Text */
+.ms-rank-2-class, .ms-rank-2-group { background: radial-gradient(circle at 30% 30%, #60a5fa, #2563eb 60%, #1d4ed8) !important; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; border: 1.2px solid #1e3a8a !important; text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important; }
+
+/* Third Rank (Class and Group) - Dark Orange with White Text */
+.ms-rank-3-class, .ms-rank-3-group { background: radial-gradient(circle at 30% 30%, #fb923c, #ea580c 60%, #c2410c) !important; color: #ffffff !important; -webkit-text-fill-color: #ffffff !important; border: 1.2px solid #9a3412 !important; text-shadow: 0 1px 2px rgba(0,0,0,0.3) !important; }
+
+/* Standard Generalized Ranks (4th and beyond) */
+/* Class Rank > 3 (Silver/Grey with dark text, no change to color just formatting) */
+.ms-rank-gen-class { background: radial-gradient(circle at 30% 30%, #ffffff 0%, #e2e8f0 40%, #cbd5e1 100%) !important; color: #1e293b !important; border: 1.2px solid #64748b !important; text-shadow: none !important; }
+
+/* Group Rank > 3 (Lighter Orange with BLACK text) */
+.ms-rank-gen-group { background: radial-gradient(circle at 30% 30%, #fef3c7 0%, #fde047 50%, #eab308 100%) !important; color: #0f172a !important; border: 1.2px solid #ca8a04 !important; text-shadow: none !important; }
+
 /* Marksheet Extra Sections (History, Comments, QR) */
 .ms-extra-grid {
   display: grid !important;
@@ -22504,4 +22589,180 @@ a.sidebar-contact-item:hover {
     margin: 0 !important;
     padding: 0 !important;
   }
+}
+/* =========================================
+   PREMIUM GLASS-MORPHISM LOADING SYSTEM
+   ========================================= */
+.loading-overlay {
+    position: fixed;
+    inset: 0;
+    z-index: 10000;
+    background: rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(15px) saturate(180%);
+    -webkit-backdrop-filter: blur(15px) saturate(180%);
+    display: none;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.loading-overlay.fade-out {
+    opacity: 0;
+    pointer-events: none;
+}
+
+body.dark-mode .loading-overlay {
+    background: rgba(15, 23, 42, 0.55);
+}
+
+.loading-wrapper {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 30px;
+    animation: fadeInScale 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+@keyframes fadeInScale {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.loading-text-content {
+    text-align: center;
+}
+
+.app-name-loading {
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #1e293b;
+    margin: 0;
+    letter-spacing: -0.01em;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+body.dark-mode .app-name-loading {
+    color: #f8fafc;
+}
+
+.developer-credit-loading {
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #64748b;
+    margin: 6px 0 0;
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    opacity: 0.8;
+}
+
+body.dark-mode .developer-credit-loading {
+    color: #94a3b8;
+}
+
+
+
+/* Spinner Glow - Redesigned for a High-End App Feel */
+.professional-spinner {
+    position: relative;
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    perspective: 800px;
+}
+
+.professional-spinner::before,
+.professional-spinner::after {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border-radius: 50%;
+    animation-duration: 1.2s;
+    animation-iteration-count: infinite;
+    animation-timing-function: cubic-bezier(0.52, 0.02, 0.19, 1.02);
+}
+
+.professional-spinner::before {
+    border-top: 4px solid #4361ee;
+    border-left: 4px solid rgba(67, 97, 238, 0.1);
+    animation-name: spin-orbital-1;
+    filter: drop-shadow(0 0 8px rgba(67, 97, 238, 0.4));
+}
+
+.professional-spinner::after {
+    border-right: 4px solid #4cc9f0;
+    border-bottom: 4px solid rgba(76, 201, 240, 0.1);
+    animation-name: spin-orbital-2;
+    filter: drop-shadow(0 0 8px rgba(76, 201, 240, 0.4));
+}
+
+@keyframes spin-orbital-1 {
+    0% { transform: rotateX(35deg) rotateY(-45deg) rotateZ(0deg); }
+    100% { transform: rotateX(35deg) rotateY(-45deg) rotateZ(360deg); }
+}
+
+@keyframes spin-orbital-2 {
+    0% { transform: rotateX(50deg) rotateY(10deg) rotateZ(0deg); }
+    100% { transform: rotateX(50deg) rotateY(10deg) rotateZ(360deg); }
+}
+
+@keyframes spin-premium {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Compact Background Progress Bar */
+.ms-compact-progress {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(67, 97, 238, 0.05);
+    z-index: 1000000;
+    display: none;
+}
+
+.ms-compact-progress-bar {
+    height: 100%;
+    background: linear-gradient(90deg, #4361ee, #4cc9f0, #4361ee);
+    background-size: 200% auto;
+    width: 0%;
+    transition: width 0.3s ease;
+    box-shadow: 0 0 10px rgba(67, 97, 238, 0.4);
+    animation: gradientShift 2s linear infinite;
+}
+
+.ms-compact-info {
+    position: fixed;
+    top: 15px;
+    right: 20px;
+    background: rgba(255, 255, 255, 0.85);
+    backdrop-filter: blur(12px) saturate(180%);
+    -webkit-backdrop-filter: blur(12px) saturate(180%);
+    padding: 8px 16px;
+    border-radius: 12px;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #4361ee;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.04);
+    z-index: 1000000;
+    display: none;
+    align-items: center;
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    animation: slideInRightToast 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+}
+
+body.dark-mode .ms-compact-info {
+    background: rgba(30, 41, 59, 0.85);
+    color: #818cf8;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+}
+
+@keyframes slideInRightToast {
+    from { transform: translateX(120%) scale(0.9); opacity: 0; }
+    to { transform: translateX(0) scale(1); opacity: 1; }
 }

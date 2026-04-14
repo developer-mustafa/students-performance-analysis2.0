@@ -18,7 +18,7 @@ import { compressImage } from '../imageUtils.js';
 import QRCode from 'qrcode';
 import { generateStudentUniqueId } from './studentResultsManager.js';
 import { loadMarksheetRules, currentMarksheetRules } from './marksheetRulesManager.js';
-import { showConfirmModal } from './uiManager.js';
+import { showConfirmModal, showLoading, hideLoading } from './uiManager.js';
 
 let marksheetSettings = {
     institutionName: '',
@@ -194,10 +194,10 @@ export async function populateMSDropdowns() {
                         session: sessionSelect.value
                     });
                     const latest = lookupMap.get(studentKey);
-                    
+
                     // Skip inactive students
                     if (latest && String(latest.status) === 'false') return;
-                    
+
                     const displayName = latest ? (latest.name || s.name) : s.name;
                     studentSelect.innerHTML += `<option value="${s.id}_${s.group}">${s.id} - ${displayName}</option>`;
                 });
@@ -473,13 +473,89 @@ async function generateMarksheets() {
 
 
     for (const student of allStudentsForSummary) {
-        const html = await renderSingleMarksheet(student, displaySubjects, examDisplayName, session, null, rules, allOptSubs, allExams, subjectConfigs, null, false, highestMarks);
+        // Light render to extract exact DOM results
+        const html = await renderSingleMarksheet(student, displaySubjects, examDisplayName, session, null, rules, allOptSubs, allExams, subjectConfigs, null, true, highestMarks);
         allRenderedData.push({
+            student,
             html,
             key: `${student.id}_${student.group}`,
             group: student.group,
             subjects: student.subjects
         });
+    }
+
+    // --- PASS 1.5: EXACT HTML-BASED RANKING SYSTEM ---
+    const meritResults = allRenderedData.map(item => {
+        const isPass = item.html.includes('ms-result-pass');
+        const isAbsent = !Object.values(item.subjects).some(data =>
+            ((data.written || 0) > 0 || (data.mcq || 0) > 0 || (data.practical || 0) > 0 || (data.total || 0) > 0)
+        );
+        let gpa = 0;
+        if (isPass) {
+            const gpaMatch = item.html.match(/<span class="ms-result-value ms-gpa-value">\s*([\d.]+)\s*<\/span>/);
+            if (gpaMatch) gpa = parseFloat(gpaMatch[1]);
+        }
+        let totalMarks = 0;
+        const marksMatch = item.html.match(/<span class="ms-result-label">মোট নম্বর<\/span>\s*<span class="ms-result-value">\s*(\d+)/);
+        if (marksMatch) totalMarks = parseInt(marksMatch[1]);
+
+        let failedCount = 0;
+        if (!isPass && !isAbsent) {
+            failedCount = (item.html.match(/<td class="ms-td-grade[^>]*>\s*F\s*<\/td>/g) || []).length || 1;
+        }
+
+        const toEng = (str) => {
+            const numMap = { '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4', '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9' };
+            return String(str).replace(/[০-৯]/g, match => numMap[match]);
+        };
+        const numId = parseInt(toEng(item.student.id)) || 0;
+
+        return { key: item.key, group: item.group || 'general', id: numId, isPass, gpa, totalMarks, failedCount, isAbsent };
+    });
+
+    meritResults.sort((a, b) => {
+        if (a.isAbsent !== b.isAbsent) return a.isAbsent ? 1 : -1;
+        if (a.isAbsent && b.isAbsent) return a.id - b.id;
+        if (a.isPass !== b.isPass) return a.isPass ? -1 : 1;
+        if (a.isPass) {
+            if (Math.abs(b.gpa - a.gpa) > 0.0001) return b.gpa - a.gpa;
+        } else {
+            if (a.failedCount !== b.failedCount) return a.failedCount - b.failedCount;
+        }
+        if (Math.abs(b.totalMarks - a.totalMarks) > 0.01) return b.totalMarks - a.totalMarks;
+        return a.id - b.id;
+    });
+
+    const exactRanksMap = new Map();
+    const groupTally = new Map();
+    const toBnNum = (n) => Number(n).toLocaleString('bn-BD');
+
+    meritResults.forEach((res, idx) => {
+        const grp = res.group;
+        if (!groupTally.has(grp)) groupTally.set(grp, 0);
+        if (!res.isAbsent) groupTally.set(grp, groupTally.get(grp) + 1);
+
+        const rankIndex = res.isAbsent ? -1 : idx;
+        const groupIndex = res.isAbsent ? -1 : groupTally.get(grp) - 1;
+
+        const formatRank = (i) => i === 0 ? '১ম' : i === 1 ? '২য়' : i === 2 ? '৩য়' : i === 3 ? '৪র্থ' : i === 4 ? '৫ম' : i === 5 ? '৬ষ্ঠ' : i === 6 ? '৭ম' : i === 7 ? '৮ম' : i === 8 ? '৯ম' : i === 9 ? '১০ম' : `${toBnNum(i + 1)}তম`;
+
+        exactRanksMap.set(res.key, {
+            classRank: res.isAbsent ? 'রেঙ্ক নেই' : formatRank(rankIndex),
+            groupRank: res.isAbsent ? 'রেঙ্ক নেই' : formatRank(groupIndex),
+            classRankNum: res.isAbsent ? 999999 : rankIndex,
+            groupRankNum: res.isAbsent ? 999999 : groupIndex,
+            isPass: res.isPass,
+            isAbsent: res.isAbsent,
+            isFail: !res.isPass && !res.isAbsent,
+            roll: res.id
+        });
+    });
+
+    // Re-render specifically with the forced exact ranks!
+    for (const item of allRenderedData) {
+        const exactRanks = exactRanksMap.get(item.key);
+        item.html = await renderSingleMarksheet(item.student, displaySubjects, examDisplayName, session, null, rules, allOptSubs, allExams, subjectConfigs, null, false, highestMarks, exactRanks);
     }
 
     // Count totals from rendered marksheets — GROUP-WISE breakdown
@@ -586,7 +662,79 @@ async function generateMarksheets() {
         displayItems = displayItems.filter(item => item.key === studentSelection);
     }
 
-    const marksheetsHtml = displayItems.map(item => {
+    // --- APPLY UI CHECKBOX/RADIO CRITERIA FILTERS ---
+    const filterPass = document.getElementById('msFilterPass')?.checked ?? true;
+    const filterFail = document.getElementById('msFilterFail')?.checked ?? true;
+    const filterPresent = document.getElementById('msFilterPresent')?.checked ?? true;
+    const filterAbsent = document.getElementById('msFilterAbsent')?.checked ?? true;
+
+    displayItems = displayItems.filter(item => {
+        const stats = exactRanksMap.get(item.key);
+        if (!stats) return true;
+
+        if (stats.isAbsent && !filterAbsent) return false;
+        if (!stats.isAbsent && !filterPresent) return false;
+
+        if (!stats.isAbsent) {
+            if (stats.isPass && !filterPass) return false;
+            if (stats.isFail && !filterFail) return false;
+        }
+        return true;
+    });
+
+    // --- APPLY UI CHECKBOX/RADIO SORTING ---
+    let sortType = 'roll';
+    const sortOrderOptions = document.getElementsByName('msSortOrder');
+    if (sortOrderOptions) {
+        for (const opt of sortOrderOptions) {
+            if (opt.checked) { sortType = opt.value; break; }
+        }
+    }
+
+    displayItems.sort((a, b) => {
+        const statA = exactRanksMap.get(a.key);
+        const statB = exactRanksMap.get(b.key);
+        if (!statA || !statB) return 0;
+
+        if (sortType === 'classRank') {
+            return statA.classRankNum - statB.classRankNum || statA.roll - statB.roll;
+        } else if (sortType === 'groupRank') {
+            return statA.groupRankNum - statB.groupRankNum || statA.roll - statB.roll;
+        } else {
+            return statA.roll - statB.roll; // Default Roll Wise
+        }
+    });
+
+    previewArea.innerHTML = '';
+
+    let hasRevealedUIMS = false;
+    let generatedCardsCountMS = 0;
+
+    const revealUI = () => {
+        const criteriaFilters = document.getElementById('msCriteriaFilters');
+        const printBtn = document.getElementById('msPrintBtn');
+
+        if (criteriaFilters) criteriaFilters.style.display = 'flex';
+        if (printBtn) printBtn.style.display = 'inline-flex';
+
+        // Show main zoom header
+        const mainHeader = document.getElementById('msMainPreviewHeader');
+        if (mainHeader) {
+            mainHeader.style.display = 'flex';
+            // Auto-fit check for mobile
+            if (window.innerWidth <= 768) {
+                const zoomInput = document.getElementById('msMainZoom');
+                const zoomLevelValue = document.getElementById('msMainZoomLevel');
+                const initialScale = window.innerWidth <= 480 ? 0.48 : 0.58;
+                if (zoomInput) zoomInput.value = initialScale;
+                if (zoomLevelValue) zoomLevelValue.innerText = Math.round(initialScale * 100) + '%';
+                previewArea.style.setProperty('--ms-main-scale', initialScale);
+            }
+        }
+    };
+
+    for (let i = 0; i < displayItems.length; i++) {
+        const item = displayItems[i];
         const ms = getMarksheetSettings();
         let finalHtml = item.html;
 
@@ -606,46 +754,38 @@ async function generateMarksheets() {
         finalHtml = finalHtml.replace('<!--GS_D-->', overallGradeCounts['D']);
         finalHtml = finalHtml.replace('<!--GS_F-->', overallGradeCounts['F']);
 
-        return finalHtml;
-    }).join('');
-    // --- End Exam Summary ---
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = finalHtml;
 
-    previewArea.innerHTML = marksheetsHtml;
+        // Render QR just for this marksheet
+        try {
+            await renderMarksheetQRCodes(wrapper);
+        } catch (qrErr) {
+            console.error("QR rendering failed for student:", qrErr);
+        }
 
-    // Render QRs - Explicitly await to ensure they exist before user can print
-    try {
-        await renderMarksheetQRCodes(previewArea);
-    } catch (qrErr) {
-        console.error("QR rendering failed in main flow:", qrErr);
+        // Append to preview Area
+        while (wrapper.firstChild) {
+            previewArea.appendChild(wrapper.firstChild);
+        }
+
+        generatedCardsCountMS++;
+
+        if (generatedCardsCountMS >= 5 && !hasRevealedUIMS) {
+            // Un-comment hideLoading() here if needed later, but removed per request
+            revealUI();
+            hasRevealedUIMS = true;
+        }
+
+        // Yield occasionally
+        if (i % 2 === 0) await new Promise(r => setTimeout(r, 20));
     }
 
-    // Show bulk print buttons
-    const bulkBtn = document.getElementById('msPrintAllBtn');
-    const presentBtn = document.getElementById('msPrintPresentBtn');
-    const absentBtn = document.getElementById('msPrintAbsentBtn');
-
-    if (bulkBtn) bulkBtn.style.display = 'inline-flex';
-    if (presentBtn) presentBtn.style.display = 'inline-flex';
-    if (absentBtn) absentBtn.style.display = 'inline-flex';
+    if (!hasRevealedUIMS) {
+        revealUI();
+    }
 
     showNotification(`${displayItems.length} জন শিক্ষার্থীর মার্কশীট তৈরি হয়েছে ✅`);
-
-    // ... (rest of the function)
-
-    // Show main zoom header
-    const mainHeader = document.getElementById('msMainPreviewHeader');
-    if (mainHeader) {
-        mainHeader.style.display = 'flex';
-        // Auto-fit check for mobile
-        if (window.innerWidth <= 768) {
-            const zoomInput = document.getElementById('msMainZoom');
-            const zoomLevelValue = document.getElementById('msMainZoomLevel');
-            const initialScale = window.innerWidth <= 480 ? 0.48 : 0.58;
-            if (zoomInput) zoomInput.value = initialScale;
-            if (zoomLevelValue) zoomLevelValue.innerText = Math.round(initialScale * 100) + '%';
-            previewArea.style.setProperty('--ms-main-scale', initialScale);
-        }
-    }
 
     // Update internal state of subjects seen during this generation
     state.lastGeneratedSubjects = displaySubjects;
@@ -671,10 +811,20 @@ async function getStudentExamsHistory(student, allExams, cls, session, rules, su
     const norm = (txt) => (txt || '').trim().toLowerCase();
     const toEng = (txt) => convertToEnglishDigits(String(txt || ''));
 
+    // Critical: Cross-lingual group normalization for robust matching
+    const normalizeGrp = (group) => {
+        if (!group) return 'general';
+        const g = String(group).trim().toLowerCase();
+        if (g.includes('বিজ্ঞা') || g.includes('sci')) return 'science';
+        if (g.includes('মানবি') || g.includes('hum') || g.includes('art')) return 'humanities';
+        if (g.includes('ব্যবসায়') || g.includes('commerce') || g.includes('bus')) return 'business';
+        return g;
+    };
+
     // Cache key includes hidden subjects so rank recalculates when subjects change
     const hiddenKey = (marksheetSettings.hiddenSubjects || []).sort().join(',');
     const cacheKeyBase = `${cls}_${session}_h${hiddenKey}`;
-    
+
     let examSessions = [...new Set(allExams.filter(e => e.class === cls && e.session === session).map(e => e.name))];
     if (marksheetSettings.historyExams && marksheetSettings.historyExams.length > 0) {
         examSessions = examSessions.filter(name => marksheetSettings.historyExams.includes(name));
@@ -691,12 +841,21 @@ async function getStudentExamsHistory(student, allExams, cls, session, rules, su
             const subjectsInSession = [...new Set(sessionExams.map(e => e.subject).filter(Boolean))]
                 .filter(subj => !hiddenSet.has(norm(subj)));
 
+            const lookupMap = await getStudentLookupMap();
+
             const studentsInSession = new Map();
             sessionExams.forEach(ex => {
                 if (!ex.studentData) return;
                 ex.studentData.forEach(s => {
-                    const sId = toEng(s.id);
-                    const sGroup = norm(s.group);
+                    // Strictly skip inactive students so they do not occupy ranks
+                    const lookupKey = generateStudentDocId({ id: s.id, group: s.group, class: cls, session: session });
+                    const latestDoc = lookupMap.get(lookupKey);
+                    if (latestDoc && String(latestDoc.status) === 'false') return;
+
+                    // ID normalization: strip leading zeros so '03' and '3' are same student
+                    let sId = toEng(s.id);
+                    if (/^\d+$/.test(sId)) sId = parseInt(sId, 10).toString();
+                    const sGroup = normalizeGrp(s.group); // Use robust group normalization
                     const key = `${sId}_${sGroup}`;
                     if (!studentsInSession.has(key)) {
                         studentsInSession.set(key, { id: sId, name: s.name, group: sGroup, originalGroup: s.group, subjects: {} });
@@ -825,10 +984,12 @@ async function getStudentExamsHistory(student, allExams, cls, session, rules, su
             results = tempResults;
         }
 
-        const studentId = toEng(student.id);
-        const studentGroup = norm(student.group);
+        // Match the same ID normalization used during data collection
+        let studentId = toEng(student.id);
+        if (/^\d+$/.test(studentId)) studentId = parseInt(studentId, 10).toString();
+        const studentGroup = normalizeGrp(student.group); // Use robust group normalization
         const searchKey = `${studentId}_${studentGroup}`;
-        
+
         const studentRankIdx = results.findIndex(r => r.key === searchKey || (r.id === studentId && r.group === studentGroup));
         const groupResults = results.filter(r => r.group === studentGroup);
         const groupRankIdx = groupResults.findIndex(r => r.key === searchKey || (r.id === studentId && r.group === studentGroup));
@@ -860,7 +1021,7 @@ const getMarkClass = (mark, passMark) => {
 };
 
 
-export async function renderSingleMarksheet(student, subjects, examDisplayName, selectedSession, customSettings = null, rules = null, allOptSubs = [], allExams = [], subjectConfigs = {}, examSummary = null, skipHeavyOps = false, highestMarks = {}) {
+export async function renderSingleMarksheet(student, subjects, examDisplayName, selectedSession, customSettings = null, rules = null, allOptSubs = [], allExams = [], subjectConfigs = {}, examSummary = null, skipHeavyOps = false, highestMarks = {}, exactRanks = null) {
 
     const history = skipHeavyOps ? [] : await getStudentExamsHistory(student, allExams, student.class, selectedSession, rules, subjectConfigs);
     const uid = student.uniqueId || generateStudentUniqueId(student.name, student.class, selectedSession, student.id, student.group);
@@ -956,14 +1117,14 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
 
                 const sRoll = String(student.id || '').trim().replace(/^0+/, '');
                 const sGroupNorm = normalizeText(student.group || '');
-                
+
                 // --- STRICT MAPPING ENFORCEMENT ---
                 const cleanName = normalizeText(name).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
                 const thisSubMap = (ms.subjectMapping || []).find(m => {
                     const mapSubNorm = normalizeText(m.subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
                     const mapGroupNorm = normalizeText(m.group);
-                    return mapSubNorm === cleanName && 
-                           (sGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(sGroupNorm));
+                    return mapSubNorm === cleanName &&
+                        (sGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(sGroupNorm));
                 });
 
                 if (thisSubMap) {
@@ -988,7 +1149,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
             if (isOpt && !isGeneral && !isGroup) {
                 const hasData = checkMarks(subjName) || papers.some(p => checkMarks(p));
                 // Show if has data OR if it's the only optional subject defined for this group
-                if (!hasData && optSubs.length > 2) return false; 
+                if (!hasData && optSubs.length > 2) return false;
                 // (length > 2 because a single subject might have 2 papers, so we allow 1-2 papers)
             }
 
@@ -1010,7 +1171,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                         const p1 = norm(altPair.sub1);
                         const isP1Current = p1 === normSubjName || papers.some(paper => norm(paper) === p1);
                         const partner = isP1Current ? altPair.sub2 : altPair.sub1;
-                        
+
                         if (checkMarks(partner)) {
                             hasAnyPartnerMarks = true;
                         }
@@ -1352,6 +1513,10 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
     history.forEach(h => {
         if (h.name === examDisplayName) {
             h.gpa = overallGrade === 'F' ? `${avgGPA} (F)` : avgGPA;
+            if (exactRanks) {
+                h.rank = exactRanks.classRank;
+                h.groupRank = exactRanks.groupRank;
+            }
         }
     });
 
@@ -1548,6 +1713,31 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                         <span class="ms-result-label">মোট নম্বর</span>
                         <span class="ms-result-value">${grandTotal} / ${maxGrand}</span>
                     </div>
+                    ${(() => {
+            if (grandTotal === 0 && !allPassed) return ''; // Absent: Do nothing
+
+            // subjectRows is already a string at this point (joined at line 1411)
+            const failedCount = (subjectRows.match(/ms-grade-fail/g) || []).length;
+
+            // Fallback logic incase manual status failure triggered but no F grade printed
+            const finalCount = (!allPassed && failedCount === 0) ? 1 : failedCount;
+
+            const bgStyle = (!allPassed || finalCount > 0) ? 'background: #fef2f2; border: 1px solid #fecaca;' : 'background: #f0fdf4; border: 1px solid #bbf7d0;';
+            const labelStyle = (!allPassed || finalCount > 0) ? 'color: #991b1b; font-size: 0.55rem;' : 'color: #166534; font-size: 0.55rem;';
+            const valStyle = (!allPassed || finalCount > 0) ? 'color: #dc2626; font-size: 0.85rem; font-weight: 700;' : 'color: #15803d; font-size: 0.85rem; font-weight: 700;';
+
+            let text = 'সকল বিষয় পাশ';
+            if (!allPassed || finalCount > 0) {
+                const banglaNum = Number(finalCount).toLocaleString('bn-BD');
+                text = `${banglaNum} বিষয় ফেল`;
+            }
+
+            return `
+                        <div class="ms-result-box" style="${bgStyle}">
+                            <span class="ms-result-label" style="${labelStyle}">বিষয় স্ট্যাটাস</span>
+                            <span class="ms-result-value" style="${valStyle}">${text}</span>
+                        </div>`;
+        })()}
                     </div>
                     <!--EXAM_SUMMARY_PLACEHOLDER-->
 
@@ -1610,40 +1800,46 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                             <!-- Data Rows -->
                             <div style="display: flex; flex-direction: column; gap: 6px;">
                                 ${history.length > 0 ? history.map(h => {
-                                    // Helper to get Rank Style
-                                    const getRankInfo = (rankVal) => {
-                                        if (rankVal === 'রেঙ্ক নেই' || rankVal === '-' || !rankVal) {
-                                            return { text: '-', bg: '#f1f5f9', color: '#94a3b8', border: '#e2e8f0' };
-                                        }
-                                        const r = parseInt(convertToEnglishDigits(String(rankVal)));
-                                        if (r === 1) return { text: '১ম', bg: '#f59e0b', color: '#ffffff', border: '#d97706' };
-                                        if (r === 2) return { text: '২য়', bg: '#4361ee', color: '#ffffff', border: '#3f37c9' };
-                                        if (r === 3) return { text: '৩য়', bg: '#10b981', color: '#ffffff', border: '#059669' };
-                                        
-                                        // Others use Purple as requested
-                                        const banglaNum = r.toLocaleString('bn-BD');
-                                        return { text: `${banglaNum}তম`, bg: 'rgba(139, 92, 246, 0.12)', color: '#7c3aed', border: 'rgba(139, 92, 246, 0.3)' };
-                                    };
+            // Helper functions for precise rank styling
+            const getRankClass = (rankVal, type) => {
+                if (rankVal === 'রেঙ্ক নেই' || rankVal === '-' || !rankVal) return 'ms-rank-none';
+                const r = parseInt(convertToEnglishDigits(String(rankVal)));
+                const isClass = type === 'class';
+                if (r === 1) return isClass ? 'ms-rank-1-class' : 'ms-rank-1-group';
+                if (r === 2) return 'ms-rank-2-class';
+                if (r === 3) return 'ms-rank-3-class';
+                return isClass ? 'ms-rank-gen-class' : 'ms-rank-gen-group';
+            };
 
-                                    const classRankInfo = getRankInfo(h.rank);
-                                    const groupRankInfo = getRankInfo(h.groupRank);
+            const getRankText = (rankVal) => {
+                if (rankVal === 'রেঙ্ক নেই' || rankVal === '-' || !rankVal) return '-';
+                const r = parseInt(convertToEnglishDigits(String(rankVal)));
+                if (typeof rankVal === 'string' && /[মর্থষ্ঠ]/.test(rankVal)) return rankVal;
+                return r === 1 ? '১ম' : r === 2 ? '২য়' : r === 3 ? '৩য়' : r === 4 ? '৪র্থ' : r === 5 ? '৫ম' : r === 6 ? '৬ষ্ঠ' : r === 7 ? '৭ম' : r === 8 ? '৮ম' : r === 9 ? '৯ম' : r === 10 ? '১০ম' : `${r.toLocaleString('bn-BD')}তম`;
+            };
 
-                                    return `
+            const cRankClass = getRankClass(h.rank, 'class');
+            const gRankClass = getRankClass(h.groupRank, 'group');
+            const cRankText = getRankText(h.rank);
+            const gRankText = getRankText(h.groupRank);
+
+            return `
                                     <div style="display: grid; grid-template-columns: 38% 18% 22% 22%; width: 100%; border-bottom: 1px dashed #f1f5f9; padding: 6px 0; align-items: center;">
                                         <div style="font-size: 0.72rem; font-weight: 600; color: #334155; text-align: left; padding: 2px; white-space: normal; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.3;">${h.name}</div>
                                         <div style="font-size: 0.8rem; font-weight: 800; color: #0f172a; text-align: center; padding: 2px; white-space: nowrap;">${h.gpa}</div>
                                         <div style="text-align: center; padding: 2px; display: flex; justify-content: center;">
-                                            <div style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: ${classRankInfo.bg}; color: ${classRankInfo.color}; border: 1.5px solid ${classRankInfo.border}; border-radius: 50%; font-size: ${classRankInfo.text.length > 2 ? '0.62rem' : '0.75rem'}; font-weight: 900; -webkit-print-color-adjust: exact; print-color-adjust: exact; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                                                ${classRankInfo.text}
+                                            <div class="ms-rank-badge ${cRankClass}" style="${cRankText === '-' ? 'background:#f8fafc; color:#cbd5e1; border:1px solid #e2e8f0; box-shadow:none !important;' : ''}">
+                                                ${cRankText}
                                             </div>
                                         </div>
                                         <div style="text-align: center; padding: 2px; display: flex; justify-content: center;">
-                                            <div style="display: flex; align-items: center; justify-content: center; width: 34px; height: 34px; background: ${groupRankInfo.bg}; color: ${groupRankInfo.color}; border: 1.5px solid ${groupRankInfo.border}; border-radius: 50%; font-size: ${groupRankInfo.text.length > 2 ? '0.62rem' : '0.75rem'}; font-weight: 900; -webkit-print-color-adjust: exact; print-color-adjust: exact; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
-                                                ${groupRankInfo.text}
+                                            <div class="ms-rank-badge ${gRankClass}" style="${gRankText === '-' ? 'background:#f8fafc; color:#cbd5e1; border:1px solid #e2e8f0; box-shadow:none !important;' : ''}">
+                                                ${gRankText}
                                             </div>
                                         </div>
                                     </div>
-                                `;}).join('') : '<div style="text-align:center; font-size: 0.75rem; opacity:0.5; padding: 10px 0; width: 100%;">হিস্টোরি নেই</div>'}
+                                `;
+        }).join('') : '<div style="text-align:center; font-size: 0.75rem; opacity:0.5; padding: 10px 0; width: 100%;">হিস্টোরি নেই</div>'}
                             </div>
                         </div>
                     </div>
@@ -1683,7 +1879,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                     <div style="text-align: center; white-space: nowrap; padding: 0 4px;">
                         ${getDeveloperCreditHtml('ms-dev-credit')}
                     </div>
-                    <span style="white-space: nowrap;">এটি কম্পিউটার জেনারেটেড ফলাফল পত্র</span>
+                    <span style="white-space: nowrap;">এনালিস্ট প্রো সফটওয়্যার | সম্পূর্ণ একাডেমিক সিস্টেম অটোমেশন </span>
                 </div>
             </div>
         </div>
@@ -2326,27 +2522,16 @@ window.printSingleMarksheet = function (containerId) {
 };
 
 /**
- * Bulk Print - Opens an isolated print window with all or filtered marksheets
- * @param {string} filter - 'all', 'absent', or 'present'
+ * Print all currently rendered marksheets
  */
-function bulkPrint(filter = 'all') {
+function bulkPrint() {
     const previewArea = document.getElementById('marksheetPreview');
     if (!previewArea) return;
 
     let allPages = Array.from(previewArea.querySelectorAll('.ms-page'));
 
-    // Filter logic
-    if (filter === 'absent') {
-        allPages = allPages.filter(p => p.getAttribute('data-is-absent') === 'true');
-    } else if (filter === 'present') {
-        allPages = allPages.filter(p => p.getAttribute('data-is-absent') === 'false');
-    }
-
     if (allPages.length === 0) {
-        const msg = filter === 'absent' ? 'কোনো অনুপস্থিত শিক্ষার্থীর মার্কশীট নেই' :
-            filter === 'present' ? 'কোনো উপস্থিত শিক্ষার্থীর মার্কশীট নেই' :
-                'প্রিন্ট করার জন্য কোনো মার্কশীট নেই';
-        showNotification(msg, 'error');
+        showNotification('প্রিন্ট করার জন্য কোনো মার্কশীট নেই। অনুগ্রহ করে ক্রাইটেরিয়া পরিবর্তন করে আবার জেনারেট করুন।', 'error');
         return;
     }
 
@@ -2370,20 +2555,10 @@ export async function initMarksheetManager() {
         generateBtn.addEventListener('click', generateMarksheets);
     }
 
-    // Print Buttons
-    const printAllBtn = document.getElementById('msPrintAllBtn');
-    if (printAllBtn) {
-        printAllBtn.onclick = () => bulkPrint('all');
-    }
-
-    const printPresentBtn = document.getElementById('msPrintPresentBtn');
-    if (printPresentBtn) {
-        printPresentBtn.onclick = () => bulkPrint('present');
-    }
-
-    const printAbsentBtn = document.getElementById('msPrintAbsentBtn');
-    if (printAbsentBtn) {
-        printAbsentBtn.onclick = () => bulkPrint('absent');
+    // Print Button
+    const printBtn = document.getElementById('msPrintBtn');
+    if (printBtn) {
+        printBtn.onclick = () => bulkPrint();
     }
 
     const resetBtn = document.getElementById('msResetBtn');
@@ -2398,7 +2573,10 @@ export async function initMarksheetManager() {
                     </div>
                 `;
             }
-            if (printAllBtn) printAllBtn.style.display = 'none';
+            const printBtnLocal = document.getElementById('msPrintBtn');
+            const criteriaFiltersLocal = document.getElementById('msCriteriaFilters');
+            if (printBtnLocal) printBtnLocal.style.display = 'none';
+            if (criteriaFiltersLocal) criteriaFiltersLocal.style.display = 'none';
             const mainHeader = document.getElementById('msMainPreviewHeader');
             if (mainHeader) mainHeader.style.display = 'none';
             showNotification('মার্কশীট প্রিভিউ রিসেট করা হয়েছে');

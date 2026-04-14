@@ -361,6 +361,78 @@ export function setLoading(isLoading, targetSelector = null) {
     }
 }
 
+/**
+ * Show global loading overlay with a message and real-time animated progress
+ * @param {string} title - Main title
+ * @param {string} subtitle - Secondary status text
+ * @param {number} percent - Current progress (0-100)
+ */
+export function showLoading(title = 'লোড হচ্ছে...', subtitle = '', percent = 0) {
+    setLoading(true);
+    
+    const titleEl = document.querySelector('#loadingOverlay .loading-title');
+    const subtitleEl = document.getElementById('loadingSubtitle');
+    const barEl = document.getElementById('loadingProgressBar');
+    const barContainer = document.querySelector('.loading-progress-wrapper');
+    const percentEl = document.getElementById('loadingProgressPercent');
+
+    if (titleEl) titleEl.innerText = title;
+    if (subtitleEl) subtitleEl.innerText = subtitle;
+    
+    // Only show progress bar if percent is explicitly provided and > 0
+    if (barContainer && percent > 0) {
+        barContainer.style.display = 'flex';
+        if (barEl) barEl.style.width = `${percent}%`;
+        
+        if (percentEl) {
+            const { convertToBengaliDigits } = Object.assign({}, { 
+                convertToBengaliDigits: (n) => String(n).replace(/\d/g, d => "০১২৩৪৫৬৭৮৯"[d]) 
+            });
+            percentEl.innerText = `${convertToBengaliDigits(Math.round(percent))}%`;
+        }
+    } else if (barContainer) {
+        barContainer.style.display = 'none';
+    }
+}
+
+/**
+ * Show compact/slim background progress bar
+ */
+export function showCompactProgress(text = 'প্রসেসিং...', percent = 0) {
+    const compactProgress = document.getElementById('msCompactProgress');
+    const compactBar = document.getElementById('msCompactProgressBar');
+    const compactInfo = document.getElementById('msCompactInfo');
+    const compactText = document.getElementById('msCompactInfoText');
+
+    if (compactProgress) compactProgress.style.display = 'block';
+    if (compactInfo) compactInfo.style.display = 'flex';
+    if (compactBar) compactBar.style.width = `${percent}%`;
+    if (compactText) compactText.innerText = text;
+}
+
+/**
+ * Hide compact progress
+ */
+export function hideCompactProgress() {
+    const compactProgress = document.getElementById('msCompactProgress');
+    const compactInfo = document.getElementById('msCompactInfo');
+    
+    if (compactProgress) compactProgress.style.display = 'none';
+    if (compactInfo) compactInfo.style.display = 'none';
+}
+
+/**
+ * Hide global loading overlay and reset progress
+ */
+export function hideLoading() {
+    setLoading(false);
+    // Reset after a small delay to not see it jump back during fade-out
+    setTimeout(() => {
+        const barEl = document.getElementById('loadingProgressBar');
+        if (barEl) barEl.style.width = '0%';
+    }, 500);
+}
+
 export function updateSyncStatus(isOnline) {
     if (elements.syncStatus) {
         elements.syncStatus.innerHTML = isOnline

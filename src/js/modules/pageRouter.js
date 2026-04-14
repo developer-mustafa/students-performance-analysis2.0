@@ -7,6 +7,7 @@
 import { state } from './state.js';
 import { loadTeacherAssignmentData } from './teacherAssignmentManager.js';
 import { loadAccessRequests, initAccessRequestUI } from './accessRequestManager.js';
+import { setLoading } from './uiManager.js';
 
 const NEW_PAGE_IDS = {
     'teacher-assignment': 'teacherAssignmentPage',
@@ -37,8 +38,16 @@ let currentPage = 'dashboard';
  * Navigate to a specific page
  * @param {string} pageId - One of: dashboard, students, result-entry, marksheet
  */
-export function navigateTo(pageId) {
+export async function navigateTo(pageId) {
+    if (currentPage === pageId && document.getElementById('loadingOverlay')?.style.display !== 'none') return;
+    
+    // Show premium global loader
+    setLoading(true);
+    
     currentPage = pageId;
+
+    // Small delay to allow spinner to show and content to prep
+    await new Promise(resolve => setTimeout(resolve, 300));
 
     // Hide ALL dynamic pages first
     document.querySelectorAll('.app-page').forEach(page => {
@@ -108,8 +117,11 @@ export function navigateTo(pageId) {
 
     // Callback for lazy-loading page content
     if (onPageChangeCallback) {
-        onPageChangeCallback(pageId);
+        await onPageChangeCallback(pageId);
     }
+
+    // Hide loader after transition
+    setLoading(false);
 }
 
 /**
