@@ -4,8 +4,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <meta name="description"
-    content="শিক্ষার্থীদের পারফর্ম্যান্স বিশ্লেষণ ড্যাশবোর্ড - Students Performance Analysis Dashboard" />
+  <meta name="description" content="এনালিস্ট প্রো এপস - Full Academic Enterprise solutions" />
   <meta name="keywords"
     content="student, performance, analysis, dashboard, education, bengali, শিক্ষার্থী, পারফর্ম্যান্স" />
   <meta name="author" content="Students Performance Analysis" />
@@ -18,7 +17,7 @@
   <link rel="stylesheet" href="./src/styles/main.css" />
 
 
-  <title>পারফর্ম্যান্স এপস || Mustafa sir</title>
+  <title>এনালিস্ট প্রো এপ|Automation</title>
 
   <!-- Favicon -->
   <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
@@ -32,12 +31,24 @@
 
 <body>
   <!-- Loading Overlay -->
-  <!-- Loading Overlay -->
+  <!-- Professional Loading Overlay with Real-time Progress -->
   <div class="loading-overlay" id="loadingOverlay" style="display: flex;">
-    <div class="loading-container">
+    <div class="loading-wrapper">
       <div class="professional-spinner"></div>
-      <div class="loading-text">লোড হচ্ছে...</div>
+      <div class="loading-text-content">
+        <h2 class="app-name-loading">এনালিস্ট প্রো এপ প্রসেসিং...</h2>
+        <p class="developer-credit-loading">developed by Mustafa Rahman sir</p>
+      </div>
     </div>
+  </div>
+
+  <!-- Compact Background Progress Bar (Floating) -->
+  <div class="ms-compact-progress" id="msCompactProgress" style="display: none;">
+    <div class="ms-compact-progress-bar" id="msCompactProgressBar"></div>
+  </div>
+  <div class="ms-compact-info" id="msCompactInfo" style="display: none;">
+    <i class="fas fa-spinner fa-spin" style="margin-right: 6px;"></i>
+    <span id="msCompactInfoText">প্রসেসিং...</span>
   </div>
 
   <div class="container-fluid px-4">
@@ -1184,27 +1195,32 @@
           </div>
 
           <!-- Grouped 2-Column Responsive Layout -->
-          <div style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
-            
+          <div
+            style="grid-column: 1 / -1; display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px;">
+
             <!-- Alternative Subjects Card (Electives) -->
             <div class="card ms-settings-card">
               <div class="card-header" style="background: rgba(156, 39, 176, 0.1);">
-                <h4 style="margin:0; font-size: 1rem;"><i class="fas fa-exchange-alt"></i> বিকল্প বিষয় (Alternative Subjects)</h4>
+                <h4 style="margin:0; font-size: 1rem;"><i class="fas fa-exchange-alt"></i> বিকল্প বিষয় (Alternative
+                  Subjects)</h4>
               </div>
               <div class="card-body">
-                <p style="font-size: 0.75rem; color: #666; margin-bottom: 10px;">যেকোনো ২টি বিষয় সেট করুন যার মধ্যে একটি থাকলে অন্যটি শো করবে না।</p>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; align-items: start;">
+                <p style="font-size: 0.75rem; color: #666; margin-bottom: 10px;">যেকোনো ২টি বিষয় সেট করুন যার মধ্যে একটি
+                  থাকলে অন্যটি শো করবে না।</p>
+                <div
+                  style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; align-items: start;">
                   <!-- Left side: Inputs -->
                   <div>
                     <div class="form-group" style="margin-bottom: 10px;">
                       <label style="font-size: 0.7rem;">বিষয়-১ (Subject 1)</label>
                       <select id="msSetAltSubject1" class="form-control"></select>
                     </div>
-                    <div class="input-group" style="display:flex; gap: 8px; margin-bottom: 15px; flex-direction: column;">
+                    <div class="input-group"
+                      style="display:flex; gap: 8px; margin-bottom: 15px; flex-direction: column;">
                       <label style="font-size: 0.7rem;">বিষয়-২ (Subject 2)</label>
                       <div style="display: flex; gap: 8px; width: 100%;">
-                          <select id="msSetAltSubject2" class="form-control" style="flex:1;"></select>
-                          <button id="msSetAltAddBtn" class="dm-btn dm-save"><i class="fas fa-plus"></i></button>
+                        <select id="msSetAltSubject2" class="form-control" style="flex:1;"></select>
+                        <button id="msSetAltAddBtn" class="dm-btn dm-save"><i class="fas fa-plus"></i></button>
                       </div>
                     </div>
                   </div>
@@ -1216,19 +1232,23 @@
 
             <!-- Student-wise Subject Mapping Card (NEW) -->
             <div class="card ms-settings-card" id="msSubjectMappingPanel">
-              <div class="card-header" style="background: rgba(var(--primary-rgb), 0.1); border-left: 4px solid var(--primary-color);">
-                <h4 style="margin:0; font-size: 1rem;"><i class="fas fa-user-tag"></i> নির্ধারিত বিষয় ম্যাপিং (Student Core Subjects)</h4>
+              <div class="card-header"
+                style="background: rgba(var(--primary-rgb), 0.1); border-left: 4px solid var(--primary-color);">
+                <h4 style="margin:0; font-size: 1rem;"><i class="fas fa-user-tag"></i> নির্ধারিত বিষয় ম্যাপিং (Student
+                  Core Subjects)</h4>
               </div>
               <div class="card-body">
-                <p style="font-size: 0.75rem; color: #666; margin-bottom: 12px;">নির্দিষ্ট রোলের জন্য কোনো বিষয় নির্ধারিত থাকলে এখানে সেট করুন।</p>
-                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; align-items: start;">
+                <p style="font-size: 0.75rem; color: #666; margin-bottom: 12px;">নির্দিষ্ট রোলের জন্য কোনো বিষয়
+                  নির্ধারিত থাকলে এখানে সেট করুন।</p>
+                <div
+                  style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 20px; align-items: start;">
                   <!-- Left side: Inputs -->
                   <div>
                     <div class="form-group mb-2">
                       <label style="font-size: 0.7rem;">বিষয় নির্বাচন করুন</label>
                       <select id="msMapSubject" class="form-control"></select>
                     </div>
-                    
+
                     <div class="row g-2 mb-3">
                       <div class="col-6">
                         <label style="font-size: 0.7rem;">গ্রুপ</label>
@@ -1304,6 +1324,52 @@
         <div class="header-main-unified">
           <h2 class="card-title"><i class="fas fa-file-alt"></i> ডাইনামিক মার্কশীট</h2>
           <div class="header-actions-group">
+            <button id="msPrintMeritBtn" class="dm-btn dm-save"
+              style="display:none; background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);">
+              <i class="fas fa-medal"></i> <span class="dm-btn-text">মেধা ভিত্তিক প্রিন্ট</span>
+            </button>
+            <!-- New Generation Filters and Sorting UI -->
+            <div id="msCriteriaFilters"
+              style="display: flex; flex-wrap: wrap; align-items: center; gap: 12px; background: rgba(var(--primary-rgb), 0.05); padding: 8px 15px; border-radius: 8px; border: 1px solid rgba(var(--primary-rgb), 0.1);">
+              <label
+                style="display: flex; align-items: center; gap: 5px; font-size: 0.8rem; cursor: pointer; color: var(--text-color); font-weight: 600;">
+                <input type="checkbox" id="msFilterPass" checked> পাস
+              </label>
+              <label
+                style="display: flex; align-items: center; gap: 5px; font-size: 0.8rem; cursor: pointer; color: var(--text-color); font-weight: 600;">
+                <input type="checkbox" id="msFilterFail" checked> ফেল
+              </label>
+              <label
+                style="display: flex; align-items: center; gap: 5px; font-size: 0.8rem; cursor: pointer; color: var(--text-color); font-weight: 600;">
+                <input type="checkbox" id="msFilterPresent" checked> উপস্থিত
+              </label>
+              <label
+                style="display: flex; align-items: center; gap: 5px; font-size: 0.8rem; cursor: pointer; color: var(--text-color); font-weight: 600;">
+                <input type="checkbox" id="msFilterAbsent" checked> অনুপস্থিত
+              </label>
+
+              <div style="width: 1px; height: 18px; background: rgba(0,0,0,0.1); margin: 0 5px;"
+                class="dark:bg-slate-700"></div>
+
+              <span style="font-size: 0.8rem; font-weight: 700; color: rgba(var(--primary-rgb), 0.8);">সর্টিং:</span>
+              <label
+                style="display: flex; align-items: center; gap: 5px; font-size: 0.8rem; cursor: pointer; color: var(--text-color); font-weight: 600;">
+                <input type="radio" name="msSortOrder" id="msSortRoll" value="roll" checked> রোল
+              </label>
+              <label
+                style="display: flex; align-items: center; gap: 5px; font-size: 0.8rem; cursor: pointer; color: var(--text-color); font-weight: 600;">
+                <input type="radio" name="msSortOrder" id="msSortClassRank" value="classRank"> ক্লাস রেঙ্ক
+              </label>
+              <label
+                style="display: flex; align-items: center; gap: 5px; font-size: 0.8rem; cursor: pointer; color: var(--text-color); font-weight: 600;">
+                <input type="radio" name="msSortOrder" id="msSortGroupRank" value="groupRank"> গ্রুপ রেঙ্ক
+              </label>
+            </div>
+
+            <button id="msPrintBtn" class="dm-btn dm-report"
+              style="display:none; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%); color: #fff; margin-left: auto;">
+              <i class="fas fa-print"></i> <span class="dm-btn-text">প্রিন্ট</span>
+            </button>
             <button id="marksheetSettingsBtn" class="dm-btn dm-report super-admin-only" style="display:none;">
               <i class="fas fa-cog"></i> <span class="dm-btn-text">মার্কশীট ভিউ সেটিংস</span>
             </button>
@@ -1326,14 +1392,6 @@
             class="dm-btn-text">মার্কশীট তৈরি করুন</span></button>
         <button id="msResetBtn" class="dm-btn dm-report"><i class="fas fa-sync-alt"></i> <span
             class="dm-btn-text">রিসেট</span></button>
-        <button id="msPrintPresentBtn" class="dm-btn dm-save" style="display:none; background: linear-gradient(135deg, #22c55e 0%, #15803d 100%); margin-right: 8px;">
-          <i class="fas fa-user-check"></i> <span class="dm-btn-text">উপস্থিত প্রিন্ট</span>
-        </button>
-        <button id="msPrintAbsentBtn" class="dm-btn dm-report" style="display:none; background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%);">
-          <i class="fas fa-user-times"></i> <span class="dm-btn-text">অনুপস্থিত প্রিন্ট</span>
-        </button>
-        <button id="msPrintAllBtn" class="dm-btn dm-report" style="display:none; opacity: 0.8;"><i class="fas fa-print"></i> <span
-            class="dm-btn-text">সব প্রিন্ট</span></button>
       </div>
       <div class="marksheet-preview-wrapper">
         <div class="preview-header marksheet-main-preview-header" style="display: none;" id="msMainPreviewHeader">
@@ -2977,8 +3035,10 @@
                   <div
                     style="background: linear-gradient(135deg, rgba(156, 39, 176, 0.05), rgba(103, 58, 183, 0.05)); padding: 15px; border-radius: 12px; border: 1px solid rgba(156, 39, 176, 0.2); display: flex; justify-content: space-between; align-items: center;">
                     <div>
-                      <h4 style="margin: 0; font-size: 1rem; color: #7b1fa2;"><i class="fas fa-graduation-cap" style="margin-right: 5px;"></i>বোর্ড স্ট্যান্ডার্ড (ঐচ্ছিক বিষয়)</h4>
-                      <p style="margin: 5px 0 0; font-size: 0.75rem; opacity: 0.7;">চালু থাকলে: ঐচ্ছিক বিষয়ে ফেল করলেও পাশ + বোনাস GP যুক্ত হবে। বন্ধ থাকলে: সাধারণ নিয়মে + "অপশনাল সহ GPA" দেখাবে।
+                      <h4 style="margin: 0; font-size: 1rem; color: #7b1fa2;"><i class="fas fa-graduation-cap"
+                          style="margin-right: 5px;"></i>বোর্ড স্ট্যান্ডার্ড (ঐচ্ছিক বিষয়)</h4>
+                      <p style="margin: 5px 0 0; font-size: 0.75rem; opacity: 0.7;">চালু থাকলে: ঐচ্ছিক বিষয়ে ফেল করলেও
+                        পাশ + বোনাস GP যুক্ত হবে। বন্ধ থাকলে: সাধারণ নিয়মে + "অপশনাল সহ GPA" দেখাবে।
                       </p>
                     </div>
                     <label class="ac-sw">
