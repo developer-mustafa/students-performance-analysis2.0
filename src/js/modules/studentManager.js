@@ -15,6 +15,7 @@ import { GROUP_NAMES } from '../constants.js';
 let allStudentsFromExams = [];
 let filteredStudents = [];
 let currentPage = 1;
+let showInactiveOnly = false;
 const PER_PAGE = 20;
 
 /**
@@ -129,6 +130,7 @@ function applyFilters() {
     const searchTerm = (document.getElementById('studentSearchInput')?.value || '').trim().toLowerCase();
 
     filteredStudents = allStudentsFromExams.filter(s => {
+        if (showInactiveOnly && s.status !== false) return false;
         if (classFilter !== 'all' && s.class !== classFilter) return false;
         if (sessionFilter !== 'all' && s.session !== sessionFilter) return false;
         if (groupFilter !== 'all' && s.group !== groupFilter) return false;
@@ -393,6 +395,24 @@ export async function initStudentManager() {
     const addBtn = document.getElementById('addStudentBtn');
     if (addBtn) {
         addBtn.addEventListener('click', openAddStudentModal);
+    }
+    
+    // Toggle Inactive Students
+    const toggleInactiveBtn = document.getElementById('toggleInactiveStudentsBtn');
+    if (toggleInactiveBtn) {
+        toggleInactiveBtn.addEventListener('click', () => {
+            showInactiveOnly = !showInactiveOnly;
+            if (showInactiveOnly) {
+                toggleInactiveBtn.style.background = '#dc2626';
+                toggleInactiveBtn.style.color = 'white';
+                toggleInactiveBtn.innerHTML = '<i class="fas fa-users"></i> <span class="dm-btn-text">সব শিক্ষার্থী</span>';
+            } else {
+                toggleInactiveBtn.style.background = '#fff0f0';
+                toggleInactiveBtn.style.color = '#dc2626';
+                toggleInactiveBtn.innerHTML = '<i class="fas fa-user-times"></i> <span class="dm-btn-text">নিষ্ক্রিয় তালিকা</span>';
+            }
+            applyFilters();
+        });
     }
 
     // Bulk Delete Action

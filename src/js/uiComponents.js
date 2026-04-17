@@ -5,6 +5,7 @@
 import { state } from './modules/state.js';
 import { getMarksheetSettings } from './modules/marksheetManager.js';
 
+import { loadMarksheetRules, currentMarksheetRules } from './modules/marksheetRulesManager.js';
 import {
   calculateGrade,
   getGroupClass,
@@ -1214,8 +1215,9 @@ export function getSessionStyle(session) {
 /**
  * Render saved exams list with pagination
  */
-export function renderSavedExamsList(container, exams, options = {}) {
+export async function renderSavedExamsList(container, exams, options = {}) {
   if (!container) return;
+  await loadMarksheetRules();
   const {
     currentPage = 1,
     perPage = 6,
@@ -1283,6 +1285,25 @@ export function renderSavedExamsList(container, exams, options = {}) {
     const msSettings = getMarksheetSettings() || {};
     const subjectMappings = msSettings.subjectMapping || [];
     
+    // Determine dynamic group validation from rules
+    const rules = currentMarksheetRules[exam.class || 'HSC'] || currentMarksheetRules["All"] || {};
+    const evalSubNameRule = normalizeText(exam.subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
+    const generalSubs = (rules.generalSubjects || []).map(s => normalizeText(s).replace(/\[.*?\]/g, '').replace(/\s+/g, ''));
+    let validGroups = [];
+
+    for (const [group, subs] of Object.entries(rules.groupSubjects || {})) {
+        const normSubs = subs.map(s => normalizeText(s).replace(/\[.*?\]/g, '').replace(/\s+/g, ''));
+        if (normSubs.includes(evalSubNameRule)) validGroups.push(normalizeText(group));
+    }
+    for (const [group, subs] of Object.entries(rules.optionalSubjects || {})) {
+        const normSubs = subs.map(s => normalizeText(s).replace(/\[.*?\]/g, '').replace(/\s+/g, ''));
+        if (normSubs.includes(evalSubNameRule) && !validGroups.includes(normalizeText(group))) {
+            validGroups.push(normalizeText(group));
+        }
+    }
+    const isGeneral = generalSubs.includes(evalSubNameRule) || 
+        ['বাংলা১মপত্র', 'বাংলা২য়পত্র', 'ইংরেজি১মপত্র', 'ইংরেজি২য়পত্র', 'তথ্যওযোগাযোগপ্রযুক্তি'].includes(evalSubNameRule);
+
     if (activeStudentData.length > 0) {
       activeStudentData = activeStudentData.filter(s => {
         // 1. Check if disabled globally (Inactive Student)
@@ -1298,13 +1319,14 @@ export function renderSavedExamsList(container, exams, options = {}) {
         }
         
         // 2. Strict Subject Mapping Enforcement
+        let hasCoreMapping = false;
         if (subjectMappings.length > 0) {
-          const evalSubName = normalizeText(exam.subject).replace(/\[.*?\]/g, '').replace(/\\s+/g, '');
+          const evalSubName = normalizeText(exam.subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
           const sGroupNorm = normalizeText(s.group || '');
           const sRollStr = String(s.id || s.roll || '').trim().replace(/^0+/, '');
           
           const thisSubMap = subjectMappings.find(m => {
-              const mapSubNorm = normalizeText(m.subject).replace(/\[.*?\]/g, '').replace(/\\s+/g, '');
+              const mapSubNorm = normalizeText(m.subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
               const mapGroupNorm = normalizeText(m.group);
               return mapSubNorm === evalSubName && 
                      (sGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(sGroupNorm));
@@ -1313,7 +1335,16 @@ export function renderSavedExamsList(container, exams, options = {}) {
           if (thisSubMap) {
               const mappedRolls = thisSubMap.rolls.map(r => String(r).replace(/^0+/, ''));
               if (!mappedRolls.includes(sRollStr)) return false;
+              hasCoreMapping = true;
           }
+        }
+        
+        // 3. Dynamic Marksheet Group-Based Filtering
+        if (!hasCoreMapping && !isGeneral && validGroups.length > 0) {
+            const sGroupNorm = normalizeText(s.group || '');
+            if (!validGroups.some(g => sGroupNorm.includes(g) || g.includes(sGroupNorm))) {
+                return false;
+            }
         }
         
         return true;
