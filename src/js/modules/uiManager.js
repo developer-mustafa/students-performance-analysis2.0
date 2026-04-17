@@ -10,8 +10,12 @@ export const elements = {
     sortOrderSelect: null,
     reportDropdownBtn: null,
     reportDropdownMenu: null,
-    downloadChartBtn: null,
     downloadExcelBtn: null,
+    appVersionBadge: null,
+    headerVersionNumber: null,
+    footerVersionNumber: null,
+    footerDevCredit: null,
+    footerDevContact: null,
     groupFilters: null,
     gradeFilters: null,
     searchInput: null,
@@ -25,7 +29,6 @@ export const elements = {
     failedHeaderMeta: null,
     groupStatsHeaderMeta: null,
     jsonFileInput: null,
-    downloadTemplateBtn: null,
     installAppBtn: null,
     saveAnalysisBtn: null,
     savedExamsList: null,
@@ -145,7 +148,11 @@ export function initDOMReferences() {
     elements.failedSearchInput = document.getElementById('failedSearchInput');
     elements.groupStatsHeaderMeta = document.getElementById('groupStatsHeaderMeta');
     elements.jsonFileInput = document.getElementById('jsonFileInput');
-    elements.downloadTemplateBtn = document.getElementById('downloadTemplateBtn');
+    elements.appVersionBadge = document.getElementById('appVersionBadge');
+    elements.headerVersionNumber = document.getElementById('headerVersionNumber');
+    elements.footerVersionNumber = document.getElementById('footerVersionNumber');
+    elements.footerDevCredit = document.getElementById('footerDevCredit');
+    elements.footerDevContact = document.getElementById('footerDevContact');
     elements.installAppBtn = document.getElementById('installAppBtn');
     elements.saveAnalysisBtn = document.getElementById('saveAnalysisBtn');
     elements.savedExamsList = document.getElementById('savedExamsList');

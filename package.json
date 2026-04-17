@@ -1,18 +1,19 @@
 {
     "name": "students-performance-analysis",
     "private": true,
-    "version": "1.0.0",
+    "version": "2.5.1",
     "description": "শিক্ষার্থীদের পারফর্ম্যান্স ড্যাশবোর্ড - Students Performance Analysis Dashboard",
     "type": "module",
     "scripts": {
         "dev": "vite",
         "build": "vite build",
-        "preview": "vite preview"
+        "preview": "vite preview",
+        "version-patch": "node scripts/bump-patch.js"
     },
     "keywords": [
         "students",
         "performance",
-        "analysis",
+        "analysis", 
         "dashboard",
         "education",
         "bengali"

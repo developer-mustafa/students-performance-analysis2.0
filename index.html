@@ -111,26 +111,15 @@
             </label>
           </div>
 
-          <!-- Download Template -->
-          <button id="downloadTemplateBtn" class="dm-btn dm-template">
-            <i class="fas fa-file-excel"></i> <span class="dm-btn-text">ডেমো এক্সেল ফাইল</span>
-          </button>
-
-          <!-- Report Download Dropdown -->
-          <div class="dropdown" style="position: relative;">
-            <button id="reportDropdownBtn" class="dm-btn dm-report">
-              <i class="fas fa-download"></i> <span class="dm-btn-text">রিপোর্ট</span> <i class="fas fa-chevron-down"
-                style="margin-left: 4px; font-size: 0.7em;"></i>
-            </button>
-            <div id="reportDropdownMenu" class="dropdown-menu">
-              <div class="dropdown-item" id="downloadChartBtn">
-                <i class="fas fa-file-image"></i> চার্ট (Image)
-              </div>
-              <div class="dropdown-item" id="downloadExcelBtn">
-                <i class="fas fa-file-excel"></i> ডেটা (Excel)
-              </div>
-            </div>
+          <!-- App Version Badge -->
+          <div id="appVersionBadge" class="dm-version-badge" title="অ্যাপ ভার্সন">
+            <i class="fas fa-code-branch"></i> <span class="dm-btn-text">v<span id="headerVersionNumber">2.5.1</span></span>
           </div>
+
+          <!-- Report Download Button (Excel Only) -->
+          <button id="downloadExcelBtn" class="dm-btn dm-report">
+            <i class="fas fa-file-excel"></i> <span class="dm-btn-text">এক্সেল ডাউনলোড</span>
+          </button>
 
           <!-- Save Analysis Button -->
           <button id="saveAnalysisBtn" class="dm-btn dm-save">
@@ -4179,6 +4168,20 @@
 
   <!-- Bulk Teacher Cards Container (Used for printing 4x2 grid) -->
   <div id="bulkTeacherCardsContainer" class="tc-bulk-print-wrapper" style="display: none;"></div>
+
+  <!-- Minimal App Footer -->
+  <footer id="appFooter" class="app-footer">
+    <div class="app-footer-inner">
+      <div class="footer-dev-info">
+        <span id="footerDevCredit">সফটওয়্যার নির্মাতা: মোস্তফা রাহমান</span>
+        <span class="footer-separator">|</span>
+        <span id="footerDevContact">যোগাযোগ: ০১৮৪০-৬৪৩৯৪৬</span>
+      </div>
+      <div class="footer-version">
+        <i class="fas fa-code-branch"></i> v<span id="footerVersionNumber">2.5.1</span>
+      </div>
+    </div>
+  </footer>
 
 </body>
 
