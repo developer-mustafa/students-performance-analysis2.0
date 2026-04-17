@@ -131,12 +131,20 @@ textarea {
   border-bottom-width: 0;
 }
 
-body {
+html, body {
   background-color: var(--bg-color);
   color: var(--text-color);
   line-height: 1.6;
   padding: 0;
   direction: ltr;
+  overflow-x: clip;
+  overflow-y: visible;
+  width: 100%;
+}
+
+#app, .container-fluid {
+  /* overflow: visible is required for position: sticky to work */
+  overflow: visible;
 }
 
 /* =========================================
@@ -2045,9 +2053,38 @@ body.is-super-admin .admin-only:not(.app-page) {
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.4);
 }
 
-/* =========================================
-   Data Management Toolbar (Compact)
-   ========================================= */
+/* Sticky Navigation Area Wrapper - Container only */
+.sticky-nav-area {
+  position: relative;
+  width: 100%;
+  margin-bottom: 5px;
+  box-sizing: border-box;
+  padding: 0;
+  overflow: visible;
+}
+
+/* Mobile Menu Toggle - Hide on Desktop */
+.mobile-menu-toggle {
+  display: none !important;
+}
+
+@media (max-width: 768px) {
+  .mobile-menu-toggle {
+    display: inline-flex !important;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    background: var(--primary);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    margin-left: 8px;
+    z-index: 1001;
+  }
+}
+
 .data-management-card {
   transition: all 0.3s ease;
   border: 1px solid var(--border-color);
@@ -2055,6 +2092,9 @@ body.is-super-admin .admin-only:not(.app-page) {
   color: var(--text-color);
   padding: 0;
   overflow: visible;
+  margin-bottom: 10px;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .data-management-card .dm-controls {
@@ -9969,18 +10009,38 @@ body:not(.dark-mode) .nav-btn {
   display: flex;
   gap: 4px;
   padding: 8px 12px;
-  background: var(--card-bg);
-  border-radius: 12px;
+  background: rgba(245, 247, 250, 0.95);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border-radius: 0 0 12px 12px;
   border: 1px solid var(--border-color);
-  margin: 10px 0;
+  border-top: none;
+  margin: 0;
   overflow-x: auto;
   scrollbar-width: none;
   position: sticky;
-  top: 10px;
-  z-index: 1100;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  top: 0;
+  z-index: 2000;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  width: 100%;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+.dark-mode .page-nav-tabs {
+  background: rgba(18, 18, 18, 0.9);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+}
+
+/* Hide navigation tabs on small screens as per user request (menu-based nav) */
+@media (max-width: 768px) {
+  .page-nav-tabs {
+    margin: 10px 0;
+    box-shadow: none;
+    backdrop-filter: none;
+    background: var(--card-bg);
+    display: none !important; /* Hide tabs on mobile to prefer hamburger menu */
+  }
 }
 
 .page-nav-tabs::-webkit-scrollbar {
@@ -12414,6 +12474,47 @@ body.is-super-admin td.admin-only {
 .ms-mark-fail {
   color: #dc2626 !important;
   font-weight: 800 !important;
+}
+
+/* Print Overrides for failing marks - Force RED visibility with high specificity */
+@media print {
+  /* Force color adjust for all marksheet table cells and data points */
+  .ms-table td,
+  .ms-table td span,
+  .ms-result-value,
+  .ms-gs-item,
+  .ms-sumtbl-pass,
+  .ms-sumtbl-fail,
+  .ms-sumtbl-rate {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color-adjust: exact !important;
+  }
+
+  /* Target failing marks specifically with absolute specificity */
+  .ms-page .ms-table td.ms-mark-fail,
+  .ms-page .ms-table td.ms-grade-fail,
+  .ms-page .ms-result-fail .ms-result-value,
+  .ms-page .ms-sumtbl-fail,
+  .ms-page .ms-sumtbl-fail * {
+    color: #dc2626 !important;
+    -webkit-text-fill-color: #dc2626 !important;
+    font-weight: 800 !important;
+  }
+
+  /* Ensure passing colors (green) also survive the print transition */
+  .ms-page .ms-td-total,
+  .ms-page .ms-td-grade:not(.ms-grade-fail),
+  .ms-page .ms-result-pass .ms-result-value,
+  .ms-page .ms-sumtbl-pass {
+    color: #0d5e2e !important;
+    -webkit-text-fill-color: #0d5e2e !important;
+  }
+
+  .ms-page .ms-sumtbl-rate {
+    color: #1565c0 !important;
+    -webkit-text-fill-color: #1565c0 !important;
+  }
 }
 
 .ms-gp-col-content {
@@ -19196,10 +19297,10 @@ body.sr-bulk-printing-active .print-only {
 ========================================= */
 @media (max-width: 620px) {
 
-  /* Ensure no container overflow */
+  /* Ensure no container overflow - use clip to preserve sticky */
   html,
   body {
-    overflow-x: hidden !important;
+    overflow-x: clip !important;
     width: 100% !important;
   }
 

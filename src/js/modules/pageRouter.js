@@ -111,7 +111,9 @@ export async function navigateTo(pageId) {
         }
     }
 
-    // Callback for lazy-loading page content
+    // Update body class for conditional styling (e.g. sticky nav)
+    document.body.classList.toggle('is-dashboard', pageId === 'dashboard');
+
     if (onPageChangeCallback) {
         await onPageChangeCallback(pageId);
     }
