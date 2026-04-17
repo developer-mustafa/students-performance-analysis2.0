@@ -112,11 +112,12 @@ export function renderGroupStats(container, data, options = {}) {
   if (metaElement) {
     metaElement.innerHTML = `
       <div class="modern-meta-header">
-        <div class="meta-items-group">
+        <div class="meta-items-group" style="display: flex; align-items: center; gap: 10px; flex-wrap: nowrap;">
           <span class="meta-item"><i class="fas fa-graduation-cap"></i> শ্রেণি: ${firstStudent.class || 'N/A'}</span>
+          <span style="color: var(--text-muted); opacity: 0.3;">|</span>
           <span class="meta-item"><i class="fas fa-calendar-alt"></i> সেশন: ${firstStudent.session || 'N/A'}</span>
+          <span style="color: var(--text-muted); opacity: 0.3;">|</span>
           ${examName ? `<span class="meta-item"><i class="fas fa-book"></i> ${examName}</span>` : ''}
-          ${subjectName ? `<span class="meta-item"><i class="fas fa-book-open"></i> ${subjectName}</span>` : ''}
         </div>
         <button class="sleek-download-btn" id="downloadGroupStatsBtn">
           <i class="fas fa-download"></i> <span>ডাউনলোড</span>
@@ -165,34 +166,22 @@ export function renderGroupStats(container, data, options = {}) {
 
   let html = `
     <!-- NEW: Reorganized College Identity Header with Title and Filters -->
-    <div class="dashboard-college-header-compact fade-in">
-       <!-- Left: Dashboard Title -->
-       <div class="dch-title-side">
-          <div class="header-mini-stats-group" style="display: flex; gap: 8px;">
-             <!-- Pass -->
-             <div class="h-stat-pill" style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(16,185,129,0.08); border: 1px solid rgba(16,185,129,0.2); border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                <div style="color: #10b981; font-size: 1.1rem;"><i class="fas fa-check-circle"></i></div>
-                <div style="display: flex; flex-direction: column;">
-                   <span style="font-size: 0.65rem; font-weight: 800; color: #64748b; line-height: 1.1; margin-bottom: 2px;">পাস</span>
-                   <span style="font-size: 1.05rem; font-weight: 900; color: #10b981; line-height: 1;">${globalStats.passedStudents} <small style="font-size:0.7rem;">জন</small></span>
-                </div>
-             </div>
-             <!-- Fail -->
-             <div class="h-stat-pill" style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(239,68,68,0.08); border: 1px solid rgba(239,68,68,0.2); border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                <div style="color: #ef4444; font-size: 1.1rem;"><i class="fas fa-times-circle"></i></div>
-                <div style="display: flex; flex-direction: column;">
-                   <span style="font-size: 0.65rem; font-weight: 800; color: #64748b; line-height: 1.1; margin-bottom: 2px;">ফেল</span>
-                   <span style="font-size: 1.05rem; font-weight: 900; color: #ef4444; line-height: 1;">${globalStats.failedStudents} <small style="font-size:0.7rem;">জন</small></span>
-                </div>
-             </div>
-             <!-- Absent -->
-             <div class="h-stat-pill" style="display: flex; align-items: center; gap: 8px; padding: 6px 14px; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.2); border-radius: 12px; box-shadow: 0 2px 4px rgba(0,0,0,0.02);">
-                <div style="color: #f59e0b; font-size: 1.1rem;"><i class="fas fa-user-minus"></i></div>
-                <div style="display: flex; flex-direction: column;">
-                   <span style="font-size: 0.65rem; font-weight: 800; color: #64748b; line-height: 1.1; margin-bottom: 2px;">অনুপস্থিত</span>
-                   <span style="font-size: 1.05rem; font-weight: 900; color: #f59e0b; line-height: 1;">${globalStats.absentStudents} <small style="font-size:0.7rem;">জন</small></span>
-                </div>
-             </div>
+    <div class="dashboard-college-header-compact fade-in" style="align-items: center;">
+       
+       <!-- Left: Context Info (Swapped from Right) -->
+       <div class="dch-filter-side" style="display: flex; flex-direction: column; justify-content: center; gap: 4px; text-align: left;">
+          <!-- 1. Class, Session, Exam (Strict 1 Line) -->
+          <div style="font-size: 0.78rem; color: var(--text-muted, #64748b); font-weight: 600; display: flex; align-items: center; flex-wrap: nowrap; gap: 6px; white-space: nowrap; letter-spacing: 0.2px;">
+             <span style="padding: 3px 10px; border-radius: 5px; background: var(--primary, #4f46e5); color: white; font-weight: 700; font-size: 0.72rem;">শ্রেণি: ${className}</span>
+             <span style="opacity: 0.3;">|</span>
+             <span style="padding: 3px 10px; border-radius: 5px; background: rgba(99,102,241,0.1); color: var(--primary, #4f46e5); font-weight: 700; border: 1px solid rgba(99,102,241,0.15); font-size: 0.72rem;">সেশন: ${sessionName}</span>
+             <span style="opacity: 0.3;">|</span>
+             <span style="padding: 3px 10px; border-radius: 5px; background: rgba(99,102,241,0.1); color: var(--primary, #4f46e5); font-weight: 700; border: 1px solid rgba(99,102,241,0.15); font-size: 0.72rem;">${examName}</span>
+          </div>
+          <!-- 2. Subject Name - Premium Bold Typography -->
+          <div style="font-size: 1.75rem; font-weight: 900; color: var(--heading-color, #0f172a); line-height: 1.35; letter-spacing: -0.3px; padding: 2px 0; display: flex; align-items: center; gap: 8px;">
+             <i class="fas fa-book-open" style="font-size: 1rem; color: var(--primary, #4f46e5); opacity: 0.7;"></i>
+             <span style="border-bottom: 3px solid var(--primary, #4f46e5); padding-bottom: 2px;">${subjectName}</span>
           </div>
        </div>
 
@@ -205,17 +194,34 @@ export function renderGroupStats(container, data, options = {}) {
           </div>
        </div>
 
-       <!-- Right: Filter Badges -->
-       <div class="dch-filter-side">
-          <div class="vcd-labels-row-mini">
-              <div class="vcd-row-group">
-                  <span class="vcd-badge-mini cls">শ্রেণি: ${className}</span>
-                  <span class="vcd-badge-mini ses">সেশন: ${sessionName}</span>
-              </div>
-              <div class="vcd-row-group">
-                  <span class="vcd-badge-mini exam-name">${examName}</span>
-                  <span class="vcd-badge-mini sub-name">${subjectName}</span>
-              </div>
+       <!-- Right: Dashboard Stats Badges (Swapped from Left) -->
+       <div class="dch-title-side" style="display: flex; justify-content: flex-end;">
+          <div class="header-mini-stats-group" style="display: flex; gap: 6px;">
+             <!-- Total -->
+             <div style="display: flex; flex-direction: column; align-items: center; min-width: 52px;">
+                <span style="font-size: 0.65rem; font-weight: 900; color: white; background: #6366f1; padding: 2px 10px; border-radius: 4px 4px 0 0; width: 100%; text-align: center; letter-spacing: 0.3px;">মোট</span>
+                <span style="font-size: 1.2rem; font-weight: 900; color: #6366f1; background: rgba(99,102,241,0.08); border: 1.5px solid rgba(99,102,241,0.25); border-top: none; border-radius: 0 0 6px 6px; padding: 3px 10px; width: 100%; text-align: center; line-height: 1.2;">${globalStats.totalStudents} <small style="font-size:0.6rem; font-weight:700;">জন</small></span>
+             </div>
+             <!-- Participants -->
+             <div style="display: flex; flex-direction: column; align-items: center; min-width: 52px;">
+                <span style="font-size: 0.65rem; font-weight: 900; color: white; background: #3b82f6; padding: 2px 10px; border-radius: 4px 4px 0 0; width: 100%; text-align: center; letter-spacing: 0.3px;">পরীক্ষার্থী</span>
+                <span style="font-size: 1.2rem; font-weight: 900; color: #3b82f6; background: rgba(59,130,246,0.08); border: 1.5px solid rgba(59,130,246,0.25); border-top: none; border-radius: 0 0 6px 6px; padding: 3px 10px; width: 100%; text-align: center; line-height: 1.2;">${globalStats.participants} <small style="font-size:0.6rem; font-weight:700;">জন</small></span>
+             </div>
+             <!-- Pass -->
+             <div style="display: flex; flex-direction: column; align-items: center; min-width: 52px;">
+                <span style="font-size: 0.65rem; font-weight: 900; color: white; background: #10b981; padding: 2px 10px; border-radius: 4px 4px 0 0; width: 100%; text-align: center; letter-spacing: 0.3px;">পাস</span>
+                <span style="font-size: 1.2rem; font-weight: 900; color: #10b981; background: rgba(16,185,129,0.08); border: 1.5px solid rgba(16,185,129,0.25); border-top: none; border-radius: 0 0 6px 6px; padding: 3px 10px; width: 100%; text-align: center; line-height: 1.2;">${globalStats.passedStudents} <small style="font-size:0.6rem; font-weight:700;">জন</small></span>
+             </div>
+             <!-- Fail -->
+             <div style="display: flex; flex-direction: column; align-items: center; min-width: 52px;">
+                <span style="font-size: 0.65rem; font-weight: 900; color: white; background: #ef4444; padding: 2px 10px; border-radius: 4px 4px 0 0; width: 100%; text-align: center; letter-spacing: 0.3px;">ফেল</span>
+                <span style="font-size: 1.2rem; font-weight: 900; color: #ef4444; background: rgba(239,68,68,0.08); border: 1.5px solid rgba(239,68,68,0.25); border-top: none; border-radius: 0 0 6px 6px; padding: 3px 10px; width: 100%; text-align: center; line-height: 1.2;">${globalStats.failedStudents} <small style="font-size:0.6rem; font-weight:700;">জন</small></span>
+             </div>
+             <!-- Absent -->
+             <div style="display: flex; flex-direction: column; align-items: center; min-width: 52px;">
+                <span style="font-size: 0.65rem; font-weight: 900; color: white; background: #f59e0b; padding: 2px 10px; border-radius: 4px 4px 0 0; width: 100%; text-align: center; letter-spacing: 0.3px;">অনুপস্থিত</span>
+                <span style="font-size: 1.2rem; font-weight: 900; color: #f59e0b; background: rgba(245,158,11,0.08); border: 1.5px solid rgba(245,158,11,0.25); border-top: none; border-radius: 0 0 6px 6px; padding: 3px 10px; width: 100%; text-align: center; line-height: 1.2;">${globalStats.absentStudents} <small style="font-size:0.6rem; font-weight:700;">জন</small></span>
+             </div>
           </div>
        </div>
     </div>
