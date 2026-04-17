@@ -468,9 +468,9 @@ input:focus {
   align-items: center;
   justify-content: center;
   position: fixed;
-  top: 58px;
-  right: 48px;
-  z-index: 1000;
+  top: 18px; /* Adjusted to be at the very top navigation level */
+  right: 25px; /* Moved slightly better alignment */
+  z-index: 9999; /* Increased to remain on top of sticky tabs */
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
   transition: all 0.2s ease;
 }
@@ -490,7 +490,7 @@ input:focus {
     bottom: 25px;  /* Move to bottom */
     right: 25px;
     position: fixed; /* Keep it fixed while scrolling */
-    z-index: 1000;
+    z-index: 9999;
     box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3); /* Stronger shadow for FAB */
   }
 }
