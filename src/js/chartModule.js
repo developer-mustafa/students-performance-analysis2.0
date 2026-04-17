@@ -90,9 +90,17 @@ export function createPerformanceChart(canvas, data, options = {}) {
 
     // Prepare chart data
     const chartConfig = CHART_TYPES[chartType];
-    const labels = limitedData.map((student) =>
-        `রোল:${student.id}-${student.name} (${student.group.replace(' গ্রুপ', '')})`
-    );
+    const labels = limitedData.map((student) => {
+        let groupAbbr = '';
+        if (student.group) {
+            if (student.group.includes('বিজ্ঞান')) groupAbbr = 'S';
+            else if (student.group.includes('ব্যবসায়')) groupAbbr = 'C';
+            else if (student.group.includes('মানবিক')) groupAbbr = 'A';
+        }
+        return groupAbbr 
+            ? `${student.id}-${groupAbbr}-${student.name}` 
+            : `${student.id}-${student.name}`;
+    });
     const values = limitedData.map((student) => student[chartType]);
 
     // Dynamic Pass Mark (Default to 33 if not provided)

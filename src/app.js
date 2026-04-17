@@ -27,7 +27,7 @@ import {
 import { initializeMainChart, handleChartDownload, initializeHistoryChart } from './js/modules/chartManager.js';
 
 // Utilities & Services
-import { showNotification, filterStudentData, sortStudentData, calculateStatistics, convertToEnglishDigits, formatDateBengali, normalizeText, determineStatus, calculateGrade } from './js/utils.js';
+import { showNotification, filterStudentData, sortStudentData, calculateStatistics, convertToEnglishDigits, formatDateBengali, normalizeText, determineStatus, calculateGrade, isStudentEligibleForSubject } from './js/utils.js';
 import { FAILING_THRESHOLD } from './js/constants.js';
 import {
     applyTheme,
@@ -40,6 +40,8 @@ import {
 } from './js/dataService.js';
 import { getChartTitle } from './js/chartModule.js';
 import { getSavedExams, subscribeToSettings, getSettings, subscribeToSubjectConfigs, getSubjectConfigs, getStudentLookupMap } from './js/firestoreService.js';
+import { getMarksheetSettings, loadMarksheetSettings } from './js/modules/marksheetManager.js';
+import { loadMarksheetRules, currentMarksheetRules } from './js/modules/marksheetRulesManager.js';
 
 
 import { initPageRouter, updateNavVisibility } from './js/modules/pageRouter.js';
@@ -98,56 +100,43 @@ function recalculateStudentData(studentData, subjectName) {
  * @param {Array} studentData - Array of student data from an exam
  * @param {string} examClass - The class of the exam
  * @param {string} examSession - The session of the exam
- * @param {string} examSubject - The subject of the exam
+ * @param {string} examSubject - The subject of the exam (REQUIRED for correct stats)
  * @returns {Promise<Array>} - Filtered student data
  */
 async function filterActiveStudents(studentData, examClass, examSession, examSubject) {
     if (!studentData || studentData.length === 0) return studentData;
     try {
-        if (!state._studentLookupMap) {
-            state._studentLookupMap = await getStudentLookupMap();
-        }
+        // Always refresh lookup map to prevent stale inactive-status cache
+        state._studentLookupMap = await getStudentLookupMap();
         const lookupMap = state._studentLookupMap;
 
-        // Fetch marksheetSettings to get subjectMapping 
-        let msSettings = {};
-        try {
-            const { getMarksheetSettings } = await import('./js/modules/marksheetManager.js');
-            msSettings = getMarksheetSettings() || {};
-        } catch(e) {}
+        // Use already-imported top-level getMarksheetSettings (no dynamic import needed)
+        const msSettings = getMarksheetSettings() || {};
         const subjectMappings = msSettings.subjectMapping || [];
 
         const { generateStudentDocId } = await import('./js/firestoreService.js');
-        const { normalizeText } = await import('./js/utils.js');
         
         return studentData.filter(s => {
             const key = generateStudentDocId({
                 id: s.id,
                 group: s.group || '',
-                class: examClass || '',
-                session: examSession || ''
+                class: (examClass || '').trim(),
+                session: (examSession || '').trim()
             });
             const entry = lookupMap?.get(key);
-            // Check inactive status
-            if (entry && String(entry.status) === 'false') return false;
 
-            // Apply Subject Mappings 
-            if (examSubject && subjectMappings.length > 0) {
-                const evalSubName = normalizeText(examSubject).replace(/\[.*?\]/g, '').replace(/\\s+/g, '');
-                const sGroupNorm = normalizeText(s.group || '');
-                const sRollStr = String(s.id || s.roll || '').trim().replace(/^0+/, '');
-                
-                const thisSubMap = subjectMappings.find(m => {
-                    const mapSubNorm = normalizeText(m.subject).replace(/\[.*?\]/g, '').replace(/\\s+/g, '');
-                    const mapGroupNorm = normalizeText(m.group);
-                    return mapSubNorm === evalSubName && 
-                           (sGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(sGroupNorm));
+            // Exclude inactive students (support boolean AND string 'false')
+            if (entry && (entry.status === false || entry.status === 'false')) return false;
+
+            // Apply subject-specific eligibility (mapping + group rules)
+            if (examSubject) {
+                const normClass = (examClass || 'HSC').trim();
+                const eligible = isStudentEligibleForSubject(s, examSubject, {
+                    subjectMappings: subjectMappings,
+                    marksheetRules: currentMarksheetRules,
+                    className: normClass || 'HSC'
                 });
-
-                if (thisSubMap) {
-                    const mappedRolls = thisSubMap.rolls.map(r => String(r).replace(/^0+/, ''));
-                    if (!mappedRolls.includes(sRollStr)) return false;
-                }
+                if (!eligible) return false;
             }
 
             return true;
@@ -156,6 +145,45 @@ async function filterActiveStudents(studentData, examClass, examSession, examSub
         console.warn('filterActiveStudents failed, returning unfiltered:', e);
         return studentData;
     }
+}
+
+/**
+ * Central helper: apply an exam object to application state and refresh the dashboard.
+ * Used by BOTH the "লোড করুন" button AND the "ডিফল্ট সেট" / settings-subscriber flow
+ * so both paths are guaranteed to be identical.
+ * @param {Object} exam - Exam document from Firestore
+ * @param {boolean} [saveToStorage=false] - Whether to persist loadedExamId in localStorage
+ */
+async function applyExamToState(exam, saveToStorage = false) {
+    if (!exam) return;
+
+    // 1. Recalculate grades using current subject configs
+    const raw = recalculateStudentData([...(exam.studentData || [])], exam.subject);
+
+    // 2. Filter inactive students AND apply subject-mapping eligibility
+    const filtered = await filterActiveStudents(raw, exam.class, exam.session, exam.subject);
+
+    // 3. Update shared state
+    state.studentData          = filtered;
+    state.currentExamName      = exam.name;
+    state.currentSubject       = exam.subject;
+    state.currentExamSession   = exam.session;
+    state.currentExamClass     = exam.class;
+    state.isViewingSavedExam   = true;
+
+    // 4. Sync exam-card list filters so active card is highlighted
+    state.savedExamsClassFilter   = exam.class   || 'all';
+    state.savedExamsSessionFilter = exam.session || 'all';
+
+    // 5. Optionally persist for page-reload continuity
+    if (saveToStorage) {
+        localStorage.setItem('loadedExamId',    exam.docId  || '');
+        localStorage.setItem('currentSubject',  exam.subject || '');
+    }
+
+    // 6. Refresh dashboard
+    updateViews();
+    renderSavedExams();
 }
 
 async function init() {
@@ -184,6 +212,12 @@ async function init() {
         const theme = await loadThemePreference();
         applyTheme(theme === 'dark', elements.themeToggle);
 
+        // Load Marksheet Rules and Settings early for statistics accuracy
+        await Promise.all([
+            loadMarksheetRules(),
+            loadMarksheetSettings()
+        ]);
+
         // Fetch settings and exams first to know the default
         const [settings, exams] = await Promise.all([getSettings(), fetchExams()]);
 
@@ -203,18 +237,8 @@ async function init() {
         if (loadedExamId) {
             const loadedExam = exams.find(e => e.docId === loadedExamId);
             if (loadedExam) {
-                state.studentData = recalculateStudentData(loadedExam.studentData || [], loadedExam.subject);
-                state.studentData = await filterActiveStudents(state.studentData, loadedExam.class, loadedExam.session, loadedExam.subject);
-                state.currentExamName = loadedExam.name;
-                state.currentSubject = loadedExam.subject;
-                state.currentExamSession = loadedExam.session;
-                state.currentExamClass = loadedExam.class;
-                state.isViewingSavedExam = true;
-                
-                // Automatically sync UI filters to highlight the active loaded test
-                state.savedExamsClassFilter = loadedExam.class || 'all';
-                state.savedExamsSessionFilter = loadedExam.session || 'all';
-                
+                // Use central helper — same logic as clicking "লোড করুন"
+                await applyExamToState(loadedExam, true /* preserve localStorage */);
                 defaultLoaded = true;
             }
         }
@@ -223,18 +247,8 @@ async function init() {
         if (!defaultLoaded && state.defaultExamId) {
             const defaultExam = exams.find(e => e.docId === state.defaultExamId);
             if (defaultExam) {
-                state.studentData = recalculateStudentData(defaultExam.studentData || [], defaultExam.subject);
-                state.studentData = await filterActiveStudents(state.studentData, defaultExam.class, defaultExam.session, defaultExam.subject);
-                state.currentExamName = defaultExam.name;
-                state.currentSubject = defaultExam.subject;
-                state.currentExamSession = defaultExam.session;
-                state.currentExamClass = defaultExam.class;
-                state.isViewingSavedExam = true;
-
-                // Automatically sync UI filters to highlight the active default test
-                state.savedExamsClassFilter = defaultExam.class || 'all';
-                state.savedExamsSessionFilter = defaultExam.session || 'all';
-
+                // Use central helper — same logic as settings subscriber
+                await applyExamToState(defaultExam, false /* do NOT overwrite loadedExamId */);
                 defaultLoaded = true;
             }
         }
@@ -295,29 +309,28 @@ async function init() {
         });
 
         // Settings Sync
-        state.onSettingsUnsubscribe = subscribeToSettings(settings => {
+        state.onSettingsUnsubscribe = subscribeToSettings(async settings => {
             if (settings && settings.defaultExamId !== state.defaultExamId) {
                 state.defaultExamId = settings.defaultExamId;
 
-                // Load pinning exam data as if clicking "View"
+                // Load pinning exam data — use the SAME central helper as "লোড করুন"
                 if (state.defaultExamId) {
                     const pinnedExam = state.savedExams.find(e => e.docId === state.defaultExamId);
                     if (pinnedExam) {
-                        state.studentData = recalculateStudentData(pinnedExam.studentData || [], pinnedExam.subject);
-                        filterActiveStudents(state.studentData, pinnedExam.class, pinnedExam.session, pinnedExam.subject).then(filtered => {
-                            state.studentData = filtered;
-                            updateViews();
-                        });
-                        state.currentExamName = pinnedExam.name;
-                        state.currentSubject = pinnedExam.subject;
-                        state.currentExamSession = pinnedExam.session;
-                        state.currentExamClass = pinnedExam.class;
-                        state.isViewingSavedExam = true;
+                        // applyExamToState handles recalc + inactive filter + subject filter + UI refresh
+                        await applyExamToState(pinnedExam, false /* do NOT overwrite loadedExamId */);
+                    } else {
+                        // Exam not found in cache — refresh list and retry
+                        await fetchExams();
+                        const freshExam = state.savedExams.find(e => e.docId === state.defaultExamId);
+                        if (freshExam) await applyExamToState(freshExam, false);
+                        else { updateViews(); renderSavedExams(); }
                     }
+                } else {
+                    // Default was cleared
+                    updateViews();
+                    renderSavedExams();
                 }
-
-                updateViews();
-                renderSavedExams();
             }
         });
 
@@ -499,12 +512,16 @@ function updateViews() {
     // SMART THRESHOLD: Determine if we have a real user-defined configuration
     const hasConfig = !!(subjectConfig && Object.keys(subjectConfig).length > 2); // docId & updatedAt always exist if saved
     
+    const msSettings = getMarksheetSettings() || {};
     const subjectOptions = {
         writtenPass: hasConfig ? (Number(subjectConfig.writtenPass) || 0) : FAILING_THRESHOLD.written,
         mcqPass: hasConfig ? (Number(subjectConfig.mcqPass) || 0) : FAILING_THRESHOLD.mcq,
         practicalPass: hasConfig ? (Number(subjectConfig.practicalPass) || 0) : 0,
         totalPass: hasConfig ? (Number(subjectConfig.totalPass) || (Number(subjectConfig.total) * 0.33) || 0) : FAILING_THRESHOLD.total,
-        criteria: state.currentChartType
+        criteria: state.currentChartType,
+        subjectMappings: msSettings.subjectMapping || [],
+        marksheetRules: currentMarksheetRules,
+        className: state.currentExamClass || 'HSC'
     };
 
 
@@ -1507,29 +1524,10 @@ function initEventListeners() {
         }
 
         if (exam) {
-            state.studentData = recalculateStudentData(exam.studentData || [], exam.subject);
-            filterActiveStudents(state.studentData, exam.class, exam.session).then(filtered => {
-                state.studentData = filtered;
-                updateViews();
-                renderSavedExams();
+            // Use the central helper — identical logic to default-exam flow
+            applyExamToState(exam, true /* saveToStorage */).then(() => {
+                showNotification(`"${exam.name}" সফলভাবে লোড হয়েছে`, 'success');
             });
-            state.currentExamName = exam.name;
-            state.currentSubject = exam.subject;
-            state.currentExamSession = exam.session;
-            state.currentExamClass = exam.class;
-            state.isViewingSavedExam = true;
-
-            // Automatically sync UI filters to highlight the active loaded test
-            state.savedExamsClassFilter = exam.class || 'all';
-            state.savedExamsSessionFilter = exam.session || 'all';
-
-            // Save to localStorage for persistence
-            localStorage.setItem('loadedExamId', exam.docId || '');
-            localStorage.setItem('currentSubject', exam.subject || '');
-
-            updateViews();
-            renderSavedExams();
-            showNotification(`"${exam.name}" সফলভাবে লোড হয়েছে`, 'success');
             state._pendingLoadExam = null;
         }
         elements.loadExamConfirmModal?.classList.remove('active');

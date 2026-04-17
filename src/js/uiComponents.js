@@ -15,6 +15,7 @@ import {
   calculateGroupStatistics,
   getFailedStudents,
   isAbsent,
+  isStudentEligibleForSubject,
   sortStudentData,
   formatDateBengali,
   normalizeText,
@@ -60,57 +61,35 @@ export function renderSkeletons(container, type = 'stats', count = 5) {
  * @param {Array} data - Student data array
  */
 export function renderStats(container, data, options = {}) {
+  const makeCard = (cls, icon, value, label) => `
+    <div class="stat-card ${cls} fade-in">
+      <div class="stat-icon"><i class="fas ${icon}"></i></div>
+      <div class="stat-body">
+        <div class="stat-value">${value}</div>
+        <div class="stat-label">${label}</div>
+      </div>
+    </div>`;
+
   if (!data || data.length === 0) {
-    container.innerHTML = `
-      <div class="stat-card fade-in">
-        <div class="stat-value">0</div>
-        <div class="stat-label">মোট শিক্ষার্থী</div>
-      </div>
-      <div class="stat-card fade-in">
-        <div class="stat-value">0</div>
-        <div class="stat-label">অনুপস্থিত</div>
-      </div>
-      <div class="stat-card fade-in">
-        <div class="stat-value" style="color: var(--danger)">0</div>
-        <div class="stat-label">ফেল করেছে</div>
-      </div>
-      <div class="stat-card fade-in">
-        <div class="stat-value" style="color: var(--success)">0</div>
-        <div class="stat-label">পাস করেছে</div>
-      </div>
-      <div class="stat-card fade-in">
-        <div class="stat-value" style="color: var(--info)">0</div>
-        <div class="stat-label">পরীক্ষার্থী সংখ্যা</div>
-      </div>
-    `;
+    container.innerHTML =
+      makeCard('sc-total',  'fa-users',      '0', 'মোট শিক্ষার্থী') +
+      makeCard('sc-absent', 'fa-user-slash', '0', 'অনুপস্থিত') +
+      makeCard('sc-exam',   'fa-user-edit',  '0', 'পরীক্ষার্থী সংখ্যা') +
+      makeCard('sc-pass',   'fa-check-circle','0','পাস করেছে') +
+      makeCard('sc-fail',   'fa-times-circle','0','ফেল করেছে');
     return;
   }
 
   const stats = calculateStatistics(data, options);
 
-  container.innerHTML = `
-    <div class="stat-card fade-in">
-      <div class="stat-value">${stats.totalStudents}</div>
-      <div class="stat-label">মোট শিক্ষার্থী</div>
-    </div>
-    <div class="stat-card fade-in">
-      <div class="stat-value">${stats.absentStudents}</div>
-      <div class="stat-label">অনুপস্থিত</div>
-    </div>
-    <div class="stat-card fade-in">
-      <div class="stat-value" style="color: var(--danger)">${stats.failedStudents}</div>
-      <div class="stat-label">ফেল করেছে</div>
-    </div>
-    <div class="stat-card fade-in">
-      <div class="stat-value" style="color: var(--success)">${stats.passedStudents}</div>
-      <div class="stat-label">পাস করেছে</div>
-    </div>
-    <div class="stat-card fade-in">
-      <div class="stat-value" style="color: var(--info)">${stats.participants}</div>
-      <div class="stat-label">পরীক্ষার্থী সংখ্যা</div>
-    </div>
-  `;
+  container.innerHTML =
+    makeCard('sc-total',  'fa-users',       stats.totalStudents,   'মোট শিক্ষার্থী') +
+    makeCard('sc-absent', 'fa-user-slash',  stats.absentStudents,  'অনুপস্থিত') +
+    makeCard('sc-exam',   'fa-user-edit',   stats.participants,    'পরীক্ষার্থী সংখ্যা') +
+    makeCard('sc-pass',   'fa-check-circle',stats.passedStudents,  'পাস করেছে') +
+    makeCard('sc-fail',   'fa-times-circle',stats.failedStudents,  'ফেল করেছে');
 }
+
 
 /**
  * Render group statistics
@@ -1237,11 +1216,6 @@ export async function renderSavedExamsList(container, exams, options = {}) {
   } = options;
 
   // Render count and filters
-  const countBadge = document.getElementById('savedExamsCount');
-  if (countBadge) {
-    countBadge.innerHTML = `মোট: <strong>${exams.length}</strong>টি এক্সাম`;
-  }
-
   const filterContainer = document.getElementById('savedExamsClassFilters');
   if (filterContainer) {
     renderSavedExamsFilters(filterContainer, exams, classFilter, onFilterChange);
@@ -1260,6 +1234,13 @@ export async function renderSavedExamsList(container, exams, options = {}) {
   if (sessionFilter && sessionFilter !== 'all') {
     filteredExams = filteredExams.filter(e => (e.session || 'N/A') === sessionFilter);
   }
+
+  // Render count after filtering
+  const countBadge = document.getElementById('savedExamsCount');
+  if (countBadge) {
+    countBadge.innerHTML = `<i class="fas fa-layer-group"></i> মোট: <strong>${filteredExams.length}</strong>টি এক্সাম`;
+  }
+
 
   if (!filteredExams || filteredExams.length === 0) {
     container.innerHTML = '<div class="no-exams">কোনো সংরক্ষিত পরীক্ষা পাওয়া যায়নি</div>';
@@ -1285,25 +1266,6 @@ export async function renderSavedExamsList(container, exams, options = {}) {
     const msSettings = getMarksheetSettings() || {};
     const subjectMappings = msSettings.subjectMapping || [];
     
-    // Determine dynamic group validation from rules
-    const rules = currentMarksheetRules[exam.class || 'HSC'] || currentMarksheetRules["All"] || {};
-    const evalSubNameRule = normalizeText(exam.subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
-    const generalSubs = (rules.generalSubjects || []).map(s => normalizeText(s).replace(/\[.*?\]/g, '').replace(/\s+/g, ''));
-    let validGroups = [];
-
-    for (const [group, subs] of Object.entries(rules.groupSubjects || {})) {
-        const normSubs = subs.map(s => normalizeText(s).replace(/\[.*?\]/g, '').replace(/\s+/g, ''));
-        if (normSubs.includes(evalSubNameRule)) validGroups.push(normalizeText(group));
-    }
-    for (const [group, subs] of Object.entries(rules.optionalSubjects || {})) {
-        const normSubs = subs.map(s => normalizeText(s).replace(/\[.*?\]/g, '').replace(/\s+/g, ''));
-        if (normSubs.includes(evalSubNameRule) && !validGroups.includes(normalizeText(group))) {
-            validGroups.push(normalizeText(group));
-        }
-    }
-    const isGeneral = generalSubs.includes(evalSubNameRule) || 
-        ['বাংলা১মপত্র', 'বাংলা২য়পত্র', 'ইংরেজি১মপত্র', 'ইংরেজি২য়পত্র', 'তথ্যওযোগাযোগপ্রযুক্তি'].includes(evalSubNameRule);
-
     if (activeStudentData.length > 0) {
       activeStudentData = activeStudentData.filter(s => {
         // 1. Check if disabled globally (Inactive Student)
@@ -1315,39 +1277,15 @@ export async function renderSavedExamsList(container, exams, options = {}) {
             session: exam.session || ''
           });
           const lookupEntry = studentLookupMap.get(studentKey);
-          if (lookupEntry && lookupEntry.status === false) return false;
+          if (lookupEntry && (lookupEntry.status === false || lookupEntry.status === 'false')) return false;
         }
         
-        // 2. Strict Subject Mapping Enforcement
-        let hasCoreMapping = false;
-        if (subjectMappings.length > 0) {
-          const evalSubName = normalizeText(exam.subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
-          const sGroupNorm = normalizeText(s.group || '');
-          const sRollStr = String(s.id || s.roll || '').trim().replace(/^0+/, '');
-          
-          const thisSubMap = subjectMappings.find(m => {
-              const mapSubNorm = normalizeText(m.subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
-              const mapGroupNorm = normalizeText(m.group);
-              return mapSubNorm === evalSubName && 
-                     (sGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(sGroupNorm));
-          });
-
-          if (thisSubMap) {
-              const mappedRolls = thisSubMap.rolls.map(r => String(r).replace(/^0+/, ''));
-              if (!mappedRolls.includes(sRollStr)) return false;
-              hasCoreMapping = true;
-          }
-        }
-        
-        // 3. Dynamic Marksheet Group-Based Filtering
-        if (!hasCoreMapping && !isGeneral && validGroups.length > 0) {
-            const sGroupNorm = normalizeText(s.group || '');
-            if (!validGroups.some(g => sGroupNorm.includes(g) || g.includes(sGroupNorm))) {
-                return false;
-            }
-        }
-        
-        return true;
+        // 2. Smart Subject Mapping & Group Filtering Rules
+        return isStudentEligibleForSubject(s, exam.subject, { 
+            subjectMappings, 
+            marksheetRules: currentMarksheetRules,
+            className: exam.class || 'HSC'
+        });
       });
     }
     const dynamicStats = (activeStudentData.length > 0)

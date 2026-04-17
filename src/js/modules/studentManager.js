@@ -15,7 +15,7 @@ import { GROUP_NAMES } from '../constants.js';
 let allStudentsFromExams = [];
 let filteredStudents = [];
 let currentPage = 1;
-let showInactiveOnly = false;
+let studentDisplayFilter = 'all'; // 'all', 'active', 'inactive'
 const PER_PAGE = 20;
 
 /**
@@ -130,7 +130,8 @@ function applyFilters() {
     const searchTerm = (document.getElementById('studentSearchInput')?.value || '').trim().toLowerCase();
 
     filteredStudents = allStudentsFromExams.filter(s => {
-        if (showInactiveOnly && s.status !== false) return false;
+        if (studentDisplayFilter === 'active' && s.status === false) return false;
+        if (studentDisplayFilter === 'inactive' && s.status !== false) return false;
         if (classFilter !== 'all' && s.class !== classFilter) return false;
         if (sessionFilter !== 'all' && s.session !== sessionFilter) return false;
         if (groupFilter !== 'all' && s.group !== groupFilter) return false;
@@ -397,19 +398,28 @@ export async function initStudentManager() {
         addBtn.addEventListener('click', openAddStudentModal);
     }
     
-    // Toggle Inactive Students
+    // Toggle Inactive Students (Cyclic: All -> Active -> Inactive)
     const toggleInactiveBtn = document.getElementById('toggleInactiveStudentsBtn');
     if (toggleInactiveBtn) {
         toggleInactiveBtn.addEventListener('click', () => {
-            showInactiveOnly = !showInactiveOnly;
-            if (showInactiveOnly) {
-                toggleInactiveBtn.style.background = '#dc2626';
+            if (studentDisplayFilter === 'all') {
+                studentDisplayFilter = 'active';
+                toggleInactiveBtn.style.background = '#10b981';
                 toggleInactiveBtn.style.color = 'white';
-                toggleInactiveBtn.innerHTML = '<i class="fas fa-users"></i> <span class="dm-btn-text">সব শিক্ষার্থী</span>';
+                toggleInactiveBtn.style.borderColor = '#059669';
+                toggleInactiveBtn.innerHTML = '<i class="fas fa-user-check"></i> <span class="dm-btn-text">সক্রিয় শিক্ষার্থী</span>';
+            } else if (studentDisplayFilter === 'active') {
+                studentDisplayFilter = 'inactive';
+                toggleInactiveBtn.style.background = '#ef4444';
+                toggleInactiveBtn.style.color = 'white';
+                toggleInactiveBtn.style.borderColor = '#dc2626';
+                toggleInactiveBtn.innerHTML = '<i class="fas fa-user-times"></i> <span class="dm-btn-text">নিষ্ক্রিয় শিক্ষার্থী</span>';
             } else {
+                studentDisplayFilter = 'all';
                 toggleInactiveBtn.style.background = '#fff0f0';
                 toggleInactiveBtn.style.color = '#dc2626';
-                toggleInactiveBtn.innerHTML = '<i class="fas fa-user-times"></i> <span class="dm-btn-text">নিষ্ক্রিয় তালিকা</span>';
+                toggleInactiveBtn.style.borderColor = '#fca5a5';
+                toggleInactiveBtn.innerHTML = '<i class="fas fa-users"></i> <span class="dm-btn-text">সব শিক্ষার্থী</span>';
             }
             applyFilters();
         });

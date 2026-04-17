@@ -172,15 +172,75 @@ export function getGradeClass(grade) {
 }
 
 /**
+ * Check if a student is eligible for a subject based on rules and mappings
+ */
+export function isStudentEligibleForSubject(student, subject, options = {}) {
+    const { subjectMappings = [], marksheetRules = {}, className = 'HSC' } = options;
+    if (!subject || subject === 'all') return true;
+
+    const evalSubName = normalizeText(subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
+    const sGroupNorm = normalizeText(student.group || '');
+    const sRollStr = String(student.id || student.roll || '').trim().replace(/^0+/, '');
+
+    // 1. Strict Subject Mapping Enforcement (Priority 1)
+    if (subjectMappings.length > 0) {
+        const thisSubMap = subjectMappings.find(m => {
+            const mapSubNorm = normalizeText(m.subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
+            const mapGroupNorm = normalizeText(m.group);
+            
+            // Fuzzy match for subject mapping
+            const subMatch = mapSubNorm === evalSubName || 
+                           evalSubName.includes(mapSubNorm) || 
+                           mapSubNorm.includes(evalSubName);
+
+            return subMatch && 
+                   (sGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(sGroupNorm));
+        });
+
+        if (thisSubMap) {
+            const mappedRolls = thisSubMap.rolls.map(r => String(r).replace(/^0+/, ''));
+            return mappedRolls.includes(sRollStr);
+        }
+    }
+
+    // 2. Dynamic Marksheet Group-Based Filtering (Priority 2)
+    const rules = marksheetRules[className] || marksheetRules["All"] || {};
+    const generalSubs = (rules.generalSubjects || []).map(s => normalizeText(s).replace(/\[.*?\]/g, '').replace(/\s+/g, ''));
+    
+    // Check if it's a general subject
+    const isGeneral = generalSubs.includes(evalSubName) || 
+        ['বাংলা১মপত্র', 'বাংলা২য়পত্র', 'ইংরেজি১মপত্র', 'ইংরেজি২য়পত্র', 'তথ্যওযোগাযোগপ্রযুক্তি'].includes(evalSubName);
+    
+    if (isGeneral) return true;
+
+    // Check group/optional subjects
+    let validGroups = [];
+    const checkMatch = (target, list) => {
+        const normList = list.map(s => normalizeText(s).replace(/\[.*?\]/g, '').replace(/\s+/g, ''));
+        return normList.some(ns => target === ns || target.includes(ns) || ns.includes(target));
+    };
+
+    for (const [group, subs] of Object.entries(rules.groupSubjects || {})) {
+        if (checkMatch(evalSubName, subs)) validGroups.push(normalizeText(group));
+    }
+    for (const [group, subs] of Object.entries(rules.optionalSubjects || {})) {
+        if (checkMatch(evalSubName, subs) && !validGroups.includes(normalizeText(group))) {
+            validGroups.push(normalizeText(group));
+        }
+    }
+
+    if (validGroups.length > 0) {
+        return validGroups.some(g => sGroupNorm.includes(g) || g.includes(sGroupNorm));
+    }
+
+    return true; // Default to true if no rules found for this subject
+}
+
+/**
  * Filter student data based on criteria
- * @param {Array} data - Student data array
- * @param {Object} filters - Filter criteria
- * @param {Object} options - Subject configuration options
- * @returns {Array} - Filtered data
  */
 export function filterStudentData(data, filters, options = {}) {
     let filteredData = [...data];
-
     const { group, searchTerm, grade, status, subject } = filters;
 
     // 1. Group Filter (Improved robustness)
@@ -196,12 +256,12 @@ export function filterStudentData(data, filters, options = {}) {
         });
     }
 
-    // 2. Subject Filter (Improved robustness)
+    // 2. Subject Filter (Improved robustness with smart rules)
     if (subject && subject !== 'all' && subject !== '') {
-        const normSubject = normalizeText(subject);
+        const { subjectMappings = [], marksheetRules = {}, className = 'HSC' } = options;
         filteredData = filteredData.filter((student) => {
-            if (!student.subject) return true;
-            return normalizeText(student.subject) === normSubject;
+            // Apply new smart filtering rules
+            return isStudentEligibleForSubject(student, subject, { subjectMappings, marksheetRules, className });
         });
     }
 
