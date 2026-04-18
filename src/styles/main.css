@@ -22963,6 +22963,22 @@ a.sidebar-contact-item:hover {
     margin: 0 !important;
     padding: 0 !important;
   }
+  /* Hide and disable scrollbars for all elements during report printing */
+  body.printing-report * {
+    scrollbar-width: none !important;
+    -ms-overflow-style: none !important;
+  }
+  
+  body.printing-report *::-webkit-scrollbar {
+    display: none !important;
+    width: 0 !important;
+    height: 0 !important;
+  }
+
+  body.printing-report div[style*="overflow-x: auto"],
+  body.printing-report div {
+    overflow: visible !important;
+  }
 }
 /* =========================================
    PREMIUM GLASS-MORPHISM LOADING SYSTEM
