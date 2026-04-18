@@ -22859,12 +22859,16 @@ a.sidebar-contact-item:hover {
 
   body.printing-report .rpt-summary-table thead th,
   body.printing-report .rpt-subject-table thead th {
-    background-color: #1e3a5f !important;
-    background: #1e3a5f !important;
+    background-color: #0f172a !important; /* Even darker for print contrast */
+    background: #0f172a !important;
     color: #ffffff !important;
+    font-weight: 900 !important;
+    font-size: 0.75rem !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    box-shadow: inset 0 0 0 1000px #1e3a5f !important; /* Force background */
+    box-shadow: inset 0 0 0 1000px #0f172a !important;
+    border: 0.5pt solid #334155 !important;
+    text-shadow: none !important;
   }
 
   body.printing-report .rpt-section-title {
@@ -22902,12 +22906,15 @@ a.sidebar-contact-item:hover {
   body.printing-report .rpt-g-f .rpt-grade-label { background-color: #ef4444 !important; box-shadow: inset 0 0 0 1000px #ef4444 !important; }
 
   body.printing-report .rpt-pill-left {
-    background-color: #1e40af !important;
-    background: #1e40af !important;
+    background-color: #0f172a !important; /* Consistent with table headers */
+    background: #0f172a !important;
     color: #ffffff !important;
+    font-weight: 950 !important;
+    font-size: 0.85rem !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    box-shadow: inset 0 0 0 1000px #1e40af !important;
+    box-shadow: inset 0 0 0 1000px #0f172a !important;
+    text-shadow: none !important;
   }
 
   body.printing-report .rpt-footer {
