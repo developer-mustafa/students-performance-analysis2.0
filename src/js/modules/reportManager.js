@@ -1141,13 +1141,9 @@ export async function generateReport() {
             ${fullyAbsentHtml}
 
             <div class="rpt-footer">
-                <div class="rpt-footer-left">
-                    <div class="ftr-contact">যোগাযোগ: <a href="tel:01840643946" style="color: inherit; text-decoration: none; font-weight: 700;">01840-643946</a> <span class="ftr-soft">অটোমেটেড এক্সাম এনালিষ্ট সফটওয়্যার</span></div>
-                </div>
-                <div class="rpt-footer-right">
-                    <div class="ftr-contact">প্রিন্টের তারিখ: ${todayDate}</div>
-                    <div class="ftr-contact" style="color: #2563eb; font-weight: 700;">${window.location.host}</div>
-                </div>
+                <div class="ftr-dev-main">সফটওয়্যার নির্মাতা: MUSTAFA RAHMAN</div>
+                <div class="ftr-contact-sub">যোগাযোগ: 01840-643946 | এনালিষ্ট প্রো সফটওয়্যার</div>
+                <div class="ftr-url-pill">${window.location.host}</div>
             </div>
         </div>
     </div>`;
