@@ -16,7 +16,7 @@ import {
 import { state } from './state.js';
 import QRCode from 'qrcode';
 import html2canvas from 'html2canvas';
-import { showNotification, convertToEnglishDigits, normalizeText } from '../utils.js';
+import { showNotification, convertToEnglishDigits, convertToBengaliDigits, normalizeText } from '../utils.js';
 import {
     renderSingleMarksheet,
     applyCombinedPaperLogic,
@@ -325,135 +325,254 @@ async function displayStudentMarksheet(studentResult) {
     const exams = studentResult.exams;
 
     await loadMarksheetSettings();
-    const ms = getMarksheetSettings();
 
-    // Filter exams if a specific one was sought
-    let activeExams = exams;
+    // 1. Determine which exams are being looked at (Single or Combined)
     const searchExamName = document.getElementById('srSearchExam')?.value;
-    if (searchExamName && searchExamName !== 'all') {
-        activeExams = exams.filter(e => e.name === searchExamName);
+    const uniqueExamNames = [...new Set(exams.map(e => e.name).filter(Boolean))];
+    
+    let targetExamName = searchExamName === 'all' ? '__all__' : searchExamName;
+    if (!targetExamName && uniqueExamNames.length === 1) targetExamName = uniqueExamNames[0];
+    if (!targetExamName) targetExamName = '__all__';
+
+    const examDisplayName = targetExamName === '__all__' ? 'সমন্বিত ফলাফল' : targetExamName;
+
+    // 2. Fetch ALL exams in this session to calculate accurate ranks/stats
+    const allExams = await getSavedExams();
+    let relevantExams = allExams.filter(e => e.class === cls && e.session === session);
+    if (targetExamName !== '__all__') {
+        relevantExams = relevantExams.filter(e => e.name === targetExamName);
     }
 
-    // Collect all subjects ONLY from active exams
-    const subjectsSet = new Set(activeExams.map(e => e.subject).filter(Boolean));
-    let subjects = [...subjectsSet];
+    if (relevantExams.length === 0) {
+        previewArea.innerHTML = '<div class="sr-error">তথ্য পাওয়া যায়নি।</div>';
+        return;
+    }
 
-    // Build student data aggregation (same logic as marksheetManager)
-    const studentAgg = {
-        id, name, group,
-        class: cls,
-        session,
-        subjects: {}
-    };
+    // 3. Aggregate ALL students for this specific exam context
+    const studentAggMap = new Map();
+    const lookupMap = await getStudentLookupMap();
+    const subjectsSet = new Set(relevantExams.map(e => e.subject).filter(Boolean));
+    const subjects = [...subjectsSet];
 
-    activeExams.forEach(exam => {
-        if (exam.studentData) {
-            const s = exam.studentData.find(st => String(st.id) === String(id) && (st.group || '') === group);
-            if (s) {
-                const subjKey = normalizeText(exam.subject).replace(/\s+/g, '') || exam.subject;
-                studentAgg.subjects[subjKey] = {
-                    written: s.written || 0,
-                    mcq: s.mcq || 0,
-                    practical: s.practical || 0,
-                    total: s.total || 0,
-                    grade: s.grade || '',
-                    gpa: s.gpa || '',
-                    status: s.status || ''
+    relevantExams.forEach(exam => {
+        if (!exam.studentData) return;
+        exam.studentData.forEach(s => {
+            const sGroup = normalizeText(s.group || '');
+            const sRoll = convertToEnglishDigits(String(s.id || '').trim().replace(/^0+/, '')) || '0';
+            const key = `${sRoll}_${sGroup}`;
+
+            if (!studentAggMap.has(key)) {
+                const studentKey = generateStudentDocId({ id: s.id, group: sGroup, class: cls, session: session });
+                const latest = lookupMap.get(studentKey);
+                studentAggMap.set(key, {
+                    id: s.id,
+                    name: latest ? (latest.name || s.name) : s.name,
+                    group: sGroup,
+                    class: cls,
+                    session: session,
+                    status: latest ? (latest.status !== undefined ? latest.status : true) : true,
+                    subjects: {}
+                });
+            }
+            
+            const subjKey = normalizeText(exam.subject).replace(/\s+/g, '') || exam.subject;
+            const data = s;
+            const existing = studentAggMap.get(key).subjects[subjKey];
+            const hasMarks = (data.written !== null && data.written !== '' && data.written > 0) ||
+                             (data.mcq !== null && data.mcq !== '' && data.mcq > 0) ||
+                             (data.practical !== null && data.practical !== '' && data.practical > 0);
+
+            if (!existing || hasMarks) {
+                studentAggMap.get(key).subjects[subjKey] = {
+                    written: data.written || 0,
+                    mcq: data.mcq || 0,
+                    practical: data.practical || 0,
+                    total: data.total || 0,
+                    grade: data.grade || '',
+                    gpa: data.gpa || '',
+                    status: data.status || ''
                 };
             }
-        }
+        });
     });
 
-    // Load marksheet rules for sorting
+    const allStudents = [...studentAggMap.values()]
+        .filter(s => String(s.status) !== 'false')
+        .sort((a, b) => (parseInt(convertToEnglishDigits(String(a.id))) || 0) - (parseInt(convertToEnglishDigits(String(b.id))) || 0));
+
+    // 4. Calculate Rules and Sorting (Matching marksheetManager)
     let allOptSubs = [];
     let rules = {};
     try {
         await loadMarksheetRules();
         rules = currentMarksheetRules[cls] || currentMarksheetRules["All"] || {};
-
         const generalSubjects = rules.generalSubjects || [];
-        const allGroupSubs = group !== 'all'
-            ? ((rules.groupSubjects || {})[group] || [])
-            : Object.values(rules.groupSubjects || {}).flat();
-        const optionalSubjects = (rules.optionalSubjects || {})[group] || [];
-        allOptSubs = group !== 'all'
-            ? optionalSubjects
-            : Object.values(rules.optionalSubjects || {}).flat();
-
+        const optionalSubjectsObj = rules.optionalSubjects || {};
+        const optKey = group !== 'all' ? group : Object.keys(optionalSubjectsObj)[0];
+        allOptSubs = group !== 'all' ? (optionalSubjectsObj[optKey] || []) : Object.values(optionalSubjectsObj).flat();
+        
         subjects.sort((a, b) => {
             const getScore = (sub) => {
-                const genIdx = generalSubjects.indexOf(sub);
-                if (genIdx !== -1) return 1000 + genIdx;
-                if (allGroupSubs.some(gs => sub.includes(gs) || gs.includes(sub))) return 2000;
-                const isOptional = allOptSubs.some(os => sub.includes(os) || os.includes(sub));
-                if (isOptional) return 5000;
+                if (generalSubjects.includes(sub)) return 1000;
+                if (allOptSubs.some(os => sub.includes(os) || os.includes(sub))) return 5000;
                 return 3000;
             };
             return getScore(a) - getScore(b);
         });
-    } catch (err) {
-        console.warn("Subject sorting failed:", err);
-    }
+    } catch (e) { console.warn("Rules load failed", e); }
 
-    // Apply combined paper logic if needed
     let displaySubjects = subjects;
-    try {
-        if (rules.mode === 'combined' && rules.combinedSubjects?.length > 0) {
-            displaySubjects = applyCombinedPaperLogic([studentAgg], subjects, rules, allOptSubs);
-        }
-    } catch (err) {
-        console.error("Combined paper logic failed:", err);
+    if (rules.mode === 'combined' && rules.combinedSubjects?.length > 0) {
+        displaySubjects = applyCombinedPaperLogic(allStudents, subjects, rules, allOptSubs);
     }
 
-    // Load settings for developer credit
-    const globalSettings = await getSettings();
-    state.developerCredit = globalSettings?.developerCredit || null;
-
-    // Correctly determine the Display Name
-    let examDisplayName = 'পরীক্ষা';
-    const uniqueExamNames = [...new Set(activeExams.map(e => e.name).filter(Boolean))];
-
-    if (searchExamName && searchExamName !== 'all') {
-        // If user specifically picked an exam, use that name
-        examDisplayName = searchExamName;
-    } else if (uniqueExamNames.length > 1) {
-        // Only show "Combined" if there are multiple different exam sessions
-        examDisplayName = 'সমন্বিত ফলাফল';
-    } else if (uniqueExamNames.length === 1) {
-        // Only one type of exam found
-        examDisplayName = uniqueExamNames[0];
-    }
-
-    const allExams = await getSavedExams();
     const subjectConfigs = await getSubjectConfigs();
+    const highestMarks = {};
+    allStudents.forEach(st => {
+        Object.entries(st.subjects).forEach(([sk, sd]) => {
+            const t = Number(sd.total) || 0;
+            if (!highestMarks[sk] || t > highestMarks[sk]) highestMarks[sk] = t;
+        });
+    });
 
-    const html = await renderSingleMarksheet(studentAgg, displaySubjects, examDisplayName, session, null, rules, allOptSubs, allExams, subjectConfigs);
+    // 5. Pass 1: Light Render Ranks for everyone (EXACT parity with master module)
+    const allRendered = [];
+    for (const st of allStudents) {
+        const lightHtml = await renderSingleMarksheet(st, displaySubjects, examDisplayName, session, null, rules, allOptSubs, allExams, subjectConfigs, null, true, highestMarks);
+        allRendered.push({ key: `${st.id}_${st.group}`, group: st.group, html: lightHtml, id: st.id, subjects: st.subjects });
+    }
 
-    previewArea.innerHTML = html;
+    const meritResults = allRendered.map(item => {
+        const isPass = item.html.includes('ms-result-pass');
+        const isAbsent = !Object.values(item.subjects).some(d => (d.written || 0) > 0 || (d.mcq || 0) > 0 || (d.practical || 0) > 0 || (d.total || 0) > 0);
+        let gpa = 0;
+        const gpaMatch = item.html.match(/ms-gpa-value">\s*([\d.]+)\s*<\/span>/);
+        if (gpaMatch) gpa = parseFloat(gpaMatch[1]);
+        let totalMarks = 0;
+        const marksMatch = item.html.match(/মোট নম্বর<\/span>\s*<span class="ms-result-value">\s*(\d+)/);
+        if (marksMatch) totalMarks = parseInt(marksMatch[1]);
+        const failedCount = (!isPass && !isAbsent) ? (item.html.match(/ms-grade-fail/g) || []).length || 1 : 0;
+        return { key: item.key, group: item.group, id: parseInt(convertToEnglishDigits(String(item.id))) || 0, isPass, gpa, totalMarks, failedCount, isAbsent };
+    });
 
-    // Render QR Codes for the student results page marksheet
+    meritResults.sort((a, b) => {
+        if (a.isAbsent !== b.isAbsent) return a.isAbsent ? 1 : -1;
+        if (a.isAbsent && b.isAbsent) return a.id - b.id;
+        if (a.isPass !== b.isPass) return a.isPass ? -1 : 1;
+        if (a.isPass && Math.abs(b.gpa - a.gpa) > 0.0001) return b.gpa - a.gpa;
+        if (!a.isPass && a.failedCount !== b.failedCount) return a.failedCount - b.failedCount;
+        if (Math.abs(b.totalMarks - a.totalMarks) > 0.01) return b.totalMarks - a.totalMarks;
+        return a.id - b.id;
+    });
+
+    const exactRanksMap = new Map();
+    const groupTally = new Map();
+    meritResults.forEach((res, idx) => {
+        if (!groupTally.has(res.group)) groupTally.set(res.group, 0);
+        if (!res.isAbsent) groupTally.set(res.group, groupTally.get(res.group) + 1);
+        const gIdx = res.isAbsent ? -1 : groupTally.get(res.group) - 1;
+        const formatRank = (i) => i === -1 ? 'র‍্যাঙ্ক নেই' : (i === 0 ? '১ম' : i === 1 ? '২য়' : i === 2 ? '৩য়' : i === 3 ? '৪র্থ' : i === 4 ? '৫ম' : i === 5 ? '৬ষ্ঠ' : i === 6 ? '৭ম' : i === 7 ? '৮ম' : i === 8 ? '৯ম' : i === 9 ? '১০ম' : `${convertToBengaliDigits(i + 1)}তম`);
+        exactRanksMap.set(res.key, { classRank: formatRank(res.isAbsent ? -1 : idx), groupRank: formatRank(gIdx) });
+    });
+
+    // 6. Statistics Calculation for Summary Table & Grade Distribution
+    const groupStats = new Map();
+    const gradeCounts = { 'A+': 0, 'A': 0, 'A-': 0, 'B': 0, 'C': 0, 'D': 0, 'F': 0 };
+
+    meritResults.forEach(res => {
+        const grp = res.group || 'অন্যান্য';
+        if (!groupStats.has(grp)) groupStats.set(grp, { total: 0, examinees: 0, pass: 0, fail: 0 });
+        const gs = groupStats.get(grp);
+        gs.total++;
+
+        if (res.isAbsent) return;
+        
+        gs.examinees++;
+        if (res.isPass) {
+            gs.pass++;
+            // Extract grade for distribution
+            const rankItem = allRendered.find(i => i.key === res.key);
+            const gMatch = rankItem.html.match(/গ্রেড<\/span>\s*<span class="ms-result-value">\s*(A\+|A|A-|B|C|D)\s*<\/span>/);
+            if (gMatch && gradeCounts[gMatch[1]] !== undefined) gradeCounts[gMatch[1]]++;
+        } else {
+            gs.fail++;
+            gradeCounts['F']++;
+        }
+    });
+
+    // Compute grand totals for summary
+    let gTotal = 0, gExaminees = 0, gPass = 0, gFail = 0;
+    groupStats.forEach(gs => {
+        gTotal += gs.total;
+        gExaminees += gs.examinees;
+        gPass += gs.pass;
+        gFail += gs.fail;
+    });
+
+    const groupRowsHtml = [...groupStats.entries()].map(([g, gs]) => {
+        const abs = gs.total - gs.examinees;
+        const rate = gs.examinees > 0 ? ((gs.pass / gs.examinees) * 100).toFixed(1) : '0.0';
+        return `<tr><td>${g}</td><td>${gs.total}</td><td>${gs.examinees}</td><td>${abs}</td><td class="ms-sumtbl-pass">${gs.pass}</td><td class="ms-sumtbl-fail">${gs.fail}</td><td class="ms-sumtbl-rate">${rate}%</td></tr>`;
+    }).join('');
+
+    const examSummaryHtml = `
+        <div class="ms-exam-summary-section">
+            <table class="ms-exam-summary-tbl">
+                <caption>পরীক্ষার ফলাফল সামারি</caption>
+                <thead><tr><th>বিভাগ</th><th>মোট</th><th>পরীক্ষার্থী</th><th>অনুপস্থিত</th><th>পাশ</th><th>ফেল</th><th>পাশের হার</th></tr></thead>
+                <tbody>${groupRowsHtml}</tbody>
+                <tfoot><tr><td>সর্বমোট</td><td>${gTotal}</td><td>${gExaminees}</td><td>${gTotal - gExaminees}</td><td class="ms-sumtbl-pass">${gPass}</td><td class="ms-sumtbl-fail">${gFail}</td><td class="ms-sumtbl-rate">${gExaminees > 0 ? ((gPass / gExaminees) * 100).toFixed(1) : '0.0'}%</td></tr></tfoot>
+            </table>
+        </div>`;
+
+    // 7. Final Render for the matched student
+    const targetKey = `${id}_${group}`;
+    const targetAgg = studentAggMap.get(`${convertToEnglishDigits(String(id).trim().replace(/^0+/, '')) || '0'}_${normalizeText(group)}`);
+    
+    if (!targetAgg) {
+        previewArea.innerHTML = '<div class="sr-error">দুঃখিত, শিক্ষার্থীর তথ্য পাওয়া যায়নি।</div>';
+        return;
+    }
+
+    const ms = getMarksheetSettings();
+    let finalHtml = await renderSingleMarksheet(targetAgg, displaySubjects, examDisplayName, session, null, rules, allOptSubs, allExams, subjectConfigs, null, false, highestMarks, exactRanksMap.get(targetKey));
+
+    // Handle Summary Section (respecting settings)
+    if (ms.showSummary !== false) {
+        finalHtml = finalHtml.replace('<!--EXAM_SUMMARY_PLACEHOLDER-->', examSummaryHtml);
+    } else {
+        finalHtml = finalHtml.replace('<!--EXAM_SUMMARY_PLACEHOLDER-->', '');
+    }
+
+    // Inject Grading Scale Counts
+    finalHtml = finalHtml.replace('<!--GS_AP-->', gradeCounts['A+'])
+                         .replace('<!--GS_A-->', gradeCounts['A'])
+                         .replace('<!--GS_AM-->', gradeCounts['A-'])
+                         .replace('<!--GS_B-->', gradeCounts['B'])
+                         .replace('<!--GS_C-->', gradeCounts['C'])
+                         .replace('<!--GS_D-->', gradeCounts['D'])
+                         .replace('<!--GS_F-->', gradeCounts['F']);
+
+    previewArea.innerHTML = finalHtml;
+
     const { renderMarksheetQRCodes } = await import('./marksheetManager.js');
     await renderMarksheetQRCodes(previewArea);
 
-
-    // Robust Auto-fit zoom for mobile devices
+    // Zoom and notification
     const containerWidth = previewArea.clientWidth || window.innerWidth;
-    const targetWidth = 840; // A4 Standard context width
+    const targetWidth = 840;
     if (containerWidth < targetWidth) {
         const initialScale = Math.max(0.3, (containerWidth - 30) / targetWidth);
         previewArea.style.setProperty('--ms-main-scale', initialScale);
-
-        const zoomInput = document.getElementById('srZoom');
-        const zoomLevel = document.getElementById('srZoomLevel');
-        if (zoomInput) zoomInput.value = initialScale;
-        if (zoomLevel) zoomLevel.innerText = Math.round(initialScale * 100) + '%';
+        const zIn = document.getElementById('srZoom');
+        const zLvl = document.getElementById('srZoomLevel');
+        if (zIn) zIn.value = initialScale;
+        if (zLvl) zLvl.innerText = Math.round(initialScale * 100) + '%';
     }
-
-    // Show zoom controls
     const zoomHeader = document.getElementById('srPreviewHeader');
     if (zoomHeader) zoomHeader.style.display = 'flex';
 
-    showNotification('মার্কশীট সফলভাবে তৈরি হয়েছে ✅');
+    showNotification('মার্কশীট সফলভাবে তৈরি হয়েছে ✅');
 }
 
 /**
