@@ -383,9 +383,21 @@ export async function generateReport() {
         });
 
         let absentVisibleSubjectsList = [];
+        let eligibleVisibleSubjectsCount = 0;
+
         visibleSubjects.forEach(subjObj => {
             const isObj = typeof subjObj === 'object';
             const subjName = isObj ? (subjObj.name || subjObj.paper) : subjObj;
+            
+            const isEligible = isStudentEligibleForSubject(student, subjName, {
+                subjectMappings: ms.subjectMapping || [],
+                marksheetRules: clsRules,
+                className: rptClass || 'HSC'
+            });
+
+            if (!isEligible) return; // Skip subjects the student is not mapped to take
+
+            eligibleVisibleSubjectsCount++;
             let isAbs = false;
 
             if (isCombinedMode && isObj && subjObj.isCombined) {
@@ -414,8 +426,8 @@ export async function generateReport() {
             if (isAbs) absentVisibleSubjectsList.push(subjName);
         });
 
-        if (visibleSubjects.length > 0) {
-            if (absentVisibleSubjectsList.length === visibleSubjects.length) {
+        if (eligibleVisibleSubjectsCount > 0) {
+            if (absentVisibleSubjectsList.length === eligibleVisibleSubjectsCount) {
                 fullyAbsentStudents.push({
                     id: student.id,
                     name: student.name,
@@ -774,7 +786,7 @@ export async function generateReport() {
                                 <th style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important;">রোল</th>
                                 <th style="background: #f8fafc !important; color: #1e293b !important; text-align: left !important; padding-left: 10px !important; border-bottom: 2px solid #cbd5e1 !important;">নাম</th>
                                 <th style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important;">বিভাগ</th>
-                                <th style="background: #f8fafc !important; color: #1e293b !important; text-align: left !important; padding-left: 10px !important; border-bottom: 2px solid #cbd5e1 !important;">পরীক্ষার বিষয় সমূহ</th>
+                                <th style="background: #f8fafc !important; color: #1e293b !important; text-align: left !important; padding-left: 10px !important; border-bottom: 2px solid #cbd5e1 !important;">যে সকল বিষয়ে অনুপস্থিত</th>
                             </tr>
                         </thead>
                         <tbody>
