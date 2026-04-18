@@ -37,6 +37,12 @@ let marksheetSettings = {
     historyExams: [],
     showSummary: true,
     showGradeScale: true,
+    idSearchShowTable: true,
+    idSearchShowGradeScale: true,
+    idSearchShowRanking: true,
+    idSearchShowQRCode: true,
+    idSearchShowComments: true,
+    idSearchStatusMode: 'full',
     signatures: [
         { label: 'শ্রেণি শিক্ষক', url: '' },
         { label: 'পরীক্ষা কমিটি', url: '' },
@@ -763,13 +769,15 @@ async function generateMarksheets() {
         }
 
         // Handle Grade Scale Counts
-        finalHtml = finalHtml.replace('<!--GS_AP-->', overallGradeCounts['A+']);
-        finalHtml = finalHtml.replace('<!--GS_A-->', overallGradeCounts['A']);
-        finalHtml = finalHtml.replace('<!--GS_AM-->', overallGradeCounts['A-']);
-        finalHtml = finalHtml.replace('<!--GS_B-->', overallGradeCounts['B']);
-        finalHtml = finalHtml.replace('<!--GS_C-->', overallGradeCounts['C']);
-        finalHtml = finalHtml.replace('<!--GS_D-->', overallGradeCounts['D']);
-        finalHtml = finalHtml.replace('<!--GS_F-->', overallGradeCounts['F']);
+        // Handle Grade Scale Counts with Bengali Digits
+        const toBn = (n) => (n || 0).toLocaleString('bn-BD');
+        finalHtml = finalHtml.replace('<!--GS_AP-->', toBn(overallGradeCounts['A+']));
+        finalHtml = finalHtml.replace('<!--GS_A-->', toBn(overallGradeCounts['A']));
+        finalHtml = finalHtml.replace('<!--GS_AM-->', toBn(overallGradeCounts['A-']));
+        finalHtml = finalHtml.replace('<!--GS_B-->', toBn(overallGradeCounts['B']));
+        finalHtml = finalHtml.replace('<!--GS_C-->', toBn(overallGradeCounts['C']));
+        finalHtml = finalHtml.replace('<!--GS_D-->', toBn(overallGradeCounts['D']));
+        finalHtml = finalHtml.replace('<!--GS_F-->', toBn(overallGradeCounts['F']));
 
         const wrapper = document.createElement('div');
         wrapper.innerHTML = finalHtml;
@@ -1038,7 +1046,7 @@ const getMarkClass = (mark, passMark) => {
 };
 
 
-export async function renderSingleMarksheet(student, subjects, examDisplayName, selectedSession, customSettings = null, rules = null, allOptSubs = [], allExams = [], subjectConfigs = {}, examSummary = null, skipHeavyOps = false, highestMarks = {}, exactRanks = null) {
+export async function renderSingleMarksheet(student, subjects, examDisplayName, selectedSession, customSettings = null, rules = null, allOptSubs = [], allExams = [], subjectConfigs = {}, examSummary = null, skipHeavyOps = false, highestMarks = {}, exactRanks = null, isIdSearch = false) {
 
     const history = skipHeavyOps ? [] : await getStudentExamsHistory(student, allExams, student.class, selectedSession, rules, subjectConfigs);
     const uid = student.uniqueId || generateStudentUniqueId(student.name, student.class, selectedSession, student.id, student.group);
@@ -1723,7 +1731,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                 </div>
 
                 <!-- Marks Table with Watermark -->
-                <div class="ms-table-wrapper" style="position: relative;">
+                <div class="ms-table-wrapper" style="position: relative; ${isIdSearch && ms.idSearchShowTable === false ? 'display: none !important;' : ''}">
                     ${watermarkHtml}
                     <table class="ms-table">
                         <thead>
@@ -1749,7 +1757,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                 <!-- Result Summary -->
                 <div class="ms-result-section">
                     ${optionalBonusGP > 0 ? `
-                    <div class="ms-result-box" style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); border: 1px solid #a5d6a7;">
+                    <div class="ms-result-box" style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); border: 1px solid #a5d6a7; ${isIdSearch && ms.idSearchStatusMode === 'status_only' ? 'display: none !important;' : ''}">
                         <span class="ms-result-label" style="color: #2e7d32; font-size: 0.55rem;">ঐচ্ছিক বোনাস</span>
                         <span class="ms-result-value" style="color: #1b5e20; font-size: 1.1rem;">+${optionalBonusGP.toFixed(2)}</span>
                     </div>
@@ -1760,11 +1768,11 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                         <span class="ms-result-value" style="color: #d32f2f; font-size: 1rem; font-weight: 700; letter-spacing: 1px;">অনুপস্থিত</span>
                     </div>
                     ` : ''}
-                    <div class="ms-result-box">
+                    <div class="ms-result-box" style="${isIdSearch && ms.idSearchStatusMode === 'status_only' ? 'display: none !important;' : ''}">
                         <span class="ms-result-label">GPA</span>
                         <span class="ms-result-value ms-gpa-value">${avgGPA}</span>
                     </div>
-                    <div class="ms-result-box">
+                    <div class="ms-result-box" style="${isIdSearch && ms.idSearchStatusMode === 'status_only' ? 'display: none !important;' : ''}">
                         <span class="ms-result-label">গ্রেড</span>
                         <span class="ms-result-value">${overallGrade}</span>
                     </div>
@@ -1772,7 +1780,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                         <span class="ms-result-label">ফলাফল</span>
                         <span class="ms-result-value">${resultText}</span>
                     </div>
-                    <div class="ms-result-box">
+                    <div class="ms-result-box" style="${isIdSearch && ms.idSearchStatusMode === 'status_only' ? 'display: none !important;' : ''}">
                         <span class="ms-result-label">মোট নম্বর</span>
                         <span class="ms-result-value">${grandTotal} / ${maxGrand}</span>
                     </div>
@@ -1805,7 +1813,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                     <!--EXAM_SUMMARY_PLACEHOLDER-->
 
                 <!-- Grade Scale Reference -->
-                <div class="ms-grade-scale" style="${ms.showGradeScale === false ? 'display: none !important;' : ''}">
+                <div class="ms-grade-scale" style="${(ms.showGradeScale === false || (isIdSearch && ms.idSearchShowGradeScale === false)) ? 'display: none !important;' : ''}">
                     <div class="ms-grade-scale-wrapper">
                         <span class="ms-gs-title" style="letter-spacing: 0.5px;">GRADING SCALE :</span>
                         <div class="ms-grade-badges">
@@ -1843,7 +1851,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
 
                 <!-- Extra Sections: History, Comments, QR -->
                 <div class="ms-extra-grid">
-                    <div class="ms-extra-box ms-history-column" style="display: flex; flex-direction: column; min-width: 0; overflow: hidden;">
+                    <div class="ms-extra-box ms-history-column" style="display: ${isIdSearch && ms.idSearchShowRanking === false ? 'none !important' : 'flex'}; flex-direction: column; min-width: 0; overflow: hidden;">
                         <span class="ms-extra-title">পরীক্ষার ফলাফল ইতিহাস ও মেরিট পজিশন</span>
                         <div class="ms-history-grid-container" style="flex-grow: 1; display: flex; flex-direction: column; width: 100%;">
                             <!-- Header Row -->
@@ -1907,7 +1915,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                         </div>
                     </div>
                     
-                    <div class="ms-extra-box ms-comments-box">
+                    <div class="ms-extra-box ms-comments-box" style="${isIdSearch && ms.idSearchShowComments === false ? 'display: none !important;' : ''}">
                         <span class="ms-extra-title">মন্তব্য:</span>
                         <div class="ms-comment-lines" style="position: relative;">
                             <div style="position: absolute; top: 0px; left: 8px; right: 4px; line-height: 22px; font-weight: 700; font-size: 0.78rem; color: #1e3a8a; font-style: italic; z-index: 10;">${studentRemark}</div>
@@ -1917,7 +1925,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                         </div>
                     </div>
                     
-                    <div class="ms-extra-box ms-qr-column" style="justify-content: space-between; padding: 2px !important; padding-bottom: 0 !important;">
+                    <div class="ms-extra-box ms-qr-column" style="${isIdSearch && ms.idSearchShowQRCode === false ? 'display: none !important;' : ''} justify-content: space-between; padding: 2px !important; padding-bottom: 0 !important;">
                         <div class="ms-qr-canvas-wrapper" style="margin-bottom: -4px; padding: 0;">
                             <canvas class="ms-mr-qr-canvas" data-uid="${uid}" data-exam="${examDisplayName}" data-name="${student.name}"></canvas>
                         </div>
@@ -2003,6 +2011,12 @@ async function updateSettingsLivePreview() {
         watermarkOpacity: (document.getElementById('msWatermarkOpacity') ? parseInt(document.getElementById('msWatermarkOpacity').value) : 10) / 100,
         showSummary: document.getElementById('msShowSummary') ? document.getElementById('msShowSummary').checked : true,
         showGradeScale: document.getElementById('msShowGradeScale') ? document.getElementById('msShowGradeScale').checked : true,
+        idSearchShowTable: document.getElementById('msIdSearchShowTable') ? document.getElementById('msIdSearchShowTable').checked : true,
+        idSearchShowGradeScale: document.getElementById('msIdSearchShowGradeScale') ? document.getElementById('msIdSearchShowGradeScale').checked : true,
+        idSearchShowRanking: document.getElementById('msIdSearchShowRanking') ? document.getElementById('msIdSearchShowRanking').checked : true,
+        idSearchShowQRCode: document.getElementById('msIdSearchShowQRCode') ? document.getElementById('msIdSearchShowQRCode').checked : true,
+        idSearchShowComments: document.getElementById('msIdSearchShowComments') ? document.getElementById('msIdSearchShowComments').checked : true,
+        idSearchStatusMode: document.querySelector('input[name="msIdSearchStatusMode"]:checked')?.value || 'full',
         signatures: marksheetSettings.signatures || []
     };
 
@@ -2179,6 +2193,18 @@ function initMarksheetSettingsModal() {
             if (el('msShowGradeScale')) el('msShowGradeScale').checked = marksheetSettings.showGradeScale !== false;
             if (el('msBoardStandardOptional')) el('msBoardStandardOptional').checked = marksheetSettings.boardStandardOptional === true;
 
+            // ID Search Settings
+            if (el('msIdSearchShowTable')) el('msIdSearchShowTable').checked = marksheetSettings.idSearchShowTable !== false;
+            if (el('msIdSearchShowGradeScale')) el('msIdSearchShowGradeScale').checked = marksheetSettings.idSearchShowGradeScale !== false;
+            if (el('msIdSearchShowRanking')) el('msIdSearchShowRanking').checked = marksheetSettings.idSearchShowRanking !== false;
+            if (el('msIdSearchShowQRCode')) el('msIdSearchShowQRCode').checked = marksheetSettings.idSearchShowQRCode !== false;
+            if (el('msIdSearchShowComments')) el('msIdSearchShowComments').checked = marksheetSettings.idSearchShowComments !== false;
+            if (marksheetSettings.idSearchStatusMode === 'status_only') {
+                if (el('msIdSearchModeStatus')) el('msIdSearchModeStatus').checked = true;
+            } else {
+                if (el('msIdSearchModeFull')) el('msIdSearchModeFull').checked = true;
+            }
+
             // Render Signature Slots
             renderSignatureSlots();
 
@@ -2318,6 +2344,12 @@ function initMarksheetSettingsModal() {
                 showSummary: document.getElementById('msShowSummary').checked,
                 showGradeScale: document.getElementById('msShowGradeScale').checked,
                 boardStandardOptional: document.getElementById('msBoardStandardOptional')?.checked || false,
+                idSearchShowTable: document.getElementById('msIdSearchShowTable').checked,
+                idSearchShowGradeScale: document.getElementById('msIdSearchShowGradeScale').checked,
+                idSearchShowRanking: document.getElementById('msIdSearchShowRanking').checked,
+                idSearchShowQRCode: document.getElementById('msIdSearchShowQRCode').checked,
+                idSearchShowComments: document.getElementById('msIdSearchShowComments').checked,
+                idSearchStatusMode: document.querySelector('input[name="msIdSearchStatusMode"]:checked')?.value || 'full',
                 signatures: signatures.length > 0 ? signatures : [
                     { label: 'শ্রেণি শিক্ষক', url: '' },
                     { label: 'পরীক্ষা কমিটি', url: '' },
