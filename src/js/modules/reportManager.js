@@ -214,7 +214,7 @@ export async function generateReport() {
             return `<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; font-weight: 700; font-size: 0.85em;">${canonical}</span>`;
         } else if (canonical === 'মানবিক গ্রুপ') {
             return `<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; font-weight: 700; font-size: 0.85em;">${canonical}</span>`;
-        } 
+        }
         return `<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; font-weight: 700; font-size: 0.85em;">${grp || 'N/A'}</span>`;
     };
 
@@ -705,8 +705,8 @@ export async function generateReport() {
                             <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">বিভাগ</th>
                             <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">জিপিএ</th>
                             <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">গ্রেড</th>
-                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">শ্রেণি মেধাস্থান</th>
-                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">শাখা মেধাস্থান</th>
+                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">ক্লাস র‍্যাঙ্কিং</th>
+                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">গ্রুপ র‍্যাঙ্কিং</th>
                             <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">স্ট্যাটাস</th>
                         </tr>
                     </thead>
@@ -813,6 +813,7 @@ export async function generateReport() {
                                 <th style="background: #f8fafc !important; color: #1e293b !important; text-align: left !important; padding-left: 10px !important; border-bottom: 2px solid #cbd5e1 !important;">নাম</th>
                                 <th style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important;">বিভাগ</th>
                                 <th style="background: #f8fafc !important; color: #1e293b !important; text-align: left !important; padding-left: 10px !important; border-bottom: 2px solid #cbd5e1 !important;">যে সকল বিষয়ে অনুপস্থিত</th>
+                                <th style="background: #f8fafc !important; color: #ea580c !important; border-bottom: 2px solid #cbd5e1 !important;">স্ট্যাটাস</th>
                             </tr>
                         </thead>
                         <tbody>
@@ -825,6 +826,7 @@ export async function generateReport() {
                                     <td style="text-align: left !important; padding-left: 10px !important; color: #475569; font-size: 0.9em; line-height: 1.4;">
                                         ${st.absentSubjects.map((sub, idx) => `${convertToBengaliDigits(idx + 1)}. ${sub}`).join('<br>')}
                                     </td>
+                                    <td style="color: #ea580c; font-weight: bold; background: #fff7ed;">আংশিক পরীক্ষার্থী</td>
                                 </tr>
                             `).join('')}
                         </tbody>

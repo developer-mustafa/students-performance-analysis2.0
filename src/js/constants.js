@@ -42,12 +42,12 @@ export const CHART_TYPES = {
     total: {
         key: 'total',
         label: 'মোট স্কোর',
-        title: 'মোট স্কোর র‌্যাঙ্কিং',
+        title: 'মোট স্কোর র‍্যাঙ্কিং',
     },
     written: {
         key: 'written',
         label: 'লিখিত পরীক্ষার স্কোর',
-        title: 'লিখিত পরীক্ষার স্কোর র‌্যাঙ্কিং',
+        title: 'লিখিত পরীক্ষার স্কোর র‍্যাঙ্কিং',
     },
     mcq: {
         key: 'mcq',
