@@ -541,8 +541,8 @@ async function generateMarksheets() {
         const formatRank = (i) => i === 0 ? '১ম' : i === 1 ? '২য়' : i === 2 ? '৩য়' : i === 3 ? '৪র্থ' : i === 4 ? '৫ম' : i === 5 ? '৬ষ্ঠ' : i === 6 ? '৭ম' : i === 7 ? '৮ম' : i === 8 ? '৯ম' : i === 9 ? '১০ম' : `${toBnNum(i + 1)}তম`;
 
         exactRanksMap.set(res.key, {
-            classRank: res.isAbsent ? 'রেঙ্ক নেই' : formatRank(rankIndex),
-            groupRank: res.isAbsent ? 'রেঙ্ক নেই' : formatRank(groupIndex),
+            classRank: res.isAbsent ? 'র‍্যাঙ্ক নেই' : formatRank(rankIndex),
+            groupRank: res.isAbsent ? 'র‍্যাঙ্ক নেই' : formatRank(groupIndex),
             classRankNum: res.isAbsent ? 999999 : rankIndex,
             groupRankNum: res.isAbsent ? 999999 : groupIndex,
             isPass: res.isPass,
@@ -1001,8 +1001,8 @@ async function getStudentExamsHistory(student, allExams, cls, session, rules, su
             studentHistory.push({
                 name: examName,
                 gpa: res.allPassed ? res.displayGPA : '0.00',
-                rank: res.allAbsent ? 'রেঙ্ক নেই' : studentRankIdx + 1,
-                groupRank: (gRes && gRes.allAbsent) ? 'রেঙ্ক নেই' : (groupRankIdx !== -1 ? groupRankIdx + 1 : '-')
+                rank: res.allAbsent ? 'র‍্যাঙ্ক নেই' : studentRankIdx + 1,
+                groupRank: (gRes && gRes.allAbsent) ? 'র‍্যাঙ্ক নেই' : (groupRankIdx !== -1 ? groupRankIdx + 1 : '-')
             });
         }
     }
@@ -1809,7 +1809,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                                 ${history.length > 0 ? history.map(h => {
             // Helper functions for precise rank styling
             const getRankClass = (rankVal, type) => {
-                if (rankVal === 'রেঙ্ক নেই' || rankVal === '-' || !rankVal) return 'ms-rank-none';
+                if (rankVal === 'র‍্যাঙ্ক নেই' || rankVal === '-' || !rankVal) return 'ms-rank-none';
                 const r = parseInt(convertToEnglishDigits(String(rankVal)));
                 const isClass = type === 'class';
                 if (r === 1) return isClass ? 'ms-rank-1-class' : 'ms-rank-1-group';
@@ -1819,7 +1819,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
             };
 
             const getRankText = (rankVal) => {
-                if (rankVal === 'রেঙ্ক নেই' || rankVal === '-' || !rankVal) return '-';
+                if (rankVal === 'র‍্যাঙ্ক নেই' || rankVal === '-' || !rankVal) return '-';
                 const r = parseInt(convertToEnglishDigits(String(rankVal)));
                 if (typeof rankVal === 'string' && /[মর্থষ্ঠ]/.test(rankVal)) return rankVal;
                 return r === 1 ? '১ম' : r === 2 ? '২য়' : r === 3 ? '৩য়' : r === 4 ? '৪র্থ' : r === 5 ? '৫ম' : r === 6 ? '৬ষ্ঠ' : r === 7 ? '৭ম' : r === 8 ? '৮ম' : r === 9 ? '৯ম' : r === 10 ? '১০ম' : `${r.toLocaleString('bn-BD')}তম`;
