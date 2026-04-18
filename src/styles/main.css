@@ -22838,7 +22838,7 @@ a.sidebar-contact-item:hover {
   }
 
   body.printing-report .rpt-inner {
-    padding: 2mm 5mm !important;
+    padding: 2mm 3mm !important; /* Reduced side padding to give more room for tables */
   }
 
   body.printing-report * {
@@ -22853,8 +22853,18 @@ a.sidebar-contact-item:hover {
     font-size: 1.8rem !important;
   }
 
+  body.printing-report .rpt-summary-table,
+  body.printing-report .rpt-subject-table {
+    width: 100% !important;
+    table-layout: fixed !important; /* Force fit into container */
+  }
+
   body.printing-report .rpt-summary-table td,
-  body.printing-report .rpt-subject-table td {
+  body.printing-report .rpt-subject-table td,
+  body.printing-report .rpt-summary-table th,
+  body.printing-report .rpt-subject-table th {
+    padding: 4px 2px !important; /* Extremely compact padding for print */
+    font-size: 0.68rem !important; /* Smaller text to fit all columns */
     color: #000 !important;
     border: 0.5pt solid #cbd5e1 !important;
   }
