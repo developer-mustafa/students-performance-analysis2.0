@@ -101,14 +101,75 @@
         <div class="dm-controls">
 
           <!-- Brand & Version -->
-          <div class="dm-brand-section">
+            <style>
+              @keyframes premiumPulse {
+                0% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(79, 70, 229, 0.4)); }
+                50% { transform: scale(1.05); filter: drop-shadow(0 0 10px rgba(79, 70, 229, 0.8)); }
+                100% { transform: scale(1); filter: drop-shadow(0 0 4px rgba(79, 70, 229, 0.4)); }
+              }
+              @keyframes textShine {
+                0% { background-position: 0% 50%; }
+                50% { background-position: 100% 50%; }
+                100% { background-position: 0% 50%; }
+              }
+              .premium-brand-logo {
+                display: flex;
+                align-items: center;
+                gap: 10px;
+              }
+              .premium-logo-icon {
+                font-size: 1.4rem;
+                background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                animation: premiumPulse 2.5s infinite ease-in-out;
+              }
+              .premium-app-name {
+                font-weight: 900;
+                font-size: 1.25rem;
+                background: linear-gradient(270deg, #1e293b, #4f46e5, #0ea5e9, #1e293b);
+                background-size: 300% 300%;
+                -webkit-background-clip: text;
+                -webkit-text-fill-color: transparent;
+                animation: textShine 6s ease infinite;
+                letter-spacing: -0.5px;
+              }
+              
+              .soft-btn-upload {
+                background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%) !important;
+                color: #2563eb !important;
+                border: 1px solid #bfdbfe !important;
+                box-shadow: 0 2px 4px rgba(37, 99, 235, 0.05) !important;
+                font-weight: 700 !important;
+                transition: all 0.3s ease !important;
+              }
+              .soft-btn-upload:hover {
+                background: linear-gradient(135deg, #dbeafe 0%, #bfdbfe 100%) !important;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 6px rgba(37, 99, 235, 0.1) !important;
+              }
+              
+              .soft-btn-download {
+                background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%) !important;
+                color: #059669 !important;
+                border: 1px solid #a7f3d0 !important;
+                box-shadow: 0 2px 4px rgba(5, 150, 105, 0.05) !important;
+                font-weight: 700 !important;
+                transition: all 0.3s ease !important;
+              }
+              .soft-btn-download:hover {
+                background: linear-gradient(135deg, #d1fae5 0%, #a7f3d0 100%) !important;
+                transform: translateY(-1px);
+                box-shadow: 0 4px 6px rgba(5, 150, 105, 0.1) !important;
+              }
+            </style>
             <div class="dm-brand-left">
-              <div class="app-logo">
-                <i class="fas fa-chart-line"></i>
-                <span class="app-name">এনালিষ্ট প্রো</span>
+              <div class="app-logo premium-brand-logo">
+                <i class="fas fa-chart-line premium-logo-icon"></i>
+                <span class="app-name premium-app-name">এনালিস্ট প্রো</span>
               </div>
               <div id="appVersionBadge" class="dm-version-badge" title="অ্যাপ ভার্সন">
-                v<span id="headerVersionNumber">2.5.2</span>
+                v<span id="headerVersionNumber">2.5.3</span>
               </div>
             </div>
             <!-- Mobile Hamburger Toggle -->
@@ -126,12 +187,12 @@
               <div class="dm-tool-group">
                 <div class="dm-upload-wrapper">
                   <input type="file" id="jsonFileInput" accept=".json,.xlsx,.xls" style="display: none;" />
-                  <label for="jsonFileInput" class="dm-btn dm-upload">
+                  <label for="jsonFileInput" class="dm-btn soft-btn-upload">
                     <i class="fas fa-cloud-upload-alt"></i> <span class="dm-btn-text">আপলোড এক্সেল</span>
                   </label>
                 </div>
 
-                <button id="downloadExcelBtn" class="dm-btn dm-report">
+                <button id="downloadExcelBtn" class="dm-btn soft-btn-download">
                   <i class="fas fa-file-excel"></i> <span class="dm-btn-text">এক্সেল ডাউনলোড</span>
                 </button>
 
