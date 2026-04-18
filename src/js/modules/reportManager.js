@@ -920,6 +920,13 @@ export async function generateReport() {
                             <span class="rpt-stat-label">পরীক্ষায় অংশগ্রহণ</span>
                         </div>
                     </div>
+                    <div class="rpt-stat-card rpt-stat-absent">
+                        <div class="rpt-stat-icon" style="background: #fdf4ff !important; color: #a21caf !important;"><i class="fas fa-user-minus"></i></div>
+                        <div class="rpt-stat-info">
+                            <span class="rpt-stat-value" style="color: #a21caf !important;">${convertToBengaliDigits(gT - gE)}</span>
+                            <span class="rpt-stat-label">অনুপস্থিত</span>
+                        </div>
+                    </div>
                     <div class="rpt-stat-card rpt-stat-pass">
                         <div class="rpt-stat-icon"><i class="fas fa-check-circle"></i></div>
                         <div class="rpt-stat-info">
@@ -932,13 +939,6 @@ export async function generateReport() {
                         <div class="rpt-stat-info">
                             <span class="rpt-stat-value">${convertToBengaliDigits(gF)} জন</span>
                             <span class="rpt-stat-label">ফেল</span>
-                        </div>
-                    </div>
-                    <div class="rpt-stat-card rpt-stat-absent">
-                        <div class="rpt-stat-icon"><i class="fas fa-user-minus"></i></div>
-                        <div class="rpt-stat-info">
-                            <span class="rpt-stat-value">${convertToBengaliDigits(gT - gE)}</span>
-                            <span class="rpt-stat-label">অনুপস্থিত</span>
                         </div>
                     </div>
                     <div class="rpt-stat-card rpt-stat-rate">
