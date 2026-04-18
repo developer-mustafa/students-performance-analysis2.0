@@ -22857,28 +22857,25 @@ a.sidebar-contact-item:hover {
     overflow: hidden !important;
   }
 
-  body.printing-report .rpt-pill-left {
-    background: #1e40af !important;
-    color: #ffffff !important;
-    -webkit-print-color-adjust: exact !important;
-    print-color-adjust: exact !important;
-  }
-
   body.printing-report .rpt-summary-table thead th,
   body.printing-report .rpt-subject-table thead th {
+    background-color: #1e3a5f !important;
     background: #1e3a5f !important;
     color: #ffffff !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    box-shadow: inset 0 0 0 1000px #1e3a5f !important; /* Force background */
   }
 
   body.printing-report .rpt-section-title {
+    background-color: #f0f4ff !important;
     background: #f0f4ff !important;
     color: #0f172a !important;
     border-bottom: 1px solid #cbd5e1 !important;
     font-size: 0.85rem !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
+    box-shadow: inset 0 0 0 1000px #f0f4ff !important;
   }
 
   body.printing-report .rpt-stat-card,
@@ -22886,6 +22883,31 @@ a.sidebar-contact-item:hover {
     border: 1px solid #e2e8f0 !important;
     background: #fff !important;
     border-radius: 10px !important;
+    box-shadow: none !important;
+  }
+
+  body.printing-report .rpt-grade-label {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    color: #ffffff !important;
+  }
+  
+  /* Force grade-item background colors for labels */
+  body.printing-report .rpt-g-aplus .rpt-grade-label { background-color: #10b981 !important; box-shadow: inset 0 0 0 1000px #10b981 !important; }
+  body.printing-report .rpt-g-a .rpt-grade-label { background-color: #22c55e !important; box-shadow: inset 0 0 0 1000px #22c55e !important; }
+  body.printing-report .rpt-g-aminus .rpt-grade-label { background-color: #84cc16 !important; box-shadow: inset 0 0 0 1000px #84cc16 !important; }
+  body.printing-report .rpt-g-b .rpt-grade-label { background-color: #3b82f6 !important; box-shadow: inset 0 0 0 1000px #3b82f6 !important; }
+  body.printing-report .rpt-g-c .rpt-grade-label { background-color: #f59e0b !important; box-shadow: inset 0 0 0 1000px #f59e0b !important; }
+  body.printing-report .rpt-g-d .rpt-grade-label { background-color: #f97316 !important; box-shadow: inset 0 0 0 1000px #f97316 !important; }
+  body.printing-report .rpt-g-f .rpt-grade-label { background-color: #ef4444 !important; box-shadow: inset 0 0 0 1000px #ef4444 !important; }
+
+  body.printing-report .rpt-pill-left {
+    background-color: #1e40af !important;
+    background: #1e40af !important;
+    color: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+    box-shadow: inset 0 0 0 1000px #1e40af !important;
   }
 
   body.printing-report .rpt-footer {
