@@ -22834,7 +22834,6 @@ a.sidebar-contact-item:hover {
     print-color-adjust: exact !important;
     text-shadow: none !important;
     box-shadow: none !important;
-    border-radius: 0 !important;
   }
 
   body.printing-report .rpt-inst-name {
@@ -22845,22 +22844,24 @@ a.sidebar-contact-item:hover {
   body.printing-report .rpt-summary-table td,
   body.printing-report .rpt-subject-table td {
     color: #000 !important;
-    border: 0.5pt solid #94a3b8 !important;
+    border: 0.5pt solid #cbd5e1 !important;
   }
 
   body.printing-report .rpt-section {
-    border: none !important;
-    border-top: 1px solid #e2e8f0 !important;
+    border: 1px solid #e2e8f0 !important;
+    border-radius: 10px !important;
     break-inside: avoid;
     page-break-inside: avoid;
     margin-bottom: 15px !important;
     background: transparent !important;
+    overflow: hidden !important;
   }
 
   body.printing-report .rpt-pill-left {
     background: #1e40af !important;
     color: #ffffff !important;
     -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   body.printing-report .rpt-summary-table thead th,
@@ -22868,24 +22869,27 @@ a.sidebar-contact-item:hover {
     background: #1e3a5f !important;
     color: #ffffff !important;
     -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   body.printing-report .rpt-section-title {
-    background: transparent !important;
+    background: #f0f4ff !important;
     color: #0f172a !important;
-    border-bottom: 1px solid #f1f5f9 !important;
-    padding-left: 0 !important;
+    border-bottom: 1px solid #cbd5e1 !important;
     font-size: 0.85rem !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
   }
 
   body.printing-report .rpt-stat-card,
   body.printing-report .rpt-grade-item {
-    border: 1px solid #f1f5f9 !important;
+    border: 1px solid #e2e8f0 !important;
     background: #fff !important;
+    border-radius: 10px !important;
   }
 
   body.printing-report .rpt-footer {
-    border-top: 1px solid #000 !important;
+    border-top: 1px solid #cbd5e1 !important;
   }
 
   body.printing-report thead {
