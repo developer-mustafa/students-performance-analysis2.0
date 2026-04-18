@@ -23115,7 +23115,9 @@ body.dark-mode .ms-compact-info {
 
 @media (max-width: 768px) {
   #dashboardControlsCard {
-    top: 5px; /* Since page-nav-tabs is hidden on mobile, stick near the top */
+    position: relative !important;
+    top: auto !important;
+    box-shadow: var(--shadow-sm); /* Standard card shadow instead of sticky shadow */
   }
 }
 
