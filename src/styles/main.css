@@ -23014,7 +23014,7 @@ body.dark-mode .developer-credit-loading {
     border-radius: 50%;
     animation-duration: 1.2s;
     animation-iteration-count: infinite;
-    animation-timing-function: cubic-bezier(0.52, 0.02, 0.19, 1.02);
+    animation-timing-function: linear;
 }
 
 .professional-spinner::before {
