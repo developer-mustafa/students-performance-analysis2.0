@@ -1098,6 +1098,12 @@ function initEventListeners() {
         }
     });
 
+    // Theme Toggle Listener
+    elements.themeToggle?.addEventListener('click', () => {
+        const isDark = toggleTheme(elements.themeToggle);
+        saveThemePreference(isDark ? 'dark' : 'light');
+    });
+
     // ── Mobile Hamburger Menu ──
     const mobileMenuToggle = document.getElementById('mobileMenuToggle');
     const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');

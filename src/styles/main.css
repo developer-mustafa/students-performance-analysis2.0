@@ -10228,7 +10228,9 @@ body:not(.dark-mode) .nav-btn {
     box-shadow: none;
     backdrop-filter: none;
     background: var(--card-bg);
-    display: none !important; /* Hide tabs on mobile to prefer hamburger menu */
+    /* display: none !important; */ /* Show tabs on mobile as per user request */
+    border-radius: 12px;
+    border-top: 1px solid var(--border-color);
   }
 }
 
