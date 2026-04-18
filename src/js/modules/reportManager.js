@@ -280,6 +280,7 @@ export async function generateReport() {
     }
 
     // Count totals from summary students — GROUP-WISE breakdown (marksheet lines 561-603)
+    const studentResultRecords = [];
     allSummaryStudents.forEach(student => {
         const group = getCanonicalGroup(student.group || '');
         const gs = groupStats.get(group);
@@ -300,6 +301,8 @@ export async function generateReport() {
         let compulsoryCount = 0;
         let optionalBonus = 0;
         let allPassed = true;
+        let sTotalMarks = 0;
+        let sFailedCount = 0;
 
         // Get optional subjects for this student's group
         const normGroup = normalizeText(student.group || '');
@@ -437,6 +440,14 @@ export async function generateReport() {
 
                 let grade = combinedData.grade || 'F';
                 let gp = (combinedData.gpa || 0);
+                
+                let combinedTotalMarks = 0;
+                papers.forEach(p => {
+                    const pKey = normalizeText(p).replace(/\s+/g, '');
+                    const pD = student.subjects[pKey] || {};
+                    combinedTotalMarks += parseFloat(pD.total) || 0;
+                });
+                sTotalMarks += combinedTotalMarks;
 
                 if (isSubjectFail) {
                     grade = 'F';
@@ -468,6 +479,7 @@ export async function generateReport() {
                 const sSubjKey = normalizeText(subjName).replace(/\s+/g, '');
                 const data = student.subjects[sSubjKey] || {};
                 const total = data.total || 0;
+                sTotalMarks += parseFloat(total) || 0;
 
                 const config = state.subjectConfigs?.[subjName] ||
                     Object.entries(state.subjectConfigs || {}).find(([k]) =>
@@ -500,12 +512,19 @@ export async function generateReport() {
                             optionalBonus = Math.max(optionalBonus, gp - 2.00);
                         }
                         if (ms.boardStandardOptional !== true && grade === 'F') {
+                            if (allPassed) sFailedCount++;
                             allPassed = false;
+                        } else if (grade === 'F') {
+                            // Already failing locally, increment failed subject count but may not fail student if board standard optional
+                            sFailedCount++;
                         }
                     } else {
                         compulsoryGPA += gp;
                         compulsoryCount++;
-                        if (grade === 'F') allPassed = false;
+                        if (grade === 'F') {
+                            sFailedCount++;
+                            allPassed = false;
+                        }
                     }
                 } else {
                     if (isOptional) {
@@ -513,12 +532,18 @@ export async function generateReport() {
                             optionalBonus = Math.max(optionalBonus, gp - 2.00);
                         }
                         if (ms.boardStandardOptional !== true && grade === 'F') {
+                            if (allPassed) sFailedCount++;
                             allPassed = false;
+                        } else if (grade === 'F') {
+                            sFailedCount++;
                         }
                     } else {
                         compulsoryGPA += gp;
                         compulsoryCount++;
-                        if (grade === 'F') allPassed = false;
+                        if (grade === 'F') {
+                            sFailedCount++;
+                            allPassed = false;
+                        }
                     }
                 }
             }
@@ -531,6 +556,17 @@ export async function generateReport() {
         }
 
         const grade = getOverallGradeFromGPA(finalGPA, allPassed);
+
+        studentResultRecords.push({
+            id: student.id,
+            name: student.name,
+            group: group,
+            allPassed: allPassed,
+            failedCount: sFailedCount,
+            finalGPA: finalGPA,
+            totalMarks: sTotalMarks,
+            grade: grade
+        });
 
         if (allPassed) {
             gs.pass++;
@@ -552,6 +588,130 @@ export async function generateReport() {
     const todayDate = new Date().toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' });
     const dev = (await getSettings('developerCredit')) || {};
     const devH = (dev.enabled !== false && (dev.text || dev.name)) ? `<div class="rpt-dev-credit">${dev.text || ''} <strong>${dev.name || ''}</strong></div>` : '';
+
+    // Sort and calculate ranks
+    studentResultRecords.sort((a, b) => {
+        if (a.allPassed !== b.allPassed) return a.allPassed ? -1 : 1;
+        if (Math.abs(a.finalGPA - b.finalGPA) > 0.001) return b.finalGPA - a.finalGPA;
+        return b.totalMarks - a.totalMarks;
+    });
+
+    let currentClassRank = 1;
+    studentResultRecords.forEach(r => r.classRank = currentClassRank++);
+
+    const groupRankCounters = {};
+    studentResultRecords.forEach(r => {
+        const canonicalGrp = getCanonicalGroup(r.group);
+        if (!groupRankCounters[canonicalGrp]) groupRankCounters[canonicalGrp] = 1;
+        r.groupRank = groupRankCounters[canonicalGrp]++;
+    });
+
+    // 1. Generate Passed Students HTML
+    const passedStudents = studentResultRecords.filter(r => r.allPassed);
+    let passedHtml = `
+        <div class="rpt-section">
+            <div class="rpt-section-title">
+                <i class="fas fa-user-graduate"></i> সকল বিষয় পাশ শিক্ষার্থী
+                <span style="margin-left: auto; font-size: 0.7rem; opacity: 0.9; font-weight: 600;">(মোট: ${convertToBengaliDigits(passedStudents.length)} জন)</span>
+            </div>
+            <div style="overflow-x: auto;">
+                <table class="rpt-subject-table rpt-passed-table">
+                    <thead>
+                        <tr>
+                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">ক্র.নং</th>
+                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">রোল</th>
+                            <th style="background: #065f46 !important; color: #fff !important; text-align: left !important; padding-left: 10px !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">নাম</th>
+                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">বিভাগ</th>
+                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">জিপিএ</th>
+                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">গ্রেড</th>
+                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">শ্রেণি মেধাস্থান</th>
+                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">শাখা মেধাস্থান</th>
+                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">স্ট্যাটাস</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        ${passedStudents.map((st, i) => `
+                            <tr>
+                                <td>${convertToBengaliDigits(i + 1)}</td>
+                                <td style="font-weight: 800; color: #0f172a;">${convertToBengaliDigits(st.id)}</td>
+                                <td style="text-align: left !important; padding-left: 10px !important; font-weight: 600; color: #334155;">${st.name}</td>
+                                <td style="color: #475569;">${st.group}</td>
+                                <td style="font-weight: 800; color: #0f172a;">${convertToBengaliDigits(st.finalGPA.toFixed(2))}</td>
+                                <td style="font-weight: 900; color: #166534; background: #f0fdf4;">${st.grade}</td>
+                                <td style="font-weight: 700; color: #4338ca;">${convertToBengaliDigits(st.classRank)}</td>
+                                <td style="font-weight: 700; color: #0369a1;">${convertToBengaliDigits(st.groupRank)}</td>
+                                <td style="color: #166534; font-weight: bold;">পাশ</td>
+                            </tr>
+                        `).join('')}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    `;
+
+    // 2. Generate Failed Students Table(s)
+    const failedStudents = studentResultRecords.filter(r => !r.allPassed && r.failedCount > 0);
+    const failedByCount = {};
+    failedStudents.forEach(st => {
+        if (!failedByCount[st.failedCount]) failedByCount[st.failedCount] = [];
+        failedByCount[st.failedCount].push(st);
+    });
+
+    const failedCountsSorted = Object.keys(failedByCount).map(Number).sort((a, b) => a - b);
+
+    let failedHtml = `
+        <div class="rpt-section" style="margin-top: 40px;">
+            <div class="rpt-section-title" style="color: #b91c1c; border-bottom: 2px solid #b91c1c;">
+                <i class="fas fa-exclamation-circle"></i> অকৃতকার্য শিক্ষার্থীর তালিকা
+                <span style="font-size: 0.75rem; font-weight: normal; opacity: 0.8; margin-left: 8px;">(ফেল করা বিষয়ের সংখ্যা অনুযায়ী)</span>
+            </div>
+    `;
+
+    if (failedCountsSorted.length === 0) {
+        failedHtml += `<div style="text-align: center; padding: 30px; background: #fef2f2; color: #991b1b; font-weight: bold; border: 1px dashed #f87171; border-radius: 8px;">কোনো শিক্ষার্থী ফেল করেনি</div>`;
+    }
+
+    failedCountsSorted.forEach(count => {
+        const studentsInCount = failedByCount[count];
+        
+        // Sort students within this bucket by class rank (or ID/Roll as fallback)
+        studentsInCount.sort((a, b) => a.classRank - b.classRank);
+
+        failedHtml += `
+            <div style="margin-top: 25px; page-break-inside: avoid;">
+                <div style="background: #1e293b; color: white; padding: 10px 20px; font-weight: bold; font-size: 1.1rem; display: inline-block; border-radius: 6px 6px 0 0;">
+                    ${convertToBengaliDigits(count)} বিষয় ফেল 
+                    <span style="background: #ef4444; color: white; font-size: 0.8rem; padding: 2px 8px; border-radius: 12px; margin-left: 10px;">${convertToBengaliDigits(studentsInCount.length)} জন</span>
+                </div>
+                <div style="overflow-x: auto; border: 2px solid #1e293b; border-radius: 0 6px 6px 6px;">
+                    <table class="rpt-subject-table" style="width: 100%; margin: 0; box-shadow: none;">
+                        <thead>
+                            <tr>
+                                <th style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important;">ক্র.নং</th>
+                                <th style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important;">রোল</th>
+                                <th style="background: #f8fafc !important; color: #1e293b !important; text-align: left !important; padding-left: 10px !important; border-bottom: 2px solid #cbd5e1 !important;">নাম</th>
+                                <th style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important;">বিভাগ</th>
+                                <th style="background: #f8fafc !important; color: #b91c1c !important; border-bottom: 2px solid #cbd5e1 !important;">স্ট্যাটাস</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${studentsInCount.map((st, i) => `
+                                <tr>
+                                    <td style="color: #64748b;">${convertToBengaliDigits(i + 1)}</td>
+                                    <td style="font-weight: bold; color: #0f172a;">${convertToBengaliDigits(st.id)}</td>
+                                    <td style="text-align: left !important; padding-left: 10px !important; font-weight: 500;">${st.name}</td>
+                                    <td style="color: #475569;">${st.group}</td>
+                                    <td style="color: #dc2626; font-weight: bold; background: #fef2f2;">ফেল</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    });
+
+    failedHtml += `</div>`;
 
     const reportHtml = `
     <div class="rpt-page" id="rpt_page_main">
@@ -793,6 +953,9 @@ export async function generateReport() {
                     </table>
                 </div>
             </div>
+            ${passedHtml}
+            ${failedHtml}
+
             <div class="rpt-footer">তারিখ: ${todayDate}${devH}</div>
         </div>
     </div>`;
