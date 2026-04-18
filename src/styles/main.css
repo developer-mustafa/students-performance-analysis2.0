@@ -22945,9 +22945,11 @@ a.sidebar-contact-item:hover {
   body.printing-report .rpt-g-d .rpt-grade-label { background: linear-gradient(#ea580c, #ea580c) !important; }
   body.printing-report .rpt-g-f .rpt-grade-label { background: linear-gradient(#dc2626, #dc2626) !important; }
 
-  body.printing-report .rpt-pill-left {
+  body.printing-report .rpt-pill-left,
+  body.printing-report .rpt-pill-left * {
     background: linear-gradient(#1e40af, #1e40af) !important;
     color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
     font-weight: 950 !important;
     font-size: 0.95rem !important;
     -webkit-print-color-adjust: exact !important;
@@ -22955,6 +22957,20 @@ a.sidebar-contact-item:hover {
     border-radius: 60px 0 0 60px !important;
     border-right: none !important;
     text-shadow: none !important;
+  }
+
+  body.printing-report .rpt-grade-label,
+  body.printing-report .rpt-grade-label * {
+    color: #ffffff !important;
+    -webkit-text-fill-color: #ffffff !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  body.printing-report .rpt-summary-table thead th,
+  body.printing-report .rpt-subject-table thead th {
+    color: #0f172a !important;
+    -webkit-text-fill-color: #0f172a !important;
   }
 
   body.printing-report .rpt-pill-right {
