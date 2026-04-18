@@ -991,27 +991,27 @@ export async function generateReport() {
                     <table class="rpt-subject-table">
                         <thead>
                             <tr>
-                                <th rowspan="2" style="text-align: left !important; padding-left: 20px !important; background: #1e3a5f !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 950 !important;">বিষয়ের নাম</th>
-                                <th rowspan="2" style="background: #1e3a5f !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 950 !important;">মোট</th>
-                                <th rowspan="2" style="background: #1e3a5f !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 950 !important;">অনুপস্থিত</th>
-                                <th rowspan="2" style="background: #1e3a5f !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 950 !important;">পরীক্ষার্থী</th>
-                                <th colspan="4" style="background: #1e3a5f !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 950 !important;">Achievement</th>
-                                <th rowspan="2" style="background: #065f46 !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 950 !important;">পাশ</th>
-                                <th rowspan="2" style="background: #1e3a5f !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 950 !important;">হার</th>
-                                <th rowspan="2" style="background: #1e3a5f !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 950 !important;">সর্বোচ্চ</th>
+                                <th rowspan="2" style="text-align: left !important; padding-left: 20px !important; background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important; font-weight: 800 !important;">বিষয়ের নাম</th>
+                                <th rowspan="2" style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important; font-weight: 800 !important;">মোট</th>
+                                <th rowspan="2" style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important; font-weight: 800 !important;">অনুপস্থিত</th>
+                                <th rowspan="2" style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important; font-weight: 800 !important;">পরীক্ষার্থী</th>
+                                <th rowspan="2" style="background: #dcfce7 !important; color: #166534 !important; border-bottom: 2px solid #bbf7d0 !important; font-weight: 800 !important;">পাশ</th>
+                                <th rowspan="2" style="background: #fee2e2 !important; color: #991b1b !important; border-bottom: 2px solid #fecaca !important; font-weight: 800 !important;">ফেল(F)</th>
+                                <th colspan="3" style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important; font-weight: 800 !important;">Achievement</th>
+                                <th rowspan="2" style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important; font-weight: 800 !important;">হার</th>
+                                <th rowspan="2" style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important; font-weight: 800 !important;">সর্বোচ্চ</th>
                             </tr>
                             <tr>
-                                <th style="background: #065f46 !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 800 !important;">উত্তম(A+,A)</th>
-                                <th style="background: #1e40af !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 800 !important;">মাঝারি(A-,B)</th>
-                                <th style="background: #9a3412 !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 800 !important;">দুর্বল(C,D)</th>
-                                <th style="background: #991b1b !important; color: #ffffff !important; border: 1px solid #ffffff33 !important; font-weight: 800 !important;">ফেল(F)</th>
+                                <th style="background: #f8fafc !important; color: #166534 !important; border-bottom: 2px solid #cbd5e1 !important; font-weight: 700 !important;">উত্তম(A+,A)</th>
+                                <th style="background: #f8fafc !important; color: #1e40af !important; border-bottom: 2px solid #cbd5e1 !important; font-weight: 700 !important;">মাঝারি(A-,B)</th>
+                                <th style="background: #f8fafc !important; color: #ea580c !important; border-bottom: 2px solid #cbd5e1 !important; font-weight: 700 !important;">দুর্বল(C,D)</th>
                             </tr>
                         </thead>
                         <tbody>
                             ${(() => {
-            const generateRow = (subj) => {
+            const getSubjectRowData = (subj) => {
                 const examForSubj = relevantExams.find(e => e.subject === subj || e.subjectName === subj);
-                if (!examForSubj || !examForSubj.studentData) return '';
+                if (!examForSubj || !examForSubj.studentData) return null;
 
                 const cfg = specificConfigs.find(c => normalizeText(c.subjectName) === normalizeText(subj)) || null;
                 const opts = {
@@ -1021,14 +1021,12 @@ export async function generateReport() {
                     totalPass: cfg ? (Number(cfg.totalPass) || 33) : 33
                 };
 
-                // SYNC: Filter target data exactly like the Dashboard Exam Card
                 let targetData = examForSubj.studentData || [];
                 const msSettingsForSubj = getMarksheetSettings() || {};
                 const subjMappingsForSubj = msSettingsForSubj.subjectMapping || [];
 
                 if (targetData.length > 0) {
                     targetData = targetData.filter(s => {
-                        // 1. Check if student is active (Status check)
                         if (studentLookupMap) {
                             const studentKey = generateStudentDocId({
                                 id: s.id,
@@ -1040,7 +1038,6 @@ export async function generateReport() {
                             if (lookupEntry && (lookupEntry.status === false || lookupEntry.status === 'false')) return false;
                         }
                         
-                        // 2. Subject Mapping & Group Filtering Rules
                         return isStudentEligibleForSubject(s, subj, { 
                             subjectMappings: subjMappingsForSubj, 
                             marksheetRules: rules,
@@ -1049,41 +1046,62 @@ export async function generateReport() {
                     });
                 }
 
-                // Use the EXACT same calculation helper as Dashboard Exam Cards on the FILTERED data
                 const stats = calculateStatistics(targetData, opts);
                 const gd = stats.gradeDistribution || {};
 
-                // Map Grading Scale to Achievement Columns
                 const excellent = (gd['A+'] || 0) + (gd['A'] || 0);
                 const mid = (gd['A-'] || 0) + (gd['B'] || 0);
                 const weak = (gd['C'] || 0) + (gd['D'] || 0);
                 const failCount = gd['F'] || 0;
 
-                // Find highest mark manually from the FILTERED target dataset
                 let highest = 0;
                 targetData.forEach(s => {
                     const total = Number(s.total) || (Number(s.written || 0) + Number(s.mcq || 0) + Number(s.practical || 0));
                     if (total > highest) highest = total;
                 });
 
-                const passRate = stats.participants > 0 ? ((stats.passedStudents / stats.participants) * 100).toFixed(1) : '0.0';
+                const passRateStr = stats.participants > 0 ? ((stats.passedStudents / stats.participants) * 100).toFixed(1) : '0.0';
+                const passRate = parseFloat(passRateStr);
 
-                return `<tr>
+                let rateColor = '#475569';
+                let rateBg = 'transparent';
+                
+                if (passRate >= 80) {
+                    rateColor = '#166534'; // Green
+                    rateBg = '#f0fdf4';
+                } else if (passRate >= 40) {
+                    rateColor = '#ea580c'; // Orange
+                    rateBg = '#fff7ed';
+                } else {
+                    rateColor = '#dc2626'; // Red
+                    rateBg = '#fef2f2';
+                }
+
+                const html = `<tr>
                         <td style="text-align: left !important; padding-left: 20px !important; font-weight: 500; color: #334155;">${subj}</td>
                         <td style="color: #475569; font-weight: 700; background: #f8fafc;">${convertToBengaliDigits(stats.totalStudents)}</td>
-                        <td style="color: #ef4444; font-weight: 700;">${convertToBengaliDigits(stats.absentStudents)}</td>
+                        <td style="color: #475569; font-weight: 700;">${convertToBengaliDigits(stats.absentStudents)}</td>
                         <td style="color: #0f172a; font-weight: 800;">${convertToBengaliDigits(stats.participants)}</td>
+                        <td style="color: #166534; font-weight: 700; background: #f0fdf4;">${convertToBengaliDigits(stats.passedStudents)}</td>
+                        <td style="color: #dc2626; font-weight: 700; background: #fef2f2;">${convertToBengaliDigits(failCount)}</td>
                         <td><span style="font-weight: 700;">${convertToBengaliDigits(excellent)}</span></td>
                         <td><span style="font-weight: 700;">${convertToBengaliDigits(mid)}</span></td>
                         <td><span style="font-weight: 700;">${convertToBengaliDigits(weak)}</span></td>
-                        <td style="color: #dc2626; font-weight: 700; background: #fef2f2;">${convertToBengaliDigits(failCount)}</td>
-                        <td style="color: #166534; font-weight: 700; background: #f0fdf4;">${convertToBengaliDigits(stats.passedStudents)}</td>
-                        <td style="font-weight: 700; color: #475569;">${convertToBengaliDigits(passRate)}%</td>
+                        <td style="font-weight: 800; color: ${rateColor}; background: ${rateBg};">${convertToBengaliDigits(passRateStr)}%</td>
                         <td style="color: #4f46e5; font-weight: 700;">${convertToBengaliDigits(highest)}</td>
                     </tr>`;
+
+                return {
+                    subj,
+                    html,
+                    passRate
+                };
             };
 
-            return subjects.map(subj => generateRow(subj)).join('');
+            const allRowsData = subjects.map(getSubjectRowData).filter(row => row !== null);
+            allRowsData.sort((a, b) => b.passRate - a.passRate);
+            
+            return allRowsData.map(row => row.html).join('');
         })()}
                         </tbody>
                     </table>
