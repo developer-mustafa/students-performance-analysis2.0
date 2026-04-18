@@ -39,6 +39,7 @@ let marksheetSettings = {
     showGradeScale: true,
     idSearchShowTable: true,
     idSearchShowGradeScale: true,
+    idSearchShowSummary: true,
     idSearchShowRanking: true,
     idSearchShowQRCode: true,
     idSearchShowComments: true,
@@ -2013,6 +2014,7 @@ async function updateSettingsLivePreview() {
         showGradeScale: document.getElementById('msShowGradeScale') ? document.getElementById('msShowGradeScale').checked : true,
         idSearchShowTable: document.getElementById('msIdSearchShowTable') ? document.getElementById('msIdSearchShowTable').checked : true,
         idSearchShowGradeScale: document.getElementById('msIdSearchShowGradeScale') ? document.getElementById('msIdSearchShowGradeScale').checked : true,
+        idSearchShowSummary: document.getElementById('msIdSearchShowSummary') ? document.getElementById('msIdSearchShowSummary').checked : true,
         idSearchShowRanking: document.getElementById('msIdSearchShowRanking') ? document.getElementById('msIdSearchShowRanking').checked : true,
         idSearchShowQRCode: document.getElementById('msIdSearchShowQRCode') ? document.getElementById('msIdSearchShowQRCode').checked : true,
         idSearchShowComments: document.getElementById('msIdSearchShowComments') ? document.getElementById('msIdSearchShowComments').checked : true,
@@ -2196,6 +2198,7 @@ function initMarksheetSettingsModal() {
             // ID Search Settings
             if (el('msIdSearchShowTable')) el('msIdSearchShowTable').checked = marksheetSettings.idSearchShowTable !== false;
             if (el('msIdSearchShowGradeScale')) el('msIdSearchShowGradeScale').checked = marksheetSettings.idSearchShowGradeScale !== false;
+            if (el('msIdSearchShowSummary')) el('msIdSearchShowSummary').checked = marksheetSettings.idSearchShowSummary !== false;
             if (el('msIdSearchShowRanking')) el('msIdSearchShowRanking').checked = marksheetSettings.idSearchShowRanking !== false;
             if (el('msIdSearchShowQRCode')) el('msIdSearchShowQRCode').checked = marksheetSettings.idSearchShowQRCode !== false;
             if (el('msIdSearchShowComments')) el('msIdSearchShowComments').checked = marksheetSettings.idSearchShowComments !== false;
@@ -2346,6 +2349,7 @@ function initMarksheetSettingsModal() {
                 boardStandardOptional: document.getElementById('msBoardStandardOptional')?.checked || false,
                 idSearchShowTable: document.getElementById('msIdSearchShowTable').checked,
                 idSearchShowGradeScale: document.getElementById('msIdSearchShowGradeScale').checked,
+                idSearchShowSummary: document.getElementById('msIdSearchShowSummary').checked,
                 idSearchShowRanking: document.getElementById('msIdSearchShowRanking').checked,
                 idSearchShowQRCode: document.getElementById('msIdSearchShowQRCode').checked,
                 idSearchShowComments: document.getElementById('msIdSearchShowComments').checked,
