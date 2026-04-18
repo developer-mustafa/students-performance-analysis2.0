@@ -22844,7 +22844,7 @@ a.sidebar-contact-item:hover {
     width: 100% !important;
     max-width: 100% !important;
     min-height: auto !important;
-    box-shadow: none !important;
+    box-shadow: none !important; /* CRITICAL: Remove shadow in print */
     border: none !important;
     margin: 0 !important;
     padding: 0 !important;
@@ -22956,8 +22956,20 @@ a.sidebar-contact-item:hover {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     box-shadow: inset 0 0 0 1000px #1e40af !important;
-    border-right: 2px solid #1e40af !important;
+    border-right: none !important; /* Remove separator border to avoid artifacts */
     text-shadow: none !important;
+  }
+
+  body.printing-report .rpt-pill-right {
+    background-color: #ffffff !important;
+    background: #ffffff !important;
+    color: #1e40af !important;
+    box-shadow: inset 0 0 0 1000px #ffffff !important;
+  }
+
+  body.printing-report .rpt-title-pill {
+    box-shadow: none !important;
+    border: 2px solid #1e40af !important;
   }
 
   body.printing-report .rpt-meta-item {
