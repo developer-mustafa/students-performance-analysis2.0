@@ -3138,6 +3138,9 @@
               <div class="config-menu-item" data-tab="ms-sections">
                 <i class="fas fa-layer-group"></i> শাখা ও অংশ নিয়ন্ত্রণ
               </div>
+              <div class="config-menu-item" data-tab="ms-search-settings">
+                <i class="fas fa-search-plus"></i> সার্চ ফলাফল নিয়ন্ত্রণ
+              </div>
             </div>
           </div>
 
@@ -3296,6 +3299,100 @@
                   </div>
                 </div>
 
+                <!-- Search Results Content Settings -->
+                <div class="config-tab-content" id="ms-search-settings">
+                  <div class="form-header">
+                    <h3><i class="fas fa-search-plus"></i> আইডি সার্চ ফলাফল কন্টেন্ট সেটিংস</h3>
+                    <p>শিক্ষার্থীর আইডি দিয়ে সার্চ করলে মার্কশীটের কোন অংশগুলো দৃশ্যমান হবে তা এখান থেকে নিয়ন্ত্রণ করুন। এটি
+                      গ্লোবাল সেটিংস হিসেবে কাজ করবে।</p>
+                  </div>
+                  <div class="form-group" style="display: flex; flex-direction: column; gap: 12px;">
+                    <div
+                      style="background: var(--bg-color); padding: 12px 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                      <div>
+                        <h4 style="margin: 0; font-size: 0.95rem; color: var(--primary);">টেবিল সেকশন (Table Section)</h4>
+                        <p style="margin: 3px 0 0; font-size: 0.75rem; opacity: 0.7;">বিষয়ভিত্তিক নম্বর ও গ্রেড টেবিল</p>
+                      </div>
+                      <label class="ac-sw">
+                        <input type="checkbox" id="msIdSearchShowTable" checked>
+                        <span class="ac-sw-sl"></span>
+                      </label>
+                    </div>
+
+                    <div
+                      style="background: var(--bg-color); padding: 12px 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                      <div>
+                        <h4 style="margin: 0; font-size: 0.95rem; color: var(--primary);">গ্রেড স্কেল অংশ (Grade Scale)</h4>
+                        <p style="margin: 3px 0 0; font-size: 0.75rem; opacity: 0.7;">GPA গ্রেডিং রেফারেন্স টেবিল</p>
+                      </div>
+                      <label class="ac-sw">
+                        <input type="checkbox" id="msIdSearchShowGradeScale" checked>
+                        <span class="ac-sw-sl"></span>
+                      </label>
+                    </div>
+
+                    <div
+                      style="background: var(--bg-color); padding: 12px 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                      <div>
+                        <h4 style="margin: 0; font-size: 0.95rem; color: var(--primary);">রেঙ্কিং অংশ (History & Ranking)</h4>
+                        <p style="margin: 3px 0 0; font-size: 0.75rem; opacity: 0.7;">পূর্ববর্তী পরীক্ষার রেজাল্ট ও মেধা
+                          অবস্থান</p>
+                      </div>
+                      <label class="ac-sw">
+                        <input type="checkbox" id="msIdSearchShowRanking" checked>
+                        <span class="ac-sw-sl"></span>
+                      </label>
+                    </div>
+
+                    <div
+                      style="background: var(--bg-color); padding: 12px 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                      <div>
+                        <h4 style="margin: 0; font-size: 0.95rem; color: var(--primary);">QR Code অংশ (Verification QR)</h4>
+                        <p style="margin: 3px 0 0; font-size: 0.75rem; opacity: 0.7;">স্ক্যান এন্ড ভেরিফাই কিউ-আর কোড</p>
+                      </div>
+                      <label class="ac-sw">
+                        <input type="checkbox" id="msIdSearchShowQRCode" checked>
+                        <span class="ac-sw-sl"></span>
+                      </label>
+                    </div>
+
+                    <div
+                      style="background: var(--bg-color); padding: 12px 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; justify-content: space-between; align-items: center;">
+                      <div>
+                        <h4 style="margin: 0; font-size: 0.95rem; color: var(--primary);">কমেন্ট অংশ (Remarks Section)</h4>
+                        <p style="margin: 3px 0 0; font-size: 0.75rem; opacity: 0.7;">শিক্ষকের মন্তব্য ও সিগনেচার এরিয়া
+                        </p>
+                      </div>
+                      <label class="ac-sw">
+                        <input type="checkbox" id="msIdSearchShowComments" checked>
+                        <span class="ac-sw-sl"></span>
+                      </label>
+                    </div>
+
+                    <div
+                      style="background: linear-gradient(135deg, rgba(67, 97, 238, 0.05), rgba(76, 201, 240, 0.05)); padding: 15px; border-radius: 12px; border: 1px solid rgba(67, 97, 238, 0.2); margin-top: 5px;">
+                      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                        <div>
+                          <h4 style="margin: 0; font-size: 0.95rem; color: var(--primary);">ফলাফল প্রদর্শন মোড (Result Mode)</h4>
+                          <p style="margin: 3px 0 0; font-size: 0.75rem; opacity: 0.7;">কেবল পাশ/ফেল নাকি বিস্তারিত তথ্য
+                          </p>
+                        </div>
+                      </div>
+                      <div style="display: flex; gap: 15px; margin-top: 10px;">
+                        <label
+                          style="flex: 1; display: flex; align-items: center; gap: 8px; background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer;">
+                          <input type="radio" name="msIdSearchStatusMode" value="status_only" id="msIdSearchModeStatus">
+                          <span style="font-size: 0.85rem; font-weight: 600;">কেবল পাশ/ফেল স্ট্যাটাস</span>
+                        </label>
+                        <label
+                          style="flex: 1; display: flex; align-items: center; gap: 8px; background: var(--card-bg); padding: 10px; border-radius: 8px; border: 1px solid var(--border-color); cursor: pointer;">
+                          <input type="radio" name="msIdSearchStatusMode" value="full" id="msIdSearchModeFull" checked>
+                          <span style="font-size: 0.85rem; font-weight: 600;">বিস্তারিত গ্রেড ও GPA</span>
+                        </label>
+                      </div>
+                    </div>
+                  </div>
+                </div>
 
                 <!-- Appearance Settings -->
                 <div class="config-tab-content" id="ms-appearance">

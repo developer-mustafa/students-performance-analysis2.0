@@ -492,7 +492,7 @@ async function displayStudentMarksheet(studentResult) {
             gs.pass++;
             // Extract grade for distribution
             const rankItem = allRendered.find(i => i.key === res.key);
-            const gMatch = rankItem.html.match(/গ্রেড<\/span>\s*<span class="ms-result-value">\s*(A\+|A|A-|B|C|D)\s*<\/span>/);
+            const gMatch = rankItem.html.match(/<span class="ms-result-label">গ্রেড<\/span>\s*<span class="ms-result-value">\s*(A\+|A|A-|B|C|D)\s*<\/span>/);
             if (gMatch && gradeCounts[gMatch[1]] !== undefined) gradeCounts[gMatch[1]]++;
         } else {
             gs.fail++;
@@ -535,7 +535,7 @@ async function displayStudentMarksheet(studentResult) {
     }
 
     const ms = getMarksheetSettings();
-    let finalHtml = await renderSingleMarksheet(targetAgg, displaySubjects, examDisplayName, session, null, rules, allOptSubs, allExams, subjectConfigs, null, false, highestMarks, exactRanksMap.get(targetKey));
+    let finalHtml = await renderSingleMarksheet(targetAgg, displaySubjects, examDisplayName, session, null, rules, allOptSubs, allExams, subjectConfigs, null, false, highestMarks, exactRanksMap.get(targetKey), true);
 
     // Handle Summary Section (respecting settings)
     if (ms.showSummary !== false) {
@@ -544,14 +544,15 @@ async function displayStudentMarksheet(studentResult) {
         finalHtml = finalHtml.replace('<!--EXAM_SUMMARY_PLACEHOLDER-->', '');
     }
 
-    // Inject Grading Scale Counts
-    finalHtml = finalHtml.replace('<!--GS_AP-->', gradeCounts['A+'])
-                         .replace('<!--GS_A-->', gradeCounts['A'])
-                         .replace('<!--GS_AM-->', gradeCounts['A-'])
-                         .replace('<!--GS_B-->', gradeCounts['B'])
-                         .replace('<!--GS_C-->', gradeCounts['C'])
-                         .replace('<!--GS_D-->', gradeCounts['D'])
-                         .replace('<!--GS_F-->', gradeCounts['F']);
+    // Inject Grading Scale Counts with Bengali Digits
+    const toBnNumLocal = (n) => (n || 0).toLocaleString('bn-BD');
+    finalHtml = finalHtml.replace('<!--GS_AP-->', toBnNumLocal(gradeCounts['A+']))
+                         .replace('<!--GS_A-->', toBnNumLocal(gradeCounts['A']))
+                         .replace('<!--GS_AM-->', toBnNumLocal(gradeCounts['A-']))
+                         .replace('<!--GS_B-->', toBnNumLocal(gradeCounts['B']))
+                         .replace('<!--GS_C-->', toBnNumLocal(gradeCounts['C']))
+                         .replace('<!--GS_D-->', toBnNumLocal(gradeCounts['D']))
+                         .replace('<!--GS_F-->', toBnNumLocal(gradeCounts['F']));
 
     previewArea.innerHTML = finalHtml;
 

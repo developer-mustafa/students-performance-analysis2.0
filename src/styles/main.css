@@ -12031,6 +12031,20 @@ body.dark-mode .status-badge.absent {
 @media print {
   /* @page rule is injected dynamically by JS (teacherAssignmentManager) to avoid global conflicts */
 
+  /* Neutralize flex layout for print */
+  body.tc-print-mode {
+    display: block !important;
+    min-height: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  body.tc-print-mode #app,
+  body.tc-print-mode .container-fluid {
+    flex: none !important;
+    display: block !important;
+  }
+
   /* Hide everything except the bulk print wrapper */
   body.tc-print-mode .app-container,
   body.tc-print-mode .navbar,
@@ -12041,7 +12055,8 @@ body.dark-mode .status-badge.absent {
   body.tc-print-mode .main-content,
   body.tc-print-mode .container-fluid,
   body.tc-print-mode #teacherAssignmentPage,
-  body.tc-print-mode .no-print {
+  body.tc-print-mode .no-print,
+  body.tc-print-mode .app-footer {
     display: none !important;
   }
 
@@ -12058,7 +12073,7 @@ body.dark-mode .status-badge.absent {
   .tc-print-page {
     width: 297mm !important;
     height: 210mm !important;
-    padding: 4mm 5mm !important;
+    padding: 3mm 4mm !important;
     box-sizing: border-box;
     page-break-after: always;
     break-after: page;
@@ -12073,20 +12088,20 @@ body.dark-mode .status-badge.absent {
     display: grid !important;
     grid-template-columns: repeat(2, 1fr) !important;
     grid-template-rows: repeat(3, 1fr) !important;
-    gap: 3mm 5mm !important;
+    gap: 2mm 3mm !important;
     flex: 1 !important;
     width: 100% !important;
-    align-content: start !important;
+    align-content: stretch !important;
   }
 
   /* === Card Container === */
   .tc-bulk-grid .tc-card {
     width: 100% !important;
-    height: auto !important;
-    max-height: 62mm !important;
+    height: 100% !important;
+    max-height: none !important;
     margin: 0 !important;
     border: 0.8pt solid #94a3b8 !important;
-    border-radius: 8px !important;
+    border-radius: 6px !important;
     box-shadow: none !important;
     page-break-inside: avoid !important;
     print-color-adjust: exact !important;
@@ -12311,15 +12326,23 @@ body.dark-mode .status-badge.absent {
     line-height: 1.3 !important;
   }
 
-  /* === Footer === */
+  /* === Card Footer with Software Link === */
   .tc-bulk-grid .tc-footer-area {
-    padding: 2px 8px !important;
+    padding: 1.5px 8px !important;
     font-size: 5pt !important;
     border-top: 0.3pt solid #e2e8f0 !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    gap: 8px !important;
+    flex-wrap: wrap !important;
+    text-align: center !important;
   }
 
   .tc-bulk-grid .tc-live-link {
     font-size: 5pt !important;
+    color: #475569 !important;
+    font-weight: 600 !important;
   }
 
   .tc-bulk-grid .tc-dev-credit {
@@ -12334,12 +12357,12 @@ body.dark-mode .status-badge.absent {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    font-size: 7.5pt;
+    font-size: 7pt;
     font-weight: 700;
     color: #334155;
-    border-top: 1pt solid #64748b;
-    padding: 1.5mm 5mm 0;
-    margin-top: 1.5mm;
+    border-top: 0.8pt solid #64748b;
+    padding: 1mm 3mm 0;
+    margin-top: 1mm;
     flex-shrink: 0;
   }
 
