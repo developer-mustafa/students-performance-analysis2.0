@@ -22823,13 +22823,17 @@ a.sidebar-contact-item:hover {
 
 /* ── Report Page: Print Styles ── */
 @media print {
+  @page {
+    margin: 5mm !important;
+  }
+
   body.printing-report .rpt-page {
     width: 100% !important;
-    max-width: 210mm !important;
+    max-width: 100% !important;
     min-height: auto !important;
     box-shadow: none !important;
     border: none !important;
-    margin: 0 auto !important;
+    margin: 0 !important;
     padding: 0 !important;
     background: #fff !important;
     color: #1e293b !important;
@@ -22838,7 +22842,7 @@ a.sidebar-contact-item:hover {
   }
 
   body.printing-report .rpt-inner {
-    padding: 2mm 5mm !important;
+    padding: 0 !important;
   }
 
   body.printing-report * {
@@ -22850,32 +22854,43 @@ a.sidebar-contact-item:hover {
 
   body.printing-report .rpt-inst-name {
     color: #000 !important;
-    font-size: 1.8rem !important;
+    font-size: 1.6rem !important;
+  }
+
+  body.printing-report .rpt-summary-table,
+  body.printing-report .rpt-subject-table {
+    width: 100% !important;
+    table-layout: auto !important;
   }
 
   body.printing-report .rpt-summary-table td,
-  body.printing-report .rpt-subject-table td {
+  body.printing-report .rpt-subject-table td,
+  body.printing-report .rpt-summary-table th,
+  body.printing-report .rpt-subject-table th {
+    padding: 3px 2px !important;
+    font-size: 0.62rem !important;
     color: #000 !important;
     border: 0.5pt solid #cbd5e1 !important;
+    word-break: break-all !important;
   }
 
   body.printing-report .rpt-section {
     border: 1px solid #e2e8f0 !important;
-    border-radius: 10px !important;
+    border-radius: 8px !important;
     break-inside: avoid;
     page-break-inside: avoid;
-    margin-bottom: 15px !important;
+    margin-bottom: 12px !important;
     background: transparent !important;
-    overflow: hidden !important;
+    overflow: visible !important;
   }
 
   body.printing-report .rpt-summary-table thead th,
   body.printing-report .rpt-subject-table thead th {
-    background-color: #f1f5f9 !important; /* Light Grey/Blue Background */
+    background-color: #f1f5f9 !important;
     background: #f1f5f9 !important;
-    color: #0f172a !important; /* Deep Dark Text */
+    color: #0f172a !important;
     font-weight: 950 !important;
-    font-size: 0.78rem !important;
+    font-size: 0.7rem !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     box-shadow: inset 0 0 0 1000px #f1f5f9 !important;
@@ -22887,12 +22902,12 @@ a.sidebar-contact-item:hover {
   body.printing-report .rpt-grade-item {
     border: 1px solid #94a3b8 !important;
     background: #fff !important;
-    border-radius: 10px !important;
+    border-radius: 8px !important;
     box-shadow: none !important;
   }
 
   body.printing-report .rpt-grade-count {
-    color: #0f172a !important; /* Dark text for numbers in print */
+    color: #0f172a !important;
     font-weight: 950 !important;
   }
 
@@ -22903,7 +22918,6 @@ a.sidebar-contact-item:hover {
     font-weight: 900 !important;
   }
   
-  /* Restoration of grade label backgrounds for contrast */
   body.printing-report .rpt-g-aplus .rpt-grade-label { background-color: #059669 !important; box-shadow: inset 0 0 0 1000px #059669 !important; }
   body.printing-report .rpt-g-a .rpt-grade-label { background-color: #16a34a !important; box-shadow: inset 0 0 0 1000px #16a34a !important; }
   body.printing-report .rpt-g-aminus .rpt-grade-label { background-color: #65a30d !important; box-shadow: inset 0 0 0 1000px #65a30d !important; }
@@ -22913,11 +22927,11 @@ a.sidebar-contact-item:hover {
   body.printing-report .rpt-g-f .rpt-grade-label { background-color: #dc2626 !important; box-shadow: inset 0 0 0 1000px #dc2626 !important; }
 
   body.printing-report .rpt-pill-left {
-    background-color: #eff6ff !important; /* Very Light Blue */
+    background-color: #eff6ff !important;
     background: #eff6ff !important;
-    color: #1e40af !important; /* Strong Blue Text */
+    color: #1e40af !important;
     font-weight: 950 !important;
-    font-size: 0.88rem !important;
+    font-size: 0.85rem !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     box-shadow: inset 0 0 0 1000px #eff6ff !important;
@@ -22930,7 +22944,7 @@ a.sidebar-contact-item:hover {
     background: #f8fafc !important;
     color: #0f172a !important;
     border-bottom: 2px solid #334155 !important;
-    font-size: 0.9rem !important;
+    font-size: 0.85rem !important;
     font-weight: 900 !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
@@ -22950,7 +22964,6 @@ a.sidebar-contact-item:hover {
     page-break-inside: avoid !important;
   }
 
-  /* Scoped UI Hide for Report Printing */
   body.printing-report .sidebar,
   body.printing-report .navbar,
   body.printing-report .top-bar,
@@ -22975,7 +22988,7 @@ a.sidebar-contact-item:hover {
     margin: 0 !important;
     padding: 0 !important;
   }
-  /* Hide and disable scrollbars for all elements during report printing */
+
   body.printing-report * {
     scrollbar-width: none !important;
     -ms-overflow-style: none !important;
