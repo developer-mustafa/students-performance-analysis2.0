@@ -667,8 +667,16 @@ export async function generateReport() {
     const pRate = gE > 0 ? ((gP / gE) * 100).toFixed(1) : '0.0';
 
     const todayDate = new Date().toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' });
-    const dev = (await getSettings('developerCredit')) || {};
-    const devH = (dev.enabled !== false && (dev.text || dev.name)) ? `<div class="rpt-dev-credit">${dev.text || ''} <strong>${dev.name || ''}</strong></div>` : '';
+    const globalSettings = await getSettings();
+    const dev = globalSettings?.developerCredit || {};
+    
+    // Improved dynamic dev credit HTML
+    const devNameHtml = (dev.enabled !== false && (dev.name || dev.text)) ? 
+        `<div class="ftr-dev-main">${dev.text || 'Developed By:'} <strong>${dev.name || ''}</strong></div>` : '';
+    const devContactHtml = (dev.enabled !== false && dev.link) ? 
+        `<div class="ftr-contact-sub" style="font-size: 0.55rem; opacity: 0.8; margin-top: -2px;">${dev.link}</div>` : '';
+    
+    const devFullHtml = devNameHtml + devContactHtml;
 
     // Sort and calculate ranks
     studentResultRecords.sort((a, b) => {
@@ -1141,8 +1149,8 @@ export async function generateReport() {
             ${fullyAbsentHtml}
 
             <div class="rpt-footer">
-                <div class="ftr-dev-main">সফটওয়্যার নির্মাতা: MUSTAFA RAHMAN</div>
-                <div class="ftr-contact-sub">যোগাযোগ: 01840-643946 | এনালিষ্ট প্রো সফটওয়্যার</div>
+                ${devFullHtml}
+                <div class="ftr-contact-sub">যোগাযোগ: 01840-643946 | এনালিষ্ট প্রো সফটওয়্যার | প্রিন্টের তারিখ: ${todayDate}</div>
                 <div class="ftr-url-pill">${window.location.host}</div>
             </div>
         </div>

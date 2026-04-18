@@ -1228,15 +1228,12 @@ async function printBulkTeacherCards() {
                 const pageNum = Math.floor(index / 6) + 1;
                 const totalPages = Math.ceil(teacherUids.length / 6);
                 
-                let devText = 'Developed by Mustafa Rahman';
+                let devText = '';
                 if (developerCredit && typeof developerCredit === 'object') {
                     if (developerCredit.enabled !== false) {
-                        devText = `${developerCredit.text || 'Developed By:'} ${developerCredit.name || 'Mustafa Rahman'}`;
-                    } else {
-                        devText = '';
+                        devText = `${developerCredit.text || 'সফটওয়্যার নির্মাতা:'} ${developerCredit.name || ''}`;
+                        if (developerCredit.link) devText += ` | ${developerCredit.link}`;
                     }
-                } else if (typeof developerCredit === 'string') {
-                    devText = developerCredit;
                 }
 
                 footer.innerHTML = `

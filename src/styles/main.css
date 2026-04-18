@@ -22705,9 +22705,9 @@ a.sidebar-contact-item:hover {
   padding-top: 12px;
   border-top: 1.5px solid #cbd5e1;
   text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
   gap: 4px;
 }
 
@@ -22723,11 +22723,10 @@ a.sidebar-contact-item:hover {
   font-size: 0.58rem;
   color: #475569;
   font-weight: 700;
-  margin-bottom: 5px;
 }
 
 .ftr-url-pill {
-  background: #eff6ff !important;
+  background-color: #eff6ff !important;
   color: #2563eb !important;
   padding: 4px 20px;
   border-radius: 20px;
@@ -22735,6 +22734,8 @@ a.sidebar-contact-item:hover {
   font-weight: 800;
   font-family: monospace;
   border: 1px solid #dbeafe !important;
+  margin-top: 4px;
+  display: inline-block;
   -webkit-print-color-adjust: exact !important;
   print-color-adjust: exact !important;
   box-shadow: inset 0 0 0 1000px #eff6ff !important;
@@ -22744,7 +22745,11 @@ a.sidebar-contact-item:hover {
   body.printing-report .rpt-footer {
     border-top: 1.5px solid #000 !important;
     margin-top: auto !important;
-    padding-bottom: 5mm !important;
+    padding-bottom: 2mm !important;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    text-align: center !important;
   }
 }
 
@@ -22953,10 +22958,6 @@ a.sidebar-contact-item:hover {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     box-shadow: inset 0 0 0 1000px #f8fafc !important;
-  }
-
-  body.printing-report .rpt-footer {
-    border-top: 1px solid #cbd5e1 !important;
   }
 
   body.printing-report thead {
