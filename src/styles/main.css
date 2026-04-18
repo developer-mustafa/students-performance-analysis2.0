@@ -23736,45 +23736,82 @@ body.dark-mode .ms-compact-info {
 }
 
 /* =========================================
-   Sticky Table Header Implementation
+   Professional Sticky Table Header
+   Sticks precisely below Nav Tabs & Filters
    ========================================= */
+
+/* Ensure parent containers don't break stickiness */
+#app, .container-fluid, .container {
+  overflow: visible !important;
+}
+
+.card {
+  overflow: visible !important;
+}
+
+#chartSectionCollapse {
+  overflow: visible !important;
+}
+
+/* The Table Header Stickiness */
 .data-table thead th {
   position: sticky;
   top: 0;
   z-index: 100;
   background-color: var(--card-bg);
-  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
   border-bottom: 2px solid var(--border-color);
+  transition: all 0.2s ease;
 }
 
-/* Offset for Desktop: Sticks below Page Nav (50px) and Dashboard Controls (~78px) */
-@media (min-width: 992px) {
+/* Desktop Coordination (Page Nav: ~50px, Filters: ~52px) */
+@media (min-width: 769px) {
   #performanceTable thead th {
-    top: 128px; 
-    background: var(--container-bg);
-    z-index: 1850;
+    top: 102px; /* Precision offset for stacked sticky components */
+    z-index: 1800;
+    background-color: var(--container-bg);
+    box-shadow: 0 4px 6px -2px rgba(0, 0, 0, 0.1);
+    border-bottom: 2px solid var(--primary); /* High-end accent */
+    color: var(--primary);
   }
-  
+
   .dark-mode #performanceTable thead th {
-    background: var(--container-bg);
+    background-color: var(--container-bg);
+    border-bottom-color: var(--primary);
+  }
+
+  /* Ensure the row data passes underneath smoothly */
+  #performanceTable tbody tr {
+    position: relative;
+    z-index: 1;
   }
 }
 
-/* Mobile: Sticks to the top of its own scrollable container */
+/* Fixed heights for sticky elements to ensure predictability */
+.page-nav-tabs { 
+  top: 0;
+  height: 52px;
+  z-index: 2000 !important; 
+}
+
+#dashboardControlsCard { 
+  top: 52px !important; /* Move right below nav tabs */
+  z-index: 1950 !important;
+}
+
+/* Mobile Scrolling Optimization */
 @media (max-width: 768px) {
   .table-container {
-    max-height: 75vh;
+    max-height: 65vh;
     overflow-y: auto !important;
     position: relative;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
   }
 
   .data-table thead th {
     top: 0;
-    z-index: 110;
-    background: var(--card-bg);
+    z-index: 50;
+    background-color: var(--card-bg);
   }
 }
-
-.page-nav-tabs { z-index: 2100 !important; }
-#dashboardControlsCard { z-index: 2000 !important; }
 
