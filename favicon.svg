@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <style>
+    .ring1 { stroke: #4361ee; stroke-width: 12; fill: none; stroke-linecap: round; stroke-dasharray: 180 100; transform-origin: center; transform: rotateX(35deg) rotateY(-45deg); }
+    .ring2 { stroke: #4cc9f0; stroke-width: 12; fill: none; stroke-linecap: round; stroke-dasharray: 180 100; transform-origin: center; transform: rotateX(50deg) rotateY(10deg); }
+  </style>
+  <circle class="ring1" cx="50" cy="50" r="40" />
+  <circle class="ring2" cx="50" cy="50" r="40" />
+</svg>

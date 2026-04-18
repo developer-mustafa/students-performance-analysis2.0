@@ -187,7 +187,13 @@ export function renderGroupStats(container, data, options = {}) {
 
        <!-- Center: College Info -->
        <div class="dch-content">
-          ${logoUrl ? `<div class="dch-logo-box"><img src="${logoUrl}" alt="Logo"></div>` : '<div class="dch-icon-box"><i class="fas fa-university"></i></div>'}
+          ${logoUrl ? `<div class="dch-logo-box"><img src="${logoUrl}" alt="Logo"></div>` : 
+          `<div class="dch-icon-box" style="display: flex; align-items: center; justify-content: center; background: rgba(79, 70, 229, 0.05); padding: 5px; border-radius: 12px;">
+            <svg width="40" height="40" viewBox="0 0 100 100">
+                <circle cx="50" cy="50" r="40" fill="none" stroke="#4361ee" stroke-width="12" stroke-linecap="round" stroke-dasharray="160 100" transform="rotate(-45 50 50)"></circle>
+                <circle cx="50" cy="50" r="25" fill="none" stroke="#4cc9f0" stroke-width="10" stroke-linecap="round" stroke-dasharray="80 80" transform="rotate(45 50 50)"></circle>
+            </svg>
+          </div>`}
           <div class="dch-info">
              <h1 class="dch-name">${instName}</h1>
              <p class="dch-addr">${instAddr}</p>

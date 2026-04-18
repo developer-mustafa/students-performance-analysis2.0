@@ -1636,7 +1636,12 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                 <div class="ms-header-section">
                     <div class="ms-header-main-info">
                         ${ms.watermarkUrl ? `<img src="${ms.watermarkUrl}" class="ms-inst-logo" alt="College Logo">` :
-            `<div class="ms-emblem"><i class="fas fa-graduation-cap"></i></div>`}
+            `<div class="ms-emblem" style="display: flex; align-items: center; justify-content: center; background: rgba(67, 97, 238, 0.05); border-radius: 50%; width: 56px; height: 56px;">
+                <svg width="42" height="42" viewBox="0 0 100 100">
+                    <circle cx="50" cy="50" r="40" fill="none" stroke="#4361ee" stroke-width="10" stroke-linecap="round" stroke-dasharray="160 100" transform="rotate(-45 50 50)"></circle>
+                    <circle cx="50" cy="50" r="25" fill="none" stroke="#4cc9f0" stroke-width="8" stroke-linecap="round" stroke-dasharray="80 80" transform="rotate(45 50 50)"></circle>
+                </svg>
+            </div>`}
                         <div class="ms-inst-details">
                             <h1 class="ms-inst-name">${ms.institutionName || 'প্রতিষ্ঠানের নাম'}</h1>
                             ${ms.institutionAddress ? `<p class="ms-inst-address">${ms.institutionAddress}</p>` : ''}

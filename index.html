@@ -20,7 +20,7 @@
   <title>এনালিস্ট প্রো এপ|Automation</title>
 
   <!-- Favicon -->
-  <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  <link rel="icon" type="image/svg+xml" href="./favicon.svg" />
 
   <!-- Font Awesome -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" />
@@ -3974,8 +3974,16 @@
 
     <!-- Login Modal -->
     <div id="loginModal" class="modal">
-      <div class="modal-content" style="max-width: 400px; padding: 25px;">
+      <div class="modal-content" style="max-width: 400px; padding: 25px; border-radius: 20px;">
         <span class="close" id="closeLoginModal">&times;</span>
+        
+        <!-- App Logo in Login Modal -->
+        <div style="display: flex; flex-direction: column; align-items: center; margin-bottom: 25px;">
+           <div class="professional-spinner" style="width: 50px; height: 50px; margin-bottom: 12px; perspective: 400px;"></div>
+           <h2 style="font-weight: 900; font-size: 1.5rem; background: linear-gradient(270deg, #1e293b, #4f46e5, #0ea5e9, #1e293b); background-size: 300% 300%; -webkit-background-clip: text; -webkit-text-fill-color: transparent; animation: textShine 6s ease infinite; margin: 0;">এনালিস্ট প্রো</h2>
+           <p style="font-size: 0.8rem; color: #64748b; font-weight: 600; text-transform: uppercase; letter-spacing: 1px; margin-top: 4px;">একাডেমিক সিস্টেম অটোমেশন</p>
+        </div>
+
         <div class="login-tabs">
           <button class="login-tab active" data-tab="google">গুগল লগইন</button>
           <button class="login-tab" data-tab="email">ইমেইল লগইন</button>
