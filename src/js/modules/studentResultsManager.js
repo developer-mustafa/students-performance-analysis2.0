@@ -538,7 +538,8 @@ async function displayStudentMarksheet(studentResult) {
     let finalHtml = await renderSingleMarksheet(targetAgg, displaySubjects, examDisplayName, session, null, rules, allOptSubs, allExams, subjectConfigs, null, false, highestMarks, exactRanksMap.get(targetKey), true);
 
     // Handle Summary Section (respecting settings)
-    if (ms.showSummary !== false) {
+    const showSum = ms.idSearchShowSummary !== false;
+    if (showSum) {
         finalHtml = finalHtml.replace('<!--EXAM_SUMMARY_PLACEHOLDER-->', examSummaryHtml);
     } else {
         finalHtml = finalHtml.replace('<!--EXAM_SUMMARY_PLACEHOLDER-->', '');
