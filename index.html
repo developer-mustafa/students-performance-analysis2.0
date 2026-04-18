@@ -588,27 +588,36 @@
 
       <!-- Main Chart Section -->
       <div class="card" style="overflow: visible;">
-        <div class="dashboard-chart-header"
-          style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; flex-wrap: wrap; gap: 15px; border-bottom: 1px solid var(--border-color); padding-bottom: 15px;">
+        <div class="dashboard-chart-header">
           <!-- Left side group: Title + Utilities -->
-          <div class="header-left-group" style="display: flex; align-items: center; flex-wrap: wrap; gap: 16px;">
-            <h2 class="card-title" id="chartTitle" style="margin-bottom: 0; display: flex; align-items: center;">মোট
-              স্কোর র‍্যাঙ্কিং</h2>
-            <div style="width: 2px; height: 20px; background: rgba(255,255,255,0.15); border-radius: 2px;"></div>
-            <label class="chart-details-toggle"
-              style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; cursor: pointer; color: var(--text-color); font-weight: 600; user-select: none;">
-              <input type="checkbox" id="showChartDetails" checked
-                style="cursor: pointer; width: 16px; height: 16px; accent-color: var(--primary);">
-              বিস্তারিত
-            </label>
-            <button class="view-btn" id="downloadBtn"
-              style="background: #111827; color: white; border: 1px solid #374151; font-weight: 600; padding: 7px 14px; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3); border-radius: 6px; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
-              <i class="fas fa-download"></i> ডাউনলোড
-            </button>
-            <button class="view-btn" id="printBtn"
-              style="background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; font-weight: 700; padding: 7px 14px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); border-radius: 6px; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
-              <i class="fas fa-print" style="color: #0f172a;"></i> প্রিন্ট
-            </button>
+          <div class="header-left-group">
+            <div class="chart-header-title-row">
+              <h2 class="card-title" id="chartTitle" style="margin-bottom: 0;"><i class="fas fa-chart-line" style="margin-right: 8px; opacity: 0.7;"></i>মোট স্কোর র‍্যাঙ্কিং</h2>
+              <button class="mobile-header-toggle-btn" id="toggleChartHeaderBtn" title="ফিল্টার ও টুলস">
+                <i class="fas fa-ellipsis-v"></i>
+              </button>
+            </div>
+            
+            <div class="chart-header-utils" id="chartHeaderUtils">
+              <div class="view-item-divider" style="width: 2px; height: 20px; background: var(--border-color); border-radius: 2px;"></div>
+              
+              <label class="chart-details-toggle"
+                style="display: flex; align-items: center; gap: 6px; font-size: 0.85rem; cursor: pointer; color: var(--text-color); font-weight: 600; user-select: none;">
+                <input type="checkbox" id="showChartDetails" checked
+                  style="cursor: pointer; width: 16px; height: 16px; accent-color: var(--primary);">
+                বিস্তারিত
+              </label>
+              
+              <button class="view-btn" id="downloadBtn"
+                style="background: #111827; color: white; border: 1px solid #374151; font-weight: 600; padding: 7px 14px; box-shadow: 0 3px 6px rgba(0, 0, 0, 0.3); border-radius: 6px; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
+                <i class="fas fa-download"></i> ডাউনলোড
+              </button>
+              
+              <button class="view-btn" id="printBtn"
+                style="background: #ffffff; color: #0f172a; border: 1px solid #cbd5e1; font-weight: 700; padding: 7px 14px; box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); border-radius: 6px; display: flex; align-items: center; gap: 6px; transition: all 0.2s ease;">
+                <i class="fas fa-print" style="color: #0f172a;"></i> প্রিন্ট
+              </button>
+            </div>
           </div>
 
           <!-- Right side group: View Toggle Tabs -->

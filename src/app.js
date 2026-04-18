@@ -734,12 +734,20 @@ function renderSavedExams() {
 }
 
 function initEventListeners() {
-    // Theme
-    elements.themeToggle?.addEventListener('click', async () => {
-        const isDark = toggleTheme(elements.themeToggle);
-        await saveThemePreference(isDark ? 'dark' : 'light');
-        updateViews();
-    });
+    // Chart Header Toggle (Mobile)
+    const toggleHeaderBtn = document.getElementById('toggleChartHeaderBtn');
+    const chartHeaderUtils = document.getElementById('chartHeaderUtils');
+    if (toggleHeaderBtn && chartHeaderUtils) {
+        toggleHeaderBtn.addEventListener('click', () => {
+            chartHeaderUtils.classList.toggle('active');
+            const icon = toggleHeaderBtn.querySelector('i');
+            if (icon) {
+                icon.className = chartHeaderUtils.classList.contains('active') 
+                    ? 'fas fa-times' 
+                    : 'fas fa-ellipsis-v';
+            }
+        });
+    }
 
     // Filters
     elements.groupFilters?.forEach(btn => {
