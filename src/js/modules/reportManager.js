@@ -281,30 +281,14 @@ export async function generateReport() {
 
     // Count totals from summary students — GROUP-WISE breakdown (marksheet lines 561-603)
     const studentResultRecords = [];
+    const fullyAbsentStudents = [];
+    const partiallyAbsentStudents = [];
+
     allSummaryStudents.forEach(student => {
         const group = getCanonicalGroup(student.group || '');
         const gs = groupStats.get(group);
         if (!gs) return; // Should not happen
 
-        // --- Examinee Calculation (Matching exactly with marksheetManager logic for 100% sync) ---
-        // A student is an "examinee" ONLY if they have ANY marks > 0 in ANY subject criteria
-        const isExaminee = Object.values(student.subjects).some(data =>
-            ((data.written || 0) > 0 || (data.mcq || 0) > 0 || (data.practical || 0) > 0 || (data.total || 0) > 0)
-        );
-        
-        if (!isExaminee) return; 
-
-        gs.examinees++;
-
-        // Calculate GPA like marksheet ranking (lines 872-960)
-        let compulsoryGPA = 0;
-        let compulsoryCount = 0;
-        let optionalBonus = 0;
-        let allPassed = true;
-        let sTotalMarks = 0;
-        let sFailedCount = 0;
-
-        // Get optional subjects for this student's group
         const normGroup = normalizeText(student.group || '');
         const optKey = Object.keys(clsRules.groupSubjects || {}).find(k => {
             const nk = normalizeText(k);
@@ -340,7 +324,6 @@ export async function generateReport() {
                 const sRoll = String(student.id || '').trim().replace(/^0+/, '');
                 const sGroupNorm = normalizeText(student.group || '');
 
-                // --- STRICT MAPPING ENFORCEMENT ---
                 const cleanName = normalizeText(name).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
                 const thisSubMap = (ms.subjectMapping || []).find(m => {
                     const mapSubNorm = normalizeText(m.subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
@@ -350,12 +333,9 @@ export async function generateReport() {
                 });
 
                 if (thisSubMap) {
-                    // If a mapping exists for this subject, the student MUST be in it to "have" the subject.
                     return thisSubMap.rolls.map(r => String(r).replace(/^0+/, '')).includes(sRoll);
                 }
 
-                // If no mapping exists, rely on exam data presence
-                // Only consider it valid if they have actual marks or explicit status, preventing ghost records
                 if (data) {
                     const hasVal = (v) => v !== undefined && v !== null && v !== '';
                     const hasActualMarks = (hasVal(data.written) || hasVal(data.mcq) || hasVal(data.practical) || hasVal(data.total));
@@ -366,15 +346,11 @@ export async function generateReport() {
                 return false;
             };
 
-            // If it's only in the optional list (and not general/group)
-            // Show if student has marks OR is mapped to this subject
             if (isOpt && !isGeneral && !isGroup) {
                 const hasData = checkMarks(subjName) || papers.some(p => checkMarks(p));
-                // Show if has data OR if it's the only optional subject defined for this group
                 if (!hasData && optSubs.length > 2) return false;
             }
 
-            // Alternative Subject Logic (Electives)
             if (clsRules.alternativePairs && clsRules.alternativePairs.length > 0) {
                 const matchedPairs = clsRules.alternativePairs.filter(p => {
                     const p1 = normalizeText(p.sub1);
@@ -398,15 +374,82 @@ export async function generateReport() {
                         }
                     });
 
-                    // If any alternative partner is active (has marks or is mapped) and current is not, hide current
                     if (hasAnyPartnerMarks && !hasCurrentMarks) return false;
                 }
             }
 
-            // Filter out purely alternative/unmatched cross-group subjects
             return isGeneral || isGroup || isOpt;
 
         });
+
+        let absentVisibleSubjectsList = [];
+        visibleSubjects.forEach(subjObj => {
+            const isObj = typeof subjObj === 'object';
+            const subjName = isObj ? (subjObj.name || subjObj.paper) : subjObj;
+            let isAbs = false;
+
+            if (isCombinedMode && isObj && subjObj.isCombined) {
+                const combinedData = student.subjects[subjName] || {};
+                let hasMarks = false;
+                let hasExplicitAbs = (String(combinedData.status).toLowerCase() === 'absent' || combinedData.status === 'অনুপস্থিত');
+                const papers = subjObj.papers || [];
+                papers.forEach(p => {
+                    const pd = student.subjects[normalizeText(p).replace(/\s+/g, '')] || {};
+                    const w = parseFloat(pd.written) || 0;
+                    const m = parseFloat(pd.mcq) || 0;
+                    const pr = parseFloat(pd.practical) || 0;
+                    const t = parseFloat(pd.total) || 0;
+                    if (w > 0 || m > 0 || pr > 0 || t > 0) hasMarks = true;
+                    if (String(pd.status).toLowerCase() === 'absent' || pd.status === 'অনুপস্থিত') hasExplicitAbs = true;
+                });
+                if (hasExplicitAbs || !hasMarks) isAbs = true;
+            } else {
+                const sSubjKey = normalizeText(subjName).replace(/\s+/g, '');
+                const d = student.subjects[sSubjKey] || {};
+                const hasExplicitAbs = (String(d.status).toLowerCase() === 'absent' || d.status === 'অনুপস্থিত');
+                const hasMarks = (parseFloat(d.written)||0) > 0 || (parseFloat(d.mcq)||0) > 0 || (parseFloat(d.practical)||0) > 0 || (parseFloat(d.total)||0) > 0;
+                if (hasExplicitAbs || !hasMarks) isAbs = true;
+            }
+
+            if (isAbs) absentVisibleSubjectsList.push(subjName);
+        });
+
+        if (visibleSubjects.length > 0) {
+            if (absentVisibleSubjectsList.length === visibleSubjects.length) {
+                fullyAbsentStudents.push({
+                    id: student.id,
+                    name: student.name,
+                    group: group
+                });
+            } else if (absentVisibleSubjectsList.length > 0) {
+                partiallyAbsentStudents.push({
+                    id: student.id,
+                    name: student.name,
+                    group: group,
+                    absentSubjects: absentVisibleSubjectsList
+                });
+            }
+        }
+
+        // --- Examinee Calculation (Matching exactly with marksheetManager logic for 100% sync) ---
+        // A student is an "examinee" ONLY if they have ANY marks > 0 in ANY subject criteria
+        const isExaminee = Object.values(student.subjects).some(data =>
+            ((data.written || 0) > 0 || (data.mcq || 0) > 0 || (data.practical || 0) > 0 || (data.total || 0) > 0)
+        );
+        
+        if (!isExaminee) return; 
+
+        gs.examinees++;
+
+        // Calculate GPA like marksheet ranking (lines 872-960)
+        let compulsoryGPA = 0;
+        let compulsoryCount = 0;
+        let optionalBonus = 0;
+        let allPassed = true;
+        let sTotalMarks = 0;
+        let sFailedCount = 0;
+
+        // visibleSubjects logic removed from here as it was hoisted
 
         // Iterate over the student's visibleSubjects 
         visibleSubjects.forEach(subjObj => {
@@ -713,6 +756,87 @@ export async function generateReport() {
 
     failedHtml += `</div>`;
 
+    let partiallyAbsentHtml = ``;
+    if (partiallyAbsentStudents.length > 0) {
+        // Sort partially absent students by id/roll to ensure ordered
+        partiallyAbsentStudents.sort((a, b) => parseInt(a.id) - parseInt(b.id));
+
+        partiallyAbsentHtml = `
+            <div class="rpt-section" style="margin-top: 40px;">
+                <div class="rpt-section-title" style="color: #0f172a; border-bottom: 2px solid #0f172a;">
+                    <i class="fas fa-calendar-minus"></i> আংশিক অনুপস্থিত শিক্ষার্থী
+                </div>
+                <div style="overflow-x: auto; border: 2px solid #1e293b; border-radius: 6px;">
+                    <table class="rpt-subject-table" style="width: 100%; margin: 0; box-shadow: none;">
+                        <thead>
+                            <tr>
+                                <th style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important;">ক্র.নং</th>
+                                <th style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important;">রোল</th>
+                                <th style="background: #f8fafc !important; color: #1e293b !important; text-align: left !important; padding-left: 10px !important; border-bottom: 2px solid #cbd5e1 !important;">নাম</th>
+                                <th style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important;">বিভাগ</th>
+                                <th style="background: #f8fafc !important; color: #1e293b !important; text-align: left !important; padding-left: 10px !important; border-bottom: 2px solid #cbd5e1 !important;">পরীক্ষার বিষয় সমূহ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${partiallyAbsentStudents.map((st, i) => `
+                                <tr>
+                                    <td style="color: #64748b;">${convertToBengaliDigits(i + 1)}</td>
+                                    <td style="font-weight: bold; color: #0f172a;">${convertToBengaliDigits(st.id)}</td>
+                                    <td style="text-align: left !important; padding-left: 10px !important; font-weight: 500;">${st.name}</td>
+                                    <td style="color: #475569;">${st.group}</td>
+                                    <td style="text-align: left !important; padding-left: 10px !important; color: #475569; font-size: 0.9em; line-height: 1.4;">
+                                        ${st.absentSubjects.map((sub, idx) => `${convertToBengaliDigits(idx + 1)}. ${sub}`).join('<br>')}
+                                    </td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
+    let fullyAbsentHtml = ``;
+    if (fullyAbsentStudents.length > 0) {
+        // Sort fully absent students by group then id
+        fullyAbsentStudents.sort((a, b) => {
+            if (a.group !== b.group) return a.group.localeCompare(b.group);
+            return parseInt(a.id) - parseInt(b.id);
+        });
+
+        fullyAbsentHtml = `
+            <div class="rpt-section" style="margin-top: 40px; page-break-inside: avoid;">
+                <div class="rpt-section-title" style="color: #0f172a; border-bottom: 2px solid #0f172a;">
+                    <i class="fas fa-calendar-times"></i> সকল বিষয়ে অনুপস্থিত শিক্ষার্থী
+                </div>
+                <div style="overflow-x: auto; border: 2px solid #1e293b; border-radius: 6px;">
+                    <table class="rpt-subject-table" style="width: 100%; margin: 0; box-shadow: none;">
+                        <thead>
+                            <tr>
+                                <th style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important;">ক্র.নং</th>
+                                <th style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important;">রোল</th>
+                                <th style="background: #f8fafc !important; color: #1e293b !important; text-align: left !important; padding-left: 10px !important; border-bottom: 2px solid #cbd5e1 !important;">নাম</th>
+                                <th style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important;">বিভাগ</th>
+                                <th style="background: #f8fafc !important; color: #b91c1c !important; border-bottom: 2px solid #cbd5e1 !important;">স্ট্যাটাস</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${fullyAbsentStudents.map((st, i) => `
+                                <tr>
+                                    <td style="color: #64748b;">${convertToBengaliDigits(i + 1)}</td>
+                                    <td style="font-weight: bold; color: #0f172a;">${convertToBengaliDigits(st.id)}</td>
+                                    <td style="text-align: left !important; padding-left: 10px !important; font-weight: 500;">${st.name}</td>
+                                    <td style="color: #475569;">${st.group}</td>
+                                    <td style="color: #dc2626; font-weight: bold; background: #fef2f2;">অনুপস্থিত</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        `;
+    }
+
     const reportHtml = `
     <div class="rpt-page" id="rpt_page_main">
         <div class="rpt-inner">
@@ -955,6 +1079,8 @@ export async function generateReport() {
             </div>
             ${passedHtml}
             ${failedHtml}
+            ${partiallyAbsentHtml}
+            ${fullyAbsentHtml}
 
             <div class="rpt-footer">তারিখ: ${todayDate}${devH}</div>
         </div>
