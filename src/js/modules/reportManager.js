@@ -1,8 +1,8 @@
 import { state } from './state.js';
-import { getMarksheetSettings, applyCombinedPaperLogic } from './marksheetManager.js';
+import { getMarksheetSettings, loadMarksheetSettings, applyCombinedPaperLogic } from './marksheetManager.js';
 import { loadMarksheetRules, currentMarksheetRules } from './marksheetRulesManager.js';
-import { showNotification, convertToBengaliDigits, convertToEnglishDigits, isAbsent, determineStatus, normalizeText, calculateStatistics } from '../utils.js';
-import { getSavedExams, getSettings, getUnifiedStudents, getExamConfigs } from '../firestoreService.js';
+import { showNotification, convertToBengaliDigits, convertToEnglishDigits, isAbsent, determineStatus, normalizeText, calculateStatistics, isStudentEligibleForSubject } from '../utils.js';
+import { getSavedExams, getSettings, getUnifiedStudents, getExamConfigs, getStudentLookupMap, generateStudentDocId } from '../firestoreService.js';
 import { FAILING_THRESHOLD } from '../constants.js';
 
 let lastGeneratedSubjects = [];
@@ -99,7 +99,16 @@ export async function generateReport() {
         return;
     }
 
-    const allExams = await getSavedExams();
+    // Fetch all necessary data in parallel for optimal performance and sync
+    const [allExams, masterRules, _msSetResult, specificConfigs, studentLookupMap, rawAllStudents] = await Promise.all([
+        getSavedExams(),
+        loadMarksheetRules(), // Ensures latest rules are loaded
+        loadMarksheetSettings(), // Ensures latest subject mappings are loaded
+        getExamConfigs(rptClass, rptSession),
+        getStudentLookupMap(),
+        getUnifiedStudents()
+    ]);
+
     const clsNorm = normalizeText(rptClass);
     const sesNorm = normalizeText(rptSession);
     const examNorm = normalizeText(examName);
@@ -107,10 +116,8 @@ export async function generateReport() {
     const relevantExams = allExams.filter(e => {
         const dbClass = normalizeText(e.class);
         const dbSession = normalizeText(e.session);
-        const dbExamName = normalizeText(e.examName || '');
-        const dbName = normalizeText(e.name || '');
-
-        return dbClass === clsNorm && dbSession === sesNorm && (dbExamName === examNorm || dbName === examNorm);
+        const dbExamName = normalizeText(e.examName || e.name || '');
+        return dbClass === clsNorm && dbSession === sesNorm && dbExamName === examNorm;
     });
 
     if (relevantExams.length === 0) {
@@ -118,14 +125,11 @@ export async function generateReport() {
         return;
     }
 
-    const ms = getMarksheetSettings();
-    const rules = currentMarksheetRules;
-    const specificConfigs = await getExamConfigs(rptClass, rptSession) || [];
-
-    const rawAllStudents = await getUnifiedStudents();
     const masterStudents = rawAllStudents.filter(s => {
-        // Exclude inactive students
-        if (String(s.status) === 'false') return false;
+        // Exclude inactive students via lookup map for dashboard consistency
+        const key = generateStudentDocId({ id: s.id, group: s.group, class: rptClass, session: rptSession });
+        const lookup = studentLookupMap.get(key);
+        if (lookup && (lookup.status === false || lookup.status === 'false')) return false;
 
         const sCls = normalizeText(s.class || s.currentClass || '');
         const sSes = normalizeText(s.session || s.academicSession || '');
@@ -140,6 +144,8 @@ export async function generateReport() {
 
     const studentAgg = new Map();
     const subjectsSet = new Set();
+    const ms = getMarksheetSettings();
+    const rules = masterRules || currentMarksheetRules;
     const hiddenSet = new Set((ms.reportHiddenSubjects || []).map(s => normalizeText(s)));
 
     relevantExams.forEach(exam => {
@@ -707,50 +713,6 @@ export async function generateReport() {
                         </thead>
                         <tbody>
                             ${(() => {
-            const { isStudentEligibleForSubject } = (() => {
-                // Import from utils already imported at top
-                return {
-                    isStudentEligibleForSubject: (student, subject, options) => {
-                        const { marksheetRules = {}, className = 'HSC' } = options;
-                        if (!subject || subject === 'all') return true;
-
-                        const evalSubName = normalizeText(subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
-                        const sGroupNorm = normalizeText(student.group || '');
-
-                        // Check marksheet rules
-                        const rls = marksheetRules[className] || marksheetRules['All'] || {};
-                        const generalSubs = (rls.generalSubjects || []).map(s => normalizeText(s).replace(/\[.*?\]/g, '').replace(/\s+/g, ''));
-
-                        const isGeneral = generalSubs.includes(evalSubName) ||
-                            generalSubs.some(gs => evalSubName.includes(gs) || gs.includes(evalSubName));
-
-                        if (isGeneral) return true;
-
-                        // Check group subjects
-                        let validGroups = [];
-                        const checkMatch = (target, list) => {
-                            const normList = list.map(s => normalizeText(s).replace(/\[.*?\]/g, '').replace(/\s+/g, ''));
-                            return normList.some(ns => target === ns || target.includes(ns) || ns.includes(target));
-                        };
-
-                        for (const [group, subs] of Object.entries(rls.groupSubjects || {})) {
-                            if (checkMatch(evalSubName, subs)) validGroups.push(normalizeText(group));
-                        }
-                        for (const [group, subs] of Object.entries(rls.optionalSubjects || {})) {
-                            if (checkMatch(evalSubName, subs) && !validGroups.includes(normalizeText(group))) {
-                                validGroups.push(normalizeText(group));
-                            }
-                        }
-
-                        if (validGroups.length > 0) {
-                            return validGroups.some(g => sGroupNorm.includes(g) || g.includes(sGroupNorm));
-                        }
-
-                        return true;
-                    }
-                };
-            })();
-
             const generateRow = (subj) => {
                 const examForSubj = relevantExams.find(e => e.subject === subj || e.subjectName === subj);
                 if (!examForSubj || !examForSubj.studentData) return '';
@@ -762,72 +724,64 @@ export async function generateReport() {
                     practicalPass: cfg ? (Number(cfg.practicalPass) || 0) : 0,
                     totalPass: cfg ? (Number(cfg.totalPass) || 33) : 33
                 };
-                const mT = cfg ? (Number(cfg.total) || 100) : 100;
 
-                // Filter eligible master students for this subject using marksheet rules
-                const eligibleStudents = masterStudents.filter(ms =>
-                    isStudentEligibleForSubject(ms, subj, { marksheetRules: rules, className: rptClass })
-                );
-                const totalForSubject = eligibleStudents.length;
+                // SYNC: Filter target data exactly like the Dashboard Exam Card
+                let targetData = examForSubj.studentData || [];
+                const msSettingsForSubj = getMarksheetSettings() || {};
+                const subjMappingsForSubj = msSettingsForSubj.subjectMapping || [];
 
-                // Build a lookup from exam data by roll
-                const examDataMap = new Map();
-                examForSubj.studentData.forEach(s => {
-                    examDataMap.set(String(s.id || s.roll).trim(), s);
+                if (targetData.length > 0) {
+                    targetData = targetData.filter(s => {
+                        // 1. Check if student is active (Status check)
+                        if (studentLookupMap) {
+                            const studentKey = generateStudentDocId({
+                                id: s.id,
+                                group: s.group || '',
+                                class: rptClass,
+                                session: rptSession
+                            });
+                            const lookupEntry = studentLookupMap.get(studentKey);
+                            if (lookupEntry && (lookupEntry.status === false || lookupEntry.status === 'false')) return false;
+                        }
+                        
+                        // 2. Subject Mapping & Group Filtering Rules
+                        return isStudentEligibleForSubject(s, subj, { 
+                            subjectMappings: subjMappingsForSubj, 
+                            marksheetRules: rules,
+                            className: rptClass || 'HSC'
+                        });
+                    });
+                }
+
+                // Use the EXACT same calculation helper as Dashboard Exam Cards on the FILTERED data
+                const stats = calculateStatistics(targetData, opts);
+                const gd = stats.gradeDistribution || {};
+
+                // Map Grading Scale to Achievement Columns
+                const excellent = (gd['A+'] || 0) + (gd['A'] || 0);
+                const mid = (gd['A-'] || 0) + (gd['B'] || 0);
+                const weak = (gd['C'] || 0) + (gd['D'] || 0);
+                const failCount = gd['F'] || 0;
+
+                // Find highest mark manually from the FILTERED target dataset
+                let highest = 0;
+                targetData.forEach(s => {
+                    const total = Number(s.total) || (Number(s.written || 0) + Number(s.mcq || 0) + Number(s.practical || 0));
+                    if (total > highest) highest = total;
                 });
 
-                let absentCount = 0, passCount = 0, failCount = 0;
-                let excellent = 0, mid = 0, weak = 0, highest = 0;
-
-                eligibleStudents.forEach(ms => {
-                    const rid = String(ms.id).trim();
-                    const rec = examDataMap.get(rid);
-
-                    // Determine presence using EXACT marksheetManager threshold (> 0) for sync
-                    const hasMarks = rec && (
-                        (rec.written || 0) > 0 || (rec.mcq || 0) > 0 || (rec.practical || 0) > 0 || (rec.total || 0) > 0
-                    );
-
-                    if (!rec || !hasMarks) {
-                        absentCount++;
-                        return;
-                    }
-
-                    // Determine pass/fail using examConfig thresholds
-                    const status = determineStatus(rec, opts);
-                    const isPassed = (status === 'পাস' || status === 'pass' || status === 'পাশ');
-
-                    if (isPassed) {
-                        passCount++;
-                        // Achievement grade calculation (percentage-based matching report grading)
-                        const sTotal = (Number(rec.written) || 0) + (Number(rec.mcq) || 0) + (Number(rec.practical) || 0);
-                        const pct = mT > 0 ? (sTotal / mT) * 100 : 0;
-                        const grade = getLetterGrade(pct);
-                        if (grade === 'A+' || grade === 'A') excellent++;
-                        else if (grade === 'A-' || grade === 'B') mid++;
-                        else weak++; // C, D
-                    } else {
-                        failCount++;
-                    }
-
-                    // Track highest marks
-                    const sTotal = (Number(rec.written) || 0) + (Number(rec.mcq) || 0) + (Number(rec.practical) || 0);
-                    if (sTotal > highest) highest = sTotal;
-                });
-
-                const participants = totalForSubject - absentCount;
-                const passRate = participants > 0 ? ((passCount / participants) * 100).toFixed(1) : '0.0';
+                const passRate = stats.participants > 0 ? ((stats.passedStudents / stats.participants) * 100).toFixed(1) : '0.0';
 
                 return `<tr>
                         <td style="text-align: left !important; padding-left: 20px !important; font-weight: 500; color: #334155;">${subj}</td>
-                        <td style="color: #475569; font-weight: 700; background: #f8fafc;">${convertToBengaliDigits(totalForSubject)}</td>
-                        <td style="color: #ef4444; font-weight: 700;">${convertToBengaliDigits(absentCount)}</td>
-                        <td style="color: #0f172a; font-weight: 800;">${convertToBengaliDigits(participants)}</td>
+                        <td style="color: #475569; font-weight: 700; background: #f8fafc;">${convertToBengaliDigits(stats.totalStudents)}</td>
+                        <td style="color: #ef4444; font-weight: 700;">${convertToBengaliDigits(stats.absentStudents)}</td>
+                        <td style="color: #0f172a; font-weight: 800;">${convertToBengaliDigits(stats.participants)}</td>
                         <td><span style="font-weight: 700;">${convertToBengaliDigits(excellent)}</span></td>
                         <td><span style="font-weight: 700;">${convertToBengaliDigits(mid)}</span></td>
                         <td><span style="font-weight: 700;">${convertToBengaliDigits(weak)}</span></td>
                         <td style="color: #dc2626; font-weight: 700; background: #fef2f2;">${convertToBengaliDigits(failCount)}</td>
-                        <td style="color: #166534; font-weight: 700; background: #f0fdf4;">${convertToBengaliDigits(passCount)}</td>
+                        <td style="color: #166534; font-weight: 700; background: #f0fdf4;">${convertToBengaliDigits(stats.passedStudents)}</td>
                         <td style="font-weight: 700; color: #475569;">${convertToBengaliDigits(passRate)}%</td>
                         <td style="color: #4f46e5; font-weight: 700;">${convertToBengaliDigits(highest)}</td>
                     </tr>`;

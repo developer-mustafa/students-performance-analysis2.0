@@ -18,7 +18,9 @@ export function normalizeText(str) {
         .replace(/ৌ/g, 'ো')
         .replace(/ড়/g, 'র')
         .replace(/ঢ়/g, 'র')
-        .replace(/য়/g, 'য়')
+        .replace(/য়/g, 'য')
+        .replace(/ৎ/g, 'ত') // Handle Khanda-Ta variant
+        .replace(/ঁ/g, '')  // Remove Chandrabindu for fuzzy match
         .replace(/\s+/g, ' ') // collapse multiple spaces to single
         .toLowerCase()
         .trim();
@@ -172,7 +174,12 @@ export function getGradeClass(grade) {
 }
 
 /**
- * Check if a student is eligible for a subject based on rules and mappings
+ * Check if a student is eligible for a subject based on rules and mappings.
+ * Logic is synchronized with marksheetManager.js (line 1121-1133) for 100% consistency.
+ * 
+ * Priority Order:
+ * 1. Subject Mapping (Student Core Subjects) - HIGHEST priority, strict roll-based
+ * 2. Marksheet Rules (Group/Optional subjects) - Only if NO mapping exists for this subject
  */
 export function isStudentEligibleForSubject(student, subject, options = {}) {
     const { subjectMappings = [], marksheetRules = {}, className = 'HSC' } = options;
@@ -182,32 +189,47 @@ export function isStudentEligibleForSubject(student, subject, options = {}) {
     const sGroupNorm = normalizeText(student.group || '');
     const sRollStr = String(student.id || student.roll || '').trim().replace(/^0+/, '');
 
-    // 1. Strict Subject Mapping Enforcement (Priority 1)
+    // ======================================================================
+    // Priority 1: STRICT Subject Mapping Enforcement (Student Core Subjects)
+    // Matches marksheetManager.js exact logic (line 1121-1133)
+    // ======================================================================
     if (subjectMappings.length > 0) {
-        const thisSubMap = subjectMappings.find(m => {
+        // Find ALL mappings that match this subject name (across all groups)
+        const matchingMappings = subjectMappings.filter(m => {
             const mapSubNorm = normalizeText(m.subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
-            const mapGroupNorm = normalizeText(m.group);
-            
-            // Fuzzy match for subject mapping
-            const subMatch = mapSubNorm === evalSubName || 
-                           evalSubName.includes(mapSubNorm) || 
-                           mapSubNorm.includes(evalSubName);
-
-            return subMatch && 
-                   (sGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(sGroupNorm));
+            // Exact match — same as marksheetManager.js line 1126
+            return mapSubNorm === evalSubName;
         });
 
-        if (thisSubMap) {
-            const mappedRolls = thisSubMap.rolls.map(r => String(r).replace(/^0+/, ''));
-            return mappedRolls.includes(sRollStr);
+        if (matchingMappings.length > 0) {
+            // This subject HAS mapping(s) defined.
+            // Find the mapping for THIS student's group
+            const groupMapping = matchingMappings.find(m => {
+                const mapGroupNorm = normalizeText(m.group);
+                return sGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(sGroupNorm);
+            });
+
+            if (groupMapping) {
+                // Student's group has a mapping for this subject — check roll
+                const mappedRolls = groupMapping.rolls.map(r => String(r).replace(/^0+/, ''));
+                return mappedRolls.includes(sRollStr);
+            } else {
+                // This subject is mapped but NOT for this student's group.
+                // The student is NOT eligible.
+                return false;
+            }
         }
+        // If no mapping found for this subject at all, fall through to Priority 2
     }
 
-    // 2. Dynamic Marksheet Group-Based Filtering (Priority 2)
+    // ======================================================================
+    // Priority 2: Dynamic Marksheet Group-Based Filtering (Rules)
+    // Only reaches here if NO subject mapping exists for this subject
+    // ======================================================================
     const rules = marksheetRules[className] || marksheetRules["All"] || {};
     const generalSubs = (rules.generalSubjects || []).map(s => normalizeText(s).replace(/\[.*?\]/g, '').replace(/\s+/g, ''));
     
-    // Check if it's a general subject
+    // Check if it's a general subject (all students take it)
     const isGeneral = generalSubs.includes(evalSubName) || 
         ['বাংলা১মপত্র', 'বাংলা২য়পত্র', 'ইংরেজি১মপত্র', 'ইংরেজি২য়পত্র', 'তথ্যওযোগাযোগপ্রযুক্তি'].includes(evalSubName);
     
