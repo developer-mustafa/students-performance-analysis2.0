@@ -142,9 +142,16 @@ html, body {
   width: 100%;
 }
 
+body {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
 #app, .container-fluid {
   /* overflow: visible is required for position: sticky to work */
   overflow: visible;
+  flex: 1;
 }
 
 /* =========================================
@@ -13248,6 +13255,9 @@ body.is-super-admin td.admin-only {
     width: 210mm !important;
     height: auto !important;
     overflow: visible !important;
+    /* Neutralize flex layout for print */
+    display: block !important;
+    min-height: 0 !important;
   }
 
   /* Global UI Suppression - Whitelist the marksheet path */
@@ -17170,7 +17180,9 @@ input:checked+.toggle-slider:before {
     margin: 0;
     padding: 0;
     height: auto !important;
-    /* Ensure body height doesn't force extra pages */
+    /* Neutralize flex layout added for sticky footer - critical for print positioning */
+    display: block !important;
+    min-height: 0 !important;
   }
 
   /* Neutralize whitespace between pages */
@@ -17194,18 +17206,27 @@ input:checked+.toggle-slider:before {
     background: transparent;
   }
 
+  /* Reset flex on container during print */
+  body.ac-printing #app,
+  body.ac-printing .container-fluid {
+    flex: none !important;
+    display: block !important;
+  }
+
   body.ac-printing .ac-page {
     box-shadow: none !important;
     page-break-after: always;
     break-after: page;
     position: relative;
-    margin-bottom: 0 !important;
-    /* Remove margin in print */
+    margin: 0 !important;
+    padding: 5mm !important;
     overflow: hidden !important;
     /* Prevent content spill */
     font-size: var(--ac-base-font-size, 14px);
     /* Restore font-size inside page */
     line-height: normal;
+    width: 100% !important;
+    box-sizing: border-box !important;
   }
 
   body.ac-printing .ac-page-portrait {
@@ -23287,8 +23308,9 @@ body.dark-mode .ms-compact-info {
    App Footer
    ========================================= */
 .app-footer {
-  margin-top: 40px;
+  margin-top: auto;
   padding: 0 16px;
+  width: 100%;
 }
 
 .app-footer-inner {

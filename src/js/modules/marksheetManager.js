@@ -19,6 +19,7 @@ import QRCode from 'qrcode';
 import { generateStudentUniqueId } from './studentResultsManager.js';
 import { loadMarksheetRules, currentMarksheetRules } from './marksheetRulesManager.js';
 import { showConfirmModal, showLoading, hideLoading } from './uiManager.js';
+import { APP_VERSION } from '../version.js';
 
 let marksheetSettings = {
     institutionName: '',
@@ -1665,8 +1666,11 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
             </div>
 
             <!-- Decorative Border -->
-            <div class="ms-border-frame">
+            <div class="ms-border-frame" style="position: relative;">
                 
+                <!-- App Version Badge -->
+                <div class="ms-app-version-badge" style="position: absolute; top: 12px; right: 15px; font-size: 0.65rem; color: #64748b; font-weight: 600; letter-spacing: 0.5px; opacity: 0.8; pointer-events: none; -webkit-print-color-adjust: exact; print-color-adjust: exact;">এনালিষ্ট প্রো- v${APP_VERSION}</div>
+
                 <!-- Header Section -->
                 <div class="ms-header-section">
                     <div class="ms-header-main-info">
