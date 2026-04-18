@@ -1543,9 +1543,9 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
     const totalVisibleCount = visibleSubjects.length;
 
     if (attendedSubjectsCount === 0) {
-        studentRemark = 'ফলাফল:অনুপস্থিত! এই শিক্ষার্থী পরীক্ষায় অংশগ্রহণ করেনি।';
+        studentRemark = 'ফলাফল:অনুপস্থিত! তুমি সকল বিষয়ের পরীক্ষায় অনুপস্থিত। দ্রুত সমস্যা রিকোভার করে নাও ';
     } else if (attendedSubjectsCount < totalVisibleCount) {
-        studentRemark = 'ফলাফল:আংশিক অংশগ্রহণ! শিক্ষার্থী সকল বিষয়ে পরীক্ষায় অংশগ্রহণ করেনি।';
+        studentRemark = 'ফলাফল:আংশিক অংশগ্রহণ! তুমি একাধিক বিষয়ের পরীক্ষা দাওনি, দ্রুত পরীক্ষা দিয়ে ফলাফল আপডেট করে নাও।';
     } else {
         // High participation - Standard grade-based remarks
         if (overallGrade === 'A+' || overallGrade === 'A') {
