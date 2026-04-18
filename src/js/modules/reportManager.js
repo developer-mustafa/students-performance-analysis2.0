@@ -669,13 +669,13 @@ export async function generateReport() {
     const todayDate = new Date().toLocaleDateString('bn-BD', { year: 'numeric', month: 'long', day: 'numeric' });
     const globalSettings = await getSettings();
     const dev = globalSettings?.developerCredit || {};
-    
+
     // Improved dynamic dev credit HTML
-    const devNameHtml = (dev.enabled !== false && (dev.name || dev.text)) ? 
+    const devNameHtml = (dev.enabled !== false && (dev.name || dev.text)) ?
         `<div class="ftr-dev-main">${dev.text || 'Developed By:'} <strong>${dev.name || ''}</strong></div>` : '';
-    const devContactHtml = (dev.enabled !== false && dev.link) ? 
+    const devContactHtml = (dev.enabled !== false && dev.link) ?
         `<div class="ftr-contact-sub" style="font-size: 0.55rem; opacity: 0.8; margin-top: -2px;">${dev.link}</div>` : '';
-    
+
     const devFullHtml = devNameHtml + devContactHtml;
 
     // Sort and calculate ranks
@@ -700,7 +700,7 @@ export async function generateReport() {
     let passedHtml = `
         <div class="rpt-section">
             <div class="rpt-section-title">
-                <i class="fas fa-user-graduate"></i> সকল বিষয় পাশ শিক্ষার্থী
+                <i class="fas fa-user-graduate"></i>পরীক্ষায় সকল বিষয় পাশ শিক্ষার্থী
                 <span style="margin-left: auto; font-size: 0.7rem; opacity: 0.9; font-weight: 600;">(মোট: ${convertToBengaliDigits(passedStudents.length)} জন)</span>
             </div>
             <div style="overflow-x: auto;">
@@ -751,7 +751,7 @@ export async function generateReport() {
     let failedHtml = `
         <div class="rpt-section" style="margin-top: 40px;">
             <div class="rpt-section-title" style="color: #b91c1c; border-bottom: 2px solid #b91c1c;">
-                <i class="fas fa-exclamation-circle"></i> অকৃতকার্য শিক্ষার্থীর তালিকা
+                <i class="fas fa-exclamation-circle"></i>পরীক্ষায় অকৃতকার্য শিক্ষার্থীর তালিকা
                 <span style="font-size: 0.75rem; font-weight: normal; opacity: 0.8; margin-left: 8px;">(ফেল করা বিষয়ের সংখ্যা অনুযায়ী)</span>
             </div>
     `;
@@ -810,7 +810,7 @@ export async function generateReport() {
         partiallyAbsentHtml = `
             <div class="rpt-section" style="margin-top: 40px;">
                 <div class="rpt-section-title" style="color: #0f172a; border-bottom: 2px solid #0f172a;">
-                    <i class="fas fa-calendar-minus"></i> আংশিক অনুপস্থিত শিক্ষার্থী
+                    <i class="fas fa-calendar-minus"></i>পরীক্ষায় আংশিক অনুপস্থিত শিক্ষার্থী
                 </div>
                 <div style="overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 6px;">
                     <table class="rpt-subject-table" style="width: 100%; margin: 0; box-shadow: none;">
@@ -855,7 +855,7 @@ export async function generateReport() {
         fullyAbsentHtml = `
             <div class="rpt-section" style="margin-top: 40px; page-break-inside: avoid;">
                 <div class="rpt-section-title" style="color: #0f172a; border-bottom: 2px solid #0f172a;">
-                    <i class="fas fa-calendar-times"></i> সকল বিষয়ে অনুপস্থিত শিক্ষার্থী
+                    <i class="fas fa-calendar-times"></i>পরীক্ষায় সকল বিষয়ে অনুপস্থিত শিক্ষার্থী
                 </div>
                 <div style="overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 6px;">
                     <table class="rpt-subject-table" style="width: 100%; margin: 0; box-shadow: none;">
@@ -1020,7 +1020,7 @@ export async function generateReport() {
 
             <div class="rpt-section">
                 <div class="rpt-section-title">
-                    <i class="fas fa-book-open"></i> বিষয়ভিত্তিক বিস্তারিত ফলাফল 
+                    <i class="fas fa-book-open"></i>পরীক্ষার বিষয়ভিত্তিক বিস্তারিত ফলাফল 
                     <span style="margin-left: auto; font-size: 0.7rem; opacity: 0.9; font-weight: 600;">(মোট শিক্ষার্থী: ${convertToBengaliDigits(masterStudents.length)} জন)</span>
                 </div>
                 <div style="overflow-x: auto;">
