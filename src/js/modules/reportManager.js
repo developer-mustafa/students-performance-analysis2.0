@@ -206,6 +206,32 @@ export async function generateReport() {
         return 'অন্যান্য';
     };
 
+    const getGroupBadge = (grp) => {
+        const canonical = getCanonicalGroup(grp);
+        if (canonical === 'বিজ্ঞান গ্রুপ') {
+            return `<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; background: #fef2f2; color: #dc2626; border: 1px solid #fee2e2; font-weight: 700; font-size: 0.85em;">${canonical}</span>`;
+        } else if (canonical === 'ব্যবসায় গ্রুপ') {
+            return `<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; background: #eff6ff; color: #2563eb; border: 1px solid #dbeafe; font-weight: 700; font-size: 0.85em;">${canonical}</span>`;
+        } else if (canonical === 'মানবিক গ্রুপ') {
+            return `<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; background: #f0fdf4; color: #16a34a; border: 1px solid #dcfce7; font-weight: 700; font-size: 0.85em;">${canonical}</span>`;
+        } 
+        return `<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; background: #f8fafc; color: #475569; border: 1px solid #e2e8f0; font-weight: 700; font-size: 0.85em;">${grp || 'N/A'}</span>`;
+    };
+
+    const getBengaliOrdinal = (n) => {
+        if (n === 1) return '১ম';
+        if (n === 2) return '২য়';
+        if (n === 3) return '৩য়';
+        if (n === 4) return '৪র্থ';
+        if (n === 5) return '৫ম';
+        if (n === 6) return '৬ষ্ঠ';
+        if (n === 7) return '৭ম';
+        if (n === 8) return '৮ম';
+        if (n === 9) return '৯ম';
+        if (n === 10) return '১০ম';
+        return convertToBengaliDigits(n) + 'তম';
+    };
+
     // ============================================================
     // BUILD MARKSHEET-IDENTICAL SUMMARY AGGREGATION
     // Mirrors marksheetManager.js lines 350-413 and 561-603 EXACTLY
@@ -244,7 +270,7 @@ export async function generateReport() {
                 const key = `${sRoll}_${sGroupKey}`;
 
                 const targetEntry = summaryAgg.get(key);
-                if (!targetEntry) return; 
+                if (!targetEntry) return;
 
                 // Use EXACT same subject key normalization as marksheet
                 const subjKey = normalizeText(exam.subject).replace(/\s+/g, '') || exam.subject;
@@ -388,7 +414,7 @@ export async function generateReport() {
         visibleSubjects.forEach(subjObj => {
             const isObj = typeof subjObj === 'object';
             const subjName = isObj ? (subjObj.name || subjObj.paper) : subjObj;
-            
+
             const isEligible = isStudentEligibleForSubject(student, subjName, {
                 subjectMappings: ms.subjectMapping || [],
                 marksheetRules: clsRules,
@@ -419,7 +445,7 @@ export async function generateReport() {
                 const sSubjKey = normalizeText(subjName).replace(/\s+/g, '');
                 const d = student.subjects[sSubjKey] || {};
                 const hasExplicitAbs = (String(d.status).toLowerCase() === 'absent' || d.status === 'অনুপস্থিত');
-                const hasMarks = (parseFloat(d.written)||0) > 0 || (parseFloat(d.mcq)||0) > 0 || (parseFloat(d.practical)||0) > 0 || (parseFloat(d.total)||0) > 0;
+                const hasMarks = (parseFloat(d.written) || 0) > 0 || (parseFloat(d.mcq) || 0) > 0 || (parseFloat(d.practical) || 0) > 0 || (parseFloat(d.total) || 0) > 0;
                 if (hasExplicitAbs || !hasMarks) isAbs = true;
             }
 
@@ -448,8 +474,8 @@ export async function generateReport() {
         const isExaminee = Object.values(student.subjects).some(data =>
             ((data.written || 0) > 0 || (data.mcq || 0) > 0 || (data.practical || 0) > 0 || (data.total || 0) > 0)
         );
-        
-        if (!isExaminee) return; 
+
+        if (!isExaminee) return;
 
         gs.examinees++;
 
@@ -495,7 +521,7 @@ export async function generateReport() {
 
                 let grade = combinedData.grade || 'F';
                 let gp = (combinedData.gpa || 0);
-                
+
                 let combinedTotalMarks = 0;
                 papers.forEach(p => {
                     const pKey = normalizeText(p).replace(/\s+/g, '');
@@ -690,11 +716,11 @@ export async function generateReport() {
                                 <td>${convertToBengaliDigits(i + 1)}</td>
                                 <td style="font-weight: 800; color: #0f172a;">${convertToBengaliDigits(st.id)}</td>
                                 <td style="text-align: left !important; padding-left: 10px !important; font-weight: 600; color: #334155;">${st.name}</td>
-                                <td style="color: #475569;">${st.group}</td>
+                                <td style="color: #475569;">${getGroupBadge(st.group)}</td>
                                 <td style="font-weight: 800; color: #0f172a;">${convertToBengaliDigits(st.finalGPA.toFixed(2))}</td>
                                 <td style="font-weight: 900; color: #166534; background: #f0fdf4;">${st.grade}</td>
-                                <td style="font-weight: 700; color: #4338ca;">${convertToBengaliDigits(st.classRank)}</td>
-                                <td style="font-weight: 700; color: #0369a1;">${convertToBengaliDigits(st.groupRank)}</td>
+                                <td style="font-weight: 700; color: #4338ca;">${getBengaliOrdinal(st.classRank)}</td>
+                                <td style="font-weight: 700; color: #0369a1;">${getBengaliOrdinal(st.groupRank)}</td>
                                 <td style="color: #166534; font-weight: bold;">পাশ</td>
                             </tr>
                         `).join('')}
@@ -728,17 +754,17 @@ export async function generateReport() {
 
     failedCountsSorted.forEach(count => {
         const studentsInCount = failedByCount[count];
-        
+
         // Sort students within this bucket by class rank (or ID/Roll as fallback)
         studentsInCount.sort((a, b) => a.classRank - b.classRank);
 
         failedHtml += `
             <div style="margin-top: 25px; page-break-inside: avoid;">
-                <div style="background: #1e293b; color: white; padding: 10px 20px; font-weight: bold; font-size: 1.1rem; display: inline-block; border-radius: 6px 6px 0 0;">
+                <div style="background: #f1f5f9; color: #334155; padding: 10px 20px; font-weight: bold; font-size: 1.1rem; display: inline-block; border-radius: 6px 6px 0 0; border: 1px solid #cbd5e1; border-bottom: none;">
                     ${convertToBengaliDigits(count)} বিষয় ফেল 
-                    <span style="background: #ef4444; color: white; font-size: 0.8rem; padding: 2px 8px; border-radius: 12px; margin-left: 10px;">${convertToBengaliDigits(studentsInCount.length)} জন</span>
+                    <span style="background: #fee2e2; color: #b91c1c; border: 1px solid #fca5a5; font-size: 0.8rem; padding: 2px 8px; border-radius: 12px; margin-left: 10px;">${convertToBengaliDigits(studentsInCount.length)} জন</span>
                 </div>
-                <div style="overflow-x: auto; border: 2px solid #1e293b; border-radius: 0 6px 6px 6px;">
+                <div style="overflow-x: auto; border: 1px solid #cbd5e1; border-top: none; border-radius: 0 6px 6px 6px;">
                     <table class="rpt-subject-table" style="width: 100%; margin: 0; box-shadow: none;">
                         <thead>
                             <tr>
@@ -755,7 +781,7 @@ export async function generateReport() {
                                     <td style="color: #64748b;">${convertToBengaliDigits(i + 1)}</td>
                                     <td style="font-weight: bold; color: #0f172a;">${convertToBengaliDigits(st.id)}</td>
                                     <td style="text-align: left !important; padding-left: 10px !important; font-weight: 500;">${st.name}</td>
-                                    <td style="color: #475569;">${st.group}</td>
+                                    <td style="color: #475569;">${getGroupBadge(st.group)}</td>
                                     <td style="color: #dc2626; font-weight: bold; background: #fef2f2;">ফেল</td>
                                 </tr>
                             `).join('')}
@@ -778,7 +804,7 @@ export async function generateReport() {
                 <div class="rpt-section-title" style="color: #0f172a; border-bottom: 2px solid #0f172a;">
                     <i class="fas fa-calendar-minus"></i> আংশিক অনুপস্থিত শিক্ষার্থী
                 </div>
-                <div style="overflow-x: auto; border: 2px solid #1e293b; border-radius: 6px;">
+                <div style="overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 6px;">
                     <table class="rpt-subject-table" style="width: 100%; margin: 0; box-shadow: none;">
                         <thead>
                             <tr>
@@ -795,7 +821,7 @@ export async function generateReport() {
                                     <td style="color: #64748b;">${convertToBengaliDigits(i + 1)}</td>
                                     <td style="font-weight: bold; color: #0f172a;">${convertToBengaliDigits(st.id)}</td>
                                     <td style="text-align: left !important; padding-left: 10px !important; font-weight: 500;">${st.name}</td>
-                                    <td style="color: #475569;">${st.group}</td>
+                                    <td style="color: #475569;">${getGroupBadge(st.group)}</td>
                                     <td style="text-align: left !important; padding-left: 10px !important; color: #475569; font-size: 0.9em; line-height: 1.4;">
                                         ${st.absentSubjects.map((sub, idx) => `${convertToBengaliDigits(idx + 1)}. ${sub}`).join('<br>')}
                                     </td>
@@ -821,7 +847,7 @@ export async function generateReport() {
                 <div class="rpt-section-title" style="color: #0f172a; border-bottom: 2px solid #0f172a;">
                     <i class="fas fa-calendar-times"></i> সকল বিষয়ে অনুপস্থিত শিক্ষার্থী
                 </div>
-                <div style="overflow-x: auto; border: 2px solid #1e293b; border-radius: 6px;">
+                <div style="overflow-x: auto; border: 1px solid #cbd5e1; border-radius: 6px;">
                     <table class="rpt-subject-table" style="width: 100%; margin: 0; box-shadow: none;">
                         <thead>
                             <tr>
@@ -838,7 +864,7 @@ export async function generateReport() {
                                     <td style="color: #64748b;">${convertToBengaliDigits(i + 1)}</td>
                                     <td style="font-weight: bold; color: #0f172a;">${convertToBengaliDigits(st.id)}</td>
                                     <td style="text-align: left !important; padding-left: 10px !important; font-weight: 500;">${st.name}</td>
-                                    <td style="color: #475569;">${st.group}</td>
+                                    <td style="color: #475569;">${getGroupBadge(st.group)}</td>
                                     <td style="color: #dc2626; font-weight: bold; background: #fef2f2;">অনুপস্থিত</td>
                                 </tr>
                             `).join('')}
@@ -998,8 +1024,8 @@ export async function generateReport() {
                                 <th rowspan="2" style="background: #dcfce7 !important; color: #166534 !important; border-bottom: 2px solid #bbf7d0 !important; font-weight: 800 !important;">পাশ</th>
                                 <th rowspan="2" style="background: #fee2e2 !important; color: #991b1b !important; border-bottom: 2px solid #fecaca !important; font-weight: 800 !important;">ফেল(F)</th>
                                 <th colspan="3" style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important; font-weight: 800 !important;">Achievement</th>
-                                <th rowspan="2" style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important; font-weight: 800 !important;">হার</th>
-                                <th rowspan="2" style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important; font-weight: 800 !important;">সর্বোচ্চ</th>
+                                <th rowspan="2" style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important; font-weight: 800 !important;">পাশের হার</th>
+                                <th rowspan="2" style="background: #f8fafc !important; color: #1e293b !important; border-bottom: 2px solid #cbd5e1 !important; font-weight: 800 !important;">সর্বোচ্চ মার্ক্স</th>
                             </tr>
                             <tr>
                                 <th style="background: #f8fafc !important; color: #166534 !important; border-bottom: 2px solid #cbd5e1 !important; font-weight: 700 !important;">উত্তম(A+,A)</th>
@@ -1037,9 +1063,9 @@ export async function generateReport() {
                             const lookupEntry = studentLookupMap.get(studentKey);
                             if (lookupEntry && (lookupEntry.status === false || lookupEntry.status === 'false')) return false;
                         }
-                        
-                        return isStudentEligibleForSubject(s, subj, { 
-                            subjectMappings: subjMappingsForSubj, 
+
+                        return isStudentEligibleForSubject(s, subj, {
+                            subjectMappings: subjMappingsForSubj,
                             marksheetRules: rules,
                             className: rptClass || 'HSC'
                         });
@@ -1065,7 +1091,7 @@ export async function generateReport() {
 
                 let rateColor = '#475569';
                 let rateBg = 'transparent';
-                
+
                 if (passRate >= 80) {
                     rateColor = '#166534'; // Green
                     rateBg = '#f0fdf4';
@@ -1080,7 +1106,7 @@ export async function generateReport() {
                 const html = `<tr>
                         <td style="text-align: left !important; padding-left: 20px !important; font-weight: 500; color: #334155;">${subj}</td>
                         <td style="color: #475569; font-weight: 700; background: #f8fafc;">${convertToBengaliDigits(stats.totalStudents)}</td>
-                        <td style="color: #475569; font-weight: 700;">${convertToBengaliDigits(stats.absentStudents)}</td>
+                        <td style="color: #7c3aed; font-weight: 800; background: #faf5ff;">${convertToBengaliDigits(stats.absentStudents)}</td>
                         <td style="color: #0f172a; font-weight: 800;">${convertToBengaliDigits(stats.participants)}</td>
                         <td style="color: #166534; font-weight: 700; background: #f0fdf4;">${convertToBengaliDigits(stats.passedStudents)}</td>
                         <td style="color: #dc2626; font-weight: 700; background: #fef2f2;">${convertToBengaliDigits(failCount)}</td>
@@ -1100,7 +1126,7 @@ export async function generateReport() {
 
             const allRowsData = subjects.map(getSubjectRowData).filter(row => row !== null);
             allRowsData.sort((a, b) => b.passRate - a.passRate);
-            
+
             return allRowsData.map(row => row.html).join('');
         })()}
                         </tbody>
