@@ -405,10 +405,10 @@ async function generateMarksheets() {
     const allStudentsForSummary = [...studentAgg.values()]
         .filter(s => String(s.status) !== 'false')
         .sort((a, b) => {
-            const groupA = a.group.toLowerCase();
-            const groupB = b.group.toLowerCase();
-            if (groupA < groupB) return -1;
-            if (groupA > groupB) return 1;
+            const groupPriority = { 'বিজ্ঞান গ্রুপ': 1, 'ব্যবসায় গ্রুপ': 2, 'মানবিক গ্রুপ': 3 };
+            const pA = groupPriority[a.group] || 99;
+            const pB = groupPriority[b.group] || 99;
+            if (pA !== pB) return pA - pB;
             return (parseInt(convertToEnglishDigits(String(a.id))) || 0) - (parseInt(convertToEnglishDigits(String(b.id))) || 0);
         });
 
@@ -695,6 +695,18 @@ async function generateMarksheets() {
         const statA = exactRanksMap.get(a.key);
         const statB = exactRanksMap.get(b.key);
         if (!statA || !statB) return 0;
+
+        // Group sorting sequence: Science (বিজ্ঞান গ্রুপ) -> Business (ব্যবসায় গ্রুপ) -> Humanities (মানবিক গ্রুপ)
+        if (selectedGroup === 'all') {
+            const groupPriority = {
+                'বিজ্ঞান গ্রুপ': 1,
+                'ব্যবসায় গ্রুপ': 2,
+                'মানবিক গ্রুপ': 3
+            };
+            const pA = groupPriority[a.group] || 99;
+            const pB = groupPriority[b.group] || 99;
+            if (pA !== pB) return pA - pB;
+        }
 
         if (sortType === 'classRank') {
             return statA.classRankNum - statB.classRankNum || statA.roll - statB.roll;
