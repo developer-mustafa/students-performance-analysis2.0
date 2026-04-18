@@ -1135,7 +1135,8 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                 // If no mapping exists, rely on exam data presence
                 // Only consider it valid if they have actual marks or explicit status, preventing ghost records
                 if (data) {
-                    const hasActualMarks = (data.written > 0 || data.mcq > 0 || data.practical > 0 || data.total > 0);
+                    const hasVal = (v) => v !== undefined && v !== null && v !== '';
+                    const hasActualMarks = (hasVal(data.written) || hasVal(data.mcq) || hasVal(data.practical) || hasVal(data.total));
                     const isExplicitlyAbsent = data.status === 'অনুপস্থিত' || data.status === 'absent';
                     return hasActualMarks || isExplicitlyAbsent;
                 }
@@ -1333,6 +1334,9 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                             if (grade !== 'F' && gp > 2.00) {
                                 optionalBonusGP = gp - 2.00;
                             }
+                            if (ms.boardStandardOptional !== true && grade === 'F') {
+                                allPassed = false;
+                            }
                         } else {
                             compulsoryGP += gp;
                             compulsoryCount++;
@@ -1344,7 +1348,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                     }
 
                     if (combinedData.status === 'ফেল') {
-                        if (!isOptional) allPassed = false;
+                        if (!isOptional || ms.boardStandardOptional !== true) allPassed = false;
                     }
                 }
 
@@ -1391,6 +1395,9 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                     if (grade !== 'F' && gp > 2.00) {
                         optionalBonusGP = gp - 2.00;
                     }
+                    if (ms.boardStandardOptional !== true && grade === 'F') {
+                        allPassed = false;
+                    }
                 } else {
                     compulsoryGP += gp;
                     compulsoryCount++;
@@ -1414,7 +1421,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
             }
 
             if (data.status === 'ফেল' || data.status === 'fail') {
-                if (isCombinedMode || ms.boardStandardOptional === true) {
+                if (ms.boardStandardOptional === true) {
                     if (!isOptional) allPassed = false;
                 } else {
                     allPassed = false;

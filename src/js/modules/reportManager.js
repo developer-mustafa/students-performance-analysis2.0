@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { getMarksheetSettings } from './marksheetManager.js';
+import { getMarksheetSettings, applyCombinedPaperLogic } from './marksheetManager.js';
 import { loadMarksheetRules, currentMarksheetRules } from './marksheetRulesManager.js';
 import { showNotification, convertToBengaliDigits, convertToEnglishDigits, isAbsent, determineStatus, normalizeText, calculateStatistics } from '../utils.js';
 import { getSavedExams, getSettings, getUnifiedStudents, getExamConfigs } from '../firestoreService.js';
@@ -92,6 +92,7 @@ export async function generateReport() {
     const rptClass = document.getElementById('rptClass')?.value;
     const rptSession = document.getElementById('rptSession')?.value;
     const examName = document.getElementById('rptExamName')?.value;
+    const calcMode = document.getElementById('rptCalculationMode')?.value || 'auto';
 
     if (!rptClass || !rptSession || !examName) {
         showNotification('শ্রেণি, সেশন এবং পরীক্ষা নির্বাচন করুন!', 'warning');
@@ -161,17 +162,17 @@ export async function generateReport() {
             }
 
             const curSub = studentAgg.get(rollKey).subjects[exam.subject] || { written: null, mcq: null, practical: null, total: null, status: null };
-            
+
             const hasVal = (v) => v !== undefined && v !== null && v !== '';
-            
+
             if (hasVal(s.written)) curSub.written = (curSub.written === null ? 0 : curSub.written) + Number(s.written);
             if (hasVal(s.mcq)) curSub.mcq = (curSub.mcq === null ? 0 : curSub.mcq) + Number(s.mcq);
             if (hasVal(s.practical)) curSub.practical = (curSub.practical === null ? 0 : curSub.practical) + Number(s.practical);
             if (hasVal(s.total)) curSub.total = (curSub.total === null ? 0 : curSub.total) + Number(s.total);
-            
+
             // Maintain the database status as an exact fallback backup
             if (s.status) curSub.status = s.status;
-            
+
             studentAgg.get(rollKey).subjects[exam.subject] = curSub;
         });
     });
@@ -186,7 +187,10 @@ export async function generateReport() {
 
     const clsRules = rules[rptClass] || rules['All'] || { generalSubjects: [], groupSubjects: {}, optionalSubjects: {} };
     const optSubsObj = clsRules.optionalSubjects || {};
-    const considerOptFail = ms.reportConsiderOptional === true;
+
+    let isCombinedMode = clsRules.mode === 'combined';
+    if (calcMode === 'combined') isCombinedMode = true;
+    if (calcMode === 'single') isCombinedMode = false;
 
     const getCanonicalGroup = (grp) => {
         const t = normalizeText(grp || '');
@@ -196,80 +200,330 @@ export async function generateReport() {
         return 'অন্যান্য';
     };
 
-    // Use the already defined masterStudents from above
+    // ============================================================
+    // BUILD MARKSHEET-IDENTICAL SUMMARY AGGREGATION
+    // Mirrors marksheetManager.js lines 350-413 and 561-603 EXACTLY
+    // Key = ${roll}_${group} (like marksheet), subject key normalized,
+    // data handling = overwrite (like marksheet), NOT accumulate
+    // ============================================================
+
+    const summaryAgg = new Map();
+    // Initialize groupStats and summaryAgg with all ACTIVE master students (true enrollment)
     masterStudents.forEach(ms => {
-        const grp = getCanonicalGroup(ms.group);
-        if (!groupStats.has(grp)) groupStats.set(grp, { total: 0, examinees: 0, pass: 0, fail: 0 });
-        groupStats.get(grp).total++;
+        const group = getCanonicalGroup(ms.group || '');
+        if (!groupStats.has(group)) groupStats.set(group, { total: 0, examinees: 0, pass: 0, fail: 0 });
+        groupStats.get(group).total++;
+
+        // Pre-populate summaryAgg to ensure all active students are counted in totals
+        const sRoll = convertToEnglishDigits(String(ms.id || '').trim().replace(/^0+/, '')) || '0';
+        const sGroupKey = normalizeText(group); // Use canonical group for the key
+        const key = `${sRoll}_${sGroupKey}`;
+        if (!summaryAgg.has(key)) {
+            summaryAgg.set(key, {
+                id: ms.id,
+                name: ms.name,
+                group: group, // Store canonical name
+                status: true,
+                subjects: {}
+            });
+        }
     });
 
-    allStudents.forEach(examinee => {
-        const master = masterLookup.get(String(examinee.roll).trim());
-        const group = getCanonicalGroup(master ? master.group : examinee.group);
+    relevantExams.forEach(exam => {
+        if (hiddenSet.has(normalizeText(exam.subject))) return;
+        if (exam.studentData) {
+            exam.studentData.forEach(s => {
+                const sRoll = convertToEnglishDigits(String(s.id || '').trim().replace(/^0+/, '')) || '0';
+                const sGroupKey = normalizeText(getCanonicalGroup(s.group || ''));
+                const key = `${sRoll}_${sGroupKey}`;
 
-        if (!groupStats.has(group)) groupStats.set(group, { total: 0, examinees: 0, pass: 0, fail: 0 });
-        const gs = groupStats.get(group);
+                const targetEntry = summaryAgg.get(key);
+                if (!targetEntry) return; 
 
-        let hasParticipatedInAny = false;
-        let allPassed = true;
-        let cGPA = 0, cCount = 0, oBonus = 0;
+                // Use EXACT same subject key normalization as marksheet
+                const subjKey = normalizeText(exam.subject).replace(/\s+/g, '') || exam.subject;
+                const existingSubData = targetEntry.subjects[subjKey];
 
-        subjects.forEach(subj => {
-            const data = examinee.subjects[subj];
-            const optKey = getMappedKey(group, Object.keys(optSubsObj));
-            const optList = (optSubsObj[optKey] || []).map(s => normalizeText(s));
-            const isO = optList.some(os => normalizeText(subj).includes(os) || os.includes(normalizeText(subj)));
+                const hasVal = (v) => v !== undefined && v !== null && v !== '';
+                const hasMarks = hasVal(s.written) || hasVal(s.mcq) || hasVal(s.practical) || hasVal(s.total);
 
-            const isAbsentSub = !data || isAbsent(data);
-
-            if (isAbsentSub) {
-                // Dynamic Peer-Curriculum Enforcement: 
-                // If the student is absent, check if ANY other student in their exact group took this subject.
-                // If yes, it means this was a required subject for their group, and they missed it, thus triggering an overall fail.
-                const isMandatoryForGroup = Array.from(allStudents)
-                    .filter(st => getCanonicalGroup(st.group) === group)
-                    .some(st => st.subjects[subj] && !isAbsent(st.subjects[subj]));
-
-                if (isMandatoryForGroup && !isO) {
-                    allPassed = false;
+                if (!existingSubData || hasMarks) {
+                    targetEntry.subjects[subjKey] = {
+                        written: s.written || 0,
+                        mcq: s.mcq || 0,
+                        practical: s.practical || 0,
+                        total: s.total || 0,
+                        grade: s.grade || '',
+                        gpa: s.gpa || '',
+                        status: s.status || ''
+                    };
                 }
-                return; // Skip calculating grade points since they missed it
-            }
-            
-            // If they took the subject, they officially participated
-            hasParticipatedInAny = true;
+            });
+        }
+    });
 
-            const config = specificConfigs.find(c => normalizeText(c.subjectName) === normalizeText(subj)) || null;
-            const maxT = config ? (Number(config.total) || 100) : 100;
-            const opts = {
-                writtenPass: config ? (Number(config.writtenPass) || 0) : FAILING_THRESHOLD.written,
-                mcqPass: config ? (Number(config.mcqPass) || 0) : FAILING_THRESHOLD.mcq,
-                practicalPass: config ? (Number(config.practicalPass) || 0) : 0,
-                totalPass: config ? (Number(config.totalPass) || (maxT * 0.33)) : Math.ceil(maxT * 0.33)
+    // Get all active students for summary (marksheet line 405-406)
+    const allSummaryStudents = [...summaryAgg.values()]
+        .filter(s => String(s.status) !== 'false');
+
+    // Apply Combined Paper Logic for accurate subject counts
+    const allOptSubsList = Object.values(optSubsObj).flat().map(os => normalizeText(os));
+    let displaySubjects = subjects.map(s => ({ paper: s, isCombined: false, isOptional: allOptSubsList.some(os => s.includes(os) || os.includes(s)) }));
+    if (isCombinedMode && clsRules.combinedSubjects?.length > 0) {
+        displaySubjects = applyCombinedPaperLogic(allSummaryStudents, subjects, clsRules, allOptSubsList);
+    }
+
+    // Count totals from summary students — GROUP-WISE breakdown (marksheet lines 561-603)
+    allSummaryStudents.forEach(student => {
+        const group = getCanonicalGroup(student.group || '');
+        const gs = groupStats.get(group);
+        if (!gs) return; // Should not happen
+
+        // --- Examinee Calculation (Matching exactly with marksheetManager logic for 100% sync) ---
+        // A student is an "examinee" ONLY if they have ANY marks > 0 in ANY subject criteria
+        const isExaminee = Object.values(student.subjects).some(data =>
+            ((data.written || 0) > 0 || (data.mcq || 0) > 0 || (data.practical || 0) > 0 || (data.total || 0) > 0)
+        );
+        
+        if (!isExaminee) return; 
+
+        gs.examinees++;
+
+        // Calculate GPA like marksheet ranking (lines 872-960)
+        let compulsoryGPA = 0;
+        let compulsoryCount = 0;
+        let optionalBonus = 0;
+        let allPassed = true;
+
+        // Get optional subjects for this student's group
+        const normGroup = normalizeText(student.group || '');
+        const optKey = Object.keys(clsRules.groupSubjects || {}).find(k => {
+            const nk = normalizeText(k);
+            return nk === normGroup || nk.includes(normGroup) || normGroup.includes(nk);
+        }) || student.group;
+
+        const generalSubs = (clsRules.generalSubjects || []).map(s => normalizeText(s));
+        const groupSubs = (clsRules.groupSubjects?.[optKey] || []).map(s => normalizeText(s));
+        const optSubs = (optSubsObj[optKey] || []).map(s => normalizeText(s));
+
+        const visibleSubjects = displaySubjects.filter(subjObj => {
+            const isObj = typeof subjObj === 'object';
+            const subjName = isObj ? (subjObj.name || subjObj.paper) : subjObj;
+            const normSubjName = normalizeText(subjName);
+            const papers = isObj ? (subjObj.papers || []) : [subjName];
+
+            const matchesList = (normList) => {
+                if (normList.includes(normSubjName)) return true;
+                if (isObj && subjObj.papers) {
+                    return subjObj.papers.some(p => normList.includes(normalizeText(p)));
+                }
+                return normList.some(item => normSubjName === item || normSubjName.includes(item) || item.includes(normSubjName));
             };
 
-            const savedStatus = String(data.status || '').trim();
-            const calcStatus = determineStatus(data, opts);
-            const status = savedStatus || calcStatus;
-            
-            const isAbsentStat = status === 'অনুপস্থিত' || status === 'absent';
-            const isF = status === 'ফেল' || status === 'fail' || isAbsentStat;
-            const sT = (Number(data.written) || 0) + (Number(data.mcq) || 0) + (Number(data.practical) || 0);
-            const gp = getGradePoint(maxT > 0 ? (sT / maxT) * 100 : 0);
+            const isGeneral = matchesList(generalSubs);
+            const isGroup = matchesList(groupSubs);
+            const isOpt = matchesList(optSubs);
 
-            if (isO) {
-                if (!isF && gp > 2.00) oBonus = Math.max(oBonus, gp - 2.00);
-                if (considerOptFail && isF) allPassed = false;
+            const checkMarks = (name) => {
+                const sSubjKey = normalizeText(name).replace(/\s+/g, '');
+                const data = student.subjects[sSubjKey];
+
+                const sRoll = String(student.id || '').trim().replace(/^0+/, '');
+                const sGroupNorm = normalizeText(student.group || '');
+
+                // --- STRICT MAPPING ENFORCEMENT ---
+                const cleanName = normalizeText(name).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
+                const thisSubMap = (ms.subjectMapping || []).find(m => {
+                    const mapSubNorm = normalizeText(m.subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
+                    const mapGroupNorm = normalizeText(m.group);
+                    return mapSubNorm === cleanName &&
+                        (sGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(sGroupNorm));
+                });
+
+                if (thisSubMap) {
+                    // If a mapping exists for this subject, the student MUST be in it to "have" the subject.
+                    return thisSubMap.rolls.map(r => String(r).replace(/^0+/, '')).includes(sRoll);
+                }
+
+                // If no mapping exists, rely on exam data presence
+                // Only consider it valid if they have actual marks or explicit status, preventing ghost records
+                if (data) {
+                    const hasVal = (v) => v !== undefined && v !== null && v !== '';
+                    const hasActualMarks = (hasVal(data.written) || hasVal(data.mcq) || hasVal(data.practical) || hasVal(data.total));
+                    const isExplicitlyAbsent = data.status === 'অনুপস্থিত' || String(data.status).toLowerCase() === 'absent';
+                    return hasActualMarks || isExplicitlyAbsent;
+                }
+
+                return false;
+            };
+
+            // If it's only in the optional list (and not general/group)
+            // Show if student has marks OR is mapped to this subject
+            if (isOpt && !isGeneral && !isGroup) {
+                const hasData = checkMarks(subjName) || papers.some(p => checkMarks(p));
+                // Show if has data OR if it's the only optional subject defined for this group
+                if (!hasData && optSubs.length > 2) return false;
+            }
+
+            // Alternative Subject Logic (Electives)
+            if (clsRules.alternativePairs && clsRules.alternativePairs.length > 0) {
+                const matchedPairs = clsRules.alternativePairs.filter(p => {
+                    const p1 = normalizeText(p.sub1);
+                    const p2 = normalizeText(p.sub2);
+                    if (p1 === normSubjName || p2 === normSubjName) return true;
+                    if (papers.some(paper => normalizeText(paper) === p1 || normalizeText(paper) === p2)) return true;
+                    return false;
+                });
+
+                if (matchedPairs.length > 0) {
+                    let hasAnyPartnerMarks = false;
+                    const hasCurrentMarks = checkMarks(subjName) || papers.some(p => checkMarks(p));
+
+                    matchedPairs.forEach(altPair => {
+                        const p1 = normalizeText(altPair.sub1);
+                        const isP1Current = p1 === normSubjName || papers.some(paper => normalizeText(paper) === p1);
+                        const partner = isP1Current ? altPair.sub2 : altPair.sub1;
+
+                        if (checkMarks(partner)) {
+                            hasAnyPartnerMarks = true;
+                        }
+                    });
+
+                    // If any alternative partner is active (has marks or is mapped) and current is not, hide current
+                    if (hasAnyPartnerMarks && !hasCurrentMarks) return false;
+                }
+            }
+
+            // Filter out purely alternative/unmatched cross-group subjects
+            return isGeneral || isGroup || isOpt;
+
+        });
+
+        // Iterate over the student's visibleSubjects 
+        visibleSubjects.forEach(subjObj => {
+            const isObj = typeof subjObj === 'object';
+            const subjName = isObj ? (subjObj.name || subjObj.paper) : subjObj;
+            const isOptional = isObj ? subjObj.isOptional : false;
+
+            const isCompFail = (mark, passMark) => {
+                if (!mark || mark === '-') return false;
+                const m = parseFloat(mark) || 0;
+                const p = parseFloat(passMark) || 0;
+                return (p > 0 && m < p);
+            };
+
+            if (isCombinedMode && isObj && subjObj.isCombined) {
+                const papers = subjObj.papers || [];
+                const combinedData = student.subjects[subjName] || {};
+
+                let isSubjectFail = false;
+                papers.forEach(p => {
+                    const pSubjKey = normalizeText(p).replace(/\s+/g, '');
+                    const pData = student.subjects[pSubjKey] || {};
+                    const pConfig = state.subjectConfigs?.[p] || {};
+
+                    if (isCompFail(pData.written, pConfig.writtenPass) ||
+                        isCompFail(pData.mcq, pConfig.mcqPass) ||
+                        isCompFail(pData.practical, pConfig.practicalPass)) {
+                        isSubjectFail = true;
+                    }
+                });
+
+                let grade = combinedData.grade || 'F';
+                let gp = (combinedData.gpa || 0);
+
+                if (isSubjectFail) {
+                    grade = 'F';
+                    gp = 0;
+                }
+
+                if (combinedData.status === 'ফেল' || combinedData.status === 'fail') {
+                    if (ms.boardStandardOptional === true) {
+                        if (!isOptional) allPassed = false;
+                    } else {
+                        allPassed = false;
+                    }
+                }
+
+                if (isOptional) {
+                    if (grade !== 'F' && gp > 2.00) {
+                        optionalBonus = Math.max(optionalBonus, gp - 2.00);
+                    }
+                    if (ms.boardStandardOptional !== true && grade === 'F') {
+                        allPassed = false;
+                    }
+                } else {
+                    compulsoryGPA += gp;
+                    compulsoryCount++;
+                    if (grade === 'F') allPassed = false;
+                }
+
             } else {
-                cGPA += gp; cCount++;
-                if (isF) allPassed = false;
+                const sSubjKey = normalizeText(subjName).replace(/\s+/g, '');
+                const data = student.subjects[sSubjKey] || {};
+                const total = data.total || 0;
+
+                const config = state.subjectConfigs?.[subjName] ||
+                    Object.entries(state.subjectConfigs || {}).find(([k]) =>
+                        normalizeText(k).replace(/\s+/g, '') === sSubjKey
+                    )?.[1] || { total: 100 };
+                const maxTotal = parseInt(config.total) || 100;
+                const pct = maxTotal > 0 ? (total / maxTotal) * 100 : 0;
+
+                let gp = getGradePoint(pct);
+                let grade = getLetterGrade(pct);
+
+                if (isCompFail(data.written, config.writtenPass) ||
+                    isCompFail(data.mcq, config.mcqPass) ||
+                    isCompFail(data.practical, config.practicalPass)) {
+                    grade = 'F';
+                    gp = 0;
+                }
+
+                if (data.status === 'ফেল' || data.status === 'fail') {
+                    if (ms.boardStandardOptional === true) {
+                        if (!isOptional) allPassed = false;
+                    } else {
+                        allPassed = false;
+                    }
+                }
+
+                if (isCombinedMode) {
+                    if (isOptional) {
+                        if (grade !== 'F' && gp > 2.00) {
+                            optionalBonus = Math.max(optionalBonus, gp - 2.00);
+                        }
+                        if (ms.boardStandardOptional !== true && grade === 'F') {
+                            allPassed = false;
+                        }
+                    } else {
+                        compulsoryGPA += gp;
+                        compulsoryCount++;
+                        if (grade === 'F') allPassed = false;
+                    }
+                } else {
+                    if (isOptional) {
+                        if (grade !== 'F' && gp > 2.00) {
+                            optionalBonus = Math.max(optionalBonus, gp - 2.00);
+                        }
+                        if (ms.boardStandardOptional !== true && grade === 'F') {
+                            allPassed = false;
+                        }
+                    } else {
+                        compulsoryGPA += gp;
+                        compulsoryCount++;
+                        if (grade === 'F') allPassed = false;
+                    }
+                }
             }
         });
 
-        if (!hasParticipatedInAny) return;
+        // Final GPA (marksheet lines 943-948)
+        let finalGPA = 0;
+        if (compulsoryCount > 0) {
+            finalGPA = Math.min(5.00, (compulsoryGPA + optionalBonus) / compulsoryCount);
+        }
 
-        gs.examinees++;
-        const finalGPA = cCount > 0 ? Math.min(5.00, (cGPA + oBonus) / cCount) : 0;
         const grade = getOverallGradeFromGPA(finalGPA, allPassed);
 
         if (allPassed) {
@@ -453,94 +707,134 @@ export async function generateReport() {
                         </thead>
                         <tbody>
                             ${(() => {
-                const generateRow = (subj) => {
-                    const examForSubj = relevantExams.find(e => e.subject === subj || e.subjectName === subj);
-                    if (!examForSubj || !examForSubj.studentData) return '';
+            const { isStudentEligibleForSubject } = (() => {
+                // Import from utils already imported at top
+                return {
+                    isStudentEligibleForSubject: (student, subject, options) => {
+                        const { marksheetRules = {}, className = 'HSC' } = options;
+                        if (!subject || subject === 'all') return true;
 
-                    const cfg = specificConfigs.find(c => normalizeText(c.subjectName) === normalizeText(subj)) || null;
-                    const opts = {
-                        writtenPass: cfg ? (Number(cfg.writtenPass) || 0) : FAILING_THRESHOLD.written,
-                        mcqPass: cfg ? (Number(cfg.mcqPass) || 0) : FAILING_THRESHOLD.mcq,
-                        practicalPass: cfg ? (Number(cfg.practicalPass) || 0) : 0,
-                        totalPass: cfg ? (Number(cfg.totalPass) || 33) : 33
-                    };
-                    const mT = cfg ? (Number(cfg.total) || 100) : 100;
+                        const evalSubName = normalizeText(subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
+                        const sGroupNorm = normalizeText(student.group || '');
 
-                    const stats = calculateStatistics(examForSubj.studentData, opts);
-                    
-                    // Specific Logic for General Subjects (Bangla, English, ICT)
-                    const sn = normalizeText(subj);
-                    const isGeneral = (rules.generalSubjects || []).some(gs => normalizeText(gs) === sn) || 
-                                     sn.includes('বাংলা') || sn.includes('ইংরেজি') || sn.includes('ict') || sn.includes('তথ্য ও যোগাযোগ');
+                        // Check marksheet rules
+                        const rls = marksheetRules[className] || marksheetRules['All'] || {};
+                        const generalSubs = (rls.generalSubjects || []).map(s => normalizeText(s).replace(/\[.*?\]/g, '').replace(/\s+/g, ''));
 
-                    if (isGeneral) {
-                        const masterCount = masterStudents.length;
-                        stats.totalStudents = masterCount;
-                        stats.participants = masterCount; 
-                        
-                        let manualAbsent = 0;
-                        let actualFail = 0;
-                        let actualPass = 0;
-                        
-                        masterStudents.forEach(ms => {
-                            const rid = String(ms.id).trim();
-                            const rec = examForSubj.studentData.find(s => String(s.id || s.roll).trim() === rid);
-                            
-                            // Definition of Absent: No record or No marks in all criteria
-                            const hasMarks = rec && (rec.written || rec.mcq || rec.practical);
-                            const markedAbsent = rec && (rec.status === 'absent' || rec.status === 'অনুপস্থিত');
+                        const isGeneral = generalSubs.includes(evalSubName) ||
+                            generalSubs.some(gs => evalSubName.includes(gs) || gs.includes(evalSubName));
 
-                            if (!rec || !hasMarks || markedAbsent) {
-                                manualAbsent++;
-                            } else {
-                                const status = determineStatus(rec, opts);
-                                if (status === 'পাশ' || status === 'pass' || status === 'পাস') {
-                                    actualPass++;
-                                } else {
-                                    actualFail++;
-                                }
+                        if (isGeneral) return true;
+
+                        // Check group subjects
+                        let validGroups = [];
+                        const checkMatch = (target, list) => {
+                            const normList = list.map(s => normalizeText(s).replace(/\[.*?\]/g, '').replace(/\s+/g, ''));
+                            return normList.some(ns => target === ns || target.includes(ns) || ns.includes(target));
+                        };
+
+                        for (const [group, subs] of Object.entries(rls.groupSubjects || {})) {
+                            if (checkMatch(evalSubName, subs)) validGroups.push(normalizeText(group));
+                        }
+                        for (const [group, subs] of Object.entries(rls.optionalSubjects || {})) {
+                            if (checkMatch(evalSubName, subs) && !validGroups.includes(normalizeText(group))) {
+                                validGroups.push(normalizeText(group));
                             }
-                        });
-                        
-                        stats.absentStudents = manualAbsent;
-                        stats.failedStudents = actualFail;
-                        stats.passedStudents = actualPass;
+                        }
+
+                        if (validGroups.length > 0) {
+                            return validGroups.some(g => sGroupNorm.includes(g) || g.includes(sGroupNorm));
+                        }
+
+                        return true;
+                    }
+                };
+            })();
+
+            const generateRow = (subj) => {
+                const examForSubj = relevantExams.find(e => e.subject === subj || e.subjectName === subj);
+                if (!examForSubj || !examForSubj.studentData) return '';
+
+                const cfg = specificConfigs.find(c => normalizeText(c.subjectName) === normalizeText(subj)) || null;
+                const opts = {
+                    writtenPass: cfg ? (Number(cfg.writtenPass) || 0) : FAILING_THRESHOLD.written,
+                    mcqPass: cfg ? (Number(cfg.mcqPass) || 0) : FAILING_THRESHOLD.mcq,
+                    practicalPass: cfg ? (Number(cfg.practicalPass) || 0) : 0,
+                    totalPass: cfg ? (Number(cfg.totalPass) || 33) : 33
+                };
+                const mT = cfg ? (Number(cfg.total) || 100) : 100;
+
+                // Filter eligible master students for this subject using marksheet rules
+                const eligibleStudents = masterStudents.filter(ms =>
+                    isStudentEligibleForSubject(ms, subj, { marksheetRules: rules, className: rptClass })
+                );
+                const totalForSubject = eligibleStudents.length;
+
+                // Build a lookup from exam data by roll
+                const examDataMap = new Map();
+                examForSubj.studentData.forEach(s => {
+                    examDataMap.set(String(s.id || s.roll).trim(), s);
+                });
+
+                let absentCount = 0, passCount = 0, failCount = 0;
+                let excellent = 0, mid = 0, weak = 0, highest = 0;
+
+                eligibleStudents.forEach(ms => {
+                    const rid = String(ms.id).trim();
+                    const rec = examDataMap.get(rid);
+
+                    // Determine presence using EXACT marksheetManager threshold (> 0) for sync
+                    const hasMarks = rec && (
+                        (rec.written || 0) > 0 || (rec.mcq || 0) > 0 || (rec.practical || 0) > 0 || (rec.total || 0) > 0
+                    );
+
+                    if (!rec || !hasMarks) {
+                        absentCount++;
+                        return;
                     }
 
-                    let excellent = 0, mid = 0, weak = 0, highest = 0;
-                    examForSubj.studentData.forEach(s => {
-                        if (isAbsent(s)) return;
-                        const sTotal = (Number(s.written) || 0) + (Number(s.mcq) || 0) + (Number(s.practical) || 0);
+                    // Determine pass/fail using examConfig thresholds
+                    const status = determineStatus(rec, opts);
+                    const isPassed = (status === 'পাস' || status === 'pass' || status === 'পাশ');
+
+                    if (isPassed) {
+                        passCount++;
+                        // Achievement grade calculation (percentage-based matching report grading)
+                        const sTotal = (Number(rec.written) || 0) + (Number(rec.mcq) || 0) + (Number(rec.practical) || 0);
                         const pct = mT > 0 ? (sTotal / mT) * 100 : 0;
                         const grade = getLetterGrade(pct);
-                        const status = determineStatus(s, opts);
-                        if (status === 'পাস' || status === 'pass' || status === 'পাশ') {
-                            if (grade === 'A+' || grade === 'A') excellent++;
-                            else if (grade === 'A-' || grade === 'B') mid++;
-                            else weak++;
-                        }
-                        if (sTotal > highest) highest = sTotal;
-                    });
+                        if (grade === 'A+' || grade === 'A') excellent++;
+                        else if (grade === 'A-' || grade === 'B') mid++;
+                        else weak++; // C, D
+                    } else {
+                        failCount++;
+                    }
 
-                    const passRate = stats.participants > 0 ? ((stats.passedStudents / stats.participants) * 100).toFixed(1) : '0.0';
+                    // Track highest marks
+                    const sTotal = (Number(rec.written) || 0) + (Number(rec.mcq) || 0) + (Number(rec.practical) || 0);
+                    if (sTotal > highest) highest = sTotal;
+                });
 
-                    return `<tr>
+                const participants = totalForSubject - absentCount;
+                const passRate = participants > 0 ? ((passCount / participants) * 100).toFixed(1) : '0.0';
+
+                return `<tr>
                         <td style="text-align: left !important; padding-left: 20px !important; font-weight: 500; color: #334155;">${subj}</td>
-                        <td style="color: #475569; font-weight: 700; background: #f8fafc;">${convertToBengaliDigits(stats.totalStudents)}</td>
-                        <td style="color: #ef4444; font-weight: 700;">${convertToBengaliDigits(stats.absentStudents)}</td>
-                        <td style="color: #0f172a; font-weight: 800;">${convertToBengaliDigits(stats.participants)}</td>
+                        <td style="color: #475569; font-weight: 700; background: #f8fafc;">${convertToBengaliDigits(totalForSubject)}</td>
+                        <td style="color: #ef4444; font-weight: 700;">${convertToBengaliDigits(absentCount)}</td>
+                        <td style="color: #0f172a; font-weight: 800;">${convertToBengaliDigits(participants)}</td>
                         <td><span style="font-weight: 700;">${convertToBengaliDigits(excellent)}</span></td>
                         <td><span style="font-weight: 700;">${convertToBengaliDigits(mid)}</span></td>
                         <td><span style="font-weight: 700;">${convertToBengaliDigits(weak)}</span></td>
-                        <td style="color: #dc2626; font-weight: 700; background: #fef2f2;">${convertToBengaliDigits(stats.failedStudents)}</td>
-                        <td style="color: #166534; font-weight: 700; background: #f0fdf4;">${convertToBengaliDigits(stats.passedStudents)}</td>
+                        <td style="color: #dc2626; font-weight: 700; background: #fef2f2;">${convertToBengaliDigits(failCount)}</td>
+                        <td style="color: #166534; font-weight: 700; background: #f0fdf4;">${convertToBengaliDigits(passCount)}</td>
                         <td style="font-weight: 700; color: #475569;">${convertToBengaliDigits(passRate)}%</td>
                         <td style="color: #4f46e5; font-weight: 700;">${convertToBengaliDigits(highest)}</td>
                     </tr>`;
-                };
+            };
 
-                return subjects.map(subj => generateRow(subj)).join('');
-            })()}
+            return subjects.map(subj => generateRow(subj)).join('');
+        })()}
                         </tbody>
                     </table>
                 </div>

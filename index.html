@@ -1445,6 +1445,14 @@
         <div class="selector-group"><label>সেশন</label><select id="rptSession" class="form-control"
             data-dynamic="session"></select></div>
         <div class="selector-group"><label>পরীক্ষা</label><select id="rptExamName" class="form-control"></select></div>
+        <div class="selector-group">
+          <label>ফলাফল মোড</label>
+          <select id="rptCalculationMode" class="form-control">
+            <option value="auto">অটোমেটিক (মার্কশীটের রুলস)</option>
+            <option value="combined">কম্বাইন্ড মোড (Paper 1+2)</option>
+            <option value="single">সিঙ্গেল পেপার মোড</option>
+          </select>
+        </div>
         <button id="rptGenerateBtn" class="dm-btn dm-save"><i class="fas fa-file-alt"></i> <span
             class="dm-btn-text">রিপোর্ট তৈরি</span></button>
         <button id="rptResetBtn" class="dm-btn dm-report"><i class="fas fa-sync-alt"></i> <span
