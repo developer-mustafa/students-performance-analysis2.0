@@ -696,8 +696,9 @@ async function generateMarksheets() {
         const statB = exactRanksMap.get(b.key);
         if (!statA || !statB) return 0;
 
-        // Group sorting sequence: Science (বিজ্ঞান গ্রুপ) -> Business (ব্যবসায় গ্রুপ) -> Humanities (মানবিক গ্রুপ)
-        if (selectedGroup === 'all') {
+        // Apply group priority sequence ONLY if not sorting by global Class Rank
+        // When sorting by Class Rank, we want a pure merit list regardless of group.
+        if (selectedGroup === 'all' && sortType !== 'classRank') {
             const groupPriority = {
                 'বিজ্ঞান গ্রুপ': 1,
                 'ব্যবসায় গ্রুপ': 2,
@@ -709,11 +710,14 @@ async function generateMarksheets() {
         }
 
         if (sortType === 'classRank') {
+            // Absolute global rank (Mixed groups)
             return statA.classRankNum - statB.classRankNum || statA.roll - statB.roll;
         } else if (sortType === 'groupRank') {
+            // Rank within each group (Groups are sequenced Science -> Business -> Humanities if selectedGroup is 'all')
             return statA.groupRankNum - statB.groupRankNum || statA.roll - statB.roll;
         } else {
-            return statA.roll - statB.roll; // Default Roll Wise
+            // Standard Roll Wise (within sequence)
+            return statA.roll - statB.roll;
         }
     });
 
