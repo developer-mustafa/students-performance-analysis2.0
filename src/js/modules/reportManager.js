@@ -902,10 +902,19 @@ export async function generateReport() {
                 <div class="rpt-pill-right">${examName} — ${rptSession}</div>
             </div>
 
-            <div class="rpt-meta-row">
-                <span class="rpt-meta-item"><i class="fas fa-graduation-cap"></i> শ্রেণি: <strong>${rptClass}</strong></span>
-                <span class="rpt-meta-item"><i class="fas fa-calendar-alt"></i> সেশন: <strong>${rptSession}</strong></span>
-                <span class="rpt-meta-item"><i class="fas fa-list"></i> মোট বিষয়: <strong>${convertToBengaliDigits(subjects.length)}</strong></span>
+            <div class="rpt-meta-row" style="margin-top: 20px; margin-bottom: 25px;">
+                <div class="rpt-meta-item">
+                    <i class="fas fa-graduation-cap"></i> 
+                    <span>শ্রেণি: <strong>${rptClass}</strong></span>
+                </div>
+                <div class="rpt-meta-item">
+                    <i class="fas fa-calendar-check"></i> 
+                    <span>সেশন: <strong>${rptSession}</strong></span>
+                </div>
+                <div class="rpt-meta-item">
+                    <i class="fas fa-list-ul"></i> 
+                    <span>মোট বিষয়: <strong>${convertToBengaliDigits(subjects.length)}</strong></span>
+                </div>
             </div>
 
             <div class="rpt-section">
