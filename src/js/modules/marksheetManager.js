@@ -1952,11 +1952,11 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                         ${ms.footerDevName ? (ms.footerDevLink ? `<a href="${ms.footerDevLink}" target="_blank" rel="noopener noreferrer" style="color: inherit; text-decoration: none;">${ms.footerDevName}</a>` : ms.footerDevName) : getDeveloperCreditHtml('ms-dev-credit')}
                     </div>
                     <div class="ms-ftr-right" style="display: flex; flex-direction: column; align-items: flex-end; text-align: right;">
-                        <span class="ms-ftr-system" style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; justify-content: flex-end; font-size: 0.6rem; color: #1e293b; font-weight: 700; margin-bottom: 2px;" title="${ms.footerTagline || ''}">
+                        <span class="ms-ftr-system" style="max-width: 250px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; display: flex; align-items: center; justify-content: flex-end; font-size: 0.6rem; color: #475569; font-weight: 700; margin-bottom: 2px;" title="${ms.footerTagline || ''}">
                             ${ms.footerTagline ? `
-                            <svg width="11" height="11" viewBox="0 0 100 100" style="margin-right: 5px; flex-shrink: 0;" aria-hidden="true">
-                                <circle cx="50" cy="50" r="40" fill="none" stroke="#4361ee" stroke-width="12" stroke-linecap="round" stroke-dasharray="160 100" transform="rotate(-45 50 50)"></circle>
-                                <circle cx="50" cy="50" r="25" fill="none" stroke="#4cc9f0" stroke-width="10" stroke-linecap="round" stroke-dasharray="80 80" transform="rotate(45 50 50)"></circle>
+                            <svg width="11" height="11" viewBox="0 0 100 100" style="margin-right: 5px; flex-shrink: 0; opacity: 0.8;" aria-hidden="true">
+                                <circle cx="50" cy="50" r="40" fill="none" stroke="#64748b" stroke-width="12" stroke-linecap="round" stroke-dasharray="160 100" transform="rotate(-45 50 50)"></circle>
+                                <circle cx="50" cy="50" r="25" fill="none" stroke="#94a3b8" stroke-width="10" stroke-linecap="round" stroke-dasharray="80 80" transform="rotate(45 50 50)"></circle>
                             </svg>
                             ${ms.footerTagline}` : ''}
                         </span>
