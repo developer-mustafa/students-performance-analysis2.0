@@ -674,10 +674,7 @@ export async function generateReport() {
     // Improved dynamic dev credit HTML
     const devNameHtml = (dev.enabled !== false && (dev.name || dev.text)) ?
         `<div class="ftr-dev-main">${dev.text || 'Developed By:'} <strong>${dev.name || ''}</strong> <span style="opacity: 0.6; font-size: 0.85em; margin-left: 4px;">| এনালিষ্ট প্রো- v${APP_VERSION}</span></div>` : '';
-    const devContactHtml = (dev.enabled !== false && dev.link) ?
-        `<div class="ftr-contact-sub" style="font-size: 0.55rem; opacity: 0.8; margin-top: -2px;">${dev.link}</div>` : '';
-
-    const devFullHtml = devNameHtml + devContactHtml;
+    const devFullHtml = devNameHtml;
 
     // Sort and calculate ranks
     studentResultRecords.sort((a, b) => {
@@ -1160,8 +1157,7 @@ export async function generateReport() {
 
             <div class="rpt-footer">
                 ${devFullHtml}
-                <div class="ftr-contact-sub">যোগাযোগ: 01840-643946 | এনালিষ্ট প্রো সফটওয়্যার | প্রিন্টের তারিখ: ${todayDate}</div>
-                <div class="ftr-url-pill">${window.location.host}</div>
+                <div class="ftr-contact-sub">সফটওয়্যার: এনালিষ্ট প্রো (v${APP_VERSION}) | প্রিন্টের তারিখ: ${todayDate}</div>
             </div>
         </div>
     </div>`;
