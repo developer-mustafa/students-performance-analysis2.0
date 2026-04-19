@@ -2287,15 +2287,15 @@ body.is-super-admin .admin-only:not(.app-page) {
 
 .data-management-card .dm-controls {
   display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  flex-wrap: nowrap;
+  gap: 5px;
   align-items: center;
-  padding: 10px 14px;
+  padding: 8px 12px;
 }
 
 /* Button Styles */
 .dm-btn {
-  padding: 8px 14px;
+  padding: 7px 10px;
   border-radius: 8px;
   cursor: pointer;
   display: inline-flex;
@@ -2339,7 +2339,7 @@ body.is-super-admin .admin-only:not(.app-page) {
 /* Search Box */
 .dm-search {
   flex: 1;
-  min-width: 160px;
+  min-width: 120px;
   position: relative;
 }
 
@@ -24094,20 +24094,20 @@ body.dark-mode .ms-compact-info {
 .dm-brand-section {
   display: flex;
   align-items: center;
-  gap: 12px;
-  padding-right: 8px;
+  gap: 8px;
+  padding-right: 4px;
 }
 
 .dm-brand-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
 }
 
 .dm-action-tools-wrapper {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 5px;
   flex: 1;
 }
 
@@ -24118,9 +24118,9 @@ body.dark-mode .ms-compact-info {
 .app-logo {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 6px;
   color: var(--primary);
-  font-size: 1.15rem;
+  font-size: 1.05rem;
 }
 
 .app-logo i {
