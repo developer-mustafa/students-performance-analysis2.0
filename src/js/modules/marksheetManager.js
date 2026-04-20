@@ -1052,51 +1052,51 @@ const getMarkClass = (mark, passMark) => {
  * Orthogonal metrics to avoid redundancy: GPA, Relative Excellence, and Stability.
  */
 function calculateAPS(data) {
-    const { 
-        gpa, 
+    const {
+        gpa,
         reScore, // Relative Excellence: Avg(Student Marks / Highest Marks)
-        subjectsCount, 
-        passedSubjects, 
-        weakSubjects, 
-        absentCount, 
-        failedSubjects 
+        subjectsCount,
+        passedSubjects,
+        weakSubjects,
+        absentCount,
+        failedSubjects
     } = data;
-    
+
     // 1. BP (Baseline Proficiency - 40%) - Measure based on GPA
     const BP = (parseFloat(gpa) / 5.00) * 100;
-    
+
     // 2. RE (Relative Excellence - 42%) - Measures how close student is to Subject Toppers
     const RE = reScore; // Already calculated as average % relative to highs
-    
+
     // 3. SS (Stability & Seriousness - 18%) - Measures passing breadth
     const SS = subjectsCount > 0 ? (passedSubjects / subjectsCount) * 100 : 0;
-    
+
     // O-APS Base Score
     let APS = (0.40 * BP) + (0.42 * RE) + (0.18 * SS);
-    
+
     // --- Modifiers ---
-    
+
     // Serious Student Bonus: No Weak Subjects (>50% everywhere)
     const isSeriousStudent = weakSubjects === 0 && failedSubjects === 0;
     if (isSeriousStudent) {
         APS = APS * 1.05; // 5% boost for consistency
     }
-    
+
     // Penalty for Absenteeism
     APS = APS - (absentCount * 2);
-    
+
     // Harsh reduction for high failure rate
     if (failedSubjects >= 3) {
         APS = APS * 0.75; // 25% reduction
     }
-    
+
     // Zero pass rule
     if (passedSubjects === 0) APS = 0;
-    
+
     // Final Step: Clamp and Precision
     const finalAPS = Math.max(0, Math.min(100, APS));
     const progressText = finalAPS.toFixed(2) + "%";
-    
+
     // Grade Mapping (Professional)
     let grade = 'NEEDS IMPROVEMENT';
     let gradeColor = '#ef4444';
@@ -1106,7 +1106,7 @@ function calculateAPS(data) {
     else if (finalAPS >= 85) { grade = 'EXCELLENT'; gradeColor = '#059669'; }
     else if (finalAPS >= 70) { grade = 'GOOD'; gradeColor = '#3b82f6'; }
     else if (finalAPS >= 50) { grade = 'AVERAGE'; gradeColor = '#f59e0b'; }
-    
+
     return {
         progressPercentage: progressText,
         apsScore: finalAPS,
@@ -1561,7 +1561,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
             const marksPercentage = (total / maxTotal) * 100;
             const writtenPercentage = config.written ? (parseFloat(data.written || 0) / parseFloat(config.written)) * 100 : 100;
             const mcqPercentage = config.mcq ? (parseFloat(data.mcq || 0) / parseFloat(config.mcq)) * 100 : 100;
-            
+
             if (marksPercentage < 50 || writtenPercentage < 40 || mcqPercentage < 40) {
                 weakSubjectsCount++;
             }
@@ -2063,19 +2063,19 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
 
                 <!-- APS Progress Scale Section -->
                 ${marksheetSettings.progressEnabled !== false ? (() => {
-                    const apsData = calculateAPS({
-                        gpa: avgGPA,
-                        reScore: totalVisibleCountForAPS > 0 ? (relativeExcellenceSum / totalVisibleCountForAPS) : 0,
-                        subjectsCount: totalVisibleCountForAPS,
-                        passedSubjects: passedSubjectsCount,
-                        weakSubjects: weakSubjectsCount,
-                        absentCount: absentCount,
-                        failedSubjects: failedSubjectsCount
-                    });
-                    
-                    return `
+            const apsData = calculateAPS({
+                gpa: avgGPA,
+                reScore: totalVisibleCountForAPS > 0 ? (relativeExcellenceSum / totalVisibleCountForAPS) : 0,
+                subjectsCount: totalVisibleCountForAPS,
+                passedSubjects: passedSubjectsCount,
+                weakSubjects: weakSubjectsCount,
+                absentCount: absentCount,
+                failedSubjects: failedSubjectsCount
+            });
+
+            return `
                     <div class="ms-progress-section" style="margin-top: 10px; width: 100%; page-break-inside: avoid;">
-                        <span class="ms-extra-title" style="margin-bottom: 5px;">শিক্ষার্থীর অগ্রগতি স্কেল (APS) ${apsData.isSerious ? '<span style="color: #059669; font-weight: 800; font-size: 0.6rem; margin-left: 8px; vertical-align: middle; background: #ecfdf5; padding: 1px 6px; border-radius: 4px; border: 1px solid #10b98140;">★ SERIOUS STUDENT</span>' : ''}</span>
+                        <span class="ms-extra-title" style="margin-bottom: 5px;">শিক্ষার্থীর একাডেমিক অগ্রগতি স্কেল (APS) ${apsData.isSerious ? '<span style="color: #059669; font-weight: 800; font-size: 0.6rem; margin-left: 8px; vertical-align: middle; background: #ecfdf5; padding: 1px 6px; border-radius: 4px; border: 1px solid #10b98140;">★ SERIOUS STUDENT</span>' : ''}</span>
                         <div class="ms-progress-card" style="padding: 10px 18px;">
                             <div class="ms-progress-header" style="margin-bottom: 8px;">
                                 <div class="ms-progress-info">
@@ -2094,13 +2094,13 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                             </div>
                             
                             <div style="font-size: 0.62rem; color: #64748b; font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
-                                <span>মানদণ্ড: GPA, বিষয়ের সর্বোচ্চ মার্কসের সাপেক্ষে অবস্থান ও ধারাবাহিক দক্ষতা।</span>
-                                <span style="opacity: 0.7;">Orthogonal Analysis Scale</span>
+                                <span>Formula: 40% BP + 42% RE + 18% SS [O-APS Orthogonal Analysis]</span>
+                                <span style="opacity: 0.7;">Progress Index Scale</span>
                             </div>
                         </div>
                     </div>
                     `;
-                })() : ''}
+        })() : ''}
 
 
                 <!-- Signatures -->
