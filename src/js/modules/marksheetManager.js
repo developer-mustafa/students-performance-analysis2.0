@@ -1325,6 +1325,14 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
     let optionalBonusGP = 0;
     let totalGradePointSum = 0; // Keeping for simple mode
 
+    // APS Progress Scale Counters
+    let totalFullMarks = 0;
+    let passedSubjectsCount = 0;
+    let weakSubjectsCount = 0;
+    let absentCount = 0;
+    let failedSubjectsCount = 0;
+    const totalVisibleCountForAPS = visibleSubjects.length;
+
     const isCombinedMode = rules && rules.mode === 'combined';
 
     const subjectRows = visibleSubjects.flatMap((subjObj, idx) => {
