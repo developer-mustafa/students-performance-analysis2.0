@@ -1434,10 +1434,14 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
 
                     totalGradePointSum += gp;
 
-                    // Relative Excellence Logic (Combined)
+                    // Relative Excellence Logic (Combined) with Dynamic Fallback
                     const high = highestMarks[sSubjKey] || 0;
-                    if (high > 0) relativeExcellenceSum += (avgMarks / high) * 100;
-                    else if (avgMarks > 0) relativeExcellenceSum += 100;
+                    if (high > 0) {
+                        relativeExcellenceSum += (avgMarks / high) * 100;
+                    } else if (maxTotal > 0) {
+                        // Fallback: Use standard Score Ratio (SR)
+                        relativeExcellenceSum += (avgMarks / maxTotal) * 100;
+                    }
 
                     // GPA Logic
                     if (isCombinedMode) {
@@ -1493,10 +1497,14 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
 
             totalGradePointSum += gp;
 
-            // Relative Excellence Logic (Single)
+            // Relative Excellence Logic (Single) with Dynamic Fallback
             const high = highestMarks[sSubjKey] || 0;
-            if (high > 0) relativeExcellenceSum += (total / high) * 100;
-            else if (total > 0) relativeExcellenceSum += 100;
+            if (high > 0) {
+                relativeExcellenceSum += (total / high) * 100;
+            } else if (maxTotal > 0) {
+                // Fallback: Use standard Score Ratio (SR)
+                relativeExcellenceSum += (total / maxTotal) * 100;
+            }
 
             // Determine if optional (Unified logic)
             const studentGroup = student.group || '';
