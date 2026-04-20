@@ -2051,32 +2051,29 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                     });
                     
                     return `
-                    <div class="ms-progress-section" style="margin-top: 15px; width: 100%; page-break-inside: avoid;">
-                        <span class="ms-extra-title">শিক্ষার্থীর অগ্রগতি স্কেল (Student Progress Scale - APS)</span>
-                        <div class="ms-progress-card">
-                            <div class="ms-progress-header">
+                    <div class="ms-progress-section" style="margin-top: 10px; width: 100%; page-break-inside: avoid;">
+                        <span class="ms-extra-title" style="margin-bottom: 5px;">শিক্ষার্থীর অগ্রগতি স্কেল (APS)</span>
+                        <div class="ms-progress-card" style="padding: 12px 18px;">
+                            <div class="ms-progress-header" style="margin-bottom: 8px;">
                                 <div class="ms-progress-info">
-                                    <span class="ms-progress-label">অর্জিত অগ্রগতি (Progress)</span>
-                                    <span class="ms-progress-value" style="color: ${apsData.gradeColor};">${apsData.progressPercentage}</span>
+                                    <span class="ms-progress-label" style="font-size: 0.65rem;">অর্জিত অগ্রগতি (PROGRESS)</span>
+                                    <span class="ms-progress-value" style="color: ${apsData.gradeColor}; font-size: 1.5rem;">${apsData.progressPercentage}</span>
                                 </div>
-                                <div class="ms-progress-badge" style="background: ${apsData.gradeColor}15; color: ${apsData.gradeColor}; border: 1px solid ${apsData.gradeColor}30;">
+                                <div class="ms-progress-badge" style="background: ${apsData.gradeColor}10; color: ${apsData.gradeColor}; border: 1px solid ${apsData.gradeColor}25; padding: 4px 12px; font-size: 0.75rem;">
                                     ${apsData.grade}
                                 </div>
                             </div>
                             
-                            <div class="ms-progress-bar-container">
-                                <div class="ms-progress-bar-fill" style="width: ${apsData.progressPercentage}; background: linear-gradient(90deg, #6366f1, ${apsData.gradeColor});">
-                                    <div class="ms-progress-bar-glow" style="background: ${apsData.gradeColor};"></div>
-                                </div>
-                                <div class="ms-progress-markers">
-                                    <span style="left: 0%">0</span>
-                                    <span style="left: 25%">25</span>
-                                    <span style="left: 50%">50</span>
-                                    <span style="left: 75%">75</span>
-                                    <span style="left: 100%">100</span>
+                            <div class="ms-progress-bar-container" style="margin-bottom: 6px; height: 10px;">
+                                <div class="ms-progress-bar-fill" style="width: ${apsData.progressPercentage}; background: linear-gradient(90deg, #6366f1, ${apsData.gradeColor}); border-radius: 5px;">
+                                    <div class="ms-progress-bar-glow" style="background: ${apsData.gradeColor}; opacity: 0.4;"></div>
                                 </div>
                             </div>
                             
+                            <div style="font-size: 0.62rem; color: #64748b; font-weight: 600; display: flex; justify-content: space-between; align-items: center;">
+                                <span>মানদণ্ড: GPA, প্রাপ্ত নম্বর, পাশের হার ও বিষয়ভিত্তিক পারফরম্যান্সের গাণিতিক গড়।</span>
+                                <span style="opacity: 0.7;">0% — 100% Scale</span>
+                            </div>
                         </div>
                     </div>
                     `;
