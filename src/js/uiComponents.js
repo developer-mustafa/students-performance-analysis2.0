@@ -769,7 +769,7 @@ export function printFailedStudents(data, options = {}) {
   <!-- Persistent Footer -->
   <div class="ftr">
     <div class="ftr-dev">${options.developerCredit?.text || 'সফটওয়্যার নির্মাতা:'} <a href="https://mustafaofficial.netlify.app/" target="_blank" style="color: inherit; text-decoration: none; font-weight: 700;">${options.developerCredit?.name || 'Mustafa Rahman'}</a></div>
-    <div class="ftr-contact">যোগাযোগ: <a href="tel:01840643946" style="color: inherit; text-decoration: none; font-weight: 700;">01840-643946</a> | এনালিস্ট প্রো সফটওয়্যার</div>
+    <div class="ftr-contact">যোগাযোগ: <a href="tel:01840643946" style="color: inherit; text-decoration: none; font-weight: 700;">01840-643946</a> | এডটেক অটোমেটা প্রো সফটওয়্যার</div>
     <div class="ftr-live-wrapper">
       <div class="ftr-live-badge">
         <i class="fas fa-globe"></i> ${options.developerCredit?.link || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'students-performance.web.app' : window.location.hostname)}
@@ -1048,7 +1048,7 @@ export function printAllStudents(data, options = {}) {
 
   <div class="ftr">
     <div class="ftr-dev">${options.developerCredit?.text || 'সফটওয়্যার নির্মাতা:'} <a href="https://mustafaofficial.netlify.app/" target="_blank" style="color: inherit; text-decoration: none; font-weight: 700;">${options.developerCredit?.name || 'Mustafa Rahman'}</a></div>
-    <div class="ftr-contact">যোগাযোগ: <a href="tel:01840643946" style="color: inherit; text-decoration: none; font-weight: 700;">01840-643946</a> | এনালিস্ট প্রো সফটওয়্যার</div>
+    <div class="ftr-contact">যোগাযোগ: <a href="tel:01840643946" style="color: inherit; text-decoration: none; font-weight: 700;">01840-643946</a> | এডটেক অটোমেটা প্রো সফটওয়্যার</div>
     <div class="ftr-live-wrapper">
       <div class="ftr-live-badge">
         <i class="fas fa-globe"></i> ${options.developerCredit?.link || (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1' ? 'students-performance.web.app' : window.location.hostname)}
@@ -2035,7 +2035,7 @@ export function printStudentManagementList(students, settings, filters = {}) {
     <div class="footer">
       <div class="footer-left">
         <div class="ftr-dev">সফটওয়্যার নির্মাতা: <a href="https://mustafaofficial.netlify.app/" target="_blank" style="color: inherit; text-decoration: none; font-weight: 700;">Mustafa Rahman</a>, সিনিয়ঁর সফটওয়্যার ইন্জিনিয়্যার, ইস্তাম্বুল, তুরস্ক</div>
-        <div class="ftr-contact">যোগাযোগ: <a href="tel:01840643946" style="color: inherit; text-decoration: none; font-weight: 700;">01840-643946</a> <span class="ftr-soft">অটোমেটেড এক্সাম এনালিষ্ট সফটওয়্যার</span></div>
+        <div class="ftr-contact">যোগাযোগ: <a href="tel:01840643946" style="color: inherit; text-decoration: none; font-weight: 700;">01840-643946</a> <span class="ftr-soft">এডটেক অটোমেটা প্রো সফটওয়্যার</span></div>
       </div>
       <div class="footer-right">
         <div class="ftr-contact">প্রিন্টের তারিখ: ${new Date().toLocaleDateString('bn-BD')}</div>

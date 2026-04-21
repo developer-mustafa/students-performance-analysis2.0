@@ -911,7 +911,7 @@ function getDeveloperCreditHtml(className) {
     
     if (!text && !name) return '';
     
-    let content = `<span>${text} <strong>${name}</strong></span> <span style="opacity: 0.6; font-size: 0.85em; margin-left: 4px;">| এনালিষ্ট প্রো- v${APP_VERSION}</span>`;
+    let content = `<span>${text} <strong>${name}</strong></span> <span style="opacity: 0.6; font-size: 0.85em; margin-left: 4px;">| এডটেক অটোমেটা প্রো- v${APP_VERSION}</span>`;
     if (link) {
         content += `<br><a href="${link}" target="_blank" rel="noopener noreferrer" style="display:inline-block; margin-top:2px;">${link}</a>`;
     }

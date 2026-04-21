@@ -4,4 +4,4 @@
  * The patch number auto-increments on each merge to main.
  */
 export const APP_VERSION = '2.5.11';
-export const APP_NAME = 'এনালিস্ট প্রো';
+export const APP_NAME = 'এডটেক অটোমেটা প্রো';

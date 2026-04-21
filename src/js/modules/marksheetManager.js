@@ -1801,7 +1801,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
             <div class="ms-border-frame" style="position: relative;">
                 
                 <!-- App Version Badge (Watermark Style) -->
-                <div class="ms-app-version-badge" style="position: absolute; top: 16px; right: 16px; font-size: 0.5rem; color: #475569; font-weight: 700; letter-spacing: 0px; opacity: 0.25; user-select: none; pointer-events: none; border: 1px dashed rgba(71, 85, 105, 0.4); padding: 3px 6px; border-radius: 4px; z-index: 10; font-family: inherit;">এনালিস্ট প্রো • V${APP_VERSION}</div>
+                <div class="ms-app-version-badge" style="position: absolute; top: 16px; right: 16px; font-size: 0.5rem; color: #475569; font-weight: 700; letter-spacing: 0px; opacity: 0.25; user-select: none; pointer-events: none; border: 1px dashed rgba(71, 85, 105, 0.4); padding: 3px 6px; border-radius: 4px; z-index: 10; font-family: inherit;">এডটেক অটোমেটা প্রো • V${APP_VERSION}</div>
 
                 <!-- Header Section -->
                 <div class="ms-header-section">
