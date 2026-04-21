@@ -84,6 +84,26 @@
       -webkit-text-fill-color: transparent;
       animation: textShine 6s ease infinite;
       letter-spacing: -0.5px;
+      margin-right: 12px; /* Add explicit right margin to separate from badge */
+    }
+
+    .dm-version-badge {
+      font-size: 0.7rem;
+      font-weight: 800;
+      color: #4f46e5;
+      background: rgba(79, 70, 229, 0.08);
+      padding: 3px 10px;
+      border-radius: 50px;
+      border: 1px solid rgba(79, 70, 229, 0.15);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      vertical-align: middle;
+      height: 22px;
+      white-space: nowrap;
+      margin-left: 8px;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      letter-spacing: 0.5px;
     }
 
     /* Loading Overlay Logo */
@@ -306,7 +326,7 @@
                 <img src="/edtechmataprologomain.png" alt="Logo" style="width: 32px; height: 32px; object-fit: contain;">
                 <span class="app-name premium-app-name" style="white-space: nowrap;">এডটেক অটোমাটা প্রো</span>
               </div>
-              <div id="appVersionBadge" class="dm-version-badge" title="অ্যাপ ভার্সন" style="margin-left: 10px;">
+              <div id="appVersionBadge" class="dm-version-badge" title="অ্যাপ ভার্সন">
                 v<span id="headerVersionNumber">2.9.1</span>
               </div>
             </div>
