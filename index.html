@@ -64,13 +64,17 @@
     }
 
     .premium-brand-logo img {
-      filter: drop-shadow(0 0 10px rgba(79, 70, 229, 0.4));
+      image-rendering: -webkit-optimize-contrast;
+      image-rendering: crisp-edges;
+      filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
       animation: logoGlow 3s infinite ease-in-out;
+      backface-visibility: hidden;
+      transform: translateZ(0); /* Force GPU rendering for sharpness */
     }
 
     @keyframes logoGlow {
-      0%, 100% { filter: drop-shadow(0 0 5px rgba(79, 70, 229, 0.4)); }
-      50% { filter: drop-shadow(0 0 15px rgba(14, 165, 233, 0.8)); }
+      0%, 100% { filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2)) drop-shadow(0 0 5px rgba(79, 70, 229, 0.2)); }
+      50% { filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.3)) drop-shadow(0 0 12px rgba(14, 165, 233, 0.6)); }
     }
 
     .premium-app-name {
