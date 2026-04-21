@@ -138,10 +138,8 @@
       position: relative;
       overflow: hidden;
       border-radius: 20px;
-      padding: 10px;
-      background: rgba(255, 255, 255, 0.03);
-      backdrop-filter: blur(5px);
-      box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+      padding: 15px;
+      background: transparent;
       animation: floatAnimation 4s infinite ease-in-out;
     }
 
@@ -150,16 +148,17 @@
       position: absolute;
       top: 0;
       left: 0;
-      width: 60px;
+      width: 100px;
       height: 100%;
       background: linear-gradient(
         to right,
         transparent,
-        rgba(255, 255, 255, 0.4),
+        rgba(255, 255, 255, 0.6),
         transparent
       );
-      animation: shinySweep 3s infinite ease-in-out;
-      filter: blur(5px);
+      animation: shinySweep 2.5s infinite ease-in-out;
+      filter: blur(10px);
+      transform: skewX(-25deg);
     }
 
     .loading-logo-name {
