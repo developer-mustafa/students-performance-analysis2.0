@@ -403,9 +403,9 @@
           <div class="dm-divider"></div>
 
           <!-- All Action Tools Wrapper (For Flex Magic) -->
-          <div class="dm-action-tools-wrapper">
+          <div class="dm-action-tools-wrapper" style="display: flex; align-items: center; gap: 10px; flex: 1;">
             <!-- Scrollable Buttons Row -->
-            <div class="dm-action-tools-row" style="display: flex; align-items: center; gap: 10px;">
+            <div class="dm-action-tools-row" style="display: flex; align-items: center; gap: 10px; flex-shrink: 0;">
               <div class="dm-tool-group" style="display: flex; align-items: center; gap: 8px;">
                 <div class="dm-upload-wrapper">
                   <input type="file" id="jsonFileInput" accept=".json,.xlsx,.xls" style="display: none;" />
@@ -444,10 +444,10 @@
               </div>
             </div> <!-- Close dm-action-tools-row -->
 
-            <!-- Search Box -->
-            <div class="dm-search" style="margin-left: 10px; flex: 1; max-width: 280px; display: flex; align-items: center;">
+            <!-- Search Box (Correctly placed in flex flow) -->
+            <div class="dm-search" style="margin-left: auto; flex: 1; max-width: 300px; display: flex; align-items: center; min-width: 150px;">
               <i class="fas fa-search dm-search-icon"></i>
-              <input type="text" id="searchInput" placeholder="নাম বা রোল দিয়ে সার্চ..." style="width: 100%;" />
+              <input type="text" id="searchInput" placeholder="Search..." style="width: 100%; border-radius: 50px;" />
               <div id="globalSearchResults" class="search-results-grid" style="display: none;"></div>
             </div>
           </div> <!-- Close dm-action-tools-wrapper -->
