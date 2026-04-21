@@ -63,12 +63,14 @@
       gap: 10px;
     }
 
-    .premium-logo-icon {
-      font-size: 1.4rem;
-      background: linear-gradient(135deg, #4f46e5, #0ea5e9);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: premiumPulse 2.5s infinite ease-in-out;
+    .premium-brand-logo img {
+      filter: drop-shadow(0 0 10px rgba(79, 70, 229, 0.4));
+      animation: logoGlow 3s infinite ease-in-out;
+    }
+
+    @keyframes logoGlow {
+      0%, 100% { filter: drop-shadow(0 0 5px rgba(79, 70, 229, 0.4)); }
+      50% { filter: drop-shadow(0 0 15px rgba(14, 165, 233, 0.8)); }
     }
 
     .premium-app-name {
@@ -159,13 +161,23 @@
     .loading-logo-name {
       font-size: 1.6rem;
       font-weight: 900;
-      background: linear-gradient(270deg, #1e293b, #4f46e5, #0ea5e9, #1e293b);
-      background-size: 300% 300%;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: textShine 6s ease infinite;
+      background: linear-gradient(
+        to right,
+        #4f46e5 20%,
+        #0ea5e9 30%,
+        #ffffff 50%,
+        #0ea5e9 70%,
+        #4f46e5 80%
+      ) !important;
+      background-size: 200% auto !important;
+      -webkit-background-clip: text !important;
+      background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      color: transparent !important;
+      animation: shineSweep 3s infinite linear !important;
       letter-spacing: -0.5px;
       margin: 0;
+      filter: drop-shadow(0 0 15px rgba(79, 70, 229, 0.5));
     }
 
     .loading-logo-sub {
