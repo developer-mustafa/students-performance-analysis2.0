@@ -75,30 +75,29 @@
       font-weight: 900;
       font-size: 1.25rem;
       background: linear-gradient(
-        120deg,
-        #4361ee 20%,
-        #4f46e5 40%,
+        to right,
+        #4f46e5 20%,
+        #0ea5e9 30%,
         #ffffff 50%,
-        #4f46e5 60%,
-        #4361ee 80%
-      );
-      background-size: 200% auto;
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-      animation: shineSweep 3s infinite linear;
+        #0ea5e9 70%,
+        #4f46e5 80%
+      ) !important;
+      background-size: 200% auto !important;
+      -webkit-background-clip: text !important;
+      background-clip: text !important;
+      -webkit-text-fill-color: transparent !important;
+      color: transparent !important;
+      animation: shineSweep 3s infinite linear !important;
       letter-spacing: -0.5px;
       margin-right: 12px;
-      filter: drop-shadow(0 0 10px rgba(79, 70, 229, 0.4));
+      filter: drop-shadow(0 0 12px rgba(79, 70, 229, 0.5));
       white-space: nowrap;
+      display: inline-block;
     }
 
     @keyframes shineSweep {
-      0% {
-        background-position: -200% center;
-      }
-      100% {
-        background-position: 200% center;
-      }
+      0% { background-position: -200% center; }
+      100% { background-position: 200% center; }
     }
 
     .dm-version-badge {
