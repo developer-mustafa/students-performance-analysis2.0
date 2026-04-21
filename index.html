@@ -301,13 +301,13 @@
 
           <!-- Brand & Version -->
           <div class="dm-brand-section">
-            <div class="dm-brand-left">
-              <div class="app-logo premium-brand-logo">
-                <img src="/edtechmataprologomain.png" alt="Logo" style="width: 28px; height: 28px; object-fit: contain;">
-                <span class="app-name premium-app-name">এডটেক অটোমাটা প্রো</span>
+            <div class="dm-brand-left" style="display: flex; align-items: center; gap: 12px;">
+              <div class="app-logo premium-brand-logo" style="display: flex; align-items: center; gap: 8px;">
+                <img src="/edtechmataprologomain.png" alt="Logo" style="width: 32px; height: 32px; object-fit: contain;">
+                <span class="app-name premium-app-name" style="white-space: nowrap;">এডটেক অটোমাটা প্রো</span>
               </div>
-              <div id="appVersionBadge" class="dm-version-badge" title="অ্যাপ ভার্সন">
-                v<span id="headerVersionNumber">2.5.4</span>
+              <div id="appVersionBadge" class="dm-version-badge" title="অ্যাপ ভার্সন" style="margin-left: 10px;">
+                v<span id="headerVersionNumber">2.9.1</span>
               </div>
             </div>
             <!-- Mobile Hamburger Toggle -->
@@ -321,8 +321,8 @@
           <!-- All Action Tools Wrapper (For Flex Magic) -->
           <div class="dm-action-tools-wrapper">
             <!-- Scrollable Buttons Row -->
-            <div class="dm-action-tools-row">
-              <div class="dm-tool-group">
+            <div class="dm-action-tools-row" style="display: flex; align-items: center; gap: 10px;">
+              <div class="dm-tool-group" style="display: flex; align-items: center; gap: 8px;">
                 <div class="dm-upload-wrapper">
                   <input type="file" id="jsonFileInput" accept=".json,.xlsx,.xls" style="display: none;" />
                   <label for="jsonFileInput" class="dm-btn soft-btn-upload">
@@ -335,13 +335,13 @@
                 </button>
 
                 <button id="saveAnalysisBtn" class="dm-btn dm-save">
-                  <i class="fas fa-save"></i> <span class="dm-btn-text">সেভ</span>
+                  <i class="fas fa-save"></i> <span class="dm-btn-text">সেট</span>
                 </button>
               </div>
 
-              <div class="dm-divider" id="searchDividerDesktop"></div>
+              <div class="dm-divider" id="searchDividerDesktop" style="margin: 0 5px;"></div>
 
-              <div class="dm-meta-tools">
+              <div class="dm-meta-tools" style="display: flex; align-items: center; gap: 8px;">
                 <!-- Install Application Button (PWA) -->
                 <button id="installAppBtn" class="dm-btn dm-install" title="অ্যাপটি আপনার ডিভাইসে ইনস্টল করুন"
                   style="display: none;">
@@ -361,9 +361,9 @@
             </div> <!-- Close dm-action-tools-row -->
 
             <!-- Search Box -->
-            <div class="dm-search">
+            <div class="dm-search" style="margin-left: 10px; flex: 1; max-width: 280px; display: flex; align-items: center;">
               <i class="fas fa-search dm-search-icon"></i>
-              <input type="text" id="searchInput" placeholder="নাম বা রোল দিয়ে সার্চ..." />
+              <input type="text" id="searchInput" placeholder="নাম বা রোল দিয়ে সার্চ..." style="width: 100%;" />
               <div id="globalSearchResults" class="search-results-grid" style="display: none;"></div>
             </div>
           </div> <!-- Close dm-action-tools-wrapper -->
