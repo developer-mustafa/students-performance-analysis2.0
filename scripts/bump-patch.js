@@ -11,6 +11,20 @@ function updateVersion() {
         const currentVersion = packageJson.version;
         const versionParts = currentVersion.split('.').map(Number);
         versionParts[2] += 1; // Increment patch
+        
+        // If patch reaches 10, rollover to minor
+        if (versionParts[2] > 9) {
+            versionParts[1] += 1;
+            versionParts[2] = 0;
+        }
+
+        // If minor reaches 10, rollover to major
+        if (versionParts[1] > 9) {
+            versionParts[0] += 1;
+            versionParts[1] = 0;
+            versionParts[2] = 0; // Ensure patch is also 0
+        }
+        
         const newVersion = versionParts.join('.');
         
         packageJson.version = newVersion;

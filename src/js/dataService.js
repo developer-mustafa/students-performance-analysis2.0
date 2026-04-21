@@ -1,11 +1,9 @@
-﻿/**
+/**
  * Data Service Module - Handles data loading, saving, and storage
  * Now integrated with Firebase Firestore for real-time sync
  * @module dataService
  */
 
-import * as XLSX from 'xlsx';
-import html2canvas from 'html2canvas';
 import { STORAGE_KEYS } from './constants.js';
 import { showNotification, convertToEnglishDigits, normalizeText, normalizeSession } from './utils.js';
 import defaultStudentData from '../data/students.json';
@@ -515,6 +513,9 @@ export async function captureElementAsImage(element, filename = 'capture.png') {
             bgColor = isDark ? '#1a1a1a' : '#ffffff';
         }
 
+        const html2canvasModule = await import('html2canvas');
+        const html2canvas = html2canvasModule.default || html2canvasModule;
+
         const canvas = await html2canvas(element, {
             backgroundColor: bgColor,
             scale: 3, // Scale 2 is more stable for alignment than Scale 4
@@ -610,7 +611,7 @@ export function isFirestoreOnline() {
 /**
  * Download Demo Excel Template
  */
-export function downloadDemoTemplate() {
+export async function downloadDemoTemplate() {
     const headers = [
         {
             'Roll': '101',
@@ -648,6 +649,9 @@ export function downloadDemoTemplate() {
         }
     ];
 
+    const XLSXModule = await import('xlsx');
+    const XLSX = XLSXModule.default || XLSXModule;
+
     const ws = XLSX.utils.json_to_sheet(headers);
 
     // Add column widths
@@ -681,7 +685,7 @@ export function downloadDemoTemplate() {
  * @param {Array} students - Array of student objects
  * @param {string} filename - Filename for the excel file
  */
-export function exportStudentDataAsExcel(students, filename = 'students_data.xlsx', subject = '') {
+export async function exportStudentDataAsExcel(students, filename = 'students_data.xlsx', subject = '') {
     if (!students || students.length === 0) {
         showNotification('কোনো ডেটা নেই', 'error');
         return;
@@ -705,6 +709,9 @@ export function exportStudentDataAsExcel(students, filename = 'students_data.xls
         'GPA': calculateGPA(student.total),
         'গ্রেড (Grade)': calculateGrade(student.total)
     }));
+
+    const XLSXModule = await import('xlsx');
+    const XLSX = XLSXModule.default || XLSXModule;
 
     const ws = XLSX.utils.json_to_sheet(dataToExport);
 

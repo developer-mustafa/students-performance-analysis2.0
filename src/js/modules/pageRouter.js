@@ -1,12 +1,10 @@
-﻿/**
+/**
  * Page Router Module
  * Handles hash-based navigation between Dashboard, Students, Result Entry, and Marksheet pages
  * @module pageRouter
  */
 
 import { state } from './state.js';
-import { loadTeacherAssignmentData } from './teacherAssignmentManager.js';
-import { loadAccessRequests, initAccessRequestUI } from './accessRequestManager.js';
 import { setLoading } from './uiManager.js';
 
 const NEW_PAGE_IDS = {
@@ -103,13 +101,8 @@ export async function navigateTo(pageId) {
     // Scroll to top
     window.scrollTo(0, 0);
 
-    // Load page-specific data
-    if (pageId === 'teacher-assignment') {
-        loadTeacherAssignmentData();
-    } else if (pageId === 'access-requests') {
-        initAccessRequestUI();
-        loadAccessRequests();
-    } else if (pageId === 'access-control') {
+    // Page-specific initializations are handled by the callback in app.js
+    if (pageId === 'access-control') {
         // AccessControlManager is initialized in app.js
         if (window.AccessControlManager) {
             window.AccessControlManager.renderUI();

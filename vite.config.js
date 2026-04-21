@@ -6,27 +6,32 @@ export default defineConfig({
     plugins: [
         VitePWA({
             registerType: 'autoUpdate',
-            includeAssets: ['favicon.svg'],
+            includeAssets: ['edtechmataprologomain.png'],
             manifest: {
-                name: 'Students Performance Analysis Dashboard',
-                short_name: 'ResAnalyst',
-                description: 'শিক্ষার্থীদের পারফর্ম্যান্স বিশ্লেষণ ড্যাশবোর্ড',
+                name: 'EdTech Automata Pro',
+                short_name: 'EdTechPro',
+                description: 'এডটেক অটোমাটা প্রো - Full Academic Enterprise solutions',
                 theme_color: '#2563eb',
                 icons: [
                     {
-                        src: 'favicon.svg',
+                        src: 'edtechmataprologomain.png',
                         sizes: '192x192',
-                        type: 'image/svg+xml'
+                        type: 'image/png',
+                        purpose: 'any maskable'
                     },
                     {
-                        src: 'favicon.svg',
+                        src: 'edtechmataprologomain.png',
                         sizes: '512x512',
-                        type: 'image/svg+xml'
+                        type: 'image/png',
+                        purpose: 'any maskable'
                     }
                 ],
                 start_url: './',
                 display: 'standalone',
                 background_color: '#ffffff'
+            },
+            workbox: {
+                globPatterns: ['**/*.{js,css,html,png,svg,webmanifest}']
             }
         })
     ],
@@ -36,10 +41,18 @@ export default defineConfig({
     build: {
         outDir: 'dist',
         emptyOutDir: true,
+        chunkSizeWarningLimit: 1000,
         rollupOptions: {
             input: {
                 main: resolve(__dirname, 'index.html'),
             },
+            output: {
+                manualChunks: {
+                    'firebase-core': ['firebase/app', 'firebase/auth'],
+                    'firebase-db': ['firebase/firestore'],
+                    'vendor-libs': ['xlsx', 'chart.js', 'jspdf', 'html2canvas'],
+                }
+            }
         },
     },
     server: {

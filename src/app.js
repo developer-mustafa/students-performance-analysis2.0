@@ -40,9 +40,10 @@ import {
     loadThemePreference, saveThemePreference, captureElementAsImage
 } from './js/dataService.js';
 import { getChartTitle } from './js/chartModule.js';
-import { getSavedExams, subscribeToSettings, getSettings, subscribeToSubjectConfigs, getSubjectConfigs, getStudentLookupMap } from './js/firestoreService.js';
-import { getMarksheetSettings, loadMarksheetSettings } from './js/modules/marksheetManager.js';
-import { loadMarksheetRules, currentMarksheetRules } from './js/modules/marksheetRulesManager.js';
+import { getSavedExams, subscribeToSettings, getSettings, subscribeToSubjectConfigs, getSubjectConfigs, getStudentLookupMap, generateStudentDocId } from './js/firestoreService.js';
+import { getMarksheetSettings, loadMarksheetSettings, initMarksheetManager, populateMSDropdowns, initStudentMappingUI, subscribeToMarksheetSettings } from './js/modules/marksheetManager.js';
+import { loadMarksheetRules, currentMarksheetRules, initMarksheetRulesManager, populateMarksheetSettingsDropdowns } from './js/modules/marksheetRulesManager.js';
+import { initStudentResultsManager } from './js/modules/studentResultsManager.js';
 
 
 import { initPageRouter, updateNavVisibility, navigateTo } from './js/modules/pageRouter.js';
@@ -115,7 +116,6 @@ async function filterActiveStudents(studentData, examClass, examSession, examSub
         const msSettings = getMarksheetSettings() || {};
         const subjectMappings = msSettings.subjectMapping || [];
 
-        const { generateStudentDocId } = await import('./js/firestoreService.js');
         
         return studentData.filter(s => {
             const key = generateStudentDocId({
@@ -361,7 +361,6 @@ async function init() {
 
         // Marksheet Settings Sync (College Name, Address, Logo, Subject Mappings)
         const initMarksheetSettingsSub = async () => {
-             const { subscribeToMarksheetSettings } = await import('./js/modules/marksheetManager.js');
              state.onMarksheetSettingsUnsubscribe = await subscribeToMarksheetSettings((msData) => {
                 console.log('Marksheet settings updated, refreshing dashboard header and exam cards...');
                 updateProfileUI(state.auth?.currentUser, state.isAdmin, state.isSuperAdmin, state.userRole);
@@ -417,7 +416,6 @@ async function init() {
                 await populateREDropdowns();
             }
             if (pageId === 'marksheet') {
-                const { initMarksheetManager, populateMSDropdowns } = await import('./js/modules/marksheetManager.js');
                 if (!initializedModules.has('marksheet')) {
                     initMarksheetManager();
                     initializedModules.add('marksheet');
@@ -433,8 +431,6 @@ async function init() {
                 await loadExamConfigs();
             }
             if (pageId === 'marksheet-settings') {
-                const { initMarksheetRulesManager, populateMarksheetSettingsDropdowns } = await import('./js/modules/marksheetRulesManager.js');
-                const { initStudentMappingUI } = await import('./js/modules/marksheetManager.js');
                 if (!initializedModules.has('marksheet-rules')) {
                     initMarksheetRulesManager();
                     initStudentMappingUI();
@@ -484,7 +480,6 @@ async function init() {
                 }
             }
             if (pageId === 'student-results') {
-                const { initStudentResultsManager } = await import('./js/modules/studentResultsManager.js');
                 if (!initializedModules.has('student-results')) {
                     initStudentResultsManager();
                     initializedModules.add('student-results');
