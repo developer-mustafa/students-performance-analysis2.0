@@ -2,7 +2,7 @@ import { state } from './state.js';
 import { getMarksheetSettings, loadMarksheetSettings, applyCombinedPaperLogic } from './marksheetManager.js';
 import { loadMarksheetRules, currentMarksheetRules } from './marksheetRulesManager.js';
 import { showNotification, convertToBengaliDigits, convertToEnglishDigits, isAbsent, determineStatus, normalizeText, calculateStatistics, isStudentEligibleForSubject } from '../utils.js';
-import { getSavedExams, getSettings, getUnifiedStudents, getExamConfigs, getStudentLookupMap, generateStudentDocId } from '../firestoreService.js';
+import { getSavedExams, getSettings, getUnifiedStudents, getExamConfigs, getStudentLookupMap, generateStudentDocId, getSubjectConfigs } from '../firestoreService.js';
 import { FAILING_THRESHOLD } from '../constants.js';
 import { APP_VERSION } from '../version.js';
 
@@ -101,14 +101,19 @@ export async function generateReport() {
     }
 
     // Fetch all necessary data in parallel for optimal performance and sync
-    const [allExams, masterRules, _msSetResult, specificConfigs, studentLookupMap, rawAllStudents] = await Promise.all([
+    const [allExams, masterRules, _msSetResult, specificConfigs, studentLookupMap, rawAllStudents, latestSubjectConfigs] = await Promise.all([
         getSavedExams(),
         loadMarksheetRules(), // Ensures latest rules are loaded
         loadMarksheetSettings(), // Ensures latest subject mappings are loaded
         getExamConfigs(rptClass, rptSession),
         getStudentLookupMap(),
-        getUnifiedStudents()
+        getUnifiedStudents(),
+        getSubjectConfigs()
     ]);
+
+    if (latestSubjectConfigs) {
+        state.subjectConfigs = latestSubjectConfigs;
+    }
 
     const clsNorm = normalizeText(rptClass);
     const sesNorm = normalizeText(rptSession);
@@ -496,10 +501,11 @@ export async function generateReport() {
             const subjName = isObj ? (subjObj.name || subjObj.paper) : subjObj;
             const isOptional = isObj ? subjObj.isOptional : false;
 
-            const isCompFail = (mark, passMark) => {
+            const isCompFail = (mark, passMark, defaultPass) => {
                 if (!mark || mark === '-') return false;
                 const m = parseFloat(mark) || 0;
-                const p = parseFloat(passMark) || 0;
+                let p = (passMark !== undefined && passMark !== '' && passMark !== null) ? parseFloat(passMark) : defaultPass;
+                if (isNaN(p)) p = 0;
                 return (p > 0 && m < p);
             };
 
@@ -513,9 +519,9 @@ export async function generateReport() {
                     const pData = student.subjects[pSubjKey] || {};
                     const pConfig = state.subjectConfigs?.[p] || {};
 
-                    if (isCompFail(pData.written, pConfig.writtenPass) ||
-                        isCompFail(pData.mcq, pConfig.mcqPass) ||
-                        isCompFail(pData.practical, pConfig.practicalPass)) {
+                    if (isCompFail(pData.written, pConfig.writtenPass, FAILING_THRESHOLD.written) ||
+                        isCompFail(pData.mcq, pConfig.mcqPass, FAILING_THRESHOLD.mcq) ||
+                        isCompFail(pData.practical, pConfig.practicalPass, 0)) {
                         isSubjectFail = true;
                     }
                 });
@@ -573,9 +579,9 @@ export async function generateReport() {
                 let gp = getGradePoint(pct);
                 let grade = getLetterGrade(pct);
 
-                if (isCompFail(data.written, config.writtenPass) ||
-                    isCompFail(data.mcq, config.mcqPass) ||
-                    isCompFail(data.practical, config.practicalPass)) {
+                if (isCompFail(data.written, config.writtenPass, FAILING_THRESHOLD.written) ||
+                    isCompFail(data.mcq, config.mcqPass, FAILING_THRESHOLD.mcq) ||
+                    isCompFail(data.practical, config.practicalPass, 0)) {
                     grade = 'F';
                     gp = 0;
                 }
@@ -709,15 +715,15 @@ export async function generateReport() {
                 <table class="rpt-subject-table rpt-passed-table">
                     <thead>
                         <tr>
-                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">ক্র.নং</th>
-                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">রোল</th>
-                            <th style="background: #065f46 !important; color: #fff !important; text-align: left !important; padding-left: 10px !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">নাম</th>
-                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">বিভাগ</th>
-                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">জিপিএ</th>
-                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">গ্রেড</th>
-                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">ক্লাস মেধাক্রমিং</th>
-                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">গ্রুপ মেধাক্রমিং</th>
-                            <th style="background: #065f46 !important; color: #fff !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important;">স্ট্যাটাস</th>
+                            <th style="background: #065f46 !important; color: white !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;"><span style="color: white !important;">ক্র.নং</span></th>
+                            <th style="background: #065f46 !important; color: white !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;"><span style="color: white !important;">রোল</span></th>
+                            <th style="background: #065f46 !important; color: white !important; text-align: left !important; padding-left: 10px !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;"><span style="color: white !important;">নাম</span></th>
+                            <th style="background: #065f46 !important; color: white !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;"><span style="color: white !important;">বিভাগ</span></th>
+                            <th style="background: #065f46 !important; color: white !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;"><span style="color: white !important;">জিপিএ</span></th>
+                            <th style="background: #065f46 !important; color: white !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;"><span style="color: white !important;">গ্রেড</span></th>
+                            <th style="background: #065f46 !important; color: white !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;"><span style="color: white !important;">ক্লাস মেধাক্রমিং</span></th>
+                            <th style="background: #065f46 !important; color: white !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;"><span style="color: white !important;">গ্রুপ মেধাক্রমিং</span></th>
+                            <th style="background: #065f46 !important; color: white !important; font-weight: 900 !important; border: 1px solid #ffffff33 !important; print-color-adjust: exact; -webkit-print-color-adjust: exact;"><span style="color: white !important;">স্ট্যাটাস</span></th>
                         </tr>
                     </thead>
                     <tbody>
@@ -888,6 +894,26 @@ export async function generateReport() {
     }
 
     const reportHtml = `
+    <style>
+        @media print {
+            * {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+            }
+            .rpt-passed-table thead th,
+            .rpt-passed-table thead th span,
+            .rpt-passed-table thead th * {
+                background-color: #065f46 !important;
+                color: #ffffff !important;
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                -webkit-text-fill-color: #ffffff !important;
+            }
+            .rpt-section-title {
+                color: inherit !important;
+            }
+        }
+    </style>
     <div class="rpt-page" id="rpt_page_main">
         <div class="rpt-inner">
             <div class="rpt-header">
@@ -1060,12 +1086,20 @@ export async function generateReport() {
                 const examForSubj = relevantExams.find(e => e.subject === subj || e.subjectName === subj);
                 if (!examForSubj || !examForSubj.studentData) return null;
 
-                const cfg = specificConfigs.find(c => normalizeText(c.subjectName) === normalizeText(subj)) || null;
+                const sSubjKey = normalizeText(subj).replace(/\s+/g, '');
+                let cfg = state.subjectConfigs?.[subj] || 
+                    Object.entries(state.subjectConfigs || {}).find(([k]) => 
+                        normalizeText(k).replace(/\s+/g, '') === sSubjKey
+                    )?.[1] || null;
+
+                if (!cfg) {
+                    cfg = specificConfigs.find(c => normalizeText(c.subjectName) === normalizeText(subj)) || null;
+                }
                 const opts = {
-                    writtenPass: cfg ? (Number(cfg.writtenPass) || 0) : FAILING_THRESHOLD.written,
-                    mcqPass: cfg ? (Number(cfg.mcqPass) || 0) : FAILING_THRESHOLD.mcq,
-                    practicalPass: cfg ? (Number(cfg.practicalPass) || 0) : 0,
-                    totalPass: cfg ? (Number(cfg.totalPass) || 33) : 33
+                    writtenPass: (cfg && cfg.writtenPass !== undefined && cfg.writtenPass !== '') ? Number(cfg.writtenPass) : FAILING_THRESHOLD.written,
+                    mcqPass: (cfg && cfg.mcqPass !== undefined && cfg.mcqPass !== '') ? Number(cfg.mcqPass) : FAILING_THRESHOLD.mcq,
+                    practicalPass: (cfg && cfg.practicalPass !== undefined && cfg.practicalPass !== '') ? Number(cfg.practicalPass) : 0,
+                    totalPass: (cfg && cfg.total !== undefined && cfg.total !== '') ? Number(cfg.total) * 0.33 : 33
                 };
 
                 let targetData = examForSubj.studentData || [];
