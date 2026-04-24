@@ -330,9 +330,11 @@
         overflow: auto !important;
       }
       
-      body.is-tabulation #tabulationTable thead th {
+      body.is-tabulation #tabulationTable thead {
         z-index: 400;
-        top: 0 !important; /* Sticks to top of wrapper */
+      }
+      body.is-tabulation #tabulationTable thead th {
+        z-index: inherit;
       }
 
       /* Horizontal Sticky for Desktop */
@@ -411,13 +413,22 @@
     }
     
     /* Sticky Table Header - base */
-    #tabulationTable thead th {
+    #tabulationTable thead {
       position: sticky !important;
       top: 0;
       z-index: 50;
-      background-color: #f8fafc !important;
-      border-bottom: 2px solid #e2e8f0 !important;
+      background-color: #f8fafc;
+    }
+    
+    .dark-mode #tabulationTable thead {
+      background-color: #1e293b;
+    }
+    
+    #tabulationTable thead th {
+      background-color: #f8fafc;
+      border-bottom: 2px solid #e2e8f0;
       box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+      position: relative; /* Let thead handle vertical sticking */
     }
     
     .dark-mode #tabulationTable thead th {
@@ -426,10 +437,8 @@
       border-bottom-color: #334155 !important;
     }
     
-    /* For sub-headers, ensure they stick immediately below the first row */
+    /* For sub-headers, no custom top is needed because thead is sticky */
     .tab-subj-sub-th {
-      top: 47px !important;
-      z-index: 49 !important;
       font-size: 0.8rem;
       padding: 6px 4px !important;
     }
