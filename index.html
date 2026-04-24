@@ -728,6 +728,53 @@
          flex: 1;
          justify-content: center;
       }
+
+      /* Enhanced Mobile Tabulation Sheet */
+      .tab-sheet-header {
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+      }
+      .tab-college-name {
+        font-size: 1.3rem !important;
+      }
+      .tab-exam-title {
+        font-size: 1rem !important;
+        padding: 4px 12px !important;
+      }
+      .tab-stats-boxes {
+        grid-template-columns: repeat(2, 1fr) !important;
+        gap: 10px !important;
+        margin-bottom: 15px !important;
+      }
+      .tab-stat-box {
+        padding: 10px !important;
+        gap: 8px !important;
+      }
+      .tab-stat-box i {
+        width: 32px !important;
+        height: 32px !important;
+        font-size: 1rem !important;
+      }
+      .tab-stat-label {
+        font-size: 0.6rem !important;
+      }
+      .tab-stat-val {
+        font-size: 1rem !important;
+      }
+    }
+
+    @media (max-width: 400px) {
+      .tab-stats-boxes {
+        grid-template-columns: repeat(2, 1fr) !important;
+      }
+      .tab-stat-box {
+        flex-direction: column;
+        text-align: center;
+        padding: 8px !important;
+      }
+      .tab-stat-info {
+        align-items: center;
+      }
     }
 
     @media print {
