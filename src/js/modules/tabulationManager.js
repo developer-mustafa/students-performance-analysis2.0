@@ -878,7 +878,28 @@ function showStudentDetail(idx) {
     // Remove existing modal
     document.getElementById('tabDetailModal')?.remove();
 
-    let subjectRows = subjects.map(subj => {
+    const ms = getMarksheetSettings() || {};
+    const subjMapForRender = ms.subjectMapping || [];
+    const stGroupNorm = normalizeText(st.group || '');
+    const stRollClean = String(st.id || '').trim().replace(/^0+/, '');
+
+    const applicableSubjects = subjects.filter(subj => {
+        const cleanSubjName = normalizeText(subj).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
+        const thisSubMapRender = subjMapForRender.find(m => {
+            const mapSubNorm = normalizeText(m.subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
+            const mapGroupNorm = normalizeText(m.group || '');
+            return mapSubNorm === cleanSubjName &&
+                (stGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(stGroupNorm) || mapGroupNorm === '');
+        });
+
+        // If a mapping exists for this subject/group and the student's roll is NOT in it, filter it out
+        if (thisSubMapRender && !thisSubMapRender.rolls.map(r => String(r).replace(/^0+/, '')).includes(stRollClean)) {
+            return false;
+        }
+        return true;
+    });
+
+    let subjectRows = applicableSubjects.map(subj => {
         const d = st.subjects[subj] || {};
         const cfg = getSubjectCfg(subjectConfigs, subj);
         const hasData = (d.written > 0) || (d.mcq > 0) || (d.practical > 0) || (d.total > 0);
