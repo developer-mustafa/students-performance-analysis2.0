@@ -415,6 +415,8 @@ async function handleViewTabulation() {
 
             const msSettings = getMarksheetSettings() || {};
             const boardStandard = msSettings.boardStandardOptional === true;
+            // The critical subjectMapping from marksheet settings (roll-based per-subject mapping)
+            const subjectMapping = msSettings.subjectMapping || [];
 
             const studentGroup = st.group || '';
             
@@ -433,20 +435,54 @@ async function handleViewTabulation() {
 
             const optSubs = allowedOptSubs.map(os => norm(os));
 
+            // IDENTICAL to marksheet checkMarks: determines if a student is eligible for a subject
+            const checkStudentHasSubject = (subjName) => {
+                const cleanName = norm(subjName).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
+                const sRoll = String(st.id || '').trim().replace(/^0+/, '');
+                const sGroupNorm = norm(studentGroup);
+
+                const thisSubMap = subjectMapping.find(m => {
+                    const mapSubNorm = norm(m.subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
+                    const mapGroupNorm = norm(m.group || '');
+                    return mapSubNorm === cleanName &&
+                        (sGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(sGroupNorm) || mapGroupNorm === '');
+                });
+
+                if (thisSubMap) {
+                    // If a mapping exists, student MUST be in the roll list
+                    return thisSubMap.rolls.map(r => String(r).replace(/^0+/, '')).includes(sRoll);
+                }
+
+                // No mapping exists → rely on exam data (actual marks or explicit absent status)
+                const d = st.subjects[subjName];
+                if (d) {
+                    const hasActualMarks = (d.written !== undefined && d.written !== '') ||
+                                          (d.mcq !== undefined && d.mcq !== '') ||
+                                          (d.practical !== undefined && d.practical !== '') ||
+                                          (d.total !== undefined && d.total !== '');
+                    const isExplicitlyAbsent = d.status === 'অনুপস্থিত' || d.status === 'absent';
+                    return hasActualMarks || isExplicitlyAbsent;
+                }
+                return false;
+            };
+
             let hasAnyMarksForStudent = false;
 
             subjects.forEach(subj => {
                 const d = st.subjects[subj];
-                if (!d) return;
 
-                // CRITICAL FIX: Ignore subjects that do not belong to the student's group 
-                // (e.g. Science student accidentally has an empty Business subject record)
+                // CRITICAL: Ignore subjects not in this student's group rules
                 if (!allowedSet.has(norm(subj))) return;
 
+                // CRITICAL: Ignore subjects not assigned to this student (by subjectMapping)
+                if (!checkStudentHasSubject(subj)) return;
+
                 // Check if they have ANY marks for the summary check
-                if ((d.written || 0) > 0 || (d.mcq || 0) > 0 || (d.practical || 0) > 0 || (d.total || 0) > 0) {
+                if ((d?.written || 0) > 0 || (d?.mcq || 0) > 0 || (d?.practical || 0) > 0 || (d?.total || 0) > 0) {
                     hasAnyMarksForStudent = true;
                 }
+
+                if (!d) return;
 
                 const sTotal = parseFloat(d.total) || 0;
                 totalObtained += sTotal;
@@ -470,7 +506,7 @@ async function handleViewTabulation() {
 
                 let isFail = (grade === 'F');
                 
-                // Safe component check matching marksheet (parseFloat on empty string is NaN, which correctly fails the < check)
+                // Safe component check matching marksheet
                 if (d.written !== undefined && cfg.writtenPass !== undefined && parseFloat(d.written) < parseFloat(cfg.writtenPass)) isFail = true;
                 if (d.mcq !== undefined && cfg.mcqPass !== undefined && parseFloat(d.mcq) < parseFloat(cfg.mcqPass)) isFail = true;
                 if (d.practical !== undefined && cfg.practicalPass !== undefined && parseFloat(d.practical) < parseFloat(cfg.practicalPass)) isFail = true;
@@ -686,6 +722,31 @@ function renderTabulationSheet(students, subjects, cls, session, examName, subje
                             <td class="tab-col-roll">${st.id}</td>
                             <td class="tab-col-group">${st.group || '—'}</td>
                             ${subjects.map((subj, i) => {
+            // Re-derive subjectMapping check for rendering (same logic as stats loop)
+            const ms = getMarksheetSettings() || {};
+            const subjMapForRender = ms.subjectMapping || [];
+            const stGroupNorm = normalizeText(st.group || '');
+            const stRollClean = String(st.id || '').trim().replace(/^0+/, '');
+            const cleanSubjName = normalizeText(subj).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
+
+            const thisSubMapRender = subjMapForRender.find(m => {
+                const mapSubNorm = normalizeText(m.subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
+                const mapGroupNorm = normalizeText(m.group || '');
+                return mapSubNorm === cleanSubjName &&
+                    (stGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(stGroupNorm) || mapGroupNorm === '');
+            });
+
+            // Student not eligible for this subject by mapping → show N/A cells
+            if (thisSubMapRender && !thisSubMapRender.rolls.map(r => String(r).replace(/^0+/, '')).includes(stRollClean)) {
+                const tintCls = `tab-subj-tint-${i % 6} tab-subj-na`;
+                return `
+                                    <td class="${tintCls}">—</td>
+                                    <td class="${tintCls}">—</td>
+                                    <td class="${tintCls}">—</td>
+                                    <td class="${tintCls} tab-subj-last-col">—</td>
+                                `;
+            }
+
             const d = st.subjects[subj] || {};
             const cfg = getSubjectCfg(subjectConfigs, subj);
             const wPass = num(cfg.writtenPass);
