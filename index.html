@@ -427,35 +427,43 @@
       border-bottom-color: #334155 !important;
     }
     
-    /* Professional Subject Column Tints */
-    .tab-subj-tint-0 { background-color: rgba(59, 130, 246, 0.05); } /* Blue */
-    .tab-subj-tint-1 { background-color: rgba(16, 185, 129, 0.05); } /* Emerald */
-    .tab-subj-tint-2 { background-color: rgba(139, 92, 246, 0.05); } /* Violet */
-    .tab-subj-tint-3 { background-color: rgba(245, 158, 11, 0.05); } /* Amber */
-    .tab-subj-tint-4 { background-color: rgba(236, 72, 153, 0.05); } /* Pink */
-    .tab-subj-tint-5 { background-color: rgba(14, 165, 233, 0.05); } /* Sky */
+    /* Professional Subject Column Tints (More visible opacity) */
+    .tab-subj-tint-0 { background-color: rgba(59, 130, 246, 0.12); } /* Blue */
+    .tab-subj-tint-1 { background-color: rgba(16, 185, 129, 0.12); } /* Emerald */
+    .tab-subj-tint-2 { background-color: rgba(139, 92, 246, 0.12); } /* Violet */
+    .tab-subj-tint-3 { background-color: rgba(245, 158, 11, 0.15); } /* Amber */
+    .tab-subj-tint-4 { background-color: rgba(236, 72, 153, 0.12); } /* Pink */
+    .tab-subj-tint-5 { background-color: rgba(14, 165, 233, 0.12); } /* Sky */
 
-    .dark-mode .tab-subj-tint-0 { background-color: rgba(59, 130, 246, 0.12); }
-    .dark-mode .tab-subj-tint-1 { background-color: rgba(16, 185, 129, 0.12); }
-    .dark-mode .tab-subj-tint-2 { background-color: rgba(139, 92, 246, 0.12); }
-    .dark-mode .tab-subj-tint-3 { background-color: rgba(245, 158, 11, 0.12); }
-    .dark-mode .tab-subj-tint-4 { background-color: rgba(236, 72, 153, 0.12); }
-    .dark-mode .tab-subj-tint-5 { background-color: rgba(14, 165, 233, 0.12); }
+    .dark-mode .tab-subj-tint-0 { background-color: rgba(59, 130, 246, 0.18); }
+    .dark-mode .tab-subj-tint-1 { background-color: rgba(16, 185, 129, 0.18); }
+    .dark-mode .tab-subj-tint-2 { background-color: rgba(139, 92, 246, 0.18); }
+    .dark-mode .tab-subj-tint-3 { background-color: rgba(245, 158, 11, 0.22); }
+    .dark-mode .tab-subj-tint-4 { background-color: rgba(236, 72, 153, 0.18); }
+    .dark-mode .tab-subj-tint-5 { background-color: rgba(14, 165, 233, 0.18); }
+    
+    /* Stronger vertical dividers between subjects */
+    td.tab-subj-last-col {
+        border-right: 2px solid #cbd5e1 !important;
+    }
+    .dark-mode td.tab-subj-last-col {
+        border-right: 2px solid #475569 !important;
+    }
 
     /* Solid colors for TH */
-    #tabulationTable thead th.tab-subj-th-0 { background-color: #eff6ff !important; border-bottom: 2px solid #bfdbfe !important; }
-    #tabulationTable thead th.tab-subj-th-1 { background-color: #ecfdf5 !important; border-bottom: 2px solid #a7f3d0 !important; }
-    #tabulationTable thead th.tab-subj-th-2 { background-color: #f5f3ff !important; border-bottom: 2px solid #ddd6fe !important; }
-    #tabulationTable thead th.tab-subj-th-3 { background-color: #fffbeb !important; border-bottom: 2px solid #fde68a !important; }
-    #tabulationTable thead th.tab-subj-th-4 { background-color: #fdf2f8 !important; border-bottom: 2px solid #fbcfe8 !important; }
-    #tabulationTable thead th.tab-subj-th-5 { background-color: #f0f9ff !important; border-bottom: 2px solid #bae6fd !important; }
+    #tabulationTable thead th.tab-subj-th-0 { background-color: #eff6ff !important; border-bottom: 2px solid #bfdbfe !important; border-right: 2px solid #cbd5e1 !important; }
+    #tabulationTable thead th.tab-subj-th-1 { background-color: #ecfdf5 !important; border-bottom: 2px solid #a7f3d0 !important; border-right: 2px solid #cbd5e1 !important; }
+    #tabulationTable thead th.tab-subj-th-2 { background-color: #f5f3ff !important; border-bottom: 2px solid #ddd6fe !important; border-right: 2px solid #cbd5e1 !important; }
+    #tabulationTable thead th.tab-subj-th-3 { background-color: #fffbeb !important; border-bottom: 2px solid #fde68a !important; border-right: 2px solid #cbd5e1 !important; }
+    #tabulationTable thead th.tab-subj-th-4 { background-color: #fdf2f8 !important; border-bottom: 2px solid #fbcfe8 !important; border-right: 2px solid #cbd5e1 !important; }
+    #tabulationTable thead th.tab-subj-th-5 { background-color: #f0f9ff !important; border-bottom: 2px solid #bae6fd !important; border-right: 2px solid #cbd5e1 !important; }
 
-    .dark-mode #tabulationTable thead th.tab-subj-th-0 { background-color: #1e3a8a !important; border-bottom: 2px solid #1e40af !important; color: #dbeafe !important;}
-    .dark-mode #tabulationTable thead th.tab-subj-th-1 { background-color: #064e3b !important; border-bottom: 2px solid #065f46 !important; color: #d1fae5 !important;}
-    .dark-mode #tabulationTable thead th.tab-subj-th-2 { background-color: #4c1d95 !important; border-bottom: 2px solid #5b21b6 !important; color: #ede9fe !important;}
-    .dark-mode #tabulationTable thead th.tab-subj-th-3 { background-color: #78350f !important; border-bottom: 2px solid #92400e !important; color: #fef3c7 !important;}
-    .dark-mode #tabulationTable thead th.tab-subj-th-4 { background-color: #831843 !important; border-bottom: 2px solid #9d174d !important; color: #fce7f3 !important;}
-    .dark-mode #tabulationTable thead th.tab-subj-th-5 { background-color: #0c4a6e !important; border-bottom: 2px solid #075985 !important; color: #e0f2fe !important;}
+    .dark-mode #tabulationTable thead th.tab-subj-th-0 { background-color: #1e3a8a !important; border-bottom: 2px solid #1e40af !important; border-right: 2px solid #475569 !important; color: #dbeafe !important;}
+    .dark-mode #tabulationTable thead th.tab-subj-th-1 { background-color: #064e3b !important; border-bottom: 2px solid #065f46 !important; border-right: 2px solid #475569 !important; color: #d1fae5 !important;}
+    .dark-mode #tabulationTable thead th.tab-subj-th-2 { background-color: #4c1d95 !important; border-bottom: 2px solid #5b21b6 !important; border-right: 2px solid #475569 !important; color: #ede9fe !important;}
+    .dark-mode #tabulationTable thead th.tab-subj-th-3 { background-color: #78350f !important; border-bottom: 2px solid #92400e !important; border-right: 2px solid #475569 !important; color: #fef3c7 !important;}
+    .dark-mode #tabulationTable thead th.tab-subj-th-4 { background-color: #831843 !important; border-bottom: 2px solid #9d174d !important; border-right: 2px solid #475569 !important; color: #fce7f3 !important;}
+    .dark-mode #tabulationTable thead th.tab-subj-th-5 { background-color: #0c4a6e !important; border-bottom: 2px solid #075985 !important; border-right: 2px solid #475569 !important; color: #e0f2fe !important;}
     
     .tab-top-row {
       display: flex;

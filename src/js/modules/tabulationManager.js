@@ -708,7 +708,7 @@ function renderTabulationSheet(students, subjects, cls, session, examName, subje
             const wCls = `${tintCls} ${hasData && wFail ? 'tab-mark-fail' : ''}`.trim();
             const mCls = `${tintCls} ${hasData && mFail ? 'tab-mark-fail' : ''}`.trim();
             const pCls = `${tintCls} ${hasData && pFail ? 'tab-mark-fail' : ''}`.trim();
-            const tCls = `${tintCls} ${hasData && isSubjFail ? 'tab-mark-fail' : ''}`.trim();
+            const tCls = `${tintCls} tab-subj-last-col ${hasData && isSubjFail ? 'tab-mark-fail' : ''}`.trim();
 
             return `
                                     <td class="${wCls}">${hasData && d.written !== undefined && d.written !== '' ? w : '—'}</td>
