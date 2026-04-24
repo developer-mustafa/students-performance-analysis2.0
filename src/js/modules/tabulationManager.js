@@ -751,35 +751,41 @@ function setupStickyObserver() {
     if (stickyResizeHandler) window.removeEventListener('resize', stickyResizeHandler);
     
     const wrapper = document.querySelector('.tabulation-table-wrapper');
-    const actionBar = document.getElementById('tabControls');
-    if (!wrapper || !actionBar) return;
+    if (!wrapper) return;
     
-    function updateStickyTop() {
+    // Clear any old inline top values from previous logic
+    document.querySelectorAll('#tabulationTable thead th').forEach(th => {
+        th.style.top = '';
+    });
+    
+    function updateWrapperHeight() {
         if (window.innerWidth < 769) {
-            // On mobile, the action bar is not sticky, so headers stick to the very top (0)
-            document.querySelectorAll('#tabulationTable thead th').forEach(th => {
-                th.style.setProperty('top', '0px', 'important');
-            });
+            wrapper.style.maxHeight = '';
             return;
         }
-        
-        // On desktop, the action bar is sticky, so the table header must stick BELOW it
-        const actionBarHeight = actionBar.getBoundingClientRect().height;
-        document.querySelectorAll('#tabulationTable thead th').forEach(th => {
-            th.style.setProperty('top', `${actionBarHeight - 1}px`, 'important'); // -1px to prevent 1px gap
-        });
+        // Calculate remaining viewport height from the wrapper's current position
+        const rect = wrapper.getBoundingClientRect();
+        const available = window.innerHeight - rect.top - 10;
+        wrapper.style.maxHeight = `${Math.max(300, available)}px`;
     }
     
     // Initial calculation
-    updateStickyTop();
+    updateWrapperHeight();
     
-    // Update on resize (viewport height changes, action bar might wrap)
-    stickyResizeHandler = updateStickyTop;
+    // Update on scroll (wrapper position changes as page scrolls)
+    stickyScrollHandler = updateWrapperHeight;
+    window.addEventListener('scroll', stickyScrollHandler, { passive: true });
+    
+    // Update on resize (viewport height changes)
+    stickyResizeHandler = updateWrapperHeight;
     window.addEventListener('resize', stickyResizeHandler, { passive: true });
     
     // Observe action bar for size changes (e.g. filters expanding)
-    stickyObserver = new ResizeObserver(() => updateStickyTop());
-    stickyObserver.observe(actionBar);
+    const actionBar = document.getElementById('tabControls');
+    if (actionBar) {
+        stickyObserver = new ResizeObserver(() => updateWrapperHeight());
+        stickyObserver.observe(actionBar);
+    }
 }
 
 // ==========================================
