@@ -658,8 +658,8 @@ function renderTabulationSheet(students, subjects, cls, session, examName, subje
                         <th rowspan="2" class="tab-col-name">শিক্ষার্থীর নাম</th>
                         <th rowspan="2" class="tab-col-roll">রোল</th>
                         <th rowspan="2" class="tab-col-group">বিভাগ</th>
-                        ${subjects.map(s => `
-                            <th colspan="4">${s}</th>
+                        ${subjects.map((s, i) => `
+                            <th colspan="4" class="tab-subj-th-${i % 6}">${s}</th>
                         `).join('')}
                         <th rowspan="2">সর্বমোট</th>
                         <th rowspan="2">GPA</th>
@@ -685,7 +685,7 @@ function renderTabulationSheet(students, subjects, cls, session, examName, subje
                             </td>
                             <td class="tab-col-roll">${st.id}</td>
                             <td class="tab-col-group">${st.group || '—'}</td>
-                            ${subjects.map(subj => {
+                            ${subjects.map((subj, i) => {
             const d = st.subjects[subj] || {};
             const cfg = getSubjectCfg(subjectConfigs, subj);
             const wPass = num(cfg.writtenPass);
@@ -703,10 +703,12 @@ function renderTabulationSheet(students, subjects, cls, session, examName, subje
             const pFail = num(cfg.practical) > 0 && !cfg.practicalOptional && p < pPass && d.practical !== undefined && d.practical !== '';
             const isSubjFail = wFail || mFail || pFail || ((d.status || '').toLowerCase() === 'fail') || ((d.status || '').toLowerCase() === 'ফেল');
 
-            const wCls = hasData && wFail ? 'tab-mark-fail' : '';
-            const mCls = hasData && mFail ? 'tab-mark-fail' : '';
-            const pCls = hasData && pFail ? 'tab-mark-fail' : '';
-            const tCls = hasData && isSubjFail ? 'tab-mark-fail' : '';
+            const tintCls = `tab-subj-tint-${i % 6}`;
+
+            const wCls = `${tintCls} ${hasData && wFail ? 'tab-mark-fail' : ''}`.trim();
+            const mCls = `${tintCls} ${hasData && mFail ? 'tab-mark-fail' : ''}`.trim();
+            const pCls = `${tintCls} ${hasData && pFail ? 'tab-mark-fail' : ''}`.trim();
+            const tCls = `${tintCls} ${hasData && isSubjFail ? 'tab-mark-fail' : ''}`.trim();
 
             return `
                                     <td class="${wCls}">${hasData && d.written !== undefined && d.written !== '' ? w : '—'}</td>
@@ -749,41 +751,35 @@ function setupStickyObserver() {
     if (stickyResizeHandler) window.removeEventListener('resize', stickyResizeHandler);
     
     const wrapper = document.querySelector('.tabulation-table-wrapper');
-    if (!wrapper) return;
+    const actionBar = document.getElementById('tabControls');
+    if (!wrapper || !actionBar) return;
     
-    // Clear any old inline top values from previous logic
-    document.querySelectorAll('#tabulationTable thead th').forEach(th => {
-        th.style.top = '';
-    });
-    
-    function updateWrapperHeight() {
+    function updateStickyTop() {
         if (window.innerWidth < 769) {
-            wrapper.style.maxHeight = '';
+            // On mobile, the action bar is not sticky, so headers stick to the very top (0)
+            document.querySelectorAll('#tabulationTable thead th').forEach(th => {
+                th.style.setProperty('top', '0px', 'important');
+            });
             return;
         }
-        // Calculate remaining viewport height from the wrapper's current position
-        const rect = wrapper.getBoundingClientRect();
-        const available = window.innerHeight - rect.top - 10;
-        wrapper.style.maxHeight = `${Math.max(300, available)}px`;
+        
+        // On desktop, the action bar is sticky, so the table header must stick BELOW it
+        const actionBarHeight = actionBar.getBoundingClientRect().height;
+        document.querySelectorAll('#tabulationTable thead th').forEach(th => {
+            th.style.setProperty('top', `${actionBarHeight - 1}px`, 'important'); // -1px to prevent 1px gap
+        });
     }
     
     // Initial calculation
-    updateWrapperHeight();
+    updateStickyTop();
     
-    // Update on scroll (wrapper position changes as page scrolls)
-    stickyScrollHandler = updateWrapperHeight;
-    window.addEventListener('scroll', stickyScrollHandler, { passive: true });
-    
-    // Update on resize (viewport height changes)
-    stickyResizeHandler = updateWrapperHeight;
+    // Update on resize (viewport height changes, action bar might wrap)
+    stickyResizeHandler = updateStickyTop;
     window.addEventListener('resize', stickyResizeHandler, { passive: true });
     
     // Observe action bar for size changes (e.g. filters expanding)
-    const actionBar = document.getElementById('tabControls');
-    if (actionBar) {
-        stickyObserver = new ResizeObserver(() => updateWrapperHeight());
-        stickyObserver.observe(actionBar);
-    }
+    stickyObserver = new ResizeObserver(() => updateStickyTop());
+    stickyObserver.observe(actionBar);
 }
 
 // ==========================================
