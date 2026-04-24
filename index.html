@@ -306,116 +306,160 @@
       font-family: 'Hind Siliguri', sans-serif !important;
     }
     
-    .tab-filters {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      align-items: center;
-      justify-content: space-between;
-      gap: 15px;
-      padding: 15px;
-      background: var(--card-bg, #ffffff);
-      border-radius: 12px;
-      border: 1px solid var(--border-color, #e2e8f0);
-      margin-bottom: 20px;
-    }
-
-    .tab-filter-group {
-      display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
-      gap: 15px;
-      align-items: center;
-      flex: 1;
-    }
-
-    .tab-filter-item {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .tab-filter-item label {
-      margin: 0;
-      font-size: 0.85rem;
-      font-weight: 600;
-      color: #475569;
-      white-space: nowrap;
-    }
-
-    .tab-view-btn {
-      padding: 10px 20px;
-      background: linear-gradient(135deg, #4f46e5 0%, #3730a3 100%);
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      font-weight: 600;
-      font-size: 0.9rem;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      transition: all 0.2s;
+    /* Page-specific sticky overrides for Tabulation */
+    body.is-tabulation .sticky-nav-area,
+    body.is-tabulation .page-nav-tabs {
+      position: static !important;
     }
     
-    .tab-view-btn:hover {
-      box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-      transform: translateY(-1px);
-    }
-    
+    /* Desktop: Viewport scrolling with dynamic sticky headers */
+    @media (min-width: 769px) {
+      body.is-tabulation .tab-action-bar {
+        position: sticky !important;
+        top: 0 !important;
+        z-index: 500 !important;
+        background: var(--card-bg, #ffffff) !important;
+        box-shadow: 0 4px 6px rgba(0,0,0,0.05);
+        border-bottom: 1px solid var(--border-color, #e2e8f0);
+      }
+      
+      /* Absolutely critical: if wrapper has overflow-x auto, vertical sticky breaks on page scroll */
+      body.is-tabulation .tabulation-table-wrapper {
+        overflow-x: visible !important;
+        overflow-y: visible !important;
+      }
+      
+      body.is-tabulation #tabulationTable thead th {
+        z-index: 400; /* Will get top offset from JS */
+      }
 
-    
+      /* Horizontal Sticky for Desktop */
+      body.is-tabulation #tabulationTable thead th.tab-col-serial,
+      body.is-tabulation #tabulationTable tbody td.tab-col-serial {
+        position: sticky !important;
+        left: 0;
+        z-index: 450;
+        background-color: var(--card-bg, #ffffff);
+        min-width: 50px;
+        max-width: 50px;
+      }
+
+      body.is-tabulation #tabulationTable thead th.tab-col-name,
+      body.is-tabulation #tabulationTable tbody td.tab-col-name {
+        position: sticky !important;
+        left: 50px; /* Offset by serial column */
+        z-index: 450;
+        background-color: var(--card-bg, #ffffff);
+        min-width: 180px;
+        max-width: 180px;
+      }
+
+      body.is-tabulation #tabulationTable thead th.tab-col-roll,
+      body.is-tabulation #tabulationTable tbody td.tab-col-roll {
+        position: sticky !important;
+        left: 230px; /* Offset by serial + name */
+        z-index: 450;
+        background-color: var(--card-bg, #ffffff);
+        box-shadow: 2px 0 5px rgba(0,0,0,0.05);
+        min-width: 70px;
+        max-width: 70px;
+      }
+      
+      /* Corner headers (both vertically and horizontally sticky) need highest z-index */
+      body.is-tabulation #tabulationTable thead th.tab-col-serial,
+      body.is-tabulation #tabulationTable thead th.tab-col-name,
+      body.is-tabulation #tabulationTable thead th.tab-col-roll {
+        z-index: 550 !important;
+      }
+
+      .dark-mode.is-tabulation .tab-action-bar {
+        background: var(--card-bg, #2d2d2d) !important;
+        border-bottom-color: rgba(255, 255, 255, 0.1);
+      }
+      
+      .dark-mode.is-tabulation #tabulationTable tbody td.tab-col-serial,
+      .dark-mode.is-tabulation #tabulationTable tbody td.tab-col-name,
+      .dark-mode.is-tabulation #tabulationTable tbody td.tab-col-roll {
+        background-color: var(--card-bg, #2d2d2d);
+      }
+      .dark-mode.is-tabulation #tabulationTable thead th.tab-col-serial,
+      .dark-mode.is-tabulation #tabulationTable thead th.tab-col-name,
+      .dark-mode.is-tabulation #tabulationTable thead th.tab-col-roll {
+        background-color: #1e293b !important;
+      }
+    }
+
     .tab-action-bar {
       display: flex;
       flex-direction: row;
       flex-wrap: wrap;
       align-items: center;
       justify-content: space-between;
-      gap: 12px;
-      padding: 12px 16px;
+      gap: 10px;
+      padding: 8px 12px;
       background: var(--card-bg, #ffffff);
-      border-radius: 12px;
-      border: 1px solid var(--border-color, #e2e8f0);
-      margin-bottom: 20px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+      border-radius: 0;
+      border-top: 1px solid var(--border-color, #e2e8f0);
+      margin-bottom: 0;
+    }
+    
+    .dark-mode .tab-action-bar {
+      background: var(--card-bg, #2d2d2d);
+      border-top-color: rgba(255, 255, 255, 0.1);
+    }
+    
+    /* Sticky Table Header - base */
+    #tabulationTable thead th {
+      position: sticky !important;
+      top: 0;
+      z-index: 50;
+      background-color: #f8fafc !important;
+      border-bottom: 2px solid #e2e8f0 !important;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+    }
+    
+    .dark-mode #tabulationTable thead th {
+      background-color: #1e293b !important;
+      color: #f1f5f9 !important;
+      border-bottom-color: #334155 !important;
     }
     
     .tab-top-row {
       display: flex;
       align-items: center;
-      gap: 12px;
+      gap: 10px;
       flex: 1;
-      min-width: 280px;
+      min-width: 250px;
     }
     
     .tab-search-wrapper {
       position: relative;
       flex: 1;
-      max-width: 300px;
+      max-width: 280px;
     }
     
     .tab-search-wrapper i {
       position: absolute;
-      left: 12px;
+      left: 10px;
       top: 50%;
       transform: translateY(-50%);
       color: #94a3b8;
-      font-size: 0.9rem;
+      font-size: 0.85rem;
     }
     
     .tab-search-input {
       width: 100%;
-      padding: 8px 12px 8px 35px;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 8px;
-      font-size: 0.85rem;
+      padding: 6px 10px 6px 30px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 0.8rem;
       transition: all 0.3s ease;
       background: #f8fafc;
     }
     
     .tab-search-input:focus {
       border-color: #4f46e5;
-      box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.1);
+      box-shadow: 0 0 0 2px rgba(79, 70, 229, 0.1);
       background: #fff;
       outline: none;
     }
@@ -424,7 +468,7 @@
       display: flex;
       flex-direction: row;
       align-items: center;
-      gap: 10px;
+      gap: 8px;
       background: transparent;
       padding: 0;
       border: none;
@@ -432,18 +476,18 @@
     }
     
     .tab-filter-label {
-      font-size: 0.85rem;
+      font-size: 0.8rem;
       font-weight: 700;
       color: #475569;
       display: flex;
       align-items: center;
-      gap: 6px;
+      gap: 4px;
     }
     
     .tab-filter-row {
       display: flex;
       flex-direction: row !important;
-      gap: 8px;
+      gap: 6px;
       align-items: center;
       flex-wrap: nowrap; /* Keep items in one line */
       width: auto;
@@ -452,16 +496,16 @@
     .tab-filter-actions {
       display: flex;
       flex-direction: row !important;
-      gap: 8px;
+      gap: 6px;
       align-items: center;
       flex-wrap: nowrap;
     }
     
     .tab-select, .tab-select-sm {
-      padding: 8px 10px;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 8px;
-      font-size: 0.85rem;
+      padding: 6px 8px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 0.8rem;
       background: #fff;
       cursor: pointer;
       color: #1e293b;
@@ -484,11 +528,11 @@
     }
     
     .tab-input-sm {
-      width: 70px !important;
-      padding: 8px;
-      border: 1.5px solid #e2e8f0;
-      border-radius: 8px;
-      font-size: 0.85rem;
+      width: 60px !important;
+      padding: 6px;
+      border: 1px solid #e2e8f0;
+      border-radius: 6px;
+      font-size: 0.8rem;
     }
 
     .tab-input-sm:focus {
@@ -497,9 +541,9 @@
     }
     
     .tab-btn-mini {
-      padding: 8px 12px;
-      border-radius: 8px;
-      font-size: 0.85rem;
+      padding: 6px 10px;
+      border-radius: 6px;
+      font-size: 0.8rem;
       font-weight: 600;
       display: flex;
       align-items: center;
@@ -536,16 +580,16 @@
     }
     
     .tab-action-btn {
-      padding: 8px 14px;
-      border-radius: 8px;
-      font-size: 0.85rem;
+      padding: 6px 12px;
+      border-radius: 6px;
+      font-size: 0.8rem;
       font-weight: 600;
       display: flex;
       align-items: center;
       gap: 6px;
       transition: all 0.2s ease;
       cursor: pointer;
-      border: 1.5px solid #e2e8f0;
+      border: 1px solid #e2e8f0;
       background: #fff;
       color: #475569;
     }
@@ -745,6 +789,37 @@
     .status-pass { background: #dcfce7; color: #166534; }
     .status-fail { background: #fee2e2; color: #991b1b; }
     .status-absent { background: #f1f5f9; color: #475569; }
+
+    @media (max-width: 768px) {
+      /* No sticky action bar on mobile */
+      .tab-action-bar {
+        position: static !important;
+      }
+      
+      /* Horizontal sticky Roll column for mobile */
+      .tab-col-roll {
+        position: sticky !important;
+        left: 0 !important;
+        z-index: 10 !important;
+        background-color: #fff !important;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+      }
+      
+      .dark-mode .tab-col-roll {
+        background-color: #1e293b !important;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.3);
+      }
+      
+      /* Table header sticks to top of screen on mobile */
+      body.is-tabulation #tabulationTable thead th {
+        top: 0 !important;
+        z-index: 100 !important;
+      }
+      
+      body.is-tabulation #tabulationTable thead th.tab-col-roll {
+        z-index: 110 !important;
+      }
+    }
 
     /* Print styles */
     @media print {
@@ -2277,44 +2352,32 @@
 
     <!-- ========== PAGE: TABULATION SHEET (টেবুলেশন শীট) ========== -->
     <div id="tabulationPage" class="app-page" style="display: none;">
-      <div class="card tab-main-card">
-        <!-- Page Header -->
-        <div class="tab-page-header">
-          <div class="tab-page-title">
-            <i class="fas fa-table"></i>
-            <div>
-              <h2>টেবুলেশন শীট</h2>
-              <p>পরীক্ষার বিস্তারিত ফলাফল টেবুলেশন</p>
+      <div class="card tab-main-card" style="padding-top: 15px;">
+        <!-- Primary Filter Section (scrolls away) -->
+          <!-- Primary Filter Controls (Matches Other Pages) -->
+          <div class="result-entry-selectors" style="margin-bottom: 0; border-bottom: none; border-bottom-left-radius: 0; border-bottom-right-radius: 0;">
+            <div class="selector-group">
+              <label>শ্রেণি</label>
+              <select id="tabClass" class="form-control"></select>
             </div>
-          </div>
-        </div>
-
-        <!-- Filter Controls -->
-        <div class="tab-filters">
-          <div class="tab-filter-group">
-            <div class="tab-filter-item">
-              <label><i class="fas fa-school"></i> শ্রেণি</label>
-              <select id="tabClass" class="tab-select"></select>
+            <div class="selector-group">
+              <label>সেশন</label>
+              <select id="tabSession" class="form-control"></select>
             </div>
-            <div class="tab-filter-item">
-              <label><i class="fas fa-calendar-alt"></i> সেশন</label>
-              <select id="tabSession" class="tab-select"></select>
-            </div>
-            <div class="tab-filter-item">
-              <label><i class="fas fa-layer-group"></i> বিভাগ</label>
-              <select id="tabGroup" class="tab-select">
+            <div class="selector-group">
+              <label>বিভাগ</label>
+              <select id="tabGroup" class="form-control">
                 <option value="all">সকল বিভাগ (সমন্বিত)</option>
               </select>
             </div>
-            <div class="tab-filter-item">
-              <label><i class="fas fa-file-alt"></i> পরীক্ষা</label>
-              <select id="tabExam" class="tab-select" disabled></select>
+            <div class="selector-group">
+              <label>পরীক্ষা</label>
+              <select id="tabExam" class="form-control" disabled></select>
             </div>
+            <button id="tabViewBtn" class="dm-btn dm-save">
+              <i class="fas fa-eye"></i> <span class="dm-btn-text">ভিউ টেবুলেশন</span>
+            </button>
           </div>
-          <button id="tabViewBtn" class="tab-view-btn">
-            <i class="fas fa-eye"></i> ভিউ টেবুলেশন
-          </button>
-        </div>
 
         <!-- Action Controls (visible after data loads) -->
         <div class="tab-action-bar" id="tabControls">

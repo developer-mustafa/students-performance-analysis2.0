@@ -112,6 +112,7 @@ export async function navigateTo(pageId) {
 
     // Update body class for conditional styling (e.g. sticky nav)
     document.body.classList.toggle('is-dashboard', pageId === 'dashboard');
+    document.body.classList.toggle('is-tabulation', pageId === 'tabulation');
 
     if (onPageChangeCallback) {
         await onPageChangeCallback(pageId);

@@ -27,6 +27,8 @@ let allExamsCache = null;
 // ==========================================
 // INITIALIZATION
 // ==========================================
+let stickyObserver = null;
+
 export async function initTabulationManager() {
     setupEventListeners();
     await populateTabulationDropdowns();
@@ -55,7 +57,7 @@ function setupEventListeners() {
     if (searchInput) {
         searchInput.addEventListener('input', filterTabulationTable);
     }
-    
+
     const advType = document.getElementById('tabAdvFilterType');
     const advOp = document.getElementById('tabFilterOperator');
     const advNum = document.getElementById('tabFilterNumVal');
@@ -63,18 +65,18 @@ function setupEventListeners() {
     const sortOrder = document.getElementById('tabSortOrder');
     const applyBtn = document.getElementById('tabApplyFilterBtn');
     const resetBtn = document.getElementById('tabResetFilterBtn');
-    
+
     if (advType) {
         advType.addEventListener('change', () => {
             const v = advType.value;
             const numericGroup = document.getElementById('tabFilterNumericGroup');
-            
+
             if (numericGroup) numericGroup.style.display = 'none';
             if (advEnum) advEnum.style.display = 'none';
             if (sortOrder) sortOrder.style.display = (v !== 'none') ? 'block' : 'none';
             if (resetBtn) resetBtn.style.display = (v !== 'none') ? 'block' : 'none';
             if (applyBtn) applyBtn.style.display = (v !== 'none') ? 'block' : 'none';
-            
+
             if (v === 'gpa' || v === 'marks' || v === 'cq' || v === 'mcq') {
                 if (numericGroup) numericGroup.style.display = 'flex';
             } else if (v === 'result') {
@@ -84,20 +86,20 @@ function setupEventListeners() {
                 }
             } else if (v === 'status') {
                 if (advEnum) {
-                    advEnum.innerHTML = '<option value="all">সকল স্ট্যাটাস</option><option value="উপস্থিত সকল বিষয়">উপস্থিত সকল বিষয়</option><option value="আংশিক উপস্থিত">আংশিক উপস্থিত</option><option value="অনুপস্থিত">অনুপস্থিত</option>';
+                    advEnum.innerHTML = '<option value="all">সকল স্ট্যাটাস</option><option value="উপস্থিত">উপস্থিত</option><option value="আংশিক উপস্থিত">আংশিক উপস্থিত</option><option value="অনুপস্থিত">অনুপস্থিত</option>';
                     advEnum.style.display = 'block';
                 }
             }
             filterTabulationTable();
         });
     }
-    
+
     [advOp, advNum, advEnum, sortOrder].forEach(el => {
         if (el) el.addEventListener('change', filterTabulationTable);
     });
     if (advNum) advNum.addEventListener('input', filterTabulationTable);
     if (applyBtn) applyBtn.addEventListener('click', filterTabulationTable);
-    
+
     if (resetBtn) {
         resetBtn.addEventListener('click', () => {
             const numericGroup = document.getElementById('tabFilterNumericGroup');
@@ -106,13 +108,13 @@ function setupEventListeners() {
             if (advNum) advNum.value = '';
             if (advEnum) advEnum.value = 'all';
             if (sortOrder) sortOrder.value = 'desc';
-            
+
             if (numericGroup) numericGroup.style.display = 'none';
             if (advEnum) advEnum.style.display = 'none';
             if (sortOrder) sortOrder.style.display = 'none';
             if (resetBtn) resetBtn.style.display = 'none';
             if (applyBtn) applyBtn.style.display = 'none';
-            
+
             filterTabulationTable();
         });
     }
@@ -252,12 +254,12 @@ async function handleViewTabulation() {
 
             (exam.studentData || []).forEach(s => {
                 const sRoll = convertToEnglishDigits(String(s.id || '').trim().replace(/^0+/, '')) || '0';
-                
+
                 // Get the most accurate group from the master student lookup map
                 const tempStudentKey = generateStudentDocId({ id: s.id, group: s.group || '', class: cls, session });
                 const latestDoc = lookupMap.get(tempStudentKey);
                 const actualGroup = latestDoc && latestDoc.group ? latestDoc.group : (s.group || '');
-                
+
                 const sGroup = normalizeText(actualGroup);
                 const key = `${sRoll}_${sGroup}`;
 
@@ -265,10 +267,10 @@ async function handleViewTabulation() {
                 if (selGroup !== 'all') {
                     const normSelGroup = normalizeText(selGroup);
                     // Strictly match, avoiding empty string substring matching
-                    const isMatch = sGroup === normSelGroup || 
-                                  (sGroup && sGroup.includes(normSelGroup)) || 
-                                  (sGroup && normSelGroup.includes(sGroup));
-                    
+                    const isMatch = sGroup === normSelGroup ||
+                        (sGroup && sGroup.includes(normSelGroup)) ||
+                        (sGroup && normSelGroup.includes(sGroup));
+
                     if (!isMatch) {
                         return; // Skip student if they don't match the selected group
                     }
@@ -312,8 +314,8 @@ async function handleViewTabulation() {
                         } else {
                             ts = new Date(dateVal);
                         }
-                    } catch(e) {}
-                    
+                    } catch (e) { }
+
                     if (ts && !isNaN(ts.getTime())) {
                         if (!student.lastUpdated || ts > student.lastUpdated) {
                             student.lastUpdated = ts;
@@ -346,13 +348,13 @@ async function handleViewTabulation() {
         const optionalSubjectsObj = rules.optionalSubjects || {};
 
         const subjectsSet = new Set();
-        
+
         if (selGroup === 'all') {
             // For 'all', collect allowed subjects from ALL groups
             const allAllowed = new Set(generalSubjects.map(s => normalizeText(s)));
             Object.values(groupSubjectsObj).flat().forEach(s => allAllowed.add(normalizeText(s)));
             Object.values(optionalSubjectsObj).flat().forEach(s => allAllowed.add(normalizeText(s)));
-            
+
             rawSubjectsSet.forEach(s => {
                 const normS = normalizeText(s);
                 if (allAllowed.has(normS)) {
@@ -362,15 +364,15 @@ async function handleViewTabulation() {
         } else {
             const normSel = normalizeText(selGroup);
             const findGroup = (obj) => Object.keys(obj).find(k => normalizeText(k) === normSel || normalizeText(k).includes(normSel) || normSel.includes(normalizeText(k)));
-            
+
             const gKey = findGroup(groupSubjectsObj);
             const oKey = findGroup(optionalSubjectsObj);
-            
+
             const allowedGroupSubs = gKey ? groupSubjectsObj[gKey] : [];
             const allowedOptSubs = oKey ? optionalSubjectsObj[oKey] : [];
-            
+
             const allowedSet = new Set([...generalSubjects, ...allowedGroupSubs, ...allowedOptSubs].map(s => normalizeText(s)));
-            
+
             rawSubjectsSet.forEach(s => {
                 const normS = normalizeText(s);
                 // STRICTLY adhere to marksheet rules. If a subject isn't in the rules for this group, it's completely ignored.
@@ -379,21 +381,21 @@ async function handleViewTabulation() {
                 }
             });
         }
-        
+
         let subjects = [...subjectsSet].sort((a, b) => {
             const getScore = (sub) => {
                 if (generalSubjects.includes(sub)) return 1000 + generalSubjects.indexOf(sub);
-                
+
                 // Check if group subject
                 for (const g of Object.values(groupSubjectsObj)) {
                     if (g.includes(sub)) return 2000;
                 }
-                
+
                 // Check if optional
                 for (const o of Object.values(optionalSubjectsObj)) {
                     if (o.includes(sub)) return 5000;
                 }
-                
+
                 return 3000; // Unknown
             };
             return getScore(a) - getScore(b);
@@ -401,7 +403,7 @@ async function handleViewTabulation() {
 
         // Calculate pass/fail for each student
         // rules already defined above
-        
+
         students.forEach(st => {
             let totalMarks = 0, totalObtained = 0, failedSubjects = 0, presentSubjects = 0;
             let compulsoryGP = 0;
@@ -422,12 +424,12 @@ async function handleViewTabulation() {
                 const d = st.subjects[subj];
                 if (!d) return;
 
-                const hasMarks = (d.written !== undefined && d.written !== '') || 
-                                 (d.mcq !== undefined && d.mcq !== '') || 
-                                 (d.practical !== undefined && d.practical !== '') || 
-                                 (d.total > 0);
+                const hasMarks = (d.written !== undefined && d.written !== '') ||
+                    (d.mcq !== undefined && d.mcq !== '') ||
+                    (d.practical !== undefined && d.practical !== '') ||
+                    (d.total > 0);
                 const isAbsentSubject = (d.status || '').toLowerCase() === 'absent' || (d.status || '') === 'অনুপস্থিত';
-                
+
                 const hasAny = hasMarks && !isAbsentSubject;
                 if (hasAny) presentSubjects++;
 
@@ -443,7 +445,7 @@ async function handleViewTabulation() {
                 if (num(cfg.written) > 0 && d.written < wPass) failed = true;
                 if (num(cfg.mcq) > 0 && d.mcq < mPass) failed = true;
                 if (num(cfg.practical) > 0 && !cfg.practicalOptional && d.practical < pPass) failed = true;
-                
+
                 const status = (d.status || '').toLowerCase();
                 if (status === 'ফেল' || status === 'fail') failed = true;
 
@@ -463,18 +465,18 @@ async function handleViewTabulation() {
                         failedSubjects++;
                     }
                 }
-                
+
                 // GPA calculation for this subject
                 if (hasAny) {
                     let totalMark = d.total || 0;
                     let maxTotal = num(cfg.total) || 100;
                     if (maxTotal === 0) maxTotal = 100;
-                    
+
                     let pct = (totalMark / maxTotal) * 100;
                     let gp = getGradePoint(pct);
-                    
+
                     if (failed) gp = 0.00; // Force 0 if failed components
-                    
+
                     if (isOptional) {
                         hasOptionalTaken = true;
                         if (gp > 2.00 && boardStandard) {
@@ -489,7 +491,7 @@ async function handleViewTabulation() {
                     }
                 }
             });
-            
+
             // Accurate Attendance Logic
             let reqCount = 0;
             subjects.forEach(subj => {
@@ -513,11 +515,11 @@ async function handleViewTabulation() {
                     reqCount++;
                 }
             });
-            
+
             st._totalObtained = totalObtained;
             st._failedSubjects = failedSubjects;
             st._presentSubjects = presentSubjects;
-            
+
             if (presentSubjects === 0) {
                 st._isAbsent = true;
                 st._attendanceStatus = 'অনুপস্থিত';
@@ -526,11 +528,11 @@ async function handleViewTabulation() {
                 st._attendanceStatus = 'আংশিক উপস্থিত';
             } else {
                 st._isAbsent = false;
-                st._attendanceStatus = 'উপস্থিত সকল বিষয়';
+                st._attendanceStatus = 'উপস্থিত';
             }
 
             st._isPass = failedSubjects === 0 && presentSubjects > 0;
-            
+
             // Finalize GPA and Grade
             if (st._isPass && compulsoryCount > 0) {
                 const totalGP = compulsoryGP + optionalBonusGP;
@@ -644,9 +646,9 @@ function renderTabulationSheet(students, subjects, cls, session, examName, subje
             <table class="tab-table ${hideNames ? 'tab-hide-names' : ''}" id="tabulationTable">
                 <thead>
                     <tr>
-                        <th rowspan="2">ক্রম</th>
-                        <th rowspan="2">শিক্ষার্থীর নাম</th>
-                        <th rowspan="2">রোল</th>
+                        <th rowspan="2" class="tab-col-serial">ক্রম</th>
+                        <th rowspan="2" class="tab-col-name">শিক্ষার্থীর নাম</th>
+                        <th rowspan="2" class="tab-col-roll">রোল</th>
                         <th rowspan="2" class="tab-col-group">বিভাগ</th>
                         ${subjects.map(s => `
                             <th colspan="4">${s}</th>
@@ -660,51 +662,51 @@ function renderTabulationSheet(students, subjects, cls, session, examName, subje
                 </thead>
                 <tbody>
                     ${students.map((st, idx) => {
-                        const resultClass = st._isAbsent ? 'absent' : (st._isPass ? 'pass' : 'fail');
-                        const statusBadgeClass = st._isAbsent ? 'status-absent' : (st._isPass ? 'status-pass' : 'status-fail');
-                        const resultText = st._isAbsent ? 'অনুপস্থিত' : (st._isPass ? 'পাশ' : 'ফেল');
-                        const dateStr = st.lastUpdated ? formatDateBn(st.lastUpdated) : '—';
+        const resultClass = st._isAbsent ? 'absent' : (st._isPass ? 'pass' : 'fail');
+        const statusBadgeClass = st._isAbsent ? 'status-absent' : (st._isPass ? 'status-pass' : 'status-fail');
+        const resultText = st._isAbsent ? 'অনুপস্থিত' : (st._isPass ? 'পাশ' : 'ফেল');
+        const dateStr = st.lastUpdated ? formatDateBn(st.lastUpdated) : '—';
 
-                        return `
+        return `
                         <tr class="tab-row tab-row-${resultClass}" data-student-key="${idx}">
-                            <td>${convertToBengaliDigits(idx + 1)}</td>
-                            <td class="tab-td-name">
+                            <td class="tab-col-serial">${convertToBengaliDigits(idx + 1)}</td>
+                            <td class="tab-td-name tab-col-name">
                                 <button class="tab-name-btn" onclick="window.__tabShowDetail(${st._originalIndex !== undefined ? st._originalIndex : idx})" title="বিস্তারিত দেখুন">
                                     ${st.name}
                                 </button>
                             </td>
-                            <td>${st.id}</td>
+                            <td class="tab-col-roll">${st.id}</td>
                             <td class="tab-col-group">${st.group || '—'}</td>
                             ${subjects.map(subj => {
-                                const d = st.subjects[subj] || {};
-                                const cfg = getSubjectCfg(subjectConfigs, subj);
-                                const wPass = num(cfg.writtenPass);
-                                const mPass = num(cfg.mcqPass);
-                                const pPass = num(cfg.practicalPass);
+            const d = st.subjects[subj] || {};
+            const cfg = getSubjectCfg(subjectConfigs, subj);
+            const wPass = num(cfg.writtenPass);
+            const mPass = num(cfg.mcqPass);
+            const pPass = num(cfg.practicalPass);
 
-                                const w = d.written || 0;
-                                const m = d.mcq || 0;
-                                const p = d.practical || 0;
-                                const t = d.total || 0;
-                                const hasData = w > 0 || m > 0 || p > 0 || t > 0 || d.status;
-                                
-                                const wFail = num(cfg.written) > 0 && w < wPass && d.written !== undefined && d.written !== '';
-                                const mFail = num(cfg.mcq) > 0 && m < mPass && d.mcq !== undefined && d.mcq !== '';
-                                const pFail = num(cfg.practical) > 0 && !cfg.practicalOptional && p < pPass && d.practical !== undefined && d.practical !== '';
-                                const isSubjFail = wFail || mFail || pFail || ((d.status || '').toLowerCase() === 'fail') || ((d.status || '').toLowerCase() === 'ফেল');
+            const w = d.written || 0;
+            const m = d.mcq || 0;
+            const p = d.practical || 0;
+            const t = d.total || 0;
+            const hasData = w > 0 || m > 0 || p > 0 || t > 0 || d.status;
 
-                                const wCls = hasData && wFail ? 'tab-mark-fail' : '';
-                                const mCls = hasData && mFail ? 'tab-mark-fail' : '';
-                                const pCls = hasData && pFail ? 'tab-mark-fail' : '';
-                                const tCls = hasData && isSubjFail ? 'tab-mark-fail' : '';
+            const wFail = num(cfg.written) > 0 && w < wPass && d.written !== undefined && d.written !== '';
+            const mFail = num(cfg.mcq) > 0 && m < mPass && d.mcq !== undefined && d.mcq !== '';
+            const pFail = num(cfg.practical) > 0 && !cfg.practicalOptional && p < pPass && d.practical !== undefined && d.practical !== '';
+            const isSubjFail = wFail || mFail || pFail || ((d.status || '').toLowerCase() === 'fail') || ((d.status || '').toLowerCase() === 'ফেল');
 
-                                return `
+            const wCls = hasData && wFail ? 'tab-mark-fail' : '';
+            const mCls = hasData && mFail ? 'tab-mark-fail' : '';
+            const pCls = hasData && pFail ? 'tab-mark-fail' : '';
+            const tCls = hasData && isSubjFail ? 'tab-mark-fail' : '';
+
+            return `
                                     <td class="${wCls}">${hasData && d.written !== undefined && d.written !== '' ? w : '—'}</td>
                                     <td class="${mCls}">${hasData && d.mcq !== undefined && d.mcq !== '' ? m : '—'}</td>
                                     <td class="${pCls}">${hasData && d.practical !== undefined && d.practical !== '' ? p : '—'}</td>
                                     <td class="${tCls}" style="font-weight:700;">${hasData && t > 0 ? t : '—'}</td>
                                 `;
-                            }).join('')}
+        }).join('')}
                             <td style="font-weight:800;">${convertToBengaliDigits(st._totalObtained)}</td>
                             <td style="font-weight:800; color:#4f46e5;">
                                 ${st._gpa !== '—' ? convertToBengaliDigits(st._gpa) : '—'}<br>
@@ -714,7 +716,7 @@ function renderTabulationSheet(students, subjects, cls, session, examName, subje
                             <td><span class="tab-status-badge ${statusBadgeClass}">${resultText}</span></td>
                             <td style="font-size:0.75rem; white-space:nowrap; font-weight: 500;">${st._attendanceStatus}</td>
                         </tr>`;
-                    }).join('')}
+    }).join('')}
                 </tbody>
             </table>
         </div>
@@ -724,6 +726,36 @@ function renderTabulationSheet(students, subjects, cls, session, examName, subje
 
     // Expose detail handler
     window.__tabShowDetail = (idx) => showStudentDetail(idx);
+    
+    // Setup robust dynamic sticky observer
+    setupStickyObserver();
+}
+
+// ==========================================
+// DYNAMIC STICKY HEIGHT OBSERVER
+// ==========================================
+function setupStickyObserver() {
+    if (stickyObserver) stickyObserver.disconnect();
+    
+    const actionBar = document.getElementById('tabControls');
+    if (!actionBar) return;
+
+    stickyObserver = new ResizeObserver(entries => {
+        if (window.innerWidth < 769) {
+            document.querySelectorAll('#tabulationTable thead th').forEach(th => th.style.top = '');
+            return;
+        }
+        for (let entry of entries) {
+            // Use getBoundingClientRect for absolute precision (including sub-pixels)
+            const rect = entry.target.getBoundingClientRect();
+            const h = rect.height;
+            document.querySelectorAll('#tabulationTable thead th').forEach(th => {
+                th.style.top = `${h}px`;
+            });
+        }
+    });
+    
+    stickyObserver.observe(actionBar);
 }
 
 // ==========================================
@@ -827,7 +859,7 @@ function filterTabulationTable() {
 
     const query = (document.getElementById('tabSearchInput')?.value || '').toLowerCase().trim();
     const q = convertToEnglishDigits(query);
-    
+
     const filterType = document.getElementById('tabAdvFilterType')?.value || 'none';
     const filterOp = document.getElementById('tabFilterOperator')?.value || '=';
     const filterNumVal = parseFloat(convertToEnglishDigits(document.getElementById('tabFilterNumVal')?.value || '0'));
@@ -878,7 +910,7 @@ function filterTabulationTable() {
             if (filterEnumVal === 'all') return true;
             return st._attendanceStatus === filterEnumVal;
         }
-        
+
         return true;
     });
 
@@ -909,7 +941,7 @@ function filterTabulationTable() {
 
     const selGroup = document.getElementById('tabGroup')?.value || 'all';
     const selGroupName = selGroup === 'all' ? 'সকল বিভাগ' : selGroup;
-    
+
     // Re-render completely using filtered array to update dynamic stats boxes
     renderTabulationSheet(filtered, subjects, cls, session, examName, subjectConfigs, selGroupName);
 }
@@ -990,17 +1022,17 @@ function formatDateBn(date) {
 
         const day = d.getDate();
         const months = ['জানু', 'ফেব', 'মার্চ', 'এপ্রি', 'মে', 'জুন', 'জুলা', 'আগ', 'সেপ্ট', 'অক্টো', 'নভে', 'ডিসে'];
-        
+
         let hours = d.getHours();
         const minutes = d.getMinutes();
         const ampm = hours >= 12 ? 'PM' : 'AM';
         hours = hours % 12;
         hours = hours ? hours : 12;
         const minsStr = minutes < 10 ? '0' + minutes : minutes;
-        
+
         const datePart = `${convertToBengaliDigits(day)} ${months[d.getMonth()]}`;
         const timePart = `${convertToBengaliDigits(hours)}:${convertToBengaliDigits(minsStr)} ${ampm}`;
-        
+
         return `${datePart}<br><span style="font-size:0.75rem; color:#6b7280; font-family:var(--font-en);">${timePart}</span>`;
     } catch {
         return '—';
