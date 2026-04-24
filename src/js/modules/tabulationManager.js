@@ -885,18 +885,25 @@ function showStudentDetail(idx) {
 
     const applicableSubjects = subjects.filter(subj => {
         const cleanSubjName = normalizeText(subj).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
-        const thisSubMapRender = subjMapForRender.find(m => {
+        
+        // Find ALL mapping entries for this specific subject
+        const allMappingsForThisSubj = subjMapForRender.filter(m => {
             const mapSubNorm = normalizeText(m.subject).replace(/\[.*?\]/g, '').replace(/\s+/g, '');
-            const mapGroupNorm = normalizeText(m.group || '');
-            return mapSubNorm === cleanSubjName &&
-                (stGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(stGroupNorm) || mapGroupNorm === '');
+            return mapSubNorm === cleanSubjName;
         });
 
-        // If a mapping exists for this subject/group and the student's roll is NOT in it, filter it out
-        if (thisSubMapRender && !thisSubMapRender.rolls.map(r => String(r).replace(/^0+/, '')).includes(stRollClean)) {
-            return false;
-        }
-        return true;
+        // If there are NO mappings for this subject at all, it's a global subject (like Bangla/English)
+        if (allMappingsForThisSubj.length === 0) return true;
+
+        // If there ARE mappings, student must match at least one (Group AND Roll)
+        const isStudentMapped = allMappingsForThisSubj.some(m => {
+            const mapGroupNorm = normalizeText(m.group || '');
+            const groupMatches = (stGroupNorm.includes(mapGroupNorm) || mapGroupNorm.includes(stGroupNorm) || mapGroupNorm === '');
+            const rollMatches = m.rolls.map(r => String(r).replace(/^0+/, '')).includes(stRollClean);
+            return groupMatches && rollMatches;
+        });
+
+        return isStudentMapped;
     });
 
     let subjectRows = applicableSubjects.map(subj => {
