@@ -457,12 +457,12 @@
     #tabulationTable thead th.tab-subj-th-4 { background-color: #fdf2f8 !important; border-bottom: 2px solid #fbcfe8 !important; border-right: 2px solid #cbd5e1 !important; }
     #tabulationTable thead th.tab-subj-th-5 { background-color: #f0f9ff !important; border-bottom: 2px solid #bae6fd !important; border-right: 2px solid #cbd5e1 !important; }
 
-    .dark-mode #tabulationTable thead th.tab-subj-th-0 { background-color: #1e3a8a !important; border-bottom: 2px solid #1e40af !important; border-right: 2px solid #475569 !important; color: #dbeafe !important;}
-    .dark-mode #tabulationTable thead th.tab-subj-th-1 { background-color: #064e3b !important; border-bottom: 2px solid #065f46 !important; border-right: 2px solid #475569 !important; color: #d1fae5 !important;}
-    .dark-mode #tabulationTable thead th.tab-subj-th-2 { background-color: #4c1d95 !important; border-bottom: 2px solid #5b21b6 !important; border-right: 2px solid #475569 !important; color: #ede9fe !important;}
-    .dark-mode #tabulationTable thead th.tab-subj-th-3 { background-color: #78350f !important; border-bottom: 2px solid #92400e !important; border-right: 2px solid #475569 !important; color: #fef3c7 !important;}
-    .dark-mode #tabulationTable thead th.tab-subj-th-4 { background-color: #831843 !important; border-bottom: 2px solid #9d174d !important; border-right: 2px solid #475569 !important; color: #fce7f3 !important;}
-    .dark-mode #tabulationTable thead th.tab-subj-th-5 { background-color: #0c4a6e !important; border-bottom: 2px solid #075985 !important; border-right: 2px solid #475569 !important; color: #e0f2fe !important;}
+    .dark-mode #tabulationTable thead th.tab-subj-th-0 { background-color: rgba(59, 130, 246, 0.18) !important; border-bottom: 2px solid rgba(59, 130, 246, 0.3) !important; border-right: 2px solid #475569 !important; color: #f1f5f9 !important;}
+    .dark-mode #tabulationTable thead th.tab-subj-th-1 { background-color: rgba(16, 185, 129, 0.18) !important; border-bottom: 2px solid rgba(16, 185, 129, 0.3) !important; border-right: 2px solid #475569 !important; color: #f1f5f9 !important;}
+    .dark-mode #tabulationTable thead th.tab-subj-th-2 { background-color: rgba(139, 92, 246, 0.18) !important; border-bottom: 2px solid rgba(139, 92, 246, 0.3) !important; border-right: 2px solid #475569 !important; color: #f1f5f9 !important;}
+    .dark-mode #tabulationTable thead th.tab-subj-th-3 { background-color: rgba(245, 158, 11, 0.22) !important; border-bottom: 2px solid rgba(245, 158, 11, 0.35) !important; border-right: 2px solid #475569 !important; color: #f1f5f9 !important;}
+    .dark-mode #tabulationTable thead th.tab-subj-th-4 { background-color: rgba(236, 72, 153, 0.18) !important; border-bottom: 2px solid rgba(236, 72, 153, 0.3) !important; border-right: 2px solid #475569 !important; color: #f1f5f9 !important;}
+    .dark-mode #tabulationTable thead th.tab-subj-th-5 { background-color: rgba(14, 165, 233, 0.18) !important; border-bottom: 2px solid rgba(14, 165, 233, 0.3) !important; border-right: 2px solid #475569 !important; color: #f1f5f9 !important;}
     
     .tab-top-row {
       display: flex;
@@ -748,8 +748,23 @@
       font-weight: 700;
       color: #64748b;
       text-transform: uppercase;
-      letter-spacing: 0.02em;
+      letter-spacing: 0.5px;
     }
+
+    .dark-mode .tab-stat-box {
+      background: var(--card-bg, #2d2d2d);
+      border-color: rgba(255,255,255,0.1);
+    }
+    
+    .dark-mode .tab-stat-label { color: #94a3b8; }
+    .dark-mode .tab-stat-val { color: #f1f5f9; }
+
+    .dark-mode .tab-stat-box.total i { background: rgba(37, 99, 235, 0.2); color: #60a5fa; }
+    .dark-mode .tab-stat-box.present i { background: rgba(16, 185, 129, 0.2); color: #34d399; }
+    .dark-mode .tab-stat-box.absent i { background: rgba(244, 63, 94, 0.2); color: #fb7185; }
+    .dark-mode .tab-stat-box.pass i { background: rgba(22, 163, 74, 0.2); color: #4ade80; }
+    .dark-mode .tab-stat-box.fail i { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+    .dark-mode .tab-stat-box.rate i { background: rgba(124, 58, 237, 0.2); color: #a78bfa; }
     
     .tab-stat-val {
       font-size: 1.2rem;
@@ -818,6 +833,11 @@
       font-weight: 700;
       background: #fff1f2;
     }
+    
+    .dark-mode .tab-mark-fail {
+      color: #f87171 !important;
+      background: rgba(239, 68, 68, 0.15);
+    }
 
     /* N/A cell: subject not applicable for this student */
     #tabulationTable td.tab-subj-na {
@@ -829,6 +849,17 @@
         transparent 3px,
         rgba(148,163,184,0.08) 3px,
         rgba(148,163,184,0.08) 6px
+      ) !important;
+    }
+
+    .dark-mode #tabulationTable td.tab-subj-na {
+      color: #475569 !important;
+      background: repeating-linear-gradient(
+        45deg,
+        transparent,
+        transparent 3px,
+        rgba(255,255,255,0.03) 3px,
+        rgba(255,255,255,0.03) 6px
       ) !important;
     }
 
