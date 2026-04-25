@@ -73,34 +73,3 @@ jobs:
         fi
         npx firebase-tools deploy --only hosting --token "$FIREBASE_TOKEN"
 
-  # ==========================================
-  # 3. CD: Deploy to GitHub Pages (Only on main)
-  # ==========================================
-  deploy-github-pages:
-    needs: build-and-test
-    runs-on: ubuntu-latest
-    if: github.ref == 'refs/heads/main'
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
-    steps:
-    - name: Checkout Repository
-      uses: actions/checkout@v4
-
-    - name: Download Build Artifact
-      uses: actions/download-artifact@v4
-      with:
-        name: dist-files
-        path: dist/
-
-    - name: Setup Pages
-      uses: actions/configure-pages@v4
-
-    - name: Upload artifact for Pages
-      uses: actions/upload-pages-artifact@v3
-      with:
-        path: './dist'
-
-    - name: Deploy to GitHub Pages
-      id: deployment
-      uses: actions/deploy-pages@v4
