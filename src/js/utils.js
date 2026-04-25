@@ -464,15 +464,20 @@ export function showNotification(message, type = 'info') {
     const notification = document.createElement('div');
     notification.className = `notification ${type}`;
     
-    // Add icon based on type
-    const icons = {
-        success: '<i class="fas fa-check-circle"></i>',
-        error: '<i class="fas fa-exclamation-circle"></i>',
-        warning: '<i class="fas fa-exclamation-triangle"></i>',
-        info: '<i class="fas fa-info-circle"></i>'
+    const iconClassMap = {
+        success: 'fa-check-circle',
+        error: 'fa-exclamation-circle',
+        warning: 'fa-exclamation-triangle',
+        info: 'fa-info-circle'
     };
-    
-    notification.innerHTML = `${icons[type] || icons.info} <span>${message}</span>`;
+
+    const icon = document.createElement('i');
+    icon.className = `fas ${iconClassMap[type] || iconClassMap.info}`;
+
+    const text = document.createElement('span');
+    text.textContent = message;
+
+    notification.append(icon, document.createTextNode(' '), text);
     document.body.appendChild(notification);
 
     // Auto remove after delay

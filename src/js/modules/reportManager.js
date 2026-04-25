@@ -7,6 +7,7 @@ import { FAILING_THRESHOLD } from '../constants.js';
 import { APP_VERSION } from '../version.js';
 
 let lastGeneratedSubjects = [];
+let reportDropdownsBound = false;
 
 function getGradePoint(pct) {
     if (pct >= 80) return 5.00;
@@ -68,7 +69,6 @@ export async function populateReportDropdowns() {
             return;
         }
         try {
-            const { getExamConfigs } = await import('../firestoreService.js');
             const configs = await getExamConfigs(selClass, selSession);
             const examNames = [...new Set(configs.map(c => c.examName).filter(Boolean))].sort();
 
@@ -84,8 +84,12 @@ export async function populateReportDropdowns() {
         }
     };
 
-    classSelect.addEventListener('change', updateExams);
-    sessionSelect.addEventListener('change', updateExams);
+    if (!reportDropdownsBound) {
+        classSelect.onchange = updateExams;
+        sessionSelect.onchange = updateExams;
+        reportDropdownsBound = true;
+    }
+
     if (classSelect.value && sessionSelect.value) updateExams();
 }
 

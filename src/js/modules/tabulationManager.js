@@ -30,34 +30,38 @@ let allExamsCache = null;
 let stickyObserver = null;
 let stickyScrollHandler = null;
 let stickyResizeHandler = null;
+let tabulationManagerInitialized = false;
 
 export async function initTabulationManager() {
-    setupEventListeners();
+    if (!tabulationManagerInitialized) {
+        setupEventListeners();
+        tabulationManagerInitialized = true;
+    }
     await populateTabulationDropdowns();
     console.log('[TabulationManager] Initialized');
 }
 
 function setupEventListeners() {
     const viewBtn = document.getElementById('tabViewBtn');
-    if (viewBtn) viewBtn.addEventListener('click', handleViewTabulation);
+    if (viewBtn) viewBtn.onclick = handleViewTabulation;
 
     const printBtn = document.getElementById('tabPrintBtn');
-    if (printBtn) printBtn.addEventListener('click', handlePrint);
+    if (printBtn) printBtn.onclick = handlePrint;
 
     const toggleNameBtn = document.getElementById('tabToggleNames');
     if (toggleNameBtn) {
-        toggleNameBtn.addEventListener('click', () => {
+        toggleNameBtn.onclick = () => {
             hideNames = !hideNames;
             const table = document.getElementById('tabulationTable');
             if (table) table.classList.toggle('tab-hide-names', hideNames);
             toggleNameBtn.innerHTML = `<i class="fas ${hideNames ? 'fa-eye' : 'fa-eye-slash'}"></i> ${hideNames ? 'নাম দেখান' : 'নাম লুকান'}`;
             toggleNameBtn.classList.toggle('active', hideNames);
-        });
+        };
     }
 
     const searchInput = document.getElementById('tabSearchInput');
     if (searchInput) {
-        searchInput.addEventListener('input', filterTabulationTable);
+        searchInput.oninput = filterTabulationTable;
     }
 
     const advType = document.getElementById('tabAdvFilterType');
@@ -69,7 +73,7 @@ function setupEventListeners() {
     const resetBtn = document.getElementById('tabResetFilterBtn');
 
     if (advType) {
-        advType.addEventListener('change', () => {
+        advType.onchange = () => {
             const v = advType.value;
             const numericGroup = document.getElementById('tabFilterNumericGroup');
 
@@ -93,17 +97,17 @@ function setupEventListeners() {
                 }
             }
             filterTabulationTable();
-        });
+        };
     }
 
     [advOp, advNum, advEnum, sortOrder].forEach(el => {
-        if (el) el.addEventListener('change', filterTabulationTable);
+        if (el) el.onchange = filterTabulationTable;
     });
-    if (advNum) advNum.addEventListener('input', filterTabulationTable);
-    if (applyBtn) applyBtn.addEventListener('click', filterTabulationTable);
+    if (advNum) advNum.oninput = filterTabulationTable;
+    if (applyBtn) applyBtn.onclick = filterTabulationTable;
 
     if (resetBtn) {
-        resetBtn.addEventListener('click', () => {
+        resetBtn.onclick = () => {
             const numericGroup = document.getElementById('tabFilterNumericGroup');
             if (advType) advType.value = 'none';
             if (advOp) advOp.value = '>';
@@ -118,15 +122,15 @@ function setupEventListeners() {
             if (applyBtn) applyBtn.style.display = 'none';
 
             filterTabulationTable();
-        });
+        };
     }
 
     // Cascading dropdowns
     const classSelect = document.getElementById('tabClass');
     const sessionSelect = document.getElementById('tabSession');
     const groupSelect = document.getElementById('tabGroup');
-    if (classSelect) classSelect.addEventListener('change', () => { updateGroupDropdown(); updateExamDropdown(); });
-    if (sessionSelect) sessionSelect.addEventListener('change', () => { updateGroupDropdown(); updateExamDropdown(); });
+    if (classSelect) classSelect.onchange = () => { updateGroupDropdown(); updateExamDropdown(); };
+    if (sessionSelect) sessionSelect.onchange = () => { updateGroupDropdown(); updateExamDropdown(); };
 }
 
 // ==========================================

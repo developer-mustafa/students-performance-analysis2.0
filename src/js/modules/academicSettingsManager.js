@@ -8,9 +8,11 @@ import { showNotification, normalizeSession } from '../utils.js';
 import { state } from './state.js';
 import { populateDynamicDropdowns } from './uiManager.js';
 
+let academicSettingsListenersBound = false;
+
 export async function initAcademicSettingsManager() {
     await loadAcademicStructure();
-    initDeveloperCreditSettings();
+    await initDeveloperCreditSettings();
     setupEventListeners();
 }
 
@@ -73,6 +75,9 @@ function renderAcademicList(type, items) {
 }
 
 function setupEventListeners() {
+    if (academicSettingsListenersBound) return;
+    academicSettingsListenersBound = true;
+
     document.querySelectorAll('.academic-card').forEach(card => {
         const type = card.dataset.type;
         const input = card.querySelector('.academic-input');
@@ -150,7 +155,7 @@ async function initDeveloperCreditSettings() {
     }
 
     // Save settings
-    saveBtn.addEventListener('click', async () => {
+    saveBtn.onclick = async () => {
         const btnOriginalText = saveBtn.innerHTML;
         saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> সেভ করা হচ্ছে...';
         saveBtn.disabled = true;
@@ -172,5 +177,5 @@ async function initDeveloperCreditSettings() {
             saveBtn.innerHTML = btnOriginalText;
             saveBtn.disabled = false;
         }
-    });
+    };
 }

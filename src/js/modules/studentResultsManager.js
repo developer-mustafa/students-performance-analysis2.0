@@ -50,6 +50,9 @@ const BANGLA_TO_ENGLISH = {
     '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9'
 };
 
+let studentResultsManagerInitialized = false;
+let studentResultsHashBound = false;
+
 // Expose Direct Search to Window to avoid complex inline JS escaping issues
 window.srDirectSearch = (uid) => {
     if (!uid) return;
@@ -802,24 +805,29 @@ export async function initStudentResultsManager() {
     const searchInput = document.getElementById('srSearchInput');
     const clearBtn = document.getElementById('srClearBtn');
 
+    if (studentResultsManagerInitialized) {
+        return;
+    }
+    studentResultsManagerInitialized = true;
+
     if (searchBtn) {
-        searchBtn.addEventListener('click', handleSearch);
+        searchBtn.onclick = handleSearch;
     }
 
     if (searchInput) {
         // Show/Hide Clear button and update value
-        searchInput.addEventListener('input', (e) => {
+        searchInput.oninput = (e) => {
             e.target.value = e.target.value.toUpperCase();
             if (clearBtn) clearBtn.style.display = e.target.value ? 'flex' : 'none';
-        });
+        };
 
-        searchInput.addEventListener('keydown', (e) => {
+        searchInput.onkeydown = (e) => {
             if (e.key === 'Enter') handleSearch();
-        });
+        };
     }
 
     if (clearBtn) {
-        clearBtn.addEventListener('click', () => {
+        clearBtn.onclick = () => {
             if (searchInput) {
                 searchInput.value = '';
                 searchInput.focus();
@@ -835,7 +843,7 @@ export async function initStudentResultsManager() {
             // Pulse effect
             clearBtn.classList.add('sr-reset-anim');
             setTimeout(() => clearBtn.classList.remove('sr-reset-anim'), 400);
-        });
+        };
     }
 
     // --- QR Redirect Logic ---
@@ -872,12 +880,15 @@ export async function initStudentResultsManager() {
 
 
     checkQRParams();
-    window.addEventListener('hashchange', checkQRParams);
+    if (!studentResultsHashBound) {
+        window.addEventListener('hashchange', checkQRParams);
+        studentResultsHashBound = true;
+    }
 
     // Generator Reset Btn
     const genResetBtn = document.getElementById('srGenResetBtn');
     if (genResetBtn) {
-        genResetBtn.addEventListener('click', resetGeneratorSection);
+        genResetBtn.onclick = resetGeneratorSection;
     }
 
     // Zoom controls
@@ -886,41 +897,41 @@ export async function initStudentResultsManager() {
     const previewArea = document.getElementById('srMarksheetPreview');
 
     if (zoomInput && zoomLevel && previewArea) {
-        zoomInput.addEventListener('input', (e) => {
+        zoomInput.oninput = (e) => {
             const val = e.target.value;
             zoomLevel.innerText = Math.round(val * 100) + '%';
             previewArea.style.setProperty('--ms-main-scale', val);
-        });
+        };
     }
 
     // ID Generator helper
     const genBtn = document.getElementById('srGenIdBtn');
     if (genBtn) {
-        genBtn.addEventListener('click', handleGenerateId);
+        genBtn.onclick = handleGenerateId;
     }
 
     const downloadBtn = document.getElementById('srDownloadIdBtn');
     if (downloadBtn) {
-        downloadBtn.addEventListener('click', handleDownloadIdCard);
+        downloadBtn.onclick = handleDownloadIdCard;
     }
 
     // Toggle between search and generate modes
     const tabBtns = document.querySelectorAll('.sr-tab-btn');
     tabBtns.forEach(btn => {
-        btn.addEventListener('click', () => {
+        btn.onclick = () => {
             tabBtns.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             const target = btn.dataset.tab;
             document.querySelectorAll('.sr-tab-content').forEach(tc => {
                 tc.style.display = tc.id === target ? 'block' : 'none';
             });
-        });
+        };
     });
 
     // Bulk Print event
     const bpBtn = document.getElementById('srBulkPrintBtn');
     if (bpBtn) {
-        bpBtn.addEventListener('click', handleBulkPrint);
+        bpBtn.onclick = handleBulkPrint;
     }
 
     // Always populate dropdowns once
@@ -1020,8 +1031,8 @@ async function populateSrDropdowns() {
             });
         };
 
-        if (searchClassSelect) searchClassSelect.addEventListener('change', updateSearchExamDropdown);
-        if (searchSessionSelect) searchSessionSelect.addEventListener('change', updateSearchExamDropdown);
+        if (searchClassSelect) searchClassSelect.onchange = updateSearchExamDropdown;
+        if (searchSessionSelect) searchSessionSelect.onchange = updateSearchExamDropdown;
         updateSearchExamDropdown();
 
         // Function to update the student list
@@ -1093,9 +1104,9 @@ async function populateSrDropdowns() {
             }
         };
 
-        classSelect.addEventListener('change', updateStudentDropdown);
-        sessionSelect.addEventListener('change', updateStudentDropdown);
-        groupSelect.addEventListener('change', updateStudentDropdown);
+        classSelect.onchange = updateStudentDropdown;
+        sessionSelect.onchange = updateStudentDropdown;
+        groupSelect.onchange = updateStudentDropdown;
 
     } catch (err) {
         console.error("Failed to populate ID generator dropdowns:", err);

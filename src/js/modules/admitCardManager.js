@@ -648,8 +648,6 @@ export async function populateACDropdowns() {
     if (spClassSelect) spClassSelect.addEventListener('change', () => updateExamNames('sp'));
     if (spSessionSelect) spSessionSelect.addEventListener('change', () => updateExamNames('sp'));
     if (spExamNameSelect) spExamNameSelect.addEventListener('change', () => updateGroupDropdown('sp'));
-    // When Exam Name changes, update groups specifically for that exam if needed (Optional, currently global for class/session)
-    if (acExamNameSelect) acExamNameSelect.addEventListener('change', updateGroupDropdown);
 }
 
 async function generateCards(type) {

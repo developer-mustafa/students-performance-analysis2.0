@@ -10,6 +10,7 @@ const ROUTINES_DOC_ID = 'admit_card_routines';
 
 export let routinesData = {}; // Cache for all routines
 let currentRoutineKey = '';
+let routineManagerInitialized = false;
 
 export function getRoutinesData() {
     return routinesData;
@@ -41,6 +42,11 @@ export async function initRoutineManager() {
     rtExamNameSelect = document.getElementById('rtExamName');
     rtGroupSelect = document.getElementById('rtGroup');
     routineTableBody = document.getElementById('routineTableBody');
+
+    if (routineManagerInitialized) {
+        return;
+    }
+    routineManagerInitialized = true;
 
     // Global Event Listener for opening the modal (will be called from admitCardManager)
     document.getElementById('acRoutineBtn').addEventListener('click', openRoutineModal);

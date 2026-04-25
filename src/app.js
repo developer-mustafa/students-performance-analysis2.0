@@ -187,6 +187,21 @@ async function applyExamToState(exam, saveToStorage = false) {
     renderSavedExams();
 }
 
+function bindPwaInstallButton() {
+    if (!elements.installAppBtn || elements.installAppBtn.dataset.bound === 'true') return;
+
+    elements.installAppBtn.dataset.bound = 'true';
+    elements.installAppBtn.addEventListener('click', async () => {
+        if (!deferredPrompt) return;
+
+        deferredPrompt.prompt();
+        const { outcome } = await deferredPrompt.userChoice;
+        console.log(`User response to the install prompt: ${outcome}`);
+        deferredPrompt = null;
+        elements.installAppBtn.style.display = 'none';
+    });
+}
+
 async function init() {
     // Prevent multiple initializations from HMR if already initialized
     if (state.isInitialized && state.onDataUpdateUnsubscribe) {
@@ -195,6 +210,7 @@ async function init() {
     }
 
     initDOMReferences();
+    bindPwaInstallButton();
     setLoading(true);
     
     // Show Professional Skeletons while fetching initial data
@@ -262,8 +278,32 @@ async function init() {
         const updateAppFooter = (settings) => {
             const dev = settings?.developerCredit;
             if (dev) {
-                if (elements.footerDevCredit) elements.footerDevCredit.innerHTML = `${dev.text || 'Developed By:'} <a href="https://mustafaofficial.netlify.app/" target="_blank" style="color: inherit; text-decoration: none; font-weight: 700;">${dev.name || 'Mustafa Rahman'}</a>`;
-                if (elements.footerDevContact) elements.footerDevContact.innerHTML = `যোগাযোগ: <a href="tel:01840643946" style="color: inherit; text-decoration: none; font-weight: 700;">01840-643946</a>`;
+                if (elements.footerDevCredit) {
+                    elements.footerDevCredit.textContent = '';
+                    elements.footerDevCredit.append(`${dev.text || 'Developed By:'} `);
+
+                    const devLink = document.createElement('a');
+                    devLink.href = 'https://mustafaofficial.netlify.app/';
+                    devLink.target = '_blank';
+                    devLink.rel = 'noopener noreferrer';
+                    devLink.style.color = 'inherit';
+                    devLink.style.textDecoration = 'none';
+                    devLink.style.fontWeight = '700';
+                    devLink.textContent = dev.name || 'Mustafa Rahman';
+                    elements.footerDevCredit.appendChild(devLink);
+                }
+
+                if (elements.footerDevContact) {
+                    elements.footerDevContact.textContent = 'যোগাযোগ: ';
+
+                    const contactLink = document.createElement('a');
+                    contactLink.href = 'tel:01840643946';
+                    contactLink.style.color = 'inherit';
+                    contactLink.style.textDecoration = 'none';
+                    contactLink.style.fontWeight = '700';
+                    contactLink.textContent = '01840-643946';
+                    elements.footerDevContact.appendChild(contactLink);
+                }
                 
                 // Hide footer if disabled in settings
                 const footer = document.getElementById('appFooter');
@@ -363,7 +403,7 @@ async function init() {
         const initMarksheetSettingsSub = async () => {
              state.onMarksheetSettingsUnsubscribe = await subscribeToMarksheetSettings((msData) => {
                 console.log('Marksheet settings updated, refreshing dashboard header and exam cards...');
-                updateProfileUI(state.auth?.currentUser, state.isAdmin, state.isSuperAdmin, state.userRole);
+                updateProfileUI(state.currentUser, state.isAdmin, state.isSuperAdmin, state.userRole);
                 updateAppFooter(msData); // Also sync footer info from marksheet settings
                 updateViews();
                 renderSavedExams();
@@ -737,29 +777,29 @@ function renderSavedExams() {
     doRender();
 }
 
-function initEventListeners() {
-    // Chart Header Toggle (Mobile)
+function bindChartHeaderToggle() {
     const toggleHeaderBtn = document.getElementById('toggleChartHeaderBtn');
     const chartHeaderUtils = document.getElementById('chartHeaderUtils');
-    if (toggleHeaderBtn && chartHeaderUtils) {
-        toggleHeaderBtn.addEventListener('click', () => {
-            chartHeaderUtils.classList.toggle('active');
-            const icon = toggleHeaderBtn.querySelector('i');
-            if (icon) {
-                icon.className = chartHeaderUtils.classList.contains('active') 
-                    ? 'fas fa-times' 
-                    : 'fas fa-ellipsis-v';
-            }
-        });
-    }
+    if (!toggleHeaderBtn || !chartHeaderUtils) return;
 
-    // Filters
+    toggleHeaderBtn.addEventListener('click', () => {
+        chartHeaderUtils.classList.toggle('active');
+        const icon = toggleHeaderBtn.querySelector('i');
+        if (icon) {
+            icon.className = chartHeaderUtils.classList.contains('active')
+                ? 'fas fa-times'
+                : 'fas fa-ellipsis-v';
+        }
+    });
+}
+
+function bindDashboardFilterControls() {
     elements.groupFilters?.forEach(btn => {
         btn.addEventListener('click', () => {
             elements.groupFilters.forEach(b => b.classList.remove('active'));
             btn.classList.add('active');
             state.currentGroupFilter = btn.dataset.group;
-            state.failedStudentsCurrentPage = 1; // Reset page
+            state.failedStudentsCurrentPage = 1;
             updateViews();
         });
     });
@@ -768,7 +808,6 @@ function initEventListeners() {
         btn.addEventListener('click', () => {
             const selectedValue = btn.dataset.grade;
 
-            // Logic for different button types
             if (selectedValue === 'all') {
                 state.currentStatusFilter = 'all';
                 state.currentGradeFilter = 'all';
@@ -786,22 +825,14 @@ function initEventListeners() {
                 state.currentGradeFilter = 'all';
             }
             else {
-                // Individual grade clicks (A+, A, B, etc. or F)
                 state.currentGradeFilter = selectedValue;
-                // Auto-set status category
-                if (selectedValue === 'F') {
-                    state.currentStatusFilter = 'fail';
-                } else {
-                    state.currentStatusFilter = 'pass';
-                }
+                state.currentStatusFilter = selectedValue === 'F' ? 'fail' : 'pass';
             }
 
-            // Update UI Highlighting
             elements.gradeFilters.forEach(b => {
                 const val = b.dataset.grade;
                 b.classList.remove('active');
 
-                // Highlight logic
                 if (val === 'all' && state.currentStatusFilter === 'all') {
                     b.classList.add('active');
                 } else if (val === 'total-pass' && state.currentStatusFilter === 'pass') {
@@ -815,48 +846,42 @@ function initEventListeners() {
                 }
             });
 
-            state.failedStudentsCurrentPage = 1; // Reset page
+            state.failedStudentsCurrentPage = 1;
             updateViews();
         });
     });
+}
 
-    // Search
+function bindDashboardSearchAndViewControls() {
     elements.searchInput?.addEventListener('input', async (e) => {
         const query = e.target.value.toLowerCase();
         state.currentSearchTerm = query;
         updateViews();
 
-        // Predictive Search Logic
         if (query.length >= 1) {
             const candidates = await handleCandidateSearch(query, state.currentExamSession, state.currentExamClass);
             if (candidates.length > 0) {
                 elements.globalSearchResults.style.display = 'grid';
                 renderCandidateResults(elements.globalSearchResults, candidates, async (student) => {
-                    // 1. Hide dropdown and clear search field immediately
                     elements.globalSearchResults.style.display = 'none';
                     if (elements.searchInput) {
                         elements.searchInput.value = '';
                     }
 
-                    // 2. Force navigate to dashboard page globally (await transition)
                     await navigateTo('dashboard');
-                    
-                    // 3. Set dashboard UI view to analysis
+
                     state.currentView = 'analysis';
                     document.querySelectorAll('.view-toggle .view-btn').forEach(btn => btn.classList.remove('active'));
                     const analysisBtn = document.querySelector('.view-toggle .view-btn[data-view="analysis"]');
                     if (analysisBtn) analysisBtn.classList.add('active');
-                    
-                    // 4. Mount student data into analysis module
+
                     transitionToAnalysis(student);
-                    
-                    // 5. Scroll directly to the analysis view
+
                     const analysisContainer = document.getElementById('analysisView');
                     if (analysisContainer) {
                         setTimeout(() => {
-                            // Scroll but add an offset if there's a sticky header, or scroll straight to it
                             analysisContainer.scrollIntoView({ behavior: 'smooth', block: 'start' });
-                        }, 150); // slight delay for DOM to render the chart
+                        }, 150);
                     }
                 });
             } else {
@@ -867,35 +892,29 @@ function initEventListeners() {
         }
     });
 
-    // Failed Students Search
     elements.failedSearchInput?.addEventListener('input', (e) => {
         state.failedSearchTerm = e.target.value;
-        state.failedStudentsCurrentPage = 1; // Reset to page 1 on search
+        state.failedStudentsCurrentPage = 1;
         updateViews();
     });
 
-    // Close global search results on click outside
     document.addEventListener('click', (e) => {
         if (!elements.searchInput?.contains(e.target) && !elements.globalSearchResults?.contains(e.target)) {
             if (elements.globalSearchResults) elements.globalSearchResults.style.display = 'none';
         }
     });
 
-    // Chart Type Dropdown
     elements.chartTypeSelect?.addEventListener('change', (e) => {
         state.currentChartType = e.target.value;
         updateViews();
     });
 
-    // Sort Order Dropdown
     elements.sortOrderSelect?.addEventListener('change', (e) => {
         state.currentSortOrder = e.target.value;
         updateViews();
     });
 
-    // Reset Filters
     elements.resetFiltersBtn?.addEventListener('click', () => {
-        // Reset all filter states
         state.currentGroupFilter = 'all';
         state.currentStatusFilter = 'all';
         state.currentGradeFilter = 'all';
@@ -903,7 +922,6 @@ function initEventListeners() {
         state.currentChartType = 'total';
         state.currentSortOrder = 'desc';
 
-        // Reset UI elements
         elements.groupFilters?.forEach(b => b.classList.remove('active'));
         document.querySelector('.group-btn[data-group="all"]')?.classList.add('active');
         elements.gradeFilters?.forEach(b => b.classList.remove('active'));
@@ -912,7 +930,6 @@ function initEventListeners() {
         if (elements.chartTypeSelect) elements.chartTypeSelect.value = 'total';
         if (elements.sortOrderSelect) elements.sortOrderSelect.value = 'desc';
 
-        // View Transition Logic
         if (state.currentView === 'analysis') {
             state.currentView = 'chart';
             elements.viewButtons?.forEach(btn => {
@@ -924,17 +941,14 @@ function initEventListeners() {
             });
         }
 
-        // Reset Chart Section Collapse
         if (elements.chartSectionCollapse) elements.chartSectionCollapse.style.display = 'block';
         if (elements.chartSectionIcon) elements.chartSectionIcon.style.transform = 'rotate(0deg)';
 
         updateViews();
     });
 
-    // File Upload
     elements.jsonFileInput?.addEventListener('change', (e) => onFileUpload(e, () => updateViews()));
 
-    // View Switching
     elements.viewButtons?.forEach(btn => {
         btn.addEventListener('click', () => {
             elements.viewButtons.forEach(b => b.classList.remove('active'));
@@ -944,12 +958,194 @@ function initEventListeners() {
         });
     });
 
-    // Global UI Clicks
     document.addEventListener('click', (e) => {
         if (e.target?.classList.contains('modal')) {
             e.target.classList.remove('active');
         }
     });
+}
+
+function getCurrentSubjectOptions() {
+    let subjectConfig = state.subjectConfigs[state.currentSubject];
+    if (!subjectConfig) {
+        const normalizedCurrent = normalizeText(state.currentSubject);
+        const matchedKey = Object.keys(state.subjectConfigs)
+            .find(key => key !== 'updatedAt' && normalizeText(key) === normalizedCurrent);
+        subjectConfig = matchedKey ? state.subjectConfigs[matchedKey] : {};
+    }
+
+    return {
+        writtenPass: (subjectConfig.writtenPass !== undefined && subjectConfig.writtenPass !== '') ? Number(subjectConfig.writtenPass) : FAILING_THRESHOLD.written,
+        mcqPass: (subjectConfig.mcqPass !== undefined && subjectConfig.mcqPass !== '') ? Number(subjectConfig.mcqPass) : FAILING_THRESHOLD.mcq,
+        practicalPass: (subjectConfig.practicalPass !== undefined && subjectConfig.practicalPass !== '') ? Number(subjectConfig.practicalPass) : 0,
+        totalPass: (subjectConfig.total !== undefined && subjectConfig.total !== '') ? Number(subjectConfig.total) * 0.33 : FAILING_THRESHOLD.total,
+    };
+}
+
+function getCurrentPrintContext(subjectOptions) {
+    return {
+        ...subjectOptions,
+        examName: state.currentExamName,
+        subjectName: state.currentSubject,
+        groupFilter: state.currentGroupFilter,
+        gradeFilter: state.currentGradeFilter,
+        sortBy: state.currentChartType,
+        sortOrder: state.currentSortOrder,
+        statusFilter: state.currentStatusFilter,
+        searchTerm: state.currentSearchTerm,
+        fullData: state.studentData,
+        developerCredit: state.settings?.developerCredit || null
+    };
+}
+
+function bindDownloadAndPrintControls() {
+    elements.downloadChartBtn?.addEventListener('click', () => handleChartDownload(`${state.currentExamName} - ${state.currentSubject}.png`));
+    elements.downloadExcelBtn?.addEventListener('click', () => {
+        const filename = `${state.currentSubject}_${state.currentExamClass}_${state.currentExamName}(${state.currentExamSession}).xlsx`;
+        exportToExcel(state.studentData, filename, state.currentSubject);
+    });
+
+    elements.downloadBtn?.addEventListener('click', () => {
+        if (state.currentView === 'chart') {
+            handleChartDownload(`${state.currentExamName} - ${state.currentSubject}.png`);
+        } else if (state.currentView === 'table') {
+            const tableContainer = document.getElementById('tableView');
+            if (tableContainer) {
+                captureElementAsImage(tableContainer, `à¦«à¦²à¦¾à¦«à¦² - à¦Ÿà§‡à¦¬à¦¿à¦² - ${state.currentExamName}.png`);
+            }
+        } else if (state.currentView === 'analysis') {
+            const analysisReport = document.getElementById('analysisReportContent');
+            if (analysisReport) {
+                captureElementAsImage(analysisReport, `à¦¶à¦¿à¦•à§à¦·à¦¾à¦°à§à¦¥à§€ - à¦à¦¨à¦¾à¦²à¦¾à¦‡à¦¸à¦¿à¦¸ - ${state.currentAnalyzedStudent?.name || 'à¦°à¦¿à¦ªà§‹à¦°à§à¦Ÿ'}.png`);
+            }
+        }
+    });
+
+    elements.printBtn?.addEventListener('click', () => {
+        const subjectOptions = getCurrentSubjectOptions();
+        printAllStudents(filterStudentData(state.studentData, {
+            group: state.currentGroupFilter,
+            grade: state.currentGradeFilter,
+            status: state.currentStatusFilter,
+            searchTerm: state.currentSearchTerm,
+            subject: state.currentSubject
+        }, subjectOptions), getCurrentPrintContext(subjectOptions));
+    });
+
+    elements.downloadFailedBtn?.addEventListener('click', () => {
+        const section = document.querySelector('.card.failed-students');
+        if (section) {
+            captureElementAsImage(section, `failed - students - ${state.currentExamName}.png`);
+        }
+    });
+
+    document.getElementById('printFailedBtn')?.addEventListener('click', () => {
+        const subjectOptions = getCurrentSubjectOptions();
+        printFailedStudents(filterStudentData(state.studentData, {
+            group: state.currentGroupFilter,
+            grade: state.currentGradeFilter,
+            status: state.currentStatusFilter,
+            searchTerm: state.currentSearchTerm,
+            subject: state.currentSubject
+        }, subjectOptions), getCurrentPrintContext(subjectOptions));
+    });
+
+    elements.downloadGroupStatsBtn?.addEventListener('click', () => captureElementAsImage(elements.groupStatsContainer, `group - stats - ${state.currentExamName}.png`));
+
+    elements.inlineDownloadBtn?.addEventListener('click', () => {
+        const report = document.getElementById('analysisReportContent');
+        if (report) captureElementAsImage(report, `student - analysis - ${elements.analysisStudentId.value}.png`);
+    });
+}
+
+function bindAuthAndMobileControls() {
+    elements.adminToggle?.addEventListener('click', () => {
+        if (state.currentUser) {
+            elements.profileModal.classList.add('active');
+        } else {
+            elements.loginModal.classList.add('active');
+        }
+    });
+
+    elements.themeToggle?.addEventListener('click', () => {
+        const isDark = toggleTheme(elements.themeToggle);
+        saveThemePreference(isDark ? 'dark' : 'light');
+    });
+
+    const mobileMenuToggle = document.getElementById('mobileMenuToggle');
+    const mobileMenuOverlay = document.getElementById('mobileMenuOverlay');
+    const mobileMenuDrawer = document.getElementById('mobileMenuDrawer');
+    const mobileMenuClose = document.getElementById('mobileMenuClose');
+
+    function openMobileMenu() {
+        mobileMenuOverlay?.classList.add('active');
+        mobileMenuDrawer?.classList.add('active');
+        document.body.style.overflow = 'hidden';
+    }
+
+    function closeMobileMenu() {
+        mobileMenuOverlay?.classList.remove('active');
+        mobileMenuDrawer?.classList.remove('active');
+        document.body.style.overflow = '';
+    }
+
+    mobileMenuToggle?.addEventListener('click', openMobileMenu);
+    mobileMenuClose?.addEventListener('click', closeMobileMenu);
+    mobileMenuOverlay?.addEventListener('click', closeMobileMenu);
+
+    document.querySelectorAll('.mobile-drawer-item[data-trigger]').forEach(item => {
+        item.addEventListener('click', () => {
+            const targetId = item.dataset.trigger;
+            const targetEl = document.getElementById(targetId);
+            if (targetEl) {
+                targetEl.click();
+            }
+            closeMobileMenu();
+        });
+    });
+
+    elements.closeLoginModal?.addEventListener('click', () => elements.loginModal.classList.remove('active'));
+
+    elements.loginTabs?.forEach(tab => {
+        tab.addEventListener('click', () => {
+            elements.loginTabs.forEach(t => t.classList.remove('active'));
+            tab.classList.add('active');
+
+            const target = tab.dataset.tab;
+            document.getElementById('googleLoginSection').classList.toggle('active', target === 'google');
+            document.getElementById('emailLoginSection').classList.toggle('active', target === 'email');
+        });
+    });
+
+    elements.googleLoginBtn?.addEventListener('click', async () => {
+        const user = await handleLogin();
+        if (user) elements.loginModal.classList.remove('active');
+    });
+
+    elements.emailLoginForm?.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const email = document.getElementById('loginEmail').value;
+        const pass = document.getElementById('loginPassword').value;
+        const user = await handleEmailLogin(email, pass);
+        if (user) {
+            elements.loginModal.classList.remove('active');
+            e.target.reset();
+        }
+    });
+
+    elements.openRequestAccessBtn?.addEventListener('click', (e) => {
+        e.preventDefault();
+        elements.loginModal.classList.remove('active');
+        elements.requestAccessModal.classList.add('active');
+    });
+
+    elements.closeRequestAccessModal?.addEventListener('click', () => elements.requestAccessModal.classList.remove('active'));
+}
+
+function initEventListeners() {
+    bindChartHeaderToggle();
+    bindDashboardFilterControls();
+    bindDashboardSearchAndViewControls();
 
     // Developer Contact Modal
     elements.contactDevBtn?.addEventListener('click', () => {
@@ -2043,18 +2239,7 @@ window.addEventListener('beforeinstallprompt', (e) => {
 });
 
 if (elements.installAppBtn) {
-    elements.installAppBtn.addEventListener('click', async () => {
-        if (!deferredPrompt) return;
-        // Show the install prompt
-        deferredPrompt.prompt();
-        // Wait for the user to respond to the prompt
-        const { outcome } = await deferredPrompt.userChoice;
-        console.log(`User response to the install prompt: ${outcome}`);
-        // We've used the prompt, and can't use it again, throw it away
-        deferredPrompt = null;
-        // Hide the install button
-        elements.installAppBtn.style.display = 'none';
-    });
+    bindPwaInstallButton();
 }
 
 window.addEventListener('appinstalled', (event) => {
