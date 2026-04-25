@@ -27,7 +27,7 @@ import {
 import { initializeMainChart, handleChartDownload, initializeHistoryChart } from './js/modules/chartManager.js';
 
 // Utilities & Services
-import { showNotification, filterStudentData, sortStudentData, calculateStatistics, convertToEnglishDigits, formatDateBengali, normalizeText, determineStatus, calculateGrade, isStudentEligibleForSubject } from './js/utils.js';
+import { showNotification, filterStudentData, sortStudentData, calculateStatistics, convertToEnglishDigits, formatDateBengali, normalizeText, determineStatus, calculateGrade, isStudentEligibleForSubject, debounce } from './js/utils.js';
 import { APP_VERSION } from './js/version.js';
 import { FAILING_THRESHOLD } from './js/constants.js';
 import {
@@ -853,7 +853,7 @@ function bindDashboardFilterControls() {
 }
 
 function bindDashboardSearchAndViewControls() {
-    elements.searchInput?.addEventListener('input', async (e) => {
+    elements.searchInput?.addEventListener('input', debounce(async (e) => {
         const query = e.target.value.toLowerCase();
         state.currentSearchTerm = query;
         updateViews();
@@ -890,13 +890,13 @@ function bindDashboardSearchAndViewControls() {
         } else {
             elements.globalSearchResults.style.display = 'none';
         }
-    });
+    }, 300));
 
-    elements.failedSearchInput?.addEventListener('input', (e) => {
+    elements.failedSearchInput?.addEventListener('input', debounce((e) => {
         state.failedSearchTerm = e.target.value;
         state.failedStudentsCurrentPage = 1;
         updateViews();
-    });
+    }, 300));
 
     document.addEventListener('click', (e) => {
         if (!elements.searchInput?.contains(e.target) && !elements.globalSearchResults?.contains(e.target)) {

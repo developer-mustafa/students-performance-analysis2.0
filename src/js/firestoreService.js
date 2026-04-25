@@ -5,6 +5,12 @@
  */
 
 import { convertToEnglishDigits, normalizeText } from './utils.js';
+import localforage from 'localforage';
+
+localforage.config({
+    name: 'EdTechAutomataPro',
+    storeName: 'firestoreCache'
+});
 
 /**
  * Lazy-load Firestore and Auth modules to ensure code-splitting is effective.
@@ -60,10 +66,6 @@ const _pendingPromises = {
 // STUDENTS COLLECTION OPERATIONS
 // ==========================================
 
-/**
- * Get all students from Firestore
- * @returns {Promise<Array>} - Array of student documents
- */
 export async function getAllStudents() {
     const now = Date.now();
     
@@ -77,6 +79,16 @@ export async function getAllStudents() {
 
     _pendingPromises.students = (async () => {
         try {
+            // Check IndexedDB cache first
+            const cachedStudents = await localforage.getItem('studentsCache');
+            const cachedExpiry = await localforage.getItem('studentsExpiry');
+
+            if (cachedStudents && cachedExpiry && now < cachedExpiry) {
+                _cache.students = cachedStudents;
+                _cache.studentsExpiry = cachedExpiry;
+                return cachedStudents;
+            }
+
             const { db, collection, query, orderBy, getDocs } = await getFirestore();
             const studentsRef = collection(db, COLLECTIONS.students);
             const q = query(studentsRef, orderBy('id', 'asc'));
@@ -87,13 +99,25 @@ export async function getAllStudents() {
                 ...doc.data()
             }));
             
+            const expiry = now + _cache.CACHE_DURATION;
             _cache.students = students;
-            _cache.studentsExpiry = now + _cache.CACHE_DURATION;
+            _cache.studentsExpiry = expiry;
             _cache.lookupMap = null; // Invalidate dependent lookup map
+
+            // Save to IndexedDB
+            await localforage.setItem('studentsCache', students);
+            await localforage.setItem('studentsExpiry', expiry);
             
             return students;
         } catch (error) {
             console.error('শিক্ষার্থীদের ডেটা লোড করতে সমস্যা:', error);
+            
+            // Fallback to stale cache if offline
+            const staleCache = await localforage.getItem('studentsCache');
+            if (staleCache) {
+                console.warn('অফলাইন মোডে ক্যাশ ডেটা দেখানো হচ্ছে।');
+                return staleCache;
+            }
             return [];
         } finally {
             _pendingPromises.students = null;
@@ -506,20 +530,19 @@ export async function getSavedExams() {
 
     _pendingPromises.exams = (async () => {
         try {
-            // 2. Try LocalStorage Cache (Persistence across refreshes)
+            // 2. Try IndexedDB Cache (Persistence across refreshes)
             try {
-                const localData = localStorage.getItem(CACHE_KEY);
+                const localData = await localforage.getItem(CACHE_KEY);
                 if (localData) {
-                    const parsed = JSON.parse(localData);
-                    if (now - parsed.timestamp < PERSISTENT_DURATION) {
-                        // console.log('Returning persistent-cached exams (Disk Cache)');
-                        _cache.exams = parsed.data;
+                    if (now - localData.timestamp < PERSISTENT_DURATION) {
+                        // console.log('Returning persistent-cached exams (IndexedDB Cache)');
+                        _cache.exams = localData.data;
                         _cache.examsExpiry = now + _cache.CACHE_DURATION;
-                        return parsed.data;
+                        return localData.data;
                     }
                 }
             } catch (e) {
-                console.warn('LocalStorage cache read failed:', e);
+                console.warn('IndexedDB cache read failed:', e);
             }
 
             // 3. Fetch from Firestore (Fallback)
@@ -538,14 +561,14 @@ export async function getSavedExams() {
             _cache.exams = exams;
             _cache.examsExpiry = now + _cache.CACHE_DURATION;
 
-            // Update LocalStorage Cache
+            // Update IndexedDB Cache
             try {
-                localStorage.setItem(CACHE_KEY, JSON.stringify({
+                await localforage.setItem(CACHE_KEY, {
                     data: exams,
                     timestamp: now
-                }));
+                });
             } catch (e) {
-                console.warn('LocalStorage cache write failed:', e);
+                console.warn('IndexedDB cache write failed:', e);
             }
 
             return exams;
@@ -556,9 +579,10 @@ export async function getSavedExams() {
             _pendingPromises.exams = null;
         }
     })();
-
+    
     return _pendingPromises.exams;
 }
+
 
 /**
  * Get exams matching specific criteria (Class, Session)

@@ -33,6 +33,7 @@
         "firebase": "^12.9.0",
         "html2canvas": "^1.4.1",
         "jspdf": "^4.2.1",
+        "localforage": "^1.10.0",
         "qrcode": "^1.5.4",
         "xlsx": "^0.18.5"
     }

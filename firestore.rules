@@ -86,8 +86,8 @@ service cloud.firestore {
     //  Access Requests Collection
     // =======================================
     match /access_requests/{requestId} {
-      // Anyone authenticated can create a request
-      allow create: if isAuthenticated();
+      // Anyone can create a request (they don't have an account yet)
+      allow create: if true;
       // Only admins can read/update/delete requests
       allow read, update, delete: if isAdminOrAbove();
     }
