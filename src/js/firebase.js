@@ -42,8 +42,11 @@ export const db = initializeFirestore(app, {
 // Initialize Auth
 export const auth = getAuth(app);
 
-// Initialize Analytics
+// Initialize Analytics & Performance Monitoring
 export const analytics = getAnalytics(app);
+
+import { getPerformance } from 'firebase/performance';
+export const perf = getPerformance(app);
 
 // Export app instance
 export default app;
