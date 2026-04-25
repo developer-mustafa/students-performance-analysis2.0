@@ -1,4 +1,4 @@
-﻿# 🎓 এডটেক অটোমাটা প্রো (EdTech Automata Pro)
+# 🎓 এডটেক অটোমাটা প্রো (EdTech Automata Pro)
 
 > **একটি পূর্ণাঙ্গ, অত্যাধুনিক এবং ডাটা-ড্রিভেন এডুকেশন ম্যানেজমেন্ট সলিউশন।**  
 > শিক্ষা প্রতিষ্ঠানের ফলাফল বিশ্লেষণ, অটোমেটেড ডকুমেন্ট জেনারেশন এবং প্রশাসনিক সকল কাজকে এক ছাতার নিচে নিয়ে আসার ডিজিটাল প্ল্যাটফর্ম।
@@ -73,6 +73,18 @@
 
 ---
 
+## ☁️ এন্টারপ্রাইজ গ্রেড ডিপ্লয়মেন্ট আর্কিটেকচার (Multi-Target CI/CD) - **New**
+
+এই প্রজেক্টটি একটি আধুনিক **Multi-Target CI/CD (Continuous Integration & Continuous Deployment)** পাইপলাইনের সাহায্যে স্বয়ংক্রিয়ভাবে গিটহাব থেকে সরাসরি ৩টি ভিন্ন প্ল্যাটফর্মে লাইভ হয়।
+
+*   **Firebase Hosting (`automatapro.web.app`):** গিটহাব অ্যাকশনস (GitHub Actions) এর মাধ্যমে স্বয়ংক্রিয় ডিপ্লয়মেন্ট।
+*   **Netlify:** গিটহাবের সাথে সরাসরি সংযুক্ত, যা প্রতিটি কমিটে অটোমেটিক বিল্ড এবং ডিপ্লয় করে।
+*   **GitHub Pages:** প্রজেক্ট পাবলিক থাকলে এটিতেও স্বয়ংক্রিয়ভাবে লাইভ হয়।
+*   **Environment Management:** লোকাল পিসিতে `.env` এবং প্রোডাকশনে সিকিউর ফলব্যাক/ভেরিয়েবল ব্যবহারের মাধ্যমে ১০০% ডাটা সিকিউরিটি নিশ্চিত করা হয়েছে।
+*   **Firebase Performance Monitoring:** ইউজারের ব্রাউজারে অ্যাপটি কতো দ্রুত কাজ করছে তা সরাসরি ফায়ারবেস কনসোলে ট্র্যাক করার সুবিধা।
+
+---
+
 ## 📦 কিভাবে শুরু করবেন?
 ১. ডিপেন্ডেন্সি ইনস্টল করতে `npm install` ব্যবহার করুন।  
 ২. প্রোডাকশন বিল্ডের জন্য `npm run build` ব্যবহার করুন।  
@@ -80,4 +92,6 @@
 
 ---
 **Lead Developer:** Mustafa Rahman  
-**Live Site:** [result-analyst.netlify.app](https://result-analyst.netlify.app/)
+**Live Sites:** 
+* [automatapro.web.app](https://automatapro.web.app/) (Firebase)
+* [result-analyst.netlify.app](https://result-analyst.netlify.app/) (Netlify)
