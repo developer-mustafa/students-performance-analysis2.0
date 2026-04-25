@@ -1,9 +1,21 @@
-﻿/**
+/**
  * Utilities Module - Helper functions for student data processing
  * @module utils
  */
 
 import { GRADING_SYSTEM, FAILING_THRESHOLD, CHART_COLORS, GROUP_NAMES } from './constants.js';
+
+/**
+ * HTML Entity Escape — XSS প্রতিরোধের জন্য
+ * innerHTML-এ ইউজার ডেটা ব্যবহারের আগে এটি দিয়ে escape করতে হবে
+ * @param {string} str - Raw user string
+ * @returns {string} HTML-safe string
+ */
+export function escapeHtml(str) {
+    if (!str) return '';
+    const map = { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;' };
+    return String(str).replace(/[&<>"']/g, c => map[c]);
+}
 
 /**
  * Robust Bengali and English text normalization

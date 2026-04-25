@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Constants Module - Application-wide configuration
  * @module constants
  */
@@ -77,3 +77,15 @@ export const STORAGE_KEYS = {
 // ম্যাক্স চার্ট এন্ট্রি
 export const MAX_CHART_ENTRIES = 200;
 export const MAX_TABLE_ENTRIES = 2000;
+
+// ড্রাফট সংরক্ষণ সময়সীমা (মিলিসেকেন্ড)
+export const DRAFT_EXPIRY_MS = 24 * 60 * 60 * 1000; // 24 ঘন্টা
+
+// ডিবাউন্স টাইমার (মিলিসেকেন্ড)
+export const ANALYTICS_DEBOUNCE_MS = 2000;
+
+// ডিফল্ট পাশ শতাংশ
+export const DEFAULT_PASS_PERCENTAGE = 33;
+
+// পেজিনেশন
+export const DEFAULT_PAGE_SIZE = 10;

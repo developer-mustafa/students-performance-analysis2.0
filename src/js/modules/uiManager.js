@@ -1,4 +1,4 @@
-﻿/**
+/**
  * UI Management Module
  */
 
@@ -229,16 +229,6 @@ export function initDOMReferences() {
 
     elements.latestExamLabel = document.getElementById('latestExamLabel');
 
-    // Inline Search Elements
-    elements.inlineSearchPanel = document.getElementById('inlineSearchPanel');
-    elements.inlineSearchCandidates = document.getElementById('inlineSearchCandidates');
-    elements.inlineHistorySection = document.getElementById('inlineHistorySection');
-    elements.inlineStudentDetails = document.getElementById('inlineStudentDetails');
-    elements.inlineHistoryChart = document.getElementById('inlineHistoryChart');
-    elements.inlineAnalysisType = document.getElementById('inlineAnalysisType');
-    elements.inlineAnalysisMaxMarks = document.getElementById('inlineAnalysisMaxMarks');
-    elements.inlineDownloadBtn = document.getElementById('inlineDownloadBtn');
-
     // Login & Access Modals
     elements.loginModal = document.getElementById('loginModal');
     elements.closeLoginModal = document.getElementById('closeLoginModal');
@@ -251,7 +241,6 @@ export function initDOMReferences() {
     elements.requestAccessForm = document.getElementById('requestAccessForm');
 
     // Download Buttons
-    elements.downloadBtn = document.getElementById('downloadBtn');
     elements.downloadFailedBtn = document.getElementById('downloadFailedBtn');
     elements.downloadGroupStatsBtn = document.getElementById('downloadGroupStatsBtn');
 
@@ -336,10 +325,6 @@ export function initDOMReferences() {
     elements.loadExamCancelBtn = document.getElementById('loadExamCancelBtn');
     elements.closeContactModalBtn = document.getElementById('closeContactModalBtn');
     elements.formTitle = document.getElementById('formTitle');
-    elements.userMgmtSearch = document.getElementById('userMgmtSearch');
-    elements.statSuperAdminCount = document.getElementById('statSuperAdminCount');
-    elements.statAdminCount = document.getElementById('statAdminCount');
-    elements.statUserCount = document.getElementById('statUserCount');
 }
 
 export function setLoading(isLoading, targetSelector = null) {

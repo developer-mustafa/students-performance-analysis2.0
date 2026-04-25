@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Firebase Configuration Module
  * @module firebase
  */
@@ -8,15 +8,15 @@ import { getFirestore } from 'firebase/firestore';
 import { getAuth } from 'firebase/auth';
 import { getAnalytics } from 'firebase/analytics';
 
-// Firebase configuration
+// Firebase configuration (from environment variables)
 export const firebaseConfig = {
-    apiKey: "AIzaSyB-_EMg5Xx8OkkWYhH4gSOt09ejK2kmLrg",
-    authDomain: "todo-181b6.firebaseapp.com",
-    projectId: "todo-181b6",
-    storageBucket: "todo-181b6.firebasestorage.app",
-    messagingSenderId: "19269727022",
-    appId: "1:19269727022:web:3bccbb2e85d7fdffd140bf",
-    measurementId: "G-SWWK62RZLM"
+    apiKey: import.meta.env.VITE_FIREBASE_API_KEY || "AIzaSyB-_EMg5Xx8OkkWYhH4gSOt09ejK2kmLrg",
+    authDomain: import.meta.env.VITE_FIREBASE_AUTH_DOMAIN || "todo-181b6.firebaseapp.com",
+    projectId: import.meta.env.VITE_FIREBASE_PROJECT_ID || "todo-181b6",
+    storageBucket: import.meta.env.VITE_FIREBASE_STORAGE_BUCKET || "todo-181b6.firebasestorage.app",
+    messagingSenderId: import.meta.env.VITE_FIREBASE_MESSAGING_SENDER_ID || "19269727022",
+    appId: import.meta.env.VITE_FIREBASE_APP_ID || "1:19269727022:web:3bccbb2e85d7fdffd140bf",
+    measurementId: import.meta.env.VITE_FIREBASE_MEASUREMENT_ID || "G-SWWK62RZLM"
 };
 
 // Initialize Firebase

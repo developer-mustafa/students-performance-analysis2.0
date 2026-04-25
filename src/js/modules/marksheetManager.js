@@ -482,11 +482,11 @@ async function generateMarksheets() {
 
     let loop1Idx = 0;
     for (const student of allStudentsForSummary) {
-        // Light render to extract exact DOM results
-        const html = await renderSingleMarksheet(student, displaySubjects, examDisplayName, session, null, rules, allOptSubs, allExams, subjectConfigs, null, true, highestMarks);
+        // FAST RENDER: Extract pure statistics without generating HTML!
+        const stats = await renderSingleMarksheet(student, displaySubjects, examDisplayName, session, null, rules, allOptSubs, allExams, subjectConfigs, null, true, highestMarks);
         allRenderedData.push({
             student,
-            html,
+            stats,
             key: `${student.id}_${student.group}`,
             group: student.group,
             subjects: student.subjects
@@ -496,33 +496,24 @@ async function generateMarksheets() {
         if (++loop1Idx % 5 === 0) await new Promise(r => setTimeout(r, 0));
     }
 
-    // --- PASS 1.5: EXACT HTML-BASED RANKING SYSTEM ---
+    // --- EXACT STATS-BASED RANKING SYSTEM ---
     const meritResults = allRenderedData.map(item => {
-        const isPass = item.html.includes('ms-result-pass');
-        const isAbsent = !Object.values(item.subjects).some(data =>
-            ((data.written || 0) > 0 || (data.mcq || 0) > 0 || (data.practical || 0) > 0 || (data.total || 0) > 0)
-        );
-        let gpa = 0;
-        if (isPass) {
-            const gpaMatch = item.html.match(/<span class="ms-result-value ms-gpa-value">\s*([\d.]+)\s*<\/span>/);
-            if (gpaMatch) gpa = parseFloat(gpaMatch[1]);
-        }
-        let totalMarks = 0;
-        const marksMatch = item.html.match(/<span class="ms-result-label">মোট প্রাপ্ত নম্বর<\/span>\s*<span class="ms-result-value">\s*(\d+)/);
-        if (marksMatch) totalMarks = parseInt(marksMatch[1]);
-
-        let failedCount = 0;
-        if (!isPass && !isAbsent) {
-            failedCount = (item.html.match(/<td class="ms-td-grade[^>]*>\s*F\s*<\/td>/g) || []).length || 1;
-        }
-
         const toEng = (str) => {
             const numMap = { '০': '0', '১': '1', '২': '2', '৩': '3', '৪': '4', '৫': '5', '৬': '6', '৭': '7', '৮': '8', '৯': '9' };
             return String(str).replace(/[০-৯]/g, match => numMap[match]);
         };
         const numId = parseInt(toEng(item.student.id)) || 0;
 
-        return { key: item.key, group: item.group || 'general', id: numId, isPass, gpa, totalMarks, failedCount, isAbsent };
+        return { 
+            key: item.key, 
+            group: item.group || 'general', 
+            id: numId, 
+            isPass: item.stats.isPass, 
+            gpa: item.stats.gpa, 
+            totalMarks: item.stats.totalMarks, 
+            failedCount: item.stats.failedCount, 
+            isAbsent: item.stats.isAbsent 
+        };
     });
 
     meritResults.sort((a, b) => {
@@ -594,14 +585,13 @@ async function generateMarksheets() {
 
         gs.examinees++;
 
-        // Count pass/fail by detecting the CSS class from the rendered marksheet HTML
-        if (item.html.includes('ms-result-pass')) {
+        // Use direct stats instead of HTML Regex parsing
+        if (item.stats.isPass) {
             gs.pass++;
-            const match = item.html.match(/<span class="ms-result-label">গ্রেড<\/span>\s*<span class="ms-result-value">\s*(A\+|A|A-|B|C|D)\s*<\/span>/);
-            if (match && overallGradeCounts[match[1]] !== undefined) {
-                overallGradeCounts[match[1]]++;
+            if (overallGradeCounts[item.stats.overallGrade] !== undefined) {
+                overallGradeCounts[item.stats.overallGrade]++;
             }
-        } else if (item.html.includes('ms-result-fail')) {
+        } else {
             gs.fail++;
             overallGradeCounts['F']++;
         }
@@ -1790,6 +1780,18 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
         ((data.written || 0) > 0 || (data.mcq || 0) > 0 || (data.practical || 0) > 0 || (data.total || 0) > 0)
     );
     const isAbsentMark = !hasAnyMarks;
+
+    // FAST RENDER MODE: Return pure statistics instead of generating massive HTML template
+    if (skipHeavyOps) {
+        return {
+            isPass: allPassed,
+            gpa: parseFloat(avgGPA) || 0,
+            totalMarks: grandTotal,
+            failedCount: failedSubjectsCount,
+            isAbsent: isAbsentMark,
+            overallGrade: overallGrade
+        };
+    }
 
     return `
         <div class="ms-page font-${ms.fontSize || 'medium'} theme-${ms.theme || 'classic'} border-${ms.borderStyle || 'double'} typography-${ms.typography || 'default'} density-${ms.rowDensity || 'normal'}" 
@@ -3113,9 +3115,9 @@ export async function renderMarksheetQRCodes(container) {
             const liveLink = window.location.origin + window.location.pathname + '#student-results?uid=' + uid + '&exam=' + encodeURIComponent(exam);
             const qrData = `Student Marksheet Verification\nID: ${uid}\nName: ${name}\nExam: ${exam}\nLink: ${liveLink}`;
 
-            // 1. Generate QR onto the hidden canvas with Ultra-High Resolution
+            // 1. Generate QR onto the hidden canvas with Optimized Resolution
             await QRCode.toCanvas(canvas, qrData, {
-                width: 600, // Ultra-High Resolution for sharpest print
+                width: 350, // 350px is the sweet spot: 100% sharp scanning, but 3x lighter than 600px
                 margin: 0,
                 color: { dark: '#000000', light: '#ffffff' }, // Pure black for max contrast
                 errorCorrectionLevel: 'H' // Highest error correction for best print scanning

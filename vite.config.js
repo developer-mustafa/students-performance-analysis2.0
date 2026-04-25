@@ -41,6 +41,7 @@ export default defineConfig({
     build: {
         outDir: 'dist',
         emptyOutDir: true,
+        sourcemap: false,
         chunkSizeWarningLimit: 1000,
         rollupOptions: {
             input: {
@@ -64,5 +65,8 @@ export default defineConfig({
     },
     preview: {
         port: 4173,
+    },
+    esbuild: {
+        drop: process.env.NODE_ENV === 'production' ? ['console', 'debugger'] : [],
     },
 });

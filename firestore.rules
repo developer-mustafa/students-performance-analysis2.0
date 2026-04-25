@@ -1,0 +1,110 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // =======================================
+    //  Helper Functions
+    // =======================================
+
+    // Check if user is authenticated
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    // Get user document for role checking
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    // Check specific roles
+    function isSuperAdmin() {
+      return isAuthenticated() && getUserData().role == 'super_admin';
+    }
+
+    function isAdminOrAbove() {
+      return isAuthenticated() && getUserData().role in ['admin', 'super_admin'];
+    }
+
+    function isTeacherOrAbove() {
+      return isAuthenticated() && getUserData().role in ['teacher', 'admin', 'super_admin'];
+    }
+
+    // =======================================
+    //  Users Collection
+    // =======================================
+    match /users/{userId} {
+      // Users can read their own document
+      // Admins can read all users
+      allow read: if isAuthenticated() && (request.auth.uid == userId || isAdminOrAbove());
+      
+      // Only super_admin can create/update/delete users
+      allow create: if isSuperAdmin();
+      allow update: if isSuperAdmin() || request.auth.uid == userId;
+      allow delete: if isSuperAdmin();
+    }
+
+    // =======================================
+    //  Exam Data Collection
+    // =======================================
+    match /exams/{examId} {
+      // Any authenticated user can read exams
+      allow read: if isAuthenticated();
+      
+      // Teachers and above can create/update exams
+      allow create, update: if isTeacherOrAbove();
+      
+      // Only admins can delete exams
+      allow delete: if isAdminOrAbove();
+    }
+
+    // =======================================
+    //  Students Collection
+    // =======================================
+    match /students/{studentId} {
+      allow read: if isAuthenticated();
+      allow create, update: if isTeacherOrAbove();
+      allow delete: if isAdminOrAbove();
+    }
+
+    // =======================================
+    //  Teacher Assignments Collection
+    // =======================================
+    match /teacher_assignments/{assignmentId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isSuperAdmin();
+    }
+
+    // =======================================
+    //  Settings Collection (Global Config)
+    // =======================================
+    match /settings/{settingId} {
+      allow read: if isAuthenticated();
+      allow write: if isAdminOrAbove();
+    }
+
+    // =======================================
+    //  Access Requests Collection
+    // =======================================
+    match /access_requests/{requestId} {
+      // Anyone authenticated can create a request
+      allow create: if isAuthenticated();
+      // Only admins can read/update/delete requests
+      allow read, update, delete: if isAdminOrAbove();
+    }
+
+    // =======================================
+    //  Notices Collection
+    // =======================================
+    match /notices/{noticeId} {
+      allow read: if isAuthenticated();
+      allow create, update, delete: if isAdminOrAbove();
+    }
+
+    // =======================================
+    //  Catch-All: Deny everything else
+    // =======================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

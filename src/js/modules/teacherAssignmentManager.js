@@ -1,4 +1,4 @@
-﻿/**
+/**
  * Teacher Assignment Manager Module
  * Handles CRUD for teacher ↔ class/session/subject assignments
  * @module teacherAssignmentManager
@@ -396,7 +396,7 @@ export function initTeacherAssignmentUI() {
                     let infoText = `--- শিক্ষক তথ্য ---\n`;
                     infoText += `নাম: ${user.displayName || 'No Name'}\n`;
                     infoText += `ফোন: ${user.phone || 'N/A'}\n`;
-                    infoText += `イমেইল: ${user.email}\n`;
+                    infoText += `ইমেইল: ${user.email}\n`;
                     if (user.tempPassword) infoText += `পাসওয়ার্ড: ${user.tempPassword}\n`;
                     infoText += `লগইন স্ট্যাটাস: ${user.loginDisabled ? 'বন্ধ ⛔' : 'চালু ✅'}\n\n`;
                     infoText += `অ্যাসাইনমেন্টসমূহ:\n`;
@@ -558,11 +558,14 @@ export function initTeacherAssignmentUI() {
                 return;
             }
             setLoading(true, '#teacherAssignmentPage');
-            const success = await updateTeacherPassword(uid, newPass);
+            const result = await updateTeacherPassword(uid, newPass);
             setLoading(false, '#teacherAssignmentPage');
-            if (success) {
+            if (result && result.success) {
                 showNotification('পাসওয়ার্ড আপডেট করা হয়েছে! ✅');
                 await renderExistingAssignments();
+            } else {
+                const errMsg = result?.error === 'missing-credentials' ? 'এই টিচারের পূর্বের পাসওয়ার্ড পাওয়া যায়নি। অনুগ্রহ করে টিচার অ্যাকাউন্ট নতুন করে তৈরি করুন।' : 'পাসওয়ার্ড আপডেট করতে সমস্যা হয়েছে!';
+                showNotification(errMsg, 'error');
             }
         }
     });
@@ -844,17 +847,22 @@ async function renderExistingAssignments() {
     listEl.innerHTML = assignments.map((a, idx) => {
         const userDoc = allUsers.find(u => u.uid === a.uid);
         let passwordHtml = '';
-        if (userDoc && userDoc.tempPassword && state.isSuperAdmin) {
+        if (state.isSuperAdmin) {
+            const currentPass = userDoc && userDoc.tempPassword ? userDoc.tempPassword : null;
             passwordHtml = `
-                <div style="margin-top: 8px; padding: 6px 10px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef; display: inline-flex; align-items: center; gap: 10px; font-size: 0.85em;">
+                <div style="margin-top: 8px; padding: 6px 10px; background: #f8f9fa; border-radius: 6px; border: 1px solid #e9ecef; display: inline-flex; align-items: center; gap: 10px; font-size: 0.85em; flex-wrap: wrap;">
                     <span style="color: #6c757d;">পাসওয়ার্ড:</span>
-                    <strong style="font-family: monospace; letter-spacing: 0.5px;">${userDoc.tempPassword}</strong>
-                    <button type="button" class="ta-copy-btn" data-pass="${userDoc.tempPassword}" style="background: none; border: none; color: var(--primary); cursor: pointer; padding: 2px 5px;" title="পাসওয়ার্ড কপি করুন">
-                        <i class="fas fa-copy"></i>
-                    </button>
-                    <button type="button" class="ta-edit-pass-btn" data-uid="${a.uid}" data-email="${a.email}" data-old="${userDoc.tempPassword}" style="background: none; border: none; color: #ff9800; cursor: pointer; padding: 2px 5px;" title="পাসওয়ার্ড পরিবর্তন করুন">
-                        <i class="fas fa-edit"></i>
-                    </button>
+                    ${currentPass ? `
+                        <code style="background: #e8f5e9; color: #2e7d32; padding: 2px 8px; border-radius: 4px; font-weight: 600; font-size: 0.95em; letter-spacing: 0.5px;">${currentPass}</code>
+                        <button type="button" class="ta-copy-btn" data-pass="${currentPass}" style="background: none; border: none; color: var(--primary); cursor: pointer; padding: 2px 5px;" title="পাসওয়ার্ড কপি করুন">
+                            <i class="fas fa-copy"></i>
+                        </button>
+                        <button type="button" class="ta-edit-pass-btn" data-uid="${a.uid}" data-email="${a.email}" data-old="${currentPass}" style="background: none; border: none; color: #ff9800; cursor: pointer; padding: 2px 5px;" title="পাসওয়ার্ড পরিবর্তন করুন">
+                            <i class="fas fa-key"></i>
+                        </button>
+                    ` : `
+                        <strong style="color: #ff9800;">⚠️ সেট করা হয়নি (গুগল লগইন)</strong>
+                    `}
                 </div>
             `;
         }
@@ -975,29 +983,6 @@ async function renderExistingAssignments() {
         });
     });
 
-    // Edit Password handlers
-    listEl.querySelectorAll('.ta-edit-pass-btn').forEach(btn => {
-        btn.addEventListener('click', async () => {
-            const newPass = prompt('নতুন পাসওয়ার্ড প্রদান করুন:');
-            if (!newPass || newPass.trim() === '') return;
-
-            const uid = btn.dataset.uid;
-            const email = btn.dataset.email;
-            const oldPass = btn.dataset.old;
-
-            if (newPass.length < 6) {
-                showNotification('পাসওয়ার্ড কমপক্ষে ৬ অক্ষরের হতে হবে', 'error');
-                return;
-            }
-            setLoading(true, '#teacherAssignmentPage');
-            const success = await updateTeacherPassword(uid, newPass);
-            setLoading(false, '#teacherAssignmentPage');
-            if (success) {
-                showNotification('পাসওয়ার্ড আপডেট করা হয়েছে! ✅');
-                await renderExistingAssignments();
-            }
-        });
-    });
 }
 
 /**
