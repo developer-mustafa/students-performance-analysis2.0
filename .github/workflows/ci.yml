@@ -1,4 +1,4 @@
-name: CI Pipeline
+name: Multi-Target CI/CD Pipeline
 
 on:
   push:
@@ -6,10 +6,18 @@ on:
   pull_request:
     branches: [ "main", "development" ]
 
+# Sets permissions of the GITHUB_TOKEN to allow deployment to GitHub Pages
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
 jobs:
+  # ==========================================
+  # 1. CI: Build & Test (Runs on all branches)
+  # ==========================================
   build-and-test:
     runs-on: ubuntu-latest
-
     steps:
     - name: Checkout Repository
       uses: actions/checkout@v4
@@ -26,5 +34,73 @@ jobs:
     - name: Run Tests
       run: npm test
 
-    - name: Verify Build
+    - name: Verify & Build
       run: npm run build
+
+    # Upload the 'dist' folder so deployment jobs can use it
+    - name: Upload Build Artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: dist-files
+        path: dist/
+        retention-days: 1
+
+  # ==========================================
+  # 2. CD: Deploy to Firebase Hosting (Only on main)
+  # ==========================================
+  deploy-firebase:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Download Build Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: dist-files
+        path: dist/
+
+    - name: Deploy to Firebase
+      # Note: You must add FIREBASE_TOKEN to your GitHub repository secrets
+      env:
+        FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
+      run: |
+        if [ -z "$FIREBASE_TOKEN" ]; then
+          echo "⚠️ FIREBASE_TOKEN secret is missing. Skipping Firebase deployment."
+          exit 0
+        fi
+        npx firebase-tools deploy --only hosting --token "$FIREBASE_TOKEN"
+
+  # ==========================================
+  # 3. CD: Deploy to GitHub Pages (Only on main)
+  # ==========================================
+  deploy-github-pages:
+    needs: build-and-test
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+    - name: Checkout Repository
+      uses: actions/checkout@v4
+
+    - name: Download Build Artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: dist-files
+        path: dist/
+
+    - name: Setup Pages
+      uses: actions/configure-pages@v4
+
+    - name: Upload artifact for Pages
+      uses: actions/upload-pages-artifact@v3
+      with:
+        path: './dist'
+
+    - name: Deploy to GitHub Pages
+      id: deployment
+      uses: actions/deploy-pages@v4
