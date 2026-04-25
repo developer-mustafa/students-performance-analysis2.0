@@ -91,7 +91,10 @@
 ৩. সরাসরি রান করতে `npm run dev` ব্যবহার করুন।
 
 ---
-**Lead Developer:** Mustafa Rahman  
-**Live Sites:** 
-* [automatapro.web.app](https://automatapro.web.app/) (Firebase)
-* [result-analyst.netlify.app](https://result-analyst.netlify.app/) (Netlify)
+**Lead Developer & Engineer:** Mustafa Rahman  
+
+**All Live Sites:**
+* **[automatapro.web.app](https://automatapro.web.app/)** (Firebase Hosting)
+* **[automatapro.netlify.app](https://automatapro.netlify.app/)** (Netlify)
+* **[developer-mustafa.github.io/EdTech-Automata-Pro](https://developer-mustafa.github.io/EdTech-Automata-Pro/)** (GitHub Pages)
+* **[automatapro.vercel.app](https://automatapro.vercel.app/)** (Vercel)  
