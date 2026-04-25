@@ -6,17 +6,14 @@ service cloud.firestore {
     //  Helper Functions
     // =======================================
 
-    // Check if user is authenticated
     function isAuthenticated() {
       return request.auth != null;
     }
 
-    // Get user document for role checking
     function getUserData() {
       return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
     }
 
-    // Check specific roles
     function isSuperAdmin() {
       return isAuthenticated() && getUserData().role == 'super_admin';
     }
@@ -33,71 +30,79 @@ service cloud.firestore {
     //  Users Collection
     // =======================================
     match /users/{userId} {
-      // Users can read their own document
-      // Admins can read all users
       allow read: if isAuthenticated() && (request.auth.uid == userId || isAdminOrAbove());
-      
-      // Only super_admin can create/update/delete users
       allow create: if isSuperAdmin();
       allow update: if isSuperAdmin() || request.auth.uid == userId;
       allow delete: if isSuperAdmin();
     }
 
     // =======================================
-    //  Exam Data Collection
+    //  Exam Data Collection (UPDATED FOR PUBLIC READ)
     // =======================================
     match /exams/{examId} {
-      // Any authenticated user can read exams
-      allow read: if isAuthenticated();
+      // যে কেউ লগইন ছাড়াই এক্সাম কার্ড ও রেজাল্ট দেখতে পারবে
+      allow read: if true; 
       
-      // Teachers and above can create/update exams
       allow create, update: if isTeacherOrAbove();
-      
-      // Only admins can delete exams
       allow delete: if isAdminOrAbove();
+    }
+
+    // =======================================
+    //  Exam Configs & Academic Structure
+    // =======================================
+    match /examConfigs/{configId} {
+      allow read: if true; // রেজাল্ট রেন্ডার করার জন্য এটিও পাবলিক রাখা হয়েছে
+      allow create, update: if isTeacherOrAbove();
+      allow delete: if isAdminOrAbove();
+    }
+
+    match /academicStructure/{docId} {
+      allow read: if true; // ড্রপডাউন মেনুগুলোর জন্য এটি পাবলিক রাখা হয়েছে
+      allow write: if isAdminOrAbove();
     }
 
     // =======================================
     //  Students Collection
     // =======================================
     match /students/{studentId} {
+      // ব্যক্তিগত প্রোফাইল সুরক্ষার জন্য এটি শুধু অথেনটিকেটেড ইউজারদের জন্য
       allow read: if isAuthenticated();
       allow create, update: if isTeacherOrAbove();
       allow delete: if isAdminOrAbove();
     }
 
     // =======================================
-    //  Teacher Assignments Collection
+    //  Teacher Assignments & Access Control
     // =======================================
     match /teacher_assignments/{assignmentId} {
       allow read: if isAuthenticated();
       allow create, update, delete: if isSuperAdmin();
     }
 
+    match /accessControl/{docId} {
+      allow read: if isAuthenticated();
+      allow write: if isSuperAdmin();
+    }
+
     // =======================================
-    //  Settings Collection (Global Config)
+    //  Settings & Notices
     // =======================================
     match /settings/{settingId} {
-      allow read: if isAuthenticated();
+      allow read: if true; // ওয়েবসাইট থিম বা লোগোর জন্য এটি পাবলিক থাকা প্রয়োজন
       allow write: if isAdminOrAbove();
     }
 
-    // =======================================
-    //  Access Requests Collection
-    // =======================================
-    match /access_requests/{requestId} {
-      // Anyone can create a request (they don't have an account yet)
-      allow create: if true;
-      // Only admins can read/update/delete requests
-      allow read, update, delete: if isAdminOrAbove();
+    match /notices/{noticeId} {
+      allow read: if true; // নোটিশ বোর্ড সবার জন্য উন্মুক্ত
+      allow create, update, delete: if isAdminOrAbove();
     }
 
     // =======================================
-    //  Notices Collection
+    //  Access Requests
     // =======================================
-    match /notices/{noticeId} {
-      allow read: if isAuthenticated();
-      allow create, update, delete: if isAdminOrAbove();
+    match /access_requests/{requestId} {
+      allow create: if true;
+      allow read, update, delete: if isAdminOrAbove();
     }
 
     // =======================================
