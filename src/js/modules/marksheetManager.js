@@ -1443,7 +1443,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
     student.tutorialExtraGPA = tutorialExtraGP;
     // --- END TUTORIAL GPA BONUS ---
 
-    const dynamicColspan = (isCombinedMode ? 3 : 2) + (tutIntEnabled && tutCount > 0 ? 1 : 0);
+    const dynamicColspan = (isCombinedMode ? 3 : 2);
 
     const subjectRows = visibleSubjects.flatMap((subjObj, idx) => {
         const isObj = typeof subjObj === 'object';
@@ -1999,8 +1999,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                         </tbody>
                         <tfoot>
                             <tr class="ms-row-total">
-                                <td colspan="2" class="ms-td-total-label">সর্বমোট</td>
-                                ${isCombinedMode ? '<td class="ms-td-num"></td>' : ''}
+                                <td colspan="${dynamicColspan}" class="ms-td-total-label">সর্বমোট</td>
                                 ${tutIntEnabled && tutCount > 0 ? `<td class="ms-td-num" style="color:#6d28d9; font-weight:700;">${totalTutorialAvgSum}</td>` : ''}
                                 <td class="ms-td-num"></td>
                                 <td class="ms-td-num">${maxGrand}</td>
@@ -2014,68 +2013,63 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                     </table>
                 </div>
 
-                <!-- Result Summary Section -->
-                <div class="ms-result-section" style="display: flex; flex-direction: column; gap: 10px; margin-top: 15px;">
-                    
-                    <!-- Primary Results (Focus Points) -->
-                    <div class="ms-result-row-primary" style="display: flex; justify-content: center; gap: 12px; flex-wrap: wrap;">
-                        <div class="ms-result-box" style="flex: 1; min-width: 100px; padding: 10px; ${isIdSearch && ms.idSearchStatusMode === 'status_only' ? 'display: none !important;' : ''}">
-                            <span class="ms-result-label" style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: #64748b;">GPA</span>
-                            <span class="ms-result-value ms-gpa-value" style="font-size: 1.4rem; font-weight: 800; color: #1e293b;">${avgGPA}</span>
-                        </div>
-                        <div class="ms-result-box" style="flex: 1; min-width: 100px; padding: 10px; ${isIdSearch && ms.idSearchStatusMode === 'status_only' ? 'display: none !important;' : ''}">
-                            <span class="ms-result-label" style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase; color: #64748b;">গ্রেড</span>
-                            <span class="ms-result-value" style="font-size: 1.4rem; font-weight: 800; color: #1e293b;">${overallGrade}</span>
-                        </div>
-                        <div class="ms-result-box ${resultClass}" style="flex: 1.5; min-width: 130px; padding: 10px;">
-                            <span class="ms-result-label" style="font-size: 0.65rem; font-weight: 700; text-transform: uppercase;">ফলাফল</span>
-                            <span class="ms-result-value" style="font-size: 1.4rem; font-weight: 800;">${resultText}</span>
-                        </div>
+                <!-- Result Summary -->
+                <div class="ms-result-section">
+                    ${optionalBonusGP > 0 ? `
+                    <div class="ms-result-box" style="background: linear-gradient(135deg, #e8f5e9, #c8e6c9); border: 1px solid #a5d6a7; ${isIdSearch && ms.idSearchStatusMode === 'status_only' ? 'display: none !important;' : ''}">
+                        <span class="ms-result-label" style="color: #2e7d32; font-size: 0.55rem;">ঐচ্ছিক পয়েন্ট</span>
+                        <span class="ms-result-value" style="color: #1b5e20; font-size: 1.1rem;">+${optionalBonusGP.toFixed(2)}</span>
                     </div>
+                    ` : ''}
+                    ${(tutIntEnabled && tutCount > 0 && tutorialExtraGP > 0) ? `
+                    <div class="ms-result-box" style="background: linear-gradient(135deg, #f5f3ff, #ede9fe); border: 1px solid #ddd6fe; ${isIdSearch && ms.idSearchStatusMode === 'status_only' ? 'display: none !important;' : ''}">
+                        <span class="ms-result-label" style="color: #5b21b6; font-size: 0.55rem;">টিউটোরিয়াল পয়েন্ট</span>
+                        <span class="ms-result-value" style="color: #6d28d9; font-size: 1.1rem;">+${tutorialExtraGP.toFixed(2)}</span>
+                    </div>
+                    ` : ''}
+                    ${grandTotal === 0 ? `
+                    <div class="ms-result-box" style="background: #ffffff; border: 1.5px solid #e53935;">
+                        <span class="ms-result-label" style="color: #e53935; font-size: 0.55rem;">স্ট্যাটাস</span>
+                        <span class="ms-result-value" style="color: #d32f2f; font-size: 1rem; font-weight: 700; letter-spacing: 1px;">অনুপস্থিত</span>
+                    </div>
+                    ` : ''}
+                    <div class="ms-result-box" style="${isIdSearch && ms.idSearchStatusMode === 'status_only' ? 'display: none !important;' : ''}">
+                        <span class="ms-result-label">GPA</span>
+                        <span class="ms-result-value ms-gpa-value">${avgGPA}</span>
+                    </div>
+                    <div class="ms-result-box" style="${isIdSearch && ms.idSearchStatusMode === 'status_only' ? 'display: none !important;' : ''}">
+                        <span class="ms-result-label">গ্রেড</span>
+                        <span class="ms-result-value">${overallGrade}</span>
+                    </div>
+                    <div class="ms-result-box ${resultClass}">
+                        <span class="ms-result-label">ফলাফল</span>
+                        <span class="ms-result-value">${resultText}</span>
+                    </div>
+                    <div class="ms-result-box" style="${isIdSearch && ms.idSearchStatusMode === 'status_only' ? 'display: none !important;' : ''}">
+                        <span class="ms-result-label">মোট প্রাপ্ত নম্বর</span>
+                        <span class="ms-result-value">${grandTotal} / ${maxGrand}</span>
+                    </div>
+                    ${(() => {
+                        if (grandTotal === 0 && !allPassed) return ''; 
+                        const failedCount = (subjectRows.match(/ms-grade-fail/g) || []).length;
+                        const finalCount = (!allPassed && failedCount === 0) ? 1 : failedCount;
 
-                    <!-- Secondary/Detail Metrics -->
-                    <div class="ms-result-row-secondary" style="display: flex; justify-content: center; gap: 8px; flex-wrap: wrap;">
-                        ${optionalBonusGP > 0 ? `
-                        <div class="ms-result-box" style="flex: 1; min-width: 85px; padding: 6px; background: linear-gradient(135deg, #f0fdf4, #dcfce7); border: 1px solid #bbf7d0; ${isIdSearch && ms.idSearchStatusMode === 'status_only' ? 'display: none !important;' : ''}">
-                            <span class="ms-result-label" style="color: #166534; font-size: 0.55rem; font-weight: 600;">ঐচ্ছিক পয়েন্ট</span>
-                            <span class="ms-result-value" style="color: #15803d; font-size: 0.95rem; font-weight: 700;">+${optionalBonusGP.toFixed(2)}</span>
-                        </div>
-                        ` : ''}
-                        
-                        ${(tutIntEnabled && tutCount > 0 && tutorialExtraGP > 0) ? `
-                        <div class="ms-result-box" style="flex: 1; min-width: 85px; padding: 6px; background: linear-gradient(135deg, #f5f3ff, #ede9fe); border: 1px solid #ddd6fe; ${isIdSearch && ms.idSearchStatusMode === 'status_only' ? 'display: none !important;' : ''}">
-                            <span class="ms-result-label" style="color: #5b21b6; font-size: 0.55rem; font-weight: 600;">টিউটোরিয়াল পয়েন্ট</span>
-                            <span class="ms-result-value" style="color: #6d28d9; font-size: 0.95rem; font-weight: 700;">+${tutorialExtraGP.toFixed(2)}</span>
-                        </div>
-                        ` : ''}
+                        const bgStyle = (!allPassed || finalCount > 0) ? 'background: #fef2f2; border: 1px solid #fecaca;' : 'background: #f0fdf4; border: 1px solid #bbf7d0;';
+                        const labelStyle = (!allPassed || finalCount > 0) ? 'color: #991b1b; font-size: 0.55rem;' : 'color: #166534; font-size: 0.55rem;';
+                        const valStyle = (!allPassed || finalCount > 0) ? 'color: #dc2626; font-size: 0.85rem; font-weight: 700;' : 'color: #15803d; font-size: 0.85rem; font-weight: 700;';
 
-                        <div class="ms-result-box" style="flex: 1; min-width: 100px; padding: 6px; background: #f8fafc; border: 1px solid #e2e8f0; ${isIdSearch && ms.idSearchStatusMode === 'status_only' ? 'display: none !important;' : ''}">
-                            <span class="ms-result-label" style="color: #64748b; font-size: 0.55rem; font-weight: 600;">মোট প্রাপ্ত নম্বর</span>
-                            <span class="ms-result-value" style="color: #334155; font-size: 0.95rem; font-weight: 700;">${grandTotal} / ${maxGrand}</span>
-                        </div>
+                        let text = 'সকল বিষয়ে উত্তীর্ণ';
+                        if (!allPassed || finalCount > 0) {
+                            const banglaNum = Number(finalCount).toLocaleString('bn-BD');
+                            text = `${banglaNum} বিষয় ফেল`;
+                        }
 
-                        ${(() => {
-                if (grandTotal === 0 && !allPassed) return ''; 
-                const failedCount = (subjectRows.match(/ms-grade-fail/g) || []).length;
-                const finalCount = (!allPassed && failedCount === 0) ? 1 : failedCount;
-
-                const bgStyle = (!allPassed || finalCount > 0) ? 'background: #fff1f2; border: 1px solid #fecdd3;' : 'background: #f0fdf4; border: 1px solid #bbf7d0;';
-                const labelStyle = (!allPassed || finalCount > 0) ? 'color: #be123c; font-size: 0.55rem; font-weight: 600;' : 'color: #166534; font-size: 0.55rem; font-weight: 600;';
-                const valStyle = (!allPassed || finalCount > 0) ? 'color: #e11d48; font-size: 0.85rem; font-weight: 700;' : 'color: #15803d; font-size: 0.85rem; font-weight: 700;';
-
-                let text = 'সকল বিষয়ে উত্তীর্ণ';
-                if (!allPassed || finalCount > 0) {
-                    const banglaNum = Number(finalCount).toLocaleString('bn-BD');
-                    text = `${banglaNum} বিষয় ফেল`;
-                }
-
-                return `
-                        <div class="ms-result-box" style="flex: 1.2; min-width: 110px; padding: 6px; ${bgStyle}">
+                        return `
+                        <div class="ms-result-box" style="${bgStyle}">
                             <span class="ms-result-label" style="${labelStyle}">বিষয়ভিত্তিক অবস্থা:</span>
                             <span class="ms-result-value" style="${valStyle}">${text}</span>
                         </div>`;
-            })()}
-                    </div>
+                    })()}
                 </div>
                     <!--EXAM_SUMMARY_PLACEHOLDER-->
 
@@ -2117,70 +2111,75 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                 </div>
 
                 <!-- Extra Sections: History, Comments, QR -->
-                <div class="ms-extra-grid">
-                    <div class="ms-extra-box ms-history-column" style="display: ${isIdSearch && ms.idSearchShowRanking === false ? 'none !important' : 'flex'}; flex-direction: column; min-width: 0; overflow: hidden;">
-                        <span class="ms-extra-title">ফলাফলের ইতিহাস ও মেধাক্রম</span>
+                <div class="ms-extra-grid ${!(ms.showRanking !== false && !(isIdSearch && ms.idSearchShowRanking === false)) ? 'ms-no-history' : ''}">
+                    ${(() => {
+                        const showRanking = (ms.showRanking !== false) && !(isIdSearch && ms.idSearchShowRanking === false);
+                        const showClassRank = (ms.showClassRank !== false);
+                        const showGroupRank = (ms.showGroupRank !== false);
+
+                        if (!showRanking) return '';
+
+                        let gridTemplate = "70% 30%";
+                        if (showClassRank && showGroupRank) gridTemplate = "38% 18% 22% 22%";
+                        else if (showClassRank || showGroupRank) gridTemplate = "50% 20% 30%";
+
+                        return `
+                    <div class="ms-extra-box ms-history-column" style="display: flex; flex-direction: column; min-width: 0; overflow: hidden;">
+                        <span class="ms-extra-title">ফলাফলের ইতিহাস${(showClassRank || showGroupRank) ? ' ও মেধাক্রম' : ''}</span>
                         <div class="ms-history-grid-container" style="flex-grow: 1; display: flex; flex-direction: column; width: 100%;">
                             <!-- Header Row -->
-                            <div style="display: grid; grid-template-columns: 38% 18% 22% 22%; width: 100%; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 4px;">
+                            <div style="display: grid; grid-template-columns: ${gridTemplate}; width: 100%; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; margin-bottom: 4px;">
                                 <div style="display: flex; align-items: flex-end; font-size: 0.75rem; font-weight: 700; color: #475569; text-align: left; padding: 2px;">পরীক্ষার নাম</div>
                                 <div style="display: flex; align-items: flex-end; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #475569; text-align: center; padding: 2px;">GPA</div>
+                                ${showClassRank ? `
                                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; font-size: 0.75rem; font-weight: 700; color: #475569; text-align: center; padding: 2px;" title="সমন্বিত">
                                     <span>মেধাক্রম</span>
                                     <span style="font-size:0.55rem; font-weight:800; color:#64748b; margin-top:2px; letter-spacing:0.3px;">CLASS</span>
-                                </div>
+                                </div>` : ''}
+                                ${showGroupRank ? `
                                 <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; font-size: 0.75rem; font-weight: 700; color: #475569; text-align: center; padding: 2px;" title="বিভাগীয়">
                                     <span>মেধাক্রম</span>
                                     <span style="font-size:0.55rem; font-weight:800; color:#64748b; margin-top:2px; letter-spacing:0.3px;">GROUP</span>
-                                </div>
+                                </div>` : ''}
                             </div>
                             
                             <!-- Data Rows -->
                             <div style="display: flex; flex-direction: column; gap: 6px;">
                                 ${history.length > 0 ? history.map(h => {
-            // Helper functions for precise rank styling
-            const getRankClass = (rankVal, type) => {
-                if (rankVal === 'মেধাক্রম নেই' || rankVal === '-' || !rankVal) return 'ms-rank-none';
-                const r = parseInt(convertToEnglishDigits(String(rankVal)));
-                const isClass = type === 'class';
-                if (r === 1) return isClass ? 'ms-rank-1-class' : 'ms-rank-1-group';
-                if (r === 2) return 'ms-rank-2-class';
-                if (r === 3) return 'ms-rank-3-class';
-                return isClass ? 'ms-rank-gen-class' : 'ms-rank-gen-group';
-            };
+                                    const getRankClass = (rankVal, type) => {
+                                        if (rankVal === 'মেধাক্রম নেই' || rankVal === '-' || !rankVal) return 'ms-rank-none';
+                                        const r = parseInt(convertToEnglishDigits(String(rankVal)));
+                                        const isClass = type === 'class';
+                                        if (r === 1) return isClass ? 'ms-rank-1-class' : 'ms-rank-1-group';
+                                        if (r === 2) return 'ms-rank-2-class';
+                                        if (r === 3) return 'ms-rank-3-class';
+                                        return isClass ? 'ms-rank-gen-class' : 'ms-rank-gen-group';
+                                    };
 
-            const getRankText = (rankVal) => {
-                if (rankVal === 'মেধাক্রম নেই' || rankVal === '-' || !rankVal) return '-';
-                const r = parseInt(convertToEnglishDigits(String(rankVal)));
-                if (typeof rankVal === 'string' && /[মর্থষ্ঠ]/.test(rankVal)) return rankVal;
-                return r === 1 ? '১ম' : r === 2 ? '২য়' : r === 3 ? '৩য়' : r === 4 ? '৪র্থ' : r === 5 ? '৫ম' : r === 6 ? '৬ষ্ঠ' : r === 7 ? '৭ম' : r === 8 ? '৮ম' : r === 9 ? '৯ম' : r === 10 ? '১০ম' : `${r.toLocaleString('bn-BD')}তম`;
-            };
+                                    const getRankText = (rankVal) => {
+                                        if (rankVal === 'মেধাক্রম নেই' || rankVal === '-' || !rankVal) return '-';
+                                        const r = parseInt(convertToEnglishDigits(String(rankVal)));
+                                        if (typeof rankVal === 'string' && /[মর্থষ্ঠ]/.test(rankVal)) return rankVal;
+                                        return r === 1 ? '১ম' : r === 2 ? '২য়' : r === 3 ? '৩য়' : r === 4 ? '৪র্থ' : r === 5 ? '৫ম' : r === 6 ? '৬ষ্ঠ' : r === 7 ? '৭ম' : r === 8 ? '৮ম' : r === 9 ? '৯ম' : r === 10 ? '১০ম' : `${r.toLocaleString('bn-BD')}তম`;
+                                    };
 
-            const cRankClass = getRankClass(h.rank, 'class');
-            const gRankClass = getRankClass(h.groupRank, 'group');
-            const cRankText = getRankText(h.rank);
-            const gRankText = getRankText(h.groupRank);
+                                    const cRankClass = getRankClass(h.rank, 'class');
+                                    const gRankClass = getRankClass(h.groupRank, 'group');
+                                    const cRankText = getRankText(h.rank);
+                                    const gRankText = getRankText(h.groupRank);
 
-            return `
-                                    <div style="display: grid; grid-template-columns: 38% 18% 22% 22%; width: 100%; border-bottom: 1px dashed #f1f5f9; padding: 6px 0; align-items: center;">
+                                    return `
+                                    <div style="display: grid; grid-template-columns: ${gridTemplate}; width: 100%; border-bottom: 1px dashed #f1f5f9; padding: 6px 0; align-items: center;">
                                         <div style="font-size: 0.72rem; font-weight: 600; color: #334155; text-align: left; padding: 2px; white-space: normal; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.3;">${h.name}</div>
-                                        <div style="font-size: 0.8rem; font-weight: 800; color: #0f172a; text-align: center; padding: 2px; white-space: nowrap;">${h.gpa}</div>
-                                        <div style="text-align: center; padding: 2px; display: flex; justify-content: center;">
-                                            <div class="ms-rank-badge ${cRankClass}" style="${cRankText === '-' ? 'background:#f8fafc; color:#cbd5e1; border:1px solid #e2e8f0; box-shadow:none !important;' : ''}">
-                                                ${cRankText}
-                                            </div>
-                                        </div>
-                                        <div style="text-align: center; padding: 2px; display: flex; justify-content: center;">
-                                            <div class="ms-rank-badge ${gRankClass}" style="${gRankText === '-' ? 'background:#f8fafc; color:#cbd5e1; border:1px solid #e2e8f0; box-shadow:none !important;' : ''}">
-                                                ${gRankText}
-                                            </div>
-                                        </div>
-                                    </div>
-                                `;
-        }).join('') : '<div style="text-align:center; font-size: 0.75rem; opacity:0.5; padding: 10px 0; width: 100%;">হিস্টোরি নেই</div>'}
+                                        <div style="font-size: 0.85rem; font-weight: 700; color: #1e293b; text-align: center; padding: 2px; font-family: 'Inter', sans-serif;">${h.gpa}</div>
+                                        ${showClassRank ? `<div class="ms-rank-badge ${cRankClass}" style="text-align: center;">${cRankText}</div>` : ''}
+                                        ${showGroupRank ? `<div class="ms-rank-badge ${gRankClass}" style="text-align: center;">${gRankText}</div>` : ''}
+                                    </div>`;
+                                }).join('') : `<div style="text-align: center; padding: 10px; font-size: 0.75rem; color: #94a3b8; font-style: italic;">কোনো ইতিহাস পাওয়া যায়নি</div>`}
                             </div>
                         </div>
-                    </div>
+                    </div>`;
+                    })()}
                     
                     <div class="ms-extra-box ms-comments-box" style="${isIdSearch && ms.idSearchShowComments === false ? 'display: none !important;' : ''}">
                         <span class="ms-extra-title">মন্তব্য:</span>
@@ -2329,6 +2328,9 @@ async function updateSettingsLivePreview() {
         watermarkUrl: marksheetSettings.watermarkUrl || '',
         watermarkOpacity: (document.getElementById('msWatermarkOpacity') ? parseInt(document.getElementById('msWatermarkOpacity').value) : 10) / 100,
         showSummary: document.getElementById('msShowSummary') ? document.getElementById('msShowSummary').checked : true,
+        showRanking: document.getElementById('msShowRanking') ? document.getElementById('msShowRanking').checked : true,
+        showClassRank: document.getElementById('msShowClassRank') ? document.getElementById('msShowClassRank').checked : true,
+        showGroupRank: document.getElementById('msShowGroupRank') ? document.getElementById('msShowGroupRank').checked : true,
         showGradeScale: document.getElementById('msShowGradeScale') ? document.getElementById('msShowGradeScale').checked : true,
         idSearchShowTable: document.getElementById('msIdSearchShowTable') ? document.getElementById('msIdSearchShowTable').checked : true,
         idSearchShowGradeScale: document.getElementById('msIdSearchShowGradeScale') ? document.getElementById('msIdSearchShowGradeScale').checked : true,
@@ -2460,6 +2462,9 @@ function initMarksheetSettingsModal() {
             if (el('msTypography')) el('msTypography').value = marksheetSettings.typography || 'default';
             if (el('msRowDensity')) el('msRowDensity').value = marksheetSettings.rowDensity || 'normal';
             if (el('msShowSummary')) el('msShowSummary').checked = marksheetSettings.showSummary !== false;
+            if (el('msShowRanking')) el('msShowRanking').checked = marksheetSettings.showRanking !== false;
+            if (el('msShowClassRank')) el('msShowClassRank').checked = marksheetSettings.showClassRank !== false;
+            if (el('msShowGroupRank')) el('msShowGroupRank').checked = marksheetSettings.showGroupRank !== false;
             if (el('msShowGradeScale')) el('msShowGradeScale').checked = marksheetSettings.showGradeScale !== false;
             if (el('msBoardStandardOptional')) el('msBoardStandardOptional').checked = marksheetSettings.boardStandardOptional === true;
             if (el('msProgressEnabled')) el('msProgressEnabled').checked = marksheetSettings.progressEnabled !== false;
@@ -2516,6 +2521,22 @@ function initMarksheetSettingsModal() {
             renderSubjectMappings();
 
             if (modal) modal.classList.add('active');
+
+            // Handle sub-config visibility
+            const rankMain = el('msShowRanking');
+            const rankDetails = el('msRankingDetailsConfig');
+            if (rankMain && rankDetails) {
+                const updateRankDetails = () => {
+                    rankDetails.style.opacity = rankMain.checked ? '1' : '0.5';
+                    rankDetails.style.pointerEvents = rankMain.checked ? 'auto' : 'none';
+                    if (!rankMain.checked) {
+                        el('msShowClassRank').checked = false;
+                        el('msShowGroupRank').checked = false;
+                    }
+                };
+                rankMain.addEventListener('change', updateRankDetails);
+                updateRankDetails();
+            }
         });
     }
 
@@ -2623,6 +2644,9 @@ function initMarksheetSettingsModal() {
                 hiddenSubjects: marksheetSettings.hiddenSubjects || [],
                 historyExams: marksheetSettings.historyExams || [],
                 showSummary: document.getElementById('msShowSummary').checked,
+                showRanking: document.getElementById('msShowRanking').checked,
+                showClassRank: document.getElementById('msShowClassRank').checked,
+                showGroupRank: document.getElementById('msShowGroupRank').checked,
                 showGradeScale: document.getElementById('msShowGradeScale').checked,
                 boardStandardOptional: document.getElementById('msBoardStandardOptional')?.checked || false,
                 idSearchShowTable: document.getElementById('msIdSearchShowTable').checked,

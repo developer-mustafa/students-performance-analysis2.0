@@ -12999,19 +12999,23 @@ body.is-super-admin td.admin-only {
 }
 
 .ms-row-total {
-  background: #e8f5e9 !important;
+  background: #f8fafc !important; /* Lighter, cleaner background */
   font-weight: 700;
+  border-top: 2px solid var(--ms-primary, #4361ee) !important;
 }
 
 .ms-row-total td {
-  border-top: 2px solid #0d5e2e;
-  padding: 4px 4px;
+  border-top: 2px solid var(--ms-primary, #4361ee) !important;
+  padding: 6px 4px !important;
+  color: #1e293b !important;
 }
 
 .ms-td-total-label {
   text-align: right !important;
   font-weight: 800;
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  padding-right: 15px !important;
+  color: var(--ms-primary, #4361ee) !important;
 }
 
 /* Result Summary */
@@ -22677,9 +22681,24 @@ a.sidebar-contact-item:hover {
 .ms-extra-grid {
   display: grid !important;
   grid-template-columns: 1.35fr 0.8fr 0.85fr !important;
-  gap: 10px !important;
+  gap: 12px !important;
   margin-top: 15px !important;
   width: 100% !important;
+}
+
+.ms-extra-grid.ms-no-history {
+  display: flex !important;
+  justify-content: space-between !important;
+  grid-template-columns: none !important;
+  gap: 20px !important;
+}
+
+.ms-extra-grid.ms-no-history .ms-comments-box {
+  flex: 1.6 !important;
+}
+
+.ms-extra-grid.ms-no-history .ms-qr-column {
+  flex: 1 !important;
 }
 
 /* Ensure boxes don't overflow their grid columns on small screens */

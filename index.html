@@ -4324,6 +4324,38 @@
                       </label>
                     </div>
 
+                    <!-- Ranking & History Section Controls -->
+                    <div
+                      style="background: var(--bg-color); padding: 15px; border-radius: 12px; border: 1px solid var(--border-color); display: flex; flex-direction: column; gap: 12px;">
+                      <div style="display: flex; justify-content: space-between; align-items: center;">
+                        <div>
+                          <h4 style="margin: 0; font-size: 1rem; color: var(--primary);">রেঙ্কিং ও ইতিহাস অংশ</h4>
+                          <p style="margin: 5px 0 0; font-size: 0.8rem; opacity: 0.7;">পূর্ববর্তী পরীক্ষার রেজাল্ট ও মেধা অবস্থান সেকশন</p>
+                        </div>
+                        <label class="ac-sw">
+                          <input type="checkbox" id="msShowRanking" checked>
+                          <span class="ac-sw-sl"></span>
+                        </label>
+                      </div>
+                      
+                      <div id="msRankingDetailsConfig" style="margin-left: 15px; padding-left: 15px; border-left: 2px solid var(--border-color); display: flex; flex-direction: column; gap: 10px; transition: all 0.3s ease;">
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                          <span style="font-size: 0.9rem; font-weight: 500;">ক্লাস রেঙ্ক (Class Rank) প্রদর্শন</span>
+                          <label class="ac-sw" style="transform: scale(0.85);">
+                            <input type="checkbox" id="msShowClassRank" checked>
+                            <span class="ac-sw-sl"></span>
+                          </label>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                          <span style="font-size: 0.9rem; font-weight: 500;">গ্রুপ রেঙ্ক (Group Rank) প্রদর্শন</span>
+                          <label class="ac-sw" style="transform: scale(0.85);">
+                            <input type="checkbox" id="msShowGroupRank" checked>
+                            <span class="ac-sw-sl"></span>
+                          </label>
+                        </div>
+                      </div>
+                    </div>
+
                     <div
                       style="background: linear-gradient(135deg, rgba(156, 39, 176, 0.05), rgba(103, 58, 183, 0.05)); padding: 15px; border-radius: 12px; border: 1px solid rgba(156, 39, 176, 0.2); display: flex; justify-content: space-between; align-items: center;">
                       <div>
