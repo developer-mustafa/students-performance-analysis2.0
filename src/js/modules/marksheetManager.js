@@ -2132,12 +2132,12 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                                 <div style="display: flex; align-items: flex-end; font-size: 0.75rem; font-weight: 700; color: #475569; text-align: left; padding: 2px;">পরীক্ষার নাম</div>
                                 <div style="display: flex; align-items: flex-end; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #475569; text-align: center; padding: 2px;">GPA</div>
                                 ${showClassRank ? `
-                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; font-size: 0.75rem; font-weight: 700; color: #475569; text-align: center; padding: 2px;" title="সমন্বিত">
+                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #475569; text-align: center; padding: 2px;" title="সমন্বিত">
                                     <span>মেধাক্রম</span>
                                     <span style="font-size:0.55rem; font-weight:800; color:#64748b; margin-top:2px; letter-spacing:0.3px;">CLASS</span>
                                 </div>` : ''}
                                 ${showGroupRank ? `
-                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: flex-end; font-size: 0.75rem; font-weight: 700; color: #475569; text-align: center; padding: 2px;" title="বিভাগীয়">
+                                <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; color: #475569; text-align: center; padding: 2px;" title="বিভাগীয়">
                                     <span>মেধাক্রম</span>
                                     <span style="font-size:0.55rem; font-weight:800; color:#64748b; margin-top:2px; letter-spacing:0.3px;">GROUP</span>
                                 </div>` : ''}
@@ -2171,9 +2171,9 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
                                     return `
                                     <div style="display: grid; grid-template-columns: ${gridTemplate}; width: 100%; border-bottom: 1px dashed #f1f5f9; padding: 6px 0; align-items: center;">
                                         <div style="font-size: 0.72rem; font-weight: 600; color: #334155; text-align: left; padding: 2px; white-space: normal; word-wrap: break-word; overflow-wrap: break-word; line-height: 1.3;">${h.name}</div>
-                                        <div style="font-size: 0.85rem; font-weight: 700; color: #1e293b; text-align: center; padding: 2px; font-family: 'Inter', sans-serif;">${h.gpa}</div>
-                                        ${showClassRank ? `<div class="ms-rank-badge ${cRankClass}" style="text-align: center;">${cRankText}</div>` : ''}
-                                        ${showGroupRank ? `<div class="ms-rank-badge ${gRankClass}" style="text-align: center;">${gRankText}</div>` : ''}
+                                        <div style="font-size: 0.85rem; font-weight: 700; color: #1e293b; text-align: center; padding: 2px; font-family: 'Inter', sans-serif; display: flex; align-items: center; justify-content: center;">${h.gpa}</div>
+                                        ${showClassRank ? `<div style="display: flex; justify-content: center; align-items: center;"><div class="ms-rank-badge ${cRankClass}">${cRankText}</div></div>` : ''}
+                                        ${showGroupRank ? `<div style="display: flex; justify-content: center; align-items: center;"><div class="ms-rank-badge ${gRankClass}">${gRankText}</div></div>` : ''}
                                     </div>`;
                                 }).join('') : `<div style="text-align: center; padding: 10px; font-size: 0.75rem; color: #94a3b8; font-style: italic;">কোনো ইতিহাস পাওয়া যায়নি</div>`}
                             </div>
