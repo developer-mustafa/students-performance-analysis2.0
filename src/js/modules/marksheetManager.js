@@ -1925,7 +1925,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
              data-student-id="${student.id}"
              data-student-group="${student.group}"
              data-is-absent="${isAbsentMark}"
-             style="--ms-primary: ${ms.primaryColor || '#4361ee'};">
+             style="--ms-primary: ${(ms.groupColorsEnabled && ms.groupColors && ms.groupColors[student.group]) ? ms.groupColors[student.group] : (ms.primaryColor || '#4361ee')};">
             
             <div class="ms-actions-float no-print">
                 <button class="ms-btn-action ms-btn-print-single" onclick="window.printSingleMarksheet('ms_page_${student.id}_${student.group}')">
@@ -2570,6 +2570,22 @@ function initMarksheetSettingsModal() {
         });
     }
 
+    // Group-wise Colors Logic
+    const groupColorsEnabled = document.getElementById('msGroupColorsEnabled');
+    const groupColorsContainer = document.getElementById('msGroupColorsContainer');
+    if (groupColorsEnabled && groupColorsContainer) {
+        groupColorsEnabled.checked = marksheetSettings.groupColorsEnabled || false;
+        groupColorsContainer.style.display = groupColorsEnabled.checked ? 'block' : 'none';
+
+        groupColorsEnabled.addEventListener('change', () => {
+            groupColorsContainer.style.display = groupColorsEnabled.checked ? 'block' : 'none';
+            updateSettingsLivePreview();
+        });
+        
+        // Initial render of group color inputs
+        renderGroupColorInputs();
+    }
+
     // Initialize Checklists
     renderSubjectVisibilityToggles();
     renderHistoryExamsChecklist();
@@ -2653,6 +2669,14 @@ function initMarksheetSettingsModal() {
                 institutionAddress: document.getElementById('msInstitutionAddress').value.trim(),
                 headerLine1: document.getElementById('msHeaderLine1').value.trim(),
                 primaryColor: document.getElementById('msPrimaryColor').value,
+                groupColorsEnabled: document.getElementById('msGroupColorsEnabled').checked,
+                groupColors: (() => {
+                    const colors = {};
+                    document.querySelectorAll('.group-color-input').forEach(input => {
+                        colors[input.dataset.group] = input.value;
+                    });
+                    return colors;
+                })(),
                 fontSize: document.getElementById('msFontSize').value,
                 theme: document.getElementById('msTheme').value,
                 borderStyle: document.getElementById('msBorderStyle').value,
@@ -2695,6 +2719,32 @@ function initMarksheetSettingsModal() {
             if (modal) modal.classList.remove('active');
         });
     }
+}
+
+/**
+ * Render Group-wise color inputs in settings modal
+ */
+function renderGroupColorInputs() {
+    const list = document.getElementById('msGroupColorsList');
+    if (!list) return;
+
+    // Default groups
+    const defaultGroups = ["বিজ্ঞান", "মানবিক", "ব্যবসায় শিক্ষা", "সাধারণ"];
+    
+    list.innerHTML = defaultGroups.map(group => {
+        const color = (marksheetSettings.groupColors && marksheetSettings.groupColors[group]) || marksheetSettings.primaryColor || '#4361ee';
+        return `
+            <div class="group-color-row" style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
+                <span style="font-size: 0.85rem; font-weight: 700; color: #475569;">${group}</span>
+                <input type="color" class="group-color-input" data-group="${group}" value="${color}" style="width: 45px; height: 32px; border: 2px solid #fff; border-radius: 4px; background: none; cursor: pointer; box-shadow: 0 0 0 1px #e2e8f0;">
+            </div>
+        `;
+    }).join('');
+
+    // Add event listeners to update live preview
+    list.querySelectorAll('.group-color-input').forEach(input => {
+        input.addEventListener('change', () => updateSettingsLivePreview());
+    });
 }
 
 /**
