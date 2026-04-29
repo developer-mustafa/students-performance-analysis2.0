@@ -2772,44 +2772,58 @@ function renderGroupColorInputs() {
         }
     }
     
+    const premiumColors = [
+        { name: 'Blue', color: '#4361ee' },
+        { name: 'Green', color: '#10b981' },
+        { name: 'Gold', color: '#d97706' },
+        { name: 'Red', color: '#e11d48' },
+        { name: 'Purple', color: '#8b5cf6' }
+    ];
+    
     list.innerHTML = groups.map(group => {
         const color = (marksheetSettings.groupColors && marksheetSettings.groupColors[group]) || marksheetSettings.primaryColor || '#4361ee';
         return `
-            <div class="group-color-row" data-group="${group}" style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.2s;">
-                <span style="font-size: 0.85rem; font-weight: 700; color: #475569; pointer-events: none;">${group}</span>
-                <input type="color" class="group-color-input" data-group="${group}" value="${color}" style="width: 45px; height: 32px; border: 2px solid #fff; border-radius: 4px; background: none; cursor: pointer; box-shadow: 0 0 0 1px #e2e8f0;">
+            <div class="group-color-row" data-group="${group}" style="display: flex; flex-direction: column; background: #f8fafc; padding: 12px; border-radius: 10px; border: 1.5px solid #e2e8f0; transition: all 0.2s;">
+                <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-size: 0.88rem; font-weight: 700; color: #1e293b;">${group}</span>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <span style="font-size: 0.65rem; font-weight: 600; color: #64748b; text-transform: uppercase;">কাস্টম:</span>
+                        <input type="color" class="group-color-input" data-group="${group}" value="${color}" style="width: 38px; height: 24px; border: 2px solid #fff; border-radius: 4px; background: none; cursor: pointer; box-shadow: 0 0 0 1px #e2e8f0;">
+                    </div>
+                </div>
+                <div style="display: flex; align-items: center; gap: 6px;">
+                    <span style="font-size: 0.65rem; font-weight: 600; color: #64748b; text-transform: uppercase; margin-right: 2px;">প্রিমিয়াম:</span>
+                    <div class="group-mini-presets" style="display: flex; gap: 6px;">
+                        ${premiumColors.map(pc => `
+                            <div class="mini-color-preset" 
+                                 data-color="${pc.color}" 
+                                 title="${pc.name}"
+                                 style="background: ${pc.color}; width: 18px; height: 18px; border-radius: 50%; cursor: pointer; border: 1.5px solid #fff; box-shadow: 0 0 0 1px #e2e8f0; transition: transform 0.1s;">
+                            </div>
+                        `).join('')}
+                    </div>
+                </div>
             </div>
         `;
     }).join('');
 
-    // Selection Logic for Premium Presets
-    const rows = list.querySelectorAll('.group-color-row');
-    rows.forEach(row => {
-        row.addEventListener('click', (e) => {
-            if (e.target.classList.contains('group-color-input')) return;
+    // Logic for Mini Presets
+    list.querySelectorAll('.mini-color-preset').forEach(preset => {
+        preset.addEventListener('click', (e) => {
+            const color = preset.dataset.color;
+            const row = preset.closest('.group-color-row');
+            const input = row.querySelector('.group-color-input');
+            input.value = color;
             
-            // Remove active from others
-            rows.forEach(r => {
-                r.style.background = '#f8fafc';
-                r.style.borderColor = '#e2e8f0';
-                r.classList.remove('preset-target-active');
-            });
-            document.querySelector('.ms-universal-color-group')?.classList.remove('preset-target-active');
-            if (document.querySelector('.ms-universal-color-group')) {
-                document.querySelector('.ms-universal-color-group').style.background = 'transparent';
-            }
-
-            // Set active
-            row.style.background = '#eef2ff';
-            row.style.borderColor = '#6366f1';
-            row.classList.add('preset-target-active');
-            window.activeColorTarget = { type: 'group', group: row.dataset.group, el: row.querySelector('input') };
+            // Visual feedback
+            row.querySelectorAll('.mini-color-preset').forEach(p => p.style.transform = 'scale(1)');
+            preset.style.transform = 'scale(1.25)';
             
-            showNotification(`${row.dataset.group} গ্রুপটি প্রিসেট এর জন্য নির্বাচিত`);
+            updateSettingsLivePreview();
         });
     });
 
-    // Add event listeners to update live preview
+    // Add event listeners to color inputs for custom picking
     list.querySelectorAll('.group-color-input').forEach(input => {
         input.addEventListener('change', () => updateSettingsLivePreview());
     });
