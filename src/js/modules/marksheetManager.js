@@ -1925,7 +1925,11 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
              data-student-id="${student.id}"
              data-student-group="${student.group}"
              data-is-absent="${isAbsentMark}"
-             style="--ms-primary: ${(ms.groupColorsEnabled && ms.groupColors && ms.groupColors[student.group]) ? ms.groupColors[student.group] : (ms.primaryColor || '#4361ee')};">
+             style="--ms-primary: ${(() => {
+                 const g = (student.group || '').trim();
+                 const baseG = g.replace(/[\s\-_]*(গ্রুপ|Group)$/i, '').trim();
+                 return (ms.groupColorsEnabled && ms.groupColors) ? (ms.groupColors[g] || ms.groupColors[baseG] || ms.primaryColor || '#4361ee') : (ms.primaryColor || '#4361ee');
+             })()};">
             
             <div class="ms-actions-float no-print">
                 <button class="ms-btn-action ms-btn-print-single" onclick="window.printSingleMarksheet('ms_page_${student.id}_${student.group}')">
@@ -2756,10 +2760,19 @@ function renderGroupColorInputs() {
     const list = document.getElementById('msGroupColorsList');
     if (!list) return;
 
-    // Default groups
+    // Get groups from state or use defaults
     const defaultGroups = ["বিজ্ঞান", "মানবিক", "ব্যবসায় শিক্ষা", "সাধারণ"];
+    let groups = defaultGroups;
     
-    list.innerHTML = defaultGroups.map(group => {
+    if (state.academicStructure && state.academicStructure.group && state.academicStructure.group.length > 0) {
+        groups = state.academicStructure.group.map(g => g.value);
+        // Ensure 'সাধারণ' is also available if not in structure but common
+        if (!groups.includes('সাধারণ') && !groups.includes('General')) {
+            groups.push('সাধারণ');
+        }
+    }
+    
+    list.innerHTML = groups.map(group => {
         const color = (marksheetSettings.groupColors && marksheetSettings.groupColors[group]) || marksheetSettings.primaryColor || '#4361ee';
         return `
             <div class="group-color-row" data-group="${group}" style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.2s;">
