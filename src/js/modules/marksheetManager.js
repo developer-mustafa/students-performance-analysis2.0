@@ -2551,6 +2551,25 @@ function initMarksheetSettingsModal() {
         });
     }
 
+    // Color Presets Logic
+    const colorPresets = document.querySelectorAll('.color-preset');
+    const primaryColorInput = document.getElementById('msPrimaryColor');
+    if (colorPresets.length > 0 && primaryColorInput) {
+        colorPresets.forEach(preset => {
+            preset.addEventListener('click', () => {
+                const selectedColor = preset.dataset.color;
+                primaryColorInput.value = selectedColor;
+                
+                // Add active visual state
+                colorPresets.forEach(p => p.classList.remove('active'));
+                preset.classList.add('active');
+                
+                // Trigger live preview
+                updateSettingsLivePreview();
+            });
+        });
+    }
+
     // Initialize Checklists
     renderSubjectVisibilityToggles();
     renderHistoryExamsChecklist();
