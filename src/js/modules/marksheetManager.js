@@ -2551,26 +2551,55 @@ function initMarksheetSettingsModal() {
         });
     }
 
-    // Color Presets Logic
+    // Color Presets & Targets Logic
     const colorPresets = document.querySelectorAll('.color-preset');
+    const universalGroup = document.querySelector('.ms-universal-color-group');
     const primaryColorInput = document.getElementById('msPrimaryColor');
-    if (colorPresets.length > 0 && primaryColorInput) {
+    
+    // Initialize active target
+    window.activeColorTarget = { type: 'universal', el: primaryColorInput };
+    if (universalGroup) {
+        universalGroup.style.background = '#eef2ff';
+        universalGroup.style.border = '1px solid #6366f1';
+        universalGroup.classList.add('preset-target-active');
+    }
+
+    if (universalGroup) {
+        universalGroup.addEventListener('click', (e) => {
+            if (e.target.tagName === 'INPUT') return;
+            // Remove active from groups
+            document.querySelectorAll('.group-color-row').forEach(r => {
+                r.style.background = '#f8fafc';
+                r.style.borderColor = '#e2e8f0';
+                r.classList.remove('preset-target-active');
+            });
+            // Set active
+            universalGroup.style.background = '#eef2ff';
+            universalGroup.style.border = '1px solid #6366f1';
+            universalGroup.classList.add('preset-target-active');
+            window.activeColorTarget = { type: 'universal', el: primaryColorInput };
+            showNotification('ইউনিভার্সাল কালার প্রিসেট এর জন্য নির্বাচিত');
+        });
+    }
+
+    if (colorPresets.length > 0) {
         colorPresets.forEach(preset => {
             preset.addEventListener('click', () => {
                 const selectedColor = preset.dataset.color;
-                primaryColorInput.value = selectedColor;
+                if (window.activeColorTarget && window.activeColorTarget.el) {
+                    window.activeColorTarget.el.value = selectedColor;
+                }
                 
-                // Add active visual state
+                // Visual feedback for preset
                 colorPresets.forEach(p => p.classList.remove('active'));
                 preset.classList.add('active');
                 
-                // Trigger live preview
                 updateSettingsLivePreview();
             });
         });
     }
 
-    // Group-wise Colors Logic
+    // Group-wise Colors Toggle Logic
     const groupColorsEnabled = document.getElementById('msGroupColorsEnabled');
     const groupColorsContainer = document.getElementById('msGroupColorsContainer');
     if (groupColorsEnabled && groupColorsContainer) {
@@ -2582,7 +2611,6 @@ function initMarksheetSettingsModal() {
             updateSettingsLivePreview();
         });
         
-        // Initial render of group color inputs
         renderGroupColorInputs();
     }
 
@@ -2734,12 +2762,39 @@ function renderGroupColorInputs() {
     list.innerHTML = defaultGroups.map(group => {
         const color = (marksheetSettings.groupColors && marksheetSettings.groupColors[group]) || marksheetSettings.primaryColor || '#4361ee';
         return `
-            <div class="group-color-row" style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0;">
-                <span style="font-size: 0.85rem; font-weight: 700; color: #475569;">${group}</span>
+            <div class="group-color-row" data-group="${group}" style="display: flex; align-items: center; justify-content: space-between; background: #f8fafc; padding: 10px 12px; border-radius: 8px; border: 1px solid #e2e8f0; cursor: pointer; transition: all 0.2s;">
+                <span style="font-size: 0.85rem; font-weight: 700; color: #475569; pointer-events: none;">${group}</span>
                 <input type="color" class="group-color-input" data-group="${group}" value="${color}" style="width: 45px; height: 32px; border: 2px solid #fff; border-radius: 4px; background: none; cursor: pointer; box-shadow: 0 0 0 1px #e2e8f0;">
             </div>
         `;
     }).join('');
+
+    // Selection Logic for Premium Presets
+    const rows = list.querySelectorAll('.group-color-row');
+    rows.forEach(row => {
+        row.addEventListener('click', (e) => {
+            if (e.target.classList.contains('group-color-input')) return;
+            
+            // Remove active from others
+            rows.forEach(r => {
+                r.style.background = '#f8fafc';
+                r.style.borderColor = '#e2e8f0';
+                r.classList.remove('preset-target-active');
+            });
+            document.querySelector('.ms-universal-color-group')?.classList.remove('preset-target-active');
+            if (document.querySelector('.ms-universal-color-group')) {
+                document.querySelector('.ms-universal-color-group').style.background = 'transparent';
+            }
+
+            // Set active
+            row.style.background = '#eef2ff';
+            row.style.borderColor = '#6366f1';
+            row.classList.add('preset-target-active');
+            window.activeColorTarget = { type: 'group', group: row.dataset.group, el: row.querySelector('input') };
+            
+            showNotification(`${row.dataset.group} গ্রুপটি প্রিসেট এর জন্য নির্বাচিত`);
+        });
+    });
 
     // Add event listeners to update live preview
     list.querySelectorAll('.group-color-input').forEach(input => {
