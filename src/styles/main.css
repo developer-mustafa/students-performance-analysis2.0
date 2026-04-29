@@ -13001,11 +13001,11 @@ body.is-super-admin td.admin-only {
 .ms-row-total {
   background: #f8fafc !important; /* Lighter, cleaner background */
   font-weight: 700;
-  border-top: 2px solid var(--ms-primary, #4361ee) !important;
+  border-top: 2.5px solid #000000 !important;
 }
 
 .ms-row-total td {
-  border-top: 2px solid var(--ms-primary, #4361ee) !important;
+  border-top: 2.5px solid #000000 !important;
   padding: 6px 4px !important;
   color: #1e293b !important;
 }
