@@ -203,31 +203,21 @@ export function renderTemplateB(data) {
     const historyColCount = 2 + (showClassRank ? 1 : 0) + (showGroupRank ? 1 : 0);
 
     // Section Toggles
-    const showRankingSec = (ms.showRanking !== false) && !(isIdSearch && ms.idSearchShowRanking === false);
-    const showPerformanceSec = progressEnabled;
-    const showCommentsSec = (ms.showComments !== false) && !(isIdSearch && ms.idSearchShowComments === false);
-    const showQRCodeSec = (ms.showQRCode !== false) && !(isIdSearch && ms.idSearchShowQRCode === false);
+    const showRanking = (ms.showRanking !== false) && !(isIdSearch && ms.idSearchShowRanking === false);
+    const showPerformance = progressEnabled;
+    const showComments = (ms.showComments !== false) && !(isIdSearch && ms.idSearchShowComments === false);
+    const showQRCode = (ms.showQRCode !== false) && !(isIdSearch && ms.idSearchShowQRCode === false);
     
-    // New Ranking Toggles for Template B
-    const showClassRankSec = (ms.showClassRank !== false);
-    const showGroupRankSec = (ms.showGroupRank !== false);
+    // Note: showClassRank and showGroupRank are already declared above for the history table logic
 
     let activeCards = 0;
-    if (showRankingSec) activeCards++;
-    if (showPerformanceSec) activeCards++;
-    if (showCommentsSec) activeCards++;
-    if (showClassRankSec || showGroupRankSec) activeCards++;
+    if (showRanking) activeCards++;
+    if (showPerformance) activeCards++;
+    if (showComments) activeCards++;
+    if (showClassRank || showGroupRank) activeCards++;
 
     // If there is an empty slot in the grid (less than 3 cards) and QR is enabled, put QR in the grid
-    const putQrInGrid = showQRCodeSec && activeCards < 3;
-
-    // Local variables mapping to global logic for the HTML template
-    const showRanking = showRankingSec;
-    const showPerformance = showPerformanceSec;
-    const showComments = showCommentsSec;
-    const showQRCode = showQRCodeSec;
-    const showClassRank = showClassRankSec;
-    const showGroupRank = showGroupRankSec;
+    const putQrInGrid = showQRCode && activeCards < 3;
 
     // Build complete HTML
     return `
