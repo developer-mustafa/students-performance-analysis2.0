@@ -481,7 +481,7 @@ export function renderTemplateB(data) {
             if (!showPerformance) return '';
             return `
                 <div class="msb-bottom-card msb-perf-card">
-                    <div class="msb-bottom-card-title"><i class="fas fa-chart-pie"></i> পারফরমান্স বিশ্লেষণ</div>
+                    <div class="msb-bottom-card-title"><i class="fas fa-chart-pie"></i> প্রকৃত যোগ্যতা বিশ্লেষণ স্কোর</div>
                     <div class="msb-perf-circle-wrapper">
                         <div class="msb-perf-circle" style="--msb-perf-pct: ${perfPctNum};">
                             <svg viewBox="0 0 120 120" class="msb-perf-svg">
@@ -570,11 +570,11 @@ export function renderTemplateB(data) {
             : getDeveloperCreditHtml()
         }
                     </div>
-                    <div class="msb-footer-verify">
-                        Verify this result at:<br>
-                        <a href="https://${window.location.hostname}" target="_blank">${window.location.hostname}</a>
+                    <div class="msb-footer-verify" style="display: flex; gap: 8px; align-items: center; justify-content: flex-end; white-space: nowrap;">
+                        <span style="color: #64748b;">Verify this result at:</span>
+                        <a href="https://${window.location.hostname}" target="_blank" style="color: #3b82f6; text-decoration: none; font-weight: 700;">${window.location.hostname}</a>
+                        <span style="color: #94a3b8; padding-left: 8px; margin-left: 4px; border-left: 1px solid #e2e8f0; font-size: 0.6rem; font-weight: 600;">V${APP_VERSION}</span>
                     </div>
-                    <div class="msb-footer-version">V${APP_VERSION}</div>
                 </div>
             </div>
 
