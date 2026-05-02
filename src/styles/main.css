@@ -25194,11 +25194,11 @@ body.dark-mode .ms-compact-info {
 }
 
 .msb-frame {
-  padding: 18px 22px 14px;
+  padding: 12px 18px 10px;
   position: relative;
   border: 3px solid var(--msb-primary);
-  margin: 8px;
-  min-height: calc(297mm - 24px);
+  margin: 6px;
+  min-height: calc(297mm - 20px);
   display: flex;
   flex-direction: column;
 }
@@ -25233,16 +25233,16 @@ body.dark-mode .ms-compact-info {
 }
 
 .msb-logo {
-  width: 70px;
-  height: 70px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   object-fit: contain;
   border: 2px solid var(--msb-gray-border);
 }
 
 .msb-logo-placeholder {
-  width: 70px;
-  height: 70px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   background: var(--msb-light-blue);
   border: 2px solid var(--msb-gray-border);
@@ -25250,7 +25250,7 @@ body.dark-mode .ms-compact-info {
   align-items: center;
   justify-content: center;
   color: var(--msb-primary);
-  font-size: 1.8rem;
+  font-size: 1.6rem;
 }
 
 .msb-header-center {
@@ -25259,11 +25259,11 @@ body.dark-mode .ms-compact-info {
 }
 
 .msb-inst-name {
-  font-size: 1.55rem;
+  font-size: 1.45rem;
   font-weight: 900;
   color: var(--msb-primary);
   margin: 0;
-  line-height: 1.3;
+  line-height: 1.2;
   letter-spacing: -0.3px;
 }
 
@@ -25331,32 +25331,32 @@ body.dark-mode .ms-compact-info {
 /* ===== TITLE ===== */
 .msb-title-section {
   text-align: center;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   position: relative;
   z-index: 1;
 }
 
 .msb-title {
-  font-size: 1.15rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: var(--msb-primary);
   margin: 0;
-  letter-spacing: 1px;
+  letter-spacing: 0.5px;
 }
 
 .msb-subtitle {
-  font-size: 0.82rem;
+  font-size: 0.8rem;
   font-weight: 600;
   color: var(--msb-text-muted);
-  margin: 3px 0 0;
+  margin: 2px 0 0;
 }
 
 /* ===== STUDENT INFO + RESULT SUMMARY GRID ===== */
 .msb-info-result-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 12px;
-  margin-bottom: 12px;
+  gap: 10px;
+  margin-bottom: 8px;
   position: relative;
   z-index: 1;
 }
@@ -25364,8 +25364,8 @@ body.dark-mode .ms-compact-info {
 /* Student Card */
 .msb-student-card {
   display: flex;
-  gap: 12px;
-  padding: 12px;
+  gap: 10px;
+  padding: 8px;
   border: 1px solid var(--msb-gray-border);
   border-radius: 12px;
   background: #FAFBFC;
@@ -25376,16 +25376,16 @@ body.dark-mode .ms-compact-info {
 }
 
 .msb-student-photo {
-  width: 90px;
-  height: 110px;
+  width: 75px;
+  height: 95px;
   object-fit: cover;
   border-radius: 8px;
   border: 2px solid var(--msb-gray-border);
 }
 
 .msb-photo-placeholder {
-  width: 90px;
-  height: 110px;
+  width: 75px;
+  height: 95px;
   border-radius: 8px;
   border: 2px dashed var(--msb-gray-border);
   display: flex;
@@ -25393,7 +25393,7 @@ body.dark-mode .ms-compact-info {
   justify-content: center;
   background: var(--msb-light-blue);
   color: #93C5FD;
-  font-size: 2.2rem;
+  font-size: 2rem;
 }
 
 .msb-student-details {
@@ -25439,7 +25439,7 @@ body.dark-mode .ms-compact-info {
 .msb-result-summary {
   border: 1px solid var(--msb-gray-border);
   border-radius: 12px;
-  padding: 10px 12px;
+  padding: 8px 10px;
   background: #FAFBFC;
   display: flex;
   flex-direction: column;
@@ -25469,11 +25469,11 @@ body.dark-mode .ms-compact-info {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 8px 4px;
+  padding: 4px 2px;
   border-radius: 10px;
   border: 1px solid var(--msb-gray-border);
   background: #fff;
-  gap: 2px;
+  gap: 1px;
 }
 
 .msb-sum-label {
@@ -25485,7 +25485,7 @@ body.dark-mode .ms-compact-info {
 }
 
 .msb-sum-value {
-  font-size: 1.3rem;
+  font-size: 1.2rem;
   font-weight: 900;
   line-height: 1.1;
 }
@@ -25541,7 +25541,7 @@ body.dark-mode .ms-compact-info {
 
 /* ===== SUBJECT TABLE ===== */
 .msb-table-section {
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   position: relative;
   z-index: 1;
 }
@@ -25579,8 +25579,8 @@ body.dark-mode .ms-compact-info {
   background: #fff !important;
   color: var(--msb-text-dark);
   font-weight: 700;
-  font-size: 0.75rem;
-  padding: 8px 5px;
+  font-size: 0.72rem;
+  padding: 5px 3px;
   text-align: center;
   border: 1px solid var(--msb-gray-border);
   border-top: none;
@@ -25592,10 +25592,10 @@ body.dark-mode .ms-compact-info {
 .msb-th-subject { text-align: left !important; min-width: 100px; }
 
 .msb-table tbody td {
-  padding: 6px 8px;
+  padding: 4px 6px;
   border: 1px solid var(--msb-gray-border);
   text-align: center;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
 }
 
 .msb-td-subject {
@@ -25695,11 +25695,11 @@ body.dark-mode .ms-compact-info {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 12px 24px;
+  padding: 8px 16px;
   background: #F8FAFC;
   border: 1px solid #BFDBFE;
   border-radius: 10px;
-  margin-bottom: 15px;
+  margin-bottom: 10px;
   position: relative;
   z-index: 1;
   -webkit-print-color-adjust: exact !important;
@@ -25734,7 +25734,7 @@ body.dark-mode .ms-compact-info {
 }
 
 .msb-tb-val-large {
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-weight: 900;
   color: var(--msb-primary);
   font-family: 'Inter', sans-serif;
@@ -25751,7 +25751,7 @@ body.dark-mode .ms-compact-info {
 }
 
 .msb-tb-val-grade {
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-weight: 900;
 }
 
@@ -25760,7 +25760,7 @@ body.dark-mode .ms-compact-info {
 }
 
 .msb-tb-val-gpa {
-  font-size: 1.6rem;
+  font-size: 1.4rem;
   font-weight: 900;
   color: var(--msb-primary);
   font-family: 'Inter', sans-serif;
@@ -25776,8 +25776,8 @@ body.dark-mode .ms-compact-info {
 .msb-bottom-grid {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
-  gap: 10px;
-  margin-bottom: 12px;
+  gap: 8px;
+  margin-bottom: 10px;
   position: relative;
   z-index: 1;
 }
@@ -25785,7 +25785,7 @@ body.dark-mode .ms-compact-info {
 .msb-bottom-card {
   border: 1px solid var(--msb-gray-border);
   border-radius: 10px;
-  padding: 8px;
+  padding: 6px;
   background: #fff;
   display: flex;
   flex-direction: column;
@@ -25849,8 +25849,8 @@ body.dark-mode .ms-compact-info {
 
 .msb-perf-circle {
   position: relative;
-  width: 90px;
-  height: 90px;
+  width: 80px;
+  height: 80px;
 }
 
 .msb-perf-svg {
@@ -25947,9 +25947,9 @@ body.dark-mode .ms-compact-info {
   display: flex;
   align-items: flex-end;
   justify-content: space-between;
-  padding: 10px 0;
+  padding: 6px 0;
   border-top: 1px solid var(--msb-gray-border);
-  gap: 12px;
+  gap: 10px;
 }
 
 .msb-footer-qr {
@@ -25999,22 +25999,22 @@ body.dark-mode .ms-compact-info {
 }
 
 .msb-sig-img-area {
-  height: 36px;
+  height: 30px;
   display: flex;
   align-items: flex-end;
   justify-content: center;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .msb-sig-img {
-  max-height: 36px;
+  max-height: 30px;
   object-fit: contain;
 }
 
 .msb-sig-line {
-  width: 110px;
+  width: 100px;
   border-bottom: 1.5px solid #333;
-  margin-bottom: 3px;
+  margin-bottom: 2px;
 }
 
 .msb-sig-label {
@@ -26031,15 +26031,15 @@ body.dark-mode .ms-compact-info {
 }
 
 .msb-seal-img {
-  width: 70px;
-  height: 70px;
+  width: 60px;
+  height: 60px;
   object-fit: contain;
   border-radius: 50%;
 }
 
 .msb-seal-placeholder {
-  width: 65px;
-  height: 65px;
+  width: 55px;
+  height: 55px;
   border-radius: 50%;
   border: 2px dashed var(--msb-gray-border);
   display: flex;
@@ -26047,8 +26047,8 @@ body.dark-mode .ms-compact-info {
   align-items: center;
   justify-content: center;
   color: #CBD5E1;
-  font-size: 0.6rem;
-  gap: 2px;
+  font-size: 0.55rem;
+  gap: 1px;
 }
 
 .msb-seal-placeholder i { font-size: 1.2rem; }
