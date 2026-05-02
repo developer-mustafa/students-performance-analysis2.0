@@ -14,25 +14,25 @@ export default defineConfig({
                 theme_color: '#2563eb',
                 icons: [
                     {
-                        src: 'edtechmataprologomain.png',
+                        src: '/edtechmataprologomain.png',
                         sizes: '192x192',
                         type: 'image/png',
                         purpose: 'any'
                     },
                     {
-                        src: 'edtechmataprologomain.png',
+                        src: '/edtechmataprologomain.png',
                         sizes: '512x512',
                         type: 'image/png',
                         purpose: 'any'
                     },
                     {
-                        src: 'edtechmataprologomain.png',
+                        src: '/edtechmataprologomain.png',
                         sizes: '192x192',
                         type: 'image/png',
                         purpose: 'maskable'
                     },
                     {
-                        src: 'edtechmataprologomain.png',
+                        src: '/edtechmataprologomain.png',
                         sizes: '512x512',
                         type: 'image/png',
                         purpose: 'maskable'
