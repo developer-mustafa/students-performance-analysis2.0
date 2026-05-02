@@ -760,7 +760,13 @@ function renderSavedExams() {
           state._studentLookupMap = new Map();
         }
       }
-      renderSavedExamsList(elements.savedExamsList, state.savedExams, {
+      // Filter exams based on mode: Main vs Tutorial
+      const filteredExams = state.savedExams.filter(e => {
+          const isTut = e.examType === 'tutorial' || e.type === 'tutorial';
+          return state.isTutorialMode ? isTut : !isTut;
+      });
+
+      renderSavedExamsList(elements.savedExamsList, filteredExams, {
         currentPage: state.savedExamsCurrentPage,
         perPage: state.savedExamsPerPage,
         currentExamId: state.defaultExamId,
@@ -1224,35 +1230,26 @@ function initEventListeners() {
     bindDashboardFilterControls();
     bindDashboardSearchAndViewControls();
 
-    // ========== TUTORIAL MODE TOGGLE (Dashboard) ==========
-    const tutorialModeToggle = document.getElementById('tutorialModeToggle');
-    if (tutorialModeToggle) {
-        tutorialModeToggle.addEventListener('click', async () => {
-            state.isTutorialMode = !state.isTutorialMode;
-            tutorialModeToggle.classList.toggle('active', state.isTutorialMode);
+    // ========== DASHBOARD EXAM MODE TABS (Main vs Tutorial) ==========
+    const switchDashboardMode = (isTutorial) => {
+        state.isTutorialMode = isTutorial;
+        
+        // Update UI Tabs
+        if (elements.modeMainExamsBtn && elements.modeTutorialExamsBtn) {
+            elements.modeMainExamsBtn.classList.toggle('active', !isTutorial);
+            elements.modeTutorialExamsBtn.classList.toggle('active', isTutorial);
+        }
+        
+        // Reset pagination and refresh list
+        state.savedExamsCurrentPage = 1;
+        renderSavedExams();
+    };
 
-            if (state.isTutorialMode) {
-                // Load tutorial exams only
-                const { getSavedExamsByType } = await import('./js/firestoreService.js');
-                const tutorialExams = await getSavedExamsByType('tutorial');
-                const countBadge = document.getElementById('savedExamsCount');
-                if (countBadge) countBadge.textContent = `টিউটোরিয়াল: ${tutorialExams.length}টি`;
-                
-                // Temporarily swap saved exams to tutorial ones for rendering
-                state._regularExamsBackup = state.savedExams;
-                state.savedExams = tutorialExams;
-                renderSavedExams();
-            } else {
-                // Restore regular exams
-                if (state._regularExamsBackup) {
-                    state.savedExams = state._regularExamsBackup;
-                    state._regularExamsBackup = null;
-                }
-                const countBadge = document.getElementById('savedExamsCount');
-                if (countBadge) countBadge.textContent = `মোট: ${state.savedExams.length}টি এক্সাম`;
-                renderSavedExams();
-            }
-        });
+    if (elements.modeMainExamsBtn) {
+        elements.modeMainExamsBtn.addEventListener('click', () => switchDashboardMode(false));
+    }
+    if (elements.modeTutorialExamsBtn) {
+        elements.modeTutorialExamsBtn.addEventListener('click', () => switchDashboardMode(true));
     }
 
     // ========== RESULT ENTRY - Tutorial/Regular Mode Toggle ==========

@@ -1348,42 +1348,82 @@
               </div>
             </div>
             <span id="savedExamsCount" class="exams-count-badge">মোট: ০টি এক্সাম</span>
-            <button id="tutorialModeToggle" class="tutorial-mode-toggle-btn" title="ক্লাস টেস্ট / টিউটোরিয়াল পরীক্ষার কার্ড দেখুন">
-              <i class="fas fa-clipboard-check"></i> <span>টিউটোরিয়াল</span>
-            </button>
+            <div class="exam-mode-tabs">
+              <button id="modeMainExamsBtn" class="exam-mode-tab active" title="মেইন পরীক্ষার ফলাফল কার্ড দেখুন">
+                <i class="fas fa-star"></i> <span>মেইন এক্সাম</span>
+              </button>
+              <button id="modeTutorialExamsBtn" class="exam-mode-tab" title="টিউটোরিয়াল পরীক্ষার কার্ড দেখুন">
+                <i class="fas fa-clipboard-check"></i> <span>টিউটোরিয়াল</span>
+              </button>
+            </div>
             <style>
-              .tutorial-mode-toggle-btn {
+              .exam-mode-tabs {
+                display: flex;
+                background: rgba(0, 0, 0, 0.05);
+                padding: 3px;
+                border-radius: 50px;
+                gap: 2px;
+                margin-left: 10px;
+              }
+              .dark-mode .exam-mode-tabs {
+                background: rgba(255, 255, 255, 0.05);
+              }
+              .exam-mode-tab {
                 display: inline-flex;
                 align-items: center;
                 gap: 6px;
-                padding: 5px 14px;
+                padding: 6px 16px;
                 border-radius: 50px;
-                border: 2px solid #f59e0b;
+                border: none;
                 background: transparent;
-                color: #d97706;
+                color: #64748b;
                 font-weight: 700;
-                font-size: 0.8rem;
+                font-size: 0.78rem;
                 cursor: pointer;
-                transition: all 0.3s ease;
+                transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
                 white-space: nowrap;
               }
-              .tutorial-mode-toggle-btn:hover {
-                background: rgba(245, 158, 11, 0.1);
-                transform: translateY(-1px);
+              .dark-mode .exam-mode-tab {
+                color: #94a3b8;
               }
-              .tutorial-mode-toggle-btn.active {
-                background: linear-gradient(135deg, #f59e0b, #d97706);
-                color: white;
-                border-color: #d97706;
-                box-shadow: 0 3px 10px rgba(245, 158, 11, 0.3);
+              .exam-mode-tab i {
+                font-size: 0.85rem;
+                opacity: 0.7;
               }
-              .tutorial-mode-toggle-btn.active:hover {
-                background: linear-gradient(135deg, #d97706, #b45309);
+              .exam-mode-tab:hover {
+                color: var(--primary, #4361ee);
+                background: rgba(67, 97, 238, 0.05);
               }
+              .exam-mode-tab.active {
+                background: white;
+                color: var(--primary, #4361ee);
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+              }
+              .dark-mode .exam-mode-tab.active {
+                background: #334155;
+                color: #60a5fa;
+                box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+              }
+              /* Specific styles for Tutorial when active */
+              #modeTutorialExamsBtn.active {
+                color: #d97706;
+              }
+              .dark-mode #modeTutorialExamsBtn.active {
+                color: #fbbf24;
+              }
+              
               @media (max-width: 768px) {
-                .tutorial-mode-toggle-btn {
-                  padding: 4px 10px;
+                .exam-mode-tabs {
+                  margin-left: 0;
+                  width: 100%;
+                  justify-content: center;
+                  order: 10; /* Move to bottom on mobile if needed or keep it */
+                }
+                .exam-mode-tab {
+                  flex: 1;
+                  padding: 6px 10px;
                   font-size: 0.72rem;
+                  justify-content: center;
                 }
               }
             </style>
@@ -1789,7 +1829,7 @@
 
     <!-- ADD/EDIT NOTICE MODAL -->
     <div id="noticeModal"
-      class="modal !fixed !inset-0 !z-[999] p-4 flex items-center justify-center transition-all duration-300 bg-slate-900/50 backdrop-blur-sm opacity-0 invisible [&.active]:opacity-100 [&.active]:visible">
+      class="modal !fixed !inset-0 p-4 flex items-center justify-center transition-all duration-300 bg-slate-900/50 backdrop-blur-sm opacity-0 invisible [&.active]:opacity-100 [&.active]:visible">
       <div
         class="modal-content !relative !bg-white dark:!bg-slate-800 !rounded-2xl !shadow-[0_20px_60px_-15px_rgba(0,0,0,0.3)] !w-full !max-w-2xl !p-0 !border-0 overflow-hidden transform scale-95 transition-transform duration-300 [&.active_.modal-content]:scale-100">
         <div
@@ -1855,7 +1895,7 @@
 
     <!-- NOTICE DETAIL VIEW MODAL -->
     <div id="noticeDetailModal"
-      class="modal !fixed !inset-0 !z-[1000] p-4 flex items-center justify-center transition-all duration-300 bg-slate-900/60 backdrop-blur-sm opacity-0 invisible [&.active]:opacity-100 [&.active]:visible">
+      class="modal !fixed !inset-0 p-4 flex items-center justify-center transition-all duration-300 bg-slate-900/60 backdrop-blur-sm opacity-0 invisible [&.active]:opacity-100 [&.active]:visible">
       <div
         class="modal-content !relative !bg-white dark:!bg-slate-800 !rounded-2xl !shadow-[0_20px_60px_-15px_rgba(0,0,0,0.4)] !w-full !max-w-2xl !p-0 !border-0 overflow-hidden transform scale-95 transition-transform duration-300 flex flex-col max-h-[90vh]"
         id="printTarget">

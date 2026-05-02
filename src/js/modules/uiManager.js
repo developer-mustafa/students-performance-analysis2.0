@@ -312,8 +312,8 @@ export function initDOMReferences() {
     elements.configPracticalOptional = document.getElementById('configPracticalOptional');
     elements.configTotalMax = document.getElementById('configTotalMax');
     elements.calcTotalPreview = document.getElementById('calcTotalPreview');
-    elements.modeMainExamBtn = document.getElementById('modeMainExamBtn');
-    elements.modeTutorialBtn = document.getElementById('modeTutorialBtn');
+    elements.modeMainExamsBtn = document.getElementById('modeMainExamsBtn');
+    elements.modeTutorialExamsBtn = document.getElementById('modeTutorialExamsBtn');
     elements.deleteSubjectBtn = document.getElementById('deleteSubjectBtn');
     elements.saveSubjectConfigBtn = document.getElementById('saveSubjectConfigBtn');
     elements.subjectCount = document.getElementById('subjectCount');

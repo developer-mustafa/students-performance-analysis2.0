@@ -1256,7 +1256,8 @@ export async function renderSavedExamsList(container, exams, options = {}) {
   // Render count after filtering
   const countBadge = document.getElementById('savedExamsCount');
   if (countBadge) {
-    countBadge.innerHTML = `<i class="fas fa-layer-group"></i> মোট: <strong>${filteredExams.length}</strong>টি এক্সাম`;
+    const label = state.isTutorialMode ? 'টিউটোরিয়াল' : 'মেইন এক্সাম';
+    countBadge.innerHTML = `<i class="fas fa-layer-group"></i> ${label}: <strong>${filteredExams.length}</strong>টি`;
   }
 
 
