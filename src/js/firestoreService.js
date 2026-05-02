@@ -1664,8 +1664,18 @@ export async function getExamConfigs(className = null, session = null) {
 
         // Sort descending locally by createdAt
         return configs.sort((a, b) => {
-            const timeA = a.createdAt?.toMillis() || 0;
-            const timeB = b.createdAt?.toMillis() || 0;
+            let timeA = 0;
+            if (a.createdAt) {
+                timeA = typeof a.createdAt.toMillis === 'function' 
+                    ? a.createdAt.toMillis() 
+                    : (a.createdAt.seconds ? a.createdAt.seconds * 1000 : 0);
+            }
+            let timeB = 0;
+            if (b.createdAt) {
+                timeB = typeof b.createdAt.toMillis === 'function' 
+                    ? b.createdAt.toMillis() 
+                    : (b.createdAt.seconds ? b.createdAt.seconds * 1000 : 0);
+            }
             return timeB - timeA;
         });
     } catch (error) {
@@ -1974,8 +1984,18 @@ export async function getTutorialExamConfigs(className = null, session = null) {
         }));
 
         return configs.sort((a, b) => {
-            const timeA = a.createdAt?.toMillis() || 0;
-            const timeB = b.createdAt?.toMillis() || 0;
+            let timeA = 0;
+            if (a.createdAt) {
+                timeA = typeof a.createdAt.toMillis === 'function' 
+                    ? a.createdAt.toMillis() 
+                    : (a.createdAt.seconds ? a.createdAt.seconds * 1000 : 0);
+            }
+            let timeB = 0;
+            if (b.createdAt) {
+                timeB = typeof b.createdAt.toMillis === 'function' 
+                    ? b.createdAt.toMillis() 
+                    : (b.createdAt.seconds ? b.createdAt.seconds * 1000 : 0);
+            }
             return timeB - timeA;
         });
     } catch (error) {
