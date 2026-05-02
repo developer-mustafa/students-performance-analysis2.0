@@ -74,15 +74,9 @@ jobs:
         path: dist/
 
     - name: Deploy to Firebase
-      # Note: You must add FIREBASE_TOKEN to your GitHub repository secrets
       env:
         FIREBASE_TOKEN: ${{ secrets.FIREBASE_TOKEN }}
-      run: |
-        if [ -z "$FIREBASE_TOKEN" ]; then
-          echo "⚠️ FIREBASE_TOKEN secret is missing. Skipping Firebase deployment."
-          exit 0
-        fi
-        npx firebase-tools deploy --only hosting --token "$FIREBASE_TOKEN"
+      run: npx firebase-tools deploy --only hosting --token "$FIREBASE_TOKEN" --project todo-181b6
 
   # ==========================================
   # 3. CD: Deploy to GitHub Pages (Only on main)
