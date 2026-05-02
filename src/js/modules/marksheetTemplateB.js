@@ -351,7 +351,7 @@ export function renderTemplateB(data) {
                         ${(showSummaryClassRank || showSummaryGroupRank) ? `
                         <div style="display: flex; gap: 8px;">
                             ${showSummaryClassRank ? `<span class="msb-rank-badge" style="background: #e0e7ff; color: #4f46e5; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; white-space: nowrap; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;"><i class="fas fa-users"></i> শ্রেণি র‍্যাঙ্ক : ${exactRanks?.classRank || '-'}</span>` : ''}
-                            ${showSummaryGroupRank ? `<span class="msb-rank-badge" style="background: #ffffff; color: #0284c7; border: 1px solid #bae6fd; padding: 1px 8px; border-radius: 4px; font-size: 0.7rem; white-space: nowrap; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;"><i class="fas fa-layer-group"></i> গ্রুপ র‍্যাঙ্ক : ${exactRanks?.groupRank || '-'}</span>` : ''}
+                            ${showSummaryGroupRank ? `<span class="msb-rank-badge" style="background: #ffffff; color: ${primaryColor} !important; border: 1px solid ${primaryColor} !important; padding: 1px 8px; border-radius: 4px; font-size: 0.7rem; white-space: nowrap; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;"><i class="fas fa-layer-group"></i> গ্রুপ র‍্যাঙ্ক : ${exactRanks?.groupRank || '-'}</span>` : ''}
                         </div>` : ''}
                     </div>
                     <div class="msb-summary-boxes">
