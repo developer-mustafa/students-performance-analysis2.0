@@ -2797,6 +2797,8 @@ function initMarksheetSettingsModal() {
             if (el('msShowRanking')) el('msShowRanking').checked = marksheetSettings.showRanking !== false;
             if (el('msShowClassRank')) el('msShowClassRank').checked = marksheetSettings.showClassRank !== false;
             if (el('msShowGroupRank')) el('msShowGroupRank').checked = marksheetSettings.showGroupRank !== false;
+            if (el('msShowSummaryClassRank')) el('msShowSummaryClassRank').checked = marksheetSettings.showSummaryClassRank !== false;
+            if (el('msShowSummaryGroupRank')) el('msShowSummaryGroupRank').checked = marksheetSettings.showSummaryGroupRank !== false;
             if (el('msShowGradeScale')) el('msShowGradeScale').checked = marksheetSettings.showGradeScale !== false;
             if (el('msShowTutorialSummary')) el('msShowTutorialSummary').checked = marksheetSettings.showTutorialSummary !== false;
             if (el('msBoardStandardOptional')) el('msBoardStandardOptional').checked = marksheetSettings.boardStandardOptional === true;
@@ -2856,7 +2858,21 @@ function initMarksheetSettingsModal() {
 
             if (modal) modal.classList.add('active');
 
-            // Removed sub-config visibility logic linking History to Ranks
+            // Handle sub-config visibility for History
+            const rankMain = el('msShowRanking');
+            const rankDetails = el('msRankingDetailsConfig');
+            if (rankMain && rankDetails) {
+                const updateRankDetails = () => {
+                    rankDetails.style.opacity = rankMain.checked ? '1' : '0.5';
+                    rankDetails.style.pointerEvents = rankMain.checked ? 'auto' : 'none';
+                    if (!rankMain.checked) {
+                        el('msShowClassRank').checked = false;
+                        el('msShowGroupRank').checked = false;
+                    }
+                };
+                rankMain.addEventListener('change', updateRankDetails);
+                updateRankDetails();
+            }
         });
     }
 
@@ -3038,6 +3054,8 @@ function initMarksheetSettingsModal() {
                 showRanking: document.getElementById('msShowRanking').checked,
                 showClassRank: document.getElementById('msShowClassRank').checked,
                 showGroupRank: document.getElementById('msShowGroupRank').checked,
+                showSummaryClassRank: document.getElementById('msShowSummaryClassRank') ? document.getElementById('msShowSummaryClassRank').checked : true,
+                showSummaryGroupRank: document.getElementById('msShowSummaryGroupRank') ? document.getElementById('msShowSummaryGroupRank').checked : true,
                 showGradeScale: document.getElementById('msShowGradeScale').checked,
                 showTutorialSummary: document.getElementById('msShowTutorialSummary')?.checked !== false,
                 boardStandardOptional: document.getElementById('msBoardStandardOptional')?.checked || false,

@@ -164,6 +164,8 @@ export function renderTemplateB(data) {
     }).join('');
 
     // History table
+    const showSummaryClassRank = ms.showSummaryClassRank !== false;
+    const showSummaryGroupRank = ms.showSummaryGroupRank !== false;
     const showClassRank = ms.showClassRank !== false;
     const showGroupRank = ms.showGroupRank !== false;
 
@@ -320,10 +322,10 @@ export function renderTemplateB(data) {
                 <div class="msb-result-summary">
                     <div class="msb-summary-title" style="display: flex; justify-content: space-between; align-items: center;">
                         <span>ফলাফল সারাংশ</span>
-                        ${(showClassRank || showGroupRank) ? `
+                        ${(showSummaryClassRank || showSummaryGroupRank) ? `
                         <div style="display: flex; gap: 8px;">
-                            ${showClassRank ? `<span class="msb-rank-badge" style="background: #e0e7ff; color: #4f46e5; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;"><i class="fas fa-users"></i> শ্রেণি: ${exactRanks?.classRank || '-'}</span>` : ''}
-                            ${showGroupRank ? `<span class="msb-rank-badge" style="background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;"><i class="fas fa-layer-group"></i> বিভাগ: ${exactRanks?.groupRank || '-'}</span>` : ''}
+                            ${showSummaryClassRank ? `<span class="msb-rank-badge" style="background: #e0e7ff; color: #4f46e5; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;"><i class="fas fa-users"></i> শ্রেণি: ${exactRanks?.classRank || '-'}</span>` : ''}
+                            ${showSummaryGroupRank ? `<span class="msb-rank-badge" style="background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;"><i class="fas fa-layer-group"></i> বিভাগ: ${exactRanks?.groupRank || '-'}</span>` : ''}
                         </div>` : ''}
                     </div>
                     <div class="msb-summary-boxes">
