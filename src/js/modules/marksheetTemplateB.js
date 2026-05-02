@@ -133,6 +133,7 @@ export function renderTemplateB(data) {
                     <div class="msb-opt-name-flex">
                         <div class="msb-opt-badge"><i class="fas fa-book"></i> ঐচ্ছিক বিষয়</div>
                         <div class="msb-opt-subject">${row.name}</div>
+                        <div style="font-size: 0.6rem; color: #64748b; font-style: italic; margin-top: 1px;">(ঐচ্ছিক বিষয়) - ${ms.boardStandardOptional ? 'বোর্ড স্ট্যন্ডার্ড' : 'সাধারণ বিষয় নীতি'}</div>
                     </div>
                 </td>
                 ${tutIntEnabled && tutCount > 0 ? (() => {
