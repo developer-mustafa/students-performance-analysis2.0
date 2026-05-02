@@ -448,6 +448,7 @@ async function init() {
         initSubjectConfigManager();
         initClassMappingManager();
 
+
         // Initialize new feature modules
         initPageRouter(async (pageId) => {
             // Lazy-load page data and initialize modules on navigation
@@ -465,6 +466,13 @@ async function init() {
                     initializedModules.add('users');
                 }
                 await handleUserManagement();
+            }
+            if (pageId === 'backup-restore') {
+                const { initBackupRestoreManager } = await import('./js/modules/backupRestoreManager.js');
+                if (!initializedModules.has('backup-restore')) {
+                    initBackupRestoreManager();
+                    initializedModules.add('backup-restore');
+                }
             }
             if (pageId === 'students') {
                 const { initStudentManager, loadStudents } = await import('./js/modules/studentManager.js');

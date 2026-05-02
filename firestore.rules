@@ -117,6 +117,13 @@ service cloud.firestore {
     }
 
     // =======================================
+    //  Backup & Restore Logs
+    // =======================================
+    match /backup_logs/{logId} {
+      allow read, write: if isAdminOrAbove();
+    }
+
+    // =======================================
     //  Catch-All: Deny everything else
     // =======================================
     match /{document=**} {

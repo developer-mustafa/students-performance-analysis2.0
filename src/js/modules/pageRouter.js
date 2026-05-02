@@ -23,7 +23,8 @@ const NEW_PAGE_IDS = {
     'report': 'reportPage',
     'notices': 'noticesPage',
     'users': 'usersPage',
-    'tutorial-marksheet': 'tutorialMarksheetPage'
+    'tutorial-marksheet': 'tutorialMarksheetPage',
+    'backup-restore': 'backupRestorePage'
 };
 
 // IDs/selectors of all dashboard-only sections to hide on other pages
@@ -218,7 +219,7 @@ export function updateNavVisibility() {
 
         // Special override for Super Admin: always see certain tabs regardless of settings
         if (role === 'super_admin') {
-            const superAdminTabs = ['dashboard', 'access-requests', 'exam-config', 'academic-settings', 'access-control', 'student-results', 'tabulation', 'notices', 'report', 'users', 'tutorial-marksheet'];
+            const superAdminTabs = ['dashboard', 'access-requests', 'exam-config', 'academic-settings', 'access-control', 'student-results', 'tabulation', 'notices', 'report', 'users', 'tutorial-marksheet', 'backup-restore'];
             if (superAdminTabs.includes(page)) visible = true;
         }
 
