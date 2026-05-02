@@ -219,7 +219,6 @@ export function renderTemplateB(data) {
     if (showRanking) activeCards++;
     if (showPerformance) activeCards++;
     if (showComments) activeCards++;
-    if (showClassRank || showGroupRank) activeCards++;
 
     // If there is an empty slot in the grid (less than 3 cards) and QR is enabled, put QR in the grid
     const putQrInGrid = showQRCode && activeCards < 3;
@@ -319,7 +318,14 @@ export function renderTemplateB(data) {
 
                 <!-- Result Summary -->
                 <div class="msb-result-summary">
-                    <div class="msb-summary-title">ফলাফল সারাংশ</div>
+                    <div class="msb-summary-title" style="display: flex; justify-content: space-between; align-items: center;">
+                        <span>ফলাফল সারাংশ</span>
+                        ${(showClassRank || showGroupRank) ? `
+                        <div style="display: flex; gap: 8px;">
+                            ${showClassRank ? `<span class="msb-rank-badge" style="background: #e0e7ff; color: #4f46e5; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;"><i class="fas fa-users"></i> শ্রেণি: ${exactRanks?.classRank || '-'}</span>` : ''}
+                            ${showGroupRank ? `<span class="msb-rank-badge" style="background: #e0f2fe; color: #0284c7; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; -webkit-print-color-adjust: exact !important; print-color-adjust: exact !important;"><i class="fas fa-layer-group"></i> বিভাগ: ${exactRanks?.groupRank || '-'}</span>` : ''}
+                        </div>` : ''}
+                    </div>
                     <div class="msb-summary-boxes">
                         <div class="msb-sum-box msb-box-gpa">
                             <span class="msb-sum-label">GPA</span>
@@ -354,7 +360,7 @@ export function renderTemplateB(data) {
                         </div>
                         <div class="msb-sum-detail">
                             <i class="fas fa-exclamation-circle" style="color: ${failedSubjectsCount > 0 ? '#dc2626' : '#16A34A'} !important; -webkit-text-fill-color: ${failedSubjectsCount > 0 ? '#dc2626' : '#16A34A'} !important;"></i>
-                            <span>বিষয়ভিত্তিক অবস্থা</span>
+                            
                             <strong style="color: ${failedSubjectsCount > 0 ? '#dc2626' : '#16A34A'} !important; -webkit-text-fill-color: ${failedSubjectsCount > 0 ? '#dc2626' : '#16A34A'} !important;">${failedSubjectsCount > 0 ? `${toBnNum(failedSubjectsCount)} বিষয়ে ফেল` : 'সব বিষয়ে উত্তীর্ণ'}</strong>
                         </div>
                     </div>
@@ -464,32 +470,7 @@ export function renderTemplateB(data) {
                 </div>`;
         })()}
 
-                <!-- Ranking Analysis (Class/Group) -->
-                ${(() => {
-            if (!showClassRank && !showGroupRank) return '';
-            return `
-                <div class="msb-bottom-card msb-ranking-card">
-                    <div class="msb-bottom-card-title"><i class="fas fa-medal"></i> মেধাক্রম বিশ্লেষণ</div>
-                    <div class="msb-ranking-content" style="display: flex; flex-direction: column; gap: 10px; padding: 10px 5px;">
-                        ${showClassRank ? `
-                        <div class="msb-rank-item" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f8fafc; border-radius: 8px; border: 1px solid #e2e8f0;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <i class="fas fa-users" style="color: #6366f1;"></i>
-                                <span style="font-size: 0.72rem; font-weight: 700; color: #475569;">শ্রেণি মেধাক্রম</span>
-                            </div>
-                            <span style="font-size: 0.85rem; font-weight: 900; color: #1e293b;">${exactRanks?.classRank || '-'}</span>
-                        </div>` : ''}
-                        ${showGroupRank ? `
-                        <div class="msb-rank-item" style="display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; background: #f0f9ff; border-radius: 8px; border: 1px solid #bae6fd;">
-                            <div style="display: flex; align-items: center; gap: 8px;">
-                                <i class="fas fa-layer-group" style="color: #0ea5e9;"></i>
-                                <span style="font-size: 0.72rem; font-weight: 700; color: #0369a1;">বিভাগীয় মেধাক্রম</span>
-                            </div>
-                            <span style="font-size: 0.85rem; font-weight: 900; color: #0c4a6e;">${exactRanks?.groupRank || '-'}</span>
-                        </div>` : ''}
-                    </div>
-                </div>`;
-        })()}
+
 
                 <!-- QR Code (if in grid) -->
                 ${(() => {
