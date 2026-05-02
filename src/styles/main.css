@@ -25215,7 +25215,7 @@ body.dark-mode .ms-compact-info {
 .msb-watermark img {
   max-width: 280px;
   max-height: 280px;
-  opacity: 0.06;
+  opacity: 0.12;
 }
 
 /* ===== HEADER ===== */
@@ -26137,18 +26137,18 @@ body.dark-mode .ms-compact-info {
   .msb-page .msb-perf-badge { color: var(--msb-green) !important; -webkit-text-fill-color: var(--msb-green) !important; background-color: #F0FDF4 !important; border-color: #86EFAC !important; }
   .msb-page .msb-perf-badge i { color: var(--msb-green) !important; -webkit-text-fill-color: var(--msb-green) !important; }
   
-  .msb-page .msb-summary-title { background-color: var(--msb-light-blue) !important; color: var(--msb-primary) !important; -webkit-text-fill-color: var(--msb-primary) !important; }
-  .msb-page .msb-result-summary { background-color: #FAFBFC !important; border-color: var(--msb-gray-border) !important; }
-  .msb-page .msb-student-card { background-color: #FAFBFC !important; border-color: var(--msb-gray-border) !important; }
-  .msb-page .msb-photo-placeholder { background-color: var(--msb-light-blue) !important; border-color: var(--msb-gray-border) !important; }
+  .msb-page .msb-summary-title { background-color: rgba(239, 246, 255, 0.5) !important; color: var(--msb-primary) !important; -webkit-text-fill-color: var(--msb-primary) !important; }
+  .msb-page .msb-result-summary { background-color: rgba(250, 251, 252, 0.5) !important; border-color: var(--msb-gray-border) !important; }
+  .msb-page .msb-student-card { background-color: rgba(250, 251, 252, 0.5) !important; border-color: var(--msb-gray-border) !important; }
+  .msb-page .msb-photo-placeholder { background-color: rgba(239, 246, 255, 0.5) !important; border-color: var(--msb-gray-border) !important; }
   
   .msb-page .msb-box-pass { background-color: #F0FDF4 !important; border-color: #86EFAC !important; }
   .msb-page .msb-box-fail { background-color: #FEF2F2 !important; border-color: #FECACA !important; }
   .msb-page .msb-sum-box { background-color: #ffffff !important; border-color: var(--msb-gray-border) !important; }
 
-  .msb-page .msb-table thead th { background-color: #ffffff !important; border-color: var(--msb-gray-border) !important; }
-  .msb-page .msb-row-optional td { background-color: #F0FDF4 !important; }
-  .msb-page .msb-total-section td { background-color: #F9FAFB !important; }
+  .msb-page .msb-table thead th { background-color: rgba(255, 255, 255, 0.5) !important; border-color: var(--msb-gray-border) !important; }
+  .msb-page .msb-row-optional td { background-color: rgba(240, 253, 244, 0.4) !important; }
+  .msb-page .msb-total-section td { background-color: rgba(249, 250, 251, 0.5) !important; }
   .msb-page .msb-mark-fail { color: #DC2626 !important; -webkit-text-fill-color: #DC2626 !important; font-weight: 800 !important; }
   
   .msb-page .msb-detail-row i { color: var(--msb-primary) !important; -webkit-text-fill-color: var(--msb-primary) !important; }
