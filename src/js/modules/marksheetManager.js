@@ -2002,6 +2002,13 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
         failedSubjects: failedSubjectsCount
     });
 
+    let attendanceStatus = 'উপস্থিত';
+    if (attendedSubjectsCount === 0) {
+        attendanceStatus = 'অনুপস্থিত';
+    } else if (attendedSubjectsCount < totalVisibleCount) {
+        attendanceStatus = 'আংশিক উপস্থিত';
+    }
+
     // --- TEMPLATE B RENDERING BRANCH ---
     const selectedTemplate = document.getElementById('msDesignTemplate')?.value || 'A';
     if (selectedTemplate === 'B') {
@@ -2074,6 +2081,7 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
             watermarkHtml,
             todayDate,
             isAbsentMark,
+            attendanceStatus,
             failedSubjectsCount,
             exactRanks,
             apsData: apsData,

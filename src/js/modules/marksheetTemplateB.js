@@ -43,6 +43,7 @@ export function renderTemplateB(data) {
         watermarkHtml,
         todayDate,
         isAbsentMark,
+        attendanceStatus,
         failedSubjectsCount,
         exactRanks,
         apsData,
@@ -347,8 +348,13 @@ export function renderTemplateB(data) {
                             <strong style="color: #16A34A !important; -webkit-text-fill-color: #16A34A !important;">+${optionalBonusGP.toFixed(2)}</strong>
                         </div>` : ''}
                         <div class="msb-sum-detail">
+                            <i class="fas fa-user-clock" style="color: ${attendanceStatus === 'উপস্থিত' ? '#2563eb' : (attendanceStatus === 'আংশিক উপস্থিত' ? '#d97706' : '#dc2626')} !important; -webkit-text-fill-color: ${attendanceStatus === 'উপস্থিত' ? '#2563eb' : (attendanceStatus === 'আংশিক উপস্থিত' ? '#d97706' : '#dc2626')} !important;"></i>
+                            <span>উপস্থিতি</span>
+                            <strong style="color: ${attendanceStatus === 'উপস্থিত' ? '#2563eb' : (attendanceStatus === 'আংশিক উপস্থিত' ? '#d97706' : '#dc2626')} !important; -webkit-text-fill-color: ${attendanceStatus === 'উপস্থিত' ? '#2563eb' : (attendanceStatus === 'আংশিক উপস্থিত' ? '#d97706' : '#dc2626')} !important;">${attendanceStatus || 'উপস্থিত'}</strong>
+                        </div>
+                        <div class="msb-sum-detail">
                             <i class="fas fa-exclamation-circle" style="color: ${failedSubjectsCount > 0 ? '#dc2626' : '#16A34A'} !important; -webkit-text-fill-color: ${failedSubjectsCount > 0 ? '#dc2626' : '#16A34A'} !important;"></i>
-                            <span>অবস্থা</span>
+                            <span>বিষয়ভিত্তিক অবস্থা</span>
                             <strong style="color: ${failedSubjectsCount > 0 ? '#dc2626' : '#16A34A'} !important; -webkit-text-fill-color: ${failedSubjectsCount > 0 ? '#dc2626' : '#16A34A'} !important;">${failedSubjectsCount > 0 ? `${toBnNum(failedSubjectsCount)} বিষয়ে ফেল` : 'সব বিষয়ে উত্তীর্ণ'}</strong>
                         </div>
                     </div>
