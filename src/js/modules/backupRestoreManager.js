@@ -129,14 +129,15 @@ export async function createBackup(options = {}, onProgress = () => {}) {
             let docs = await fetchCollectionPaginated(colName);
 
             // Apply filters for selective backup
-            if (filters.session && colName === 'exams') {
-                docs = docs.filter(d => d.session === filters.session);
+            if (filters.session) {
+                if (['exams', 'examConfigs', 'tutorialExamConfigs'].includes(colName)) {
+                    docs = docs.filter(d => d.session === filters.session);
+                }
             }
-            if (filters.className && colName === 'exams') {
-                docs = docs.filter(d => d.class === filters.className);
-            }
-            if (filters.className && colName === 'students') {
-                docs = docs.filter(d => d.class === filters.className);
+            if (filters.className) {
+                if (['exams', 'students', 'examConfigs', 'tutorialExamConfigs'].includes(colName)) {
+                    docs = docs.filter(d => d.class === filters.className);
+                }
             }
 
             backupData.data[colName] = docs;
@@ -557,7 +558,10 @@ export function initBackupRestoreManager() {
             if (filterSession?.value) filters.session = filterSession.value;
             if (filterClass?.value) filters.className = filterClass.value;
 
-            const data = await createBackup({ type: 'selective', filters }, (pct, msg) => {
+            // Explicitly define which collections should be included in a selective backup
+            const selectiveCollections = ['exams', 'students', 'examConfigs', 'tutorialExamConfigs'];
+
+            const data = await createBackup({ type: 'selective', collections: selectiveCollections, filters }, (pct, msg) => {
                 updateProgress(backupProgress, backupProgressBar, backupProgressText, pct, msg);
             });
             if (data) downloadBackupFile(data);
