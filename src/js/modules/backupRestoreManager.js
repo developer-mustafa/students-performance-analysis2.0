@@ -177,8 +177,9 @@ export function downloadBackupFile(backupData, customPrefix = null) {
     const blob = new Blob([json], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    const dateStr = new Date().toISOString().slice(0, 10);
-    const timeStr = new Date().toTimeString().split(' ')[0].replace(/:/g, '-');
+    const d = new Date();
+    const dateStr = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+    const timeStr = `${String(d.getHours()).padStart(2, '0')}-${String(d.getMinutes()).padStart(2, '0')}-${String(d.getSeconds()).padStart(2, '0')}`;
     a.href = url;
     
     const prefix = customPrefix ? customPrefix : `EdTechPro_Backup_${backupData.meta.backupType}`;
