@@ -130,10 +130,12 @@ export function renderTemplateB(data) {
         if (isOpt) {
             return `<tr class="msb-row-optional">
                 <td colspan="2" class="msb-opt-name-cell">
-                    <div class="msb-opt-name-flex">
-                        <div class="msb-opt-badge"><i class="fas fa-book"></i> ঐচ্ছিক বিষয়</div>
-                        <div class="msb-opt-subject">${row.name}</div>
-                        <div style="font-size: 0.6rem; color: #64748b; font-style: italic; margin-top: 1px;">(ঐচ্ছিক বিষয়) - ${ms.boardStandardOptional ? 'বোর্ড স্ট্যন্ডার্ড' : 'সাধারণ বিষয় নীতি'}</div>
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                        <div class="msb-opt-badge" style="flex-shrink: 0;"><i class="fas fa-book"></i> ঐচ্ছিক বিষয়</div>
+                        <div style="display: flex; flex-direction: column; line-height: 1.3;">
+                            <span class="msb-opt-subject" style="font-size: 0.8rem; font-weight: 700;">${row.name}</span>
+                            <span style="font-size: 0.55rem; color: #94a3b8; font-weight: 500; white-space: nowrap;">${ms.boardStandardOptional ? 'বোর্ড স্ট্যন্ডার্ড' : 'সাধারণ বিষয় নীতি'}</span>
+                        </div>
                     </div>
                 </td>
                 ${tutIntEnabled && tutCount > 0 ? (() => {
