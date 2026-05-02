@@ -441,6 +441,7 @@ export function initBackupRestoreManager() {
     const connectDriveBtn = document.getElementById('brConnectDriveBtn');
     const driveStatus = document.getElementById('brDriveStatus');
     const autoBackupRadios = document.querySelectorAll('input[name="brAutoBackup"]');
+    let pendingRestoreData = null;
 
     // Check initial drive connection status
     async function checkDriveStatus() {
