@@ -2856,21 +2856,7 @@ function initMarksheetSettingsModal() {
 
             if (modal) modal.classList.add('active');
 
-            // Handle sub-config visibility
-            const rankMain = el('msShowRanking');
-            const rankDetails = el('msRankingDetailsConfig');
-            if (rankMain && rankDetails) {
-                const updateRankDetails = () => {
-                    rankDetails.style.opacity = rankMain.checked ? '1' : '0.5';
-                    rankDetails.style.pointerEvents = rankMain.checked ? 'auto' : 'none';
-                    if (!rankMain.checked) {
-                        el('msShowClassRank').checked = false;
-                        el('msShowGroupRank').checked = false;
-                    }
-                };
-                rankMain.addEventListener('change', updateRankDetails);
-                updateRankDetails();
-            }
+            // Removed sub-config visibility logic linking History to Ranks
         });
     }
 
