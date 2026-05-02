@@ -5953,114 +5953,158 @@
     </div>
     <!-- ========== PAGE: BACKUP & RESTORE ========== -->
     <div id="backupRestorePage" class="app-page" style="display: none; padding: 20px;">
-      <div style="max-width: 900px; margin: 0 auto;">
-        <h2 style="font-size: 1.5rem; font-weight: 700; margin-bottom: 24px; display: flex; align-items: center; gap: 10px;">
-          <i class="fas fa-database" style="color: #10b981;"></i> ব্যাকআপ ও রিস্টোর
-        </h2>
+      <style>
+        .br-dashboard-container { max-width: 1200px; margin: 0 auto; padding: 10px; }
+        .br-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px; border-bottom: 2px solid var(--border-color, #e2e8f0); padding-bottom: 15px; }
+        .br-header h2 { font-size: 1.8rem; font-weight: 800; color: #1e293b; display: flex; align-items: center; gap: 15px; margin: 0; }
+        .br-header-icon { width: 45px; height: 45px; border-radius: 12px; background: linear-gradient(135deg, #10b981, #059669); color: white; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; box-shadow: 0 4px 10px rgba(16, 185, 129, 0.3); }
+        .br-grid { display: grid; grid-template-columns: 1fr; gap: 24px; margin-bottom: 24px; }
+        @media (min-width: 900px) { .br-grid { grid-template-columns: 1fr 1fr; } }
+        .br-card { background: var(--card-bg, #ffffff); border-radius: 16px; padding: 28px; box-shadow: 0 4px 20px rgba(0,0,0,0.04); border: 1px solid var(--border-color, #f1f5f9); display: flex; flex-direction: column; transition: transform 0.2s ease, box-shadow 0.2s ease; position: relative; overflow: hidden; }
+        .br-card::before { content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 4px; background: transparent; transition: background 0.3s ease; }
+        .br-card:hover { transform: translateY(-3px); box-shadow: 0 10px 25px rgba(0,0,0,0.08); }
+        .br-card.card-blue:hover::before { background: #3b82f6; }
+        .br-card.card-orange:hover::before { background: #f59e0b; }
+        .br-card.card-green:hover::before { background: #10b981; }
+        .br-card.card-indigo:hover::before { background: #6366f1; }
+        .br-card-header { display: flex; align-items: center; gap: 14px; margin-bottom: 24px; border-bottom: 1px dashed #e2e8f0; padding-bottom: 16px; }
+        .br-card-title { font-size: 1.25rem; font-weight: 700; color: #0f172a; margin: 0; }
+        .br-icon-box { width: 42px; height: 42px; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 1.2rem; }
+        .icon-blue { background: #eff6ff; color: #3b82f6; border: 1px solid #bfdbfe; }
+        .icon-orange { background: #fffbeb; color: #f59e0b; border: 1px solid #fde68a; }
+        .icon-green { background: #f0fdf4; color: #10b981; border: 1px solid #bbf7d0; }
+        .icon-indigo { background: #eef2ff; color: #6366f1; border: 1px solid #c7d2fe; }
+      </style>
 
-        <!-- BACKUP PANEL -->
-        <div style="background: var(--card-bg, #fff); border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color, #e2e8f0);">
-          <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px;"><i class="fas fa-download" style="color: #3b82f6;"></i> ব্যাকআপ নিন</h3>
-          <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 16px;">
-            <button id="brBackupFullBtn" class="dm-btn dm-save" style="padding: 10px 20px;">
-              <i class="fas fa-cloud-download-alt"></i> সম্পূর্ণ ব্যাকআপ
-            </button>
-            <button id="brBackupMetaBtn" class="dm-btn" style="padding: 10px 20px; background: #6366f1; color: #fff; border: none; border-radius: 8px;">
-              <i class="fas fa-cogs"></i> শুধু মেটা ডেটা
-            </button>
-          </div>
-          <details style="margin-bottom: 12px; border: 1px solid var(--border-color, #e2e8f0); border-radius: 10px; padding: 12px;">
-            <summary style="cursor: pointer; font-weight: 600; font-size: 0.9rem;"><i class="fas fa-filter"></i> নির্বাচিত ব্যাকআপ (ফিল্টার)</summary>
-            <div style="display: flex; flex-wrap: wrap; gap: 10px; margin-top: 12px; align-items: end;">
-              <div>
-                <label style="font-size: 0.8rem; font-weight: 600;">সেশন</label>
-                <select id="brFilterSession" data-dynamic="session" data-placeholder="সব সেশন" class="form-select" style="min-width: 140px;"><option value="">সব সেশন</option></select>
-              </div>
-              <div>
-                <label style="font-size: 0.8rem; font-weight: 600;">ক্লাস</label>
-                <select id="brFilterClass" data-dynamic="class" data-placeholder="সব ক্লাস" class="form-select" style="min-width: 140px;"><option value="">সব ক্লাস</option></select>
-              </div>
-              <button id="brBackupSelectiveBtn" class="dm-btn" style="padding: 10px 16px; background: #8b5cf6; color: #fff; border: none; border-radius: 8px;">
-                <i class="fas fa-download"></i> নির্বাচিত ব্যাকআপ
+      <div class="br-dashboard-container">
+        <div class="br-header">
+          <h2>
+            <div class="br-header-icon"><i class="fas fa-database"></i></div>
+            সিস্টেম ব্যাকআপ ও রিস্টোর
+          </h2>
+        </div>
+
+        <div class="br-grid">
+          <!-- BACKUP PANEL -->
+          <div class="br-card card-blue">
+            <div class="br-card-header">
+              <div class="br-icon-box icon-blue"><i class="fas fa-cloud-download-alt"></i></div>
+              <h3 class="br-card-title">ব্যাকআপ তৈরি করুন</h3>
+            </div>
+            
+            <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px;">
+              <button id="brBackupFullBtn" class="dm-btn dm-save" style="padding: 12px 24px; border-radius: 10px; font-weight: 600; font-size: 0.95rem;">
+                <i class="fas fa-cloud-download-alt"></i> সম্পূর্ণ ব্যাকআপ
+              </button>
+              <button id="brBackupMetaBtn" class="dm-btn" style="padding: 12px 24px; background: #6366f1; color: #fff; border: none; border-radius: 10px; font-weight: 600; font-size: 0.95rem;">
+                <i class="fas fa-cogs"></i> শুধু মেটা ডেটা
               </button>
             </div>
-          </details>
-          <div id="brBackupProgress" style="display: none; margin-top: 12px;">
-            <div style="background: #e2e8f0; border-radius: 8px; height: 8px; overflow: hidden;">
-              <div id="brBackupProgressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 8px; transition: width 0.3s;"></div>
+            
+            <details style="margin-bottom: 12px; border: 1px solid var(--border-color, #e2e8f0); border-radius: 12px; padding: 16px; background: #f8fafc;">
+              <summary style="cursor: pointer; font-weight: 600; font-size: 0.95rem; color: #475569;"><i class="fas fa-filter" style="margin-right: 6px;"></i> নির্বাচিত ব্যাকআপ (ফিল্টার)</summary>
+              <div style="display: flex; flex-wrap: wrap; gap: 12px; margin-top: 16px; align-items: end;">
+                <div style="flex: 1; min-width: 140px;">
+                  <label style="font-size: 0.85rem; font-weight: 600; color: #64748b; margin-bottom: 4px; display: block;">সেশন</label>
+                  <select id="brFilterSession" data-dynamic="session" class="form-select" style="width: 100%; border-radius: 8px;"><option value="">সব সেশন</option></select>
+                </div>
+                <div style="flex: 1; min-width: 140px;">
+                  <label style="font-size: 0.85rem; font-weight: 600; color: #64748b; margin-bottom: 4px; display: block;">ক্লাস</label>
+                  <select id="brFilterClass" data-dynamic="class" class="form-select" style="width: 100%; border-radius: 8px;"><option value="">সব ক্লাস</option></select>
+                </div>
+                <button id="brBackupSelectiveBtn" class="dm-btn" style="padding: 10px 16px; background: #8b5cf6; color: #fff; border: none; border-radius: 8px; font-weight: 600;">
+                  <i class="fas fa-download"></i> নির্বাচিত
+                </button>
+              </div>
+            </details>
+            
+            <div id="brBackupProgress" style="display: none; margin-top: auto; padding-top: 16px;">
+              <div style="background: #e2e8f0; border-radius: 8px; height: 8px; overflow: hidden;">
+                <div id="brBackupProgressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #3b82f6, #10b981); border-radius: 8px; transition: width 0.3s;"></div>
+              </div>
+              <p id="brBackupProgressText" style="font-size: 0.85rem; color: #64748b; margin-top: 8px; font-weight: 500; text-align: center;"></p>
             </div>
-            <p id="brBackupProgressText" style="font-size: 0.8rem; color: #64748b; margin-top: 6px;"></p>
           </div>
-        </div>
-
-        <!-- RESTORE PANEL -->
-        <div style="background: var(--card-bg, #fff); border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color, #e2e8f0);">
-          <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px;"><i class="fas fa-upload" style="color: #f59e0b;"></i> রিস্টোর করুন</h3>
-          <input type="file" id="brRestoreFileInput" accept=".json" style="display: none;">
-          <button id="brRestoreUploadBtn" class="dm-btn" style="padding: 10px 20px; background: #f59e0b; color: #fff; border: none; border-radius: 8px;">
-            <i class="fas fa-file-upload"></i> ব্যাকআপ ফাইল আপলোড করুন
-          </button>
-          <div id="brRestorePreview" style="margin-top: 16px;"></div>
-          <div style="display: flex; gap: 10px; margin-top: 12px;">
-            <button id="brRestoreConfirmBtn" class="dm-btn dm-save" style="display: none; padding: 10px 20px; background: #ef4444; color: #fff; border: none; border-radius: 8px;">
-              <i class="fas fa-check-circle"></i> রিস্টোর নিশ্চিত করুন
-            </button>
-            <button id="brRestoreCancelBtn" class="dm-btn" style="display: none; padding: 10px 20px; background: #64748b; color: #fff; border: none; border-radius: 8px;">
-              <i class="fas fa-times"></i> বাতিল
-            </button>
-          </div>
-          <div id="brRestoreProgress" style="display: none; margin-top: 12px;">
-            <div style="background: #e2e8f0; border-radius: 8px; height: 8px; overflow: hidden;">
-              <div id="brRestoreProgressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #f59e0b, #ef4444); border-radius: 8px; transition: width 0.3s;"></div>
-            </div>
-            <p id="brRestoreProgressText" style="font-size: 0.8rem; color: #64748b; margin-top: 6px;"></p>
-          </div>
-        </div>
-
-        <!-- GOOGLE DRIVE INTEGRATION (DESIGN) -->
-        <div style="background: var(--card-bg, #fff); border-radius: 16px; padding: 24px; margin-bottom: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color, #e2e8f0);">
-          <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: center;">
-            <span><i class="fab fa-google-drive" style="color: #34a853;"></i> Google Drive Integration</span>
-            <span style="font-size: 0.75rem; background: #fef3c7; color: #d97706; padding: 4px 8px; border-radius: 12px; font-weight: 600;">Cloud Function Required</span>
-          </h3>
-          <p style="font-size: 0.9rem; color: #64748b; margin-bottom: 16px;">
-            আপনার Google Drive অ্যাকাউন্টের সাথে কানেক্ট করুন এবং অটো-ব্যাকআপ শিডিউল সেট করুন। ব্যাকআপগুলো <code>/EdTechAutomataPro/Backups/</code> ফোল্ডারে সেভ হবে।
-          </p>
           
-          <div style="display: flex; gap: 15px; margin-bottom: 20px; align-items: center;">
-            <button id="brConnectDriveBtn" class="dm-btn" style="padding: 10px 20px; background: #fff; color: #475569; border: 1px solid #cbd5e1; border-radius: 8px; display: flex; align-items: center; gap: 8px; font-weight: 600;">
-              <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" alt="Drive" style="width: 16px;">
-              Connect Google Drive
-            </button>
-            <span id="brDriveStatus" style="font-size: 0.85rem; color: #ef4444; font-weight: 600;"><i class="fas fa-times-circle"></i> Not Connected</span>
-          </div>
-
-          <div style="border-top: 1px solid var(--border-color, #e2e8f0); padding-top: 16px;">
-            <h4 style="font-size: 0.95rem; font-weight: 600; margin-bottom: 12px;">অটো-ব্যাকআপ শিডিউল</h4>
-            <div style="display: flex; gap: 15px; flex-wrap: wrap;">
-              <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer;">
-                <input type="radio" name="brAutoBackup" value="off" checked> অফ
-              </label>
-              <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer;">
-                <input type="radio" name="brAutoBackup" value="daily"> দৈনিক (রাত ১২টা)
-              </label>
-              <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer;">
-                <input type="radio" name="brAutoBackup" value="weekly"> সাপ্তাহিক (শুক্রবার)
-              </label>
-              <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer;">
-                <input type="radio" name="brAutoBackup" value="monthly"> মাসিক (১ তারিখ)
-              </label>
+          <!-- RESTORE PANEL -->
+          <div class="br-card card-orange">
+            <div class="br-card-header">
+              <div class="br-icon-box icon-orange"><i class="fas fa-cloud-upload-alt"></i></div>
+              <h3 class="br-card-title">ডেটা রিস্টোর করুন</h3>
             </div>
-            <p style="font-size: 0.8rem; color: #94a3b8; margin-top: 10px; font-style: italic;">
-              * অটো-ব্যাকআপের জন্য Firebase Cloud Functions এবং OAuth 2.0 (Client-side) সেটআপ প্রয়োজন।
-            </p>
+            
+            <input type="file" id="brRestoreFileInput" accept=".json" style="display: none;">
+            <button id="brRestoreUploadBtn" class="dm-btn" style="padding: 12px 24px; background: #f59e0b; color: #fff; border: none; border-radius: 10px; font-weight: 600; font-size: 0.95rem; width: 100%; display: flex; justify-content: center; align-items: center; gap: 8px; transition: background 0.3s;">
+              <i class="fas fa-file-upload"></i> ব্যাকআপ ফাইল আপলোড করুন
+            </button>
+            
+            <div id="brRestorePreview" style="margin-top: 20px;"></div>
+            
+            <div style="display: flex; gap: 12px; margin-top: 20px;">
+              <button id="brRestoreConfirmBtn" class="dm-btn" style="display: none; padding: 12px 24px; background: #ef4444; color: #fff; border: none; border-radius: 10px; font-weight: 600; flex: 1; transition: background 0.3s;">
+                <i class="fas fa-check-circle"></i> রিস্টোর নিশ্চিত
+              </button>
+              <button id="brRestoreCancelBtn" class="dm-btn" style="display: none; padding: 12px 24px; background: #64748b; color: #fff; border: none; border-radius: 10px; font-weight: 600; flex: 1; transition: background 0.3s;">
+                <i class="fas fa-times"></i> বাতিল
+              </button>
+            </div>
+            
+            <div id="brRestoreProgress" style="display: none; margin-top: auto; padding-top: 16px;">
+              <div style="background: #e2e8f0; border-radius: 8px; height: 8px; overflow: hidden;">
+                <div id="brRestoreProgressBar" style="height: 100%; width: 0%; background: linear-gradient(90deg, #f59e0b, #ef4444); border-radius: 8px; transition: width 0.3s;"></div>
+              </div>
+              <p id="brRestoreProgressText" style="font-size: 0.85rem; color: #64748b; margin-top: 8px; font-weight: 500; text-align: center;"></p>
+            </div>
           </div>
-        </div>
 
-        <!-- HISTORY -->
-        <div style="background: var(--card-bg, #fff); border-radius: 16px; padding: 24px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); border: 1px solid var(--border-color, #e2e8f0);">
-          <h3 style="font-size: 1.1rem; font-weight: 600; margin-bottom: 16px;"><i class="fas fa-history" style="color: #6366f1;"></i> ব্যাকআপ ইতিহাস</h3>
-          <div id="brHistoryList"><p style="color: #94a3b8; font-size: 0.9rem;">লোড হচ্ছে...</p></div>
+          <!-- GOOGLE DRIVE INTEGRATION -->
+          <div class="br-card card-green">
+            <div class="br-card-header" style="justify-content: space-between;">
+              <div style="display: flex; align-items: center; gap: 14px;">
+                <div class="br-icon-box icon-green"><i class="fab fa-google-drive"></i></div>
+                <h3 class="br-card-title">Google Drive সিঙ্ক</h3>
+              </div>
+              <span style="font-size: 0.75rem; background: #fef3c7; color: #d97706; padding: 6px 12px; border-radius: 20px; font-weight: 700; border: 1px solid #fde68a;">Cloud Status</span>
+            </div>
+            
+            <p style="font-size: 0.95rem; color: #475569; margin-bottom: 20px; line-height: 1.5;">
+              আপনার ড্রাইভ অ্যাকাউন্টের সাথে কানেক্ট করুন এবং অটো-ব্যাকআপ শিডিউল সেট করুন। ব্যাকআপ ফাইল <code>/EdTechAutomataPro/</code> ফোল্ডারে সেভ হবে।
+            </p>
+            
+            <div style="display: flex; gap: 16px; margin-bottom: 24px; align-items: center; flex-wrap: wrap;">
+              <button id="brConnectDriveBtn" class="dm-btn" style="padding: 10px 24px; background: #ffffff; color: #334155; border: 2px solid #cbd5e1; border-radius: 10px; display: flex; align-items: center; gap: 10px; font-weight: 700; transition: all 0.3s;">
+                <img src="https://upload.wikimedia.org/wikipedia/commons/1/12/Google_Drive_icon_%282020%29.svg" alt="Drive" style="width: 18px;">
+                Connect Drive
+              </button>
+              <span id="brDriveStatus" style="font-size: 0.9rem; color: #ef4444; font-weight: 700; background: #fee2e2; padding: 6px 12px; border-radius: 20px;"><i class="fas fa-times-circle"></i> Not Connected</span>
+            </div>
+
+            <div style="border-top: 1px solid var(--border-color, #e2e8f0); padding-top: 20px; margin-top: auto;">
+              <h4 style="font-size: 0.95rem; font-weight: 700; color: #1e293b; margin-bottom: 14px;">অটো-ব্যাকআপ শিডিউল</h4>
+              <div style="display: flex; gap: 16px; flex-wrap: wrap;">
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer; color: #475569; font-weight: 500;">
+                  <input type="radio" name="brAutoBackup" value="off" checked> অফ
+                </label>
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer; color: #475569; font-weight: 500;">
+                  <input type="radio" name="brAutoBackup" value="daily"> দৈনিক
+                </label>
+                <label style="display: flex; align-items: center; gap: 6px; font-size: 0.9rem; cursor: pointer; color: #475569; font-weight: 500;">
+                  <input type="radio" name="brAutoBackup" value="weekly"> সাপ্তাহিক
+                </label>
+              </div>
+            </div>
+          </div>
+
+          <!-- HISTORY -->
+          <div class="br-card card-indigo">
+            <div class="br-card-header">
+              <div class="br-icon-box icon-indigo"><i class="fas fa-history"></i></div>
+              <h3 class="br-card-title">ব্যাকআপ ইতিহাস</h3>
+            </div>
+            <div id="brHistoryList" style="flex: 1; overflow-y: auto; max-height: 250px; padding-right: 5px;">
+              <p style="color: #94a3b8; font-size: 0.95rem; text-align: center; padding: 20px 0;"><i class="fas fa-spinner fa-spin"></i> লোড হচ্ছে...</p>
+            </div>
+          </div>
         </div>
       </div>
     </div>
