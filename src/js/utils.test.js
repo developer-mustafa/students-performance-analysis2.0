@@ -12,6 +12,10 @@ import {
     calculateStatistics,
     normalizeSession,
     convertToBengaliDigits,
+    escapeHtml,
+    sortStudentData,
+    calculateGroupStatistics,
+    getFailedStudents,
 } from './utils.js';
 
 const sampleStudents = [
@@ -112,4 +116,77 @@ test('isStudentEligibleForSubject respects subject mappings before group rules',
         isStudentEligibleForSubject({ id: '09', group: '\u09AC\u09BF\u099C\u09CD\u099E\u09BE\u09A8' }, '\u09AA\u09A6\u09BE\u09B0\u09CD\u09A5\u09AC\u09BF\u099C\u09CD\u099E\u09BE\u09A8', { subjectMappings, marksheetRules, className: 'HSC' }),
         false
     );
+});
+
+test('escapeHtml prevents XSS by escaping special characters', () => {
+    assert.equal(escapeHtml('<script>alert("XSS & test")</script>'), '&lt;script&gt;alert(&quot;XSS &amp; test&quot;)&lt;/script&gt;');
+    assert.equal(escapeHtml(null), '');
+    assert.equal(escapeHtml(undefined), '');
+    assert.equal(escapeHtml(123), '123');
+});
+
+test('sortStudentData sorts students by different criteria and handles group priority', () => {
+    const students = [
+        { id: 3, name: 'Arts Student', group: 'মানবিক গ্রুপ', total: 60 },
+        { id: 1, name: 'Science Student', group: 'বিজ্ঞান গ্রুপ', total: 95 },
+        { id: 2, name: 'Business Student', group: 'ব্যবসায় গ্রুপ', total: 75 },
+    ];
+
+    // Descending order by total
+    const sortedByTotal = sortStudentData(students, 'total', 'desc');
+    assert.equal(sortedByTotal[0].name, 'Science Student');
+    assert.equal(sortedByTotal[2].name, 'Arts Student');
+
+    // Ascending order by total
+    const sortedByTotalAsc = sortStudentData(students, 'total', 'asc');
+    assert.equal(sortedByTotalAsc[0].name, 'Arts Student');
+    assert.equal(sortedByTotalAsc[2].name, 'Science Student');
+
+    // Roll Ascending (Checks Group Priority: Science > Business > Arts)
+    const sortedByRoll = sortStudentData(students, 'id', 'roll-asc');
+    assert.equal(sortedByRoll[0].name, 'Science Student');
+    assert.equal(sortedByRoll[1].name, 'Business Student');
+    assert.equal(sortedByRoll[2].name, 'Arts Student');
+});
+
+test('calculateGroupStatistics generates separate stats for each group', () => {
+    const students = [
+        { id: 1, group: 'বিজ্ঞান', written: 40, total: 50 },
+        { id: 2, group: 'বিজ্ঞান', written: 20, total: 20 }, // Fail
+        { id: 3, group: 'মানবিক', written: 40, total: 50 },
+    ];
+    
+    const stats = calculateGroupStatistics(students, { writtenPass: 33 });
+    assert.equal(stats.length, 2);
+    
+    const scienceStats = stats.find(s => s.group === 'বিজ্ঞান');
+    assert.equal(scienceStats.totalStudents, 2);
+    assert.equal(scienceStats.failedStudents, 1);
+    
+    const artsStats = stats.find(s => s.group === 'মানবিক');
+    assert.equal(artsStats.totalStudents, 1);
+    assert.equal(artsStats.failedStudents, 0);
+});
+
+test('getFailedStudents accurately identifies failed students and handles search', () => {
+    const students = [
+        { id: 1, roll: 101, name: 'Passer', written: 50, total: 60 },
+        { id: 2, roll: 102, name: 'Failer 1', written: 20, total: 30 },
+        { id: 3, roll: 103, name: 'Failer 2', written: 15, total: 25 },
+    ];
+
+    // Find all failed
+    const allFailed = getFailedStudents(students, { writtenPass: 33 });
+    assert.equal(allFailed.length, 2);
+    assert.equal(allFailed[0].name, 'Failer 1');
+
+    // Search for specific failed student (by English digit)
+    const searchedFail = getFailedStudents(students, { writtenPass: 33, searchTerm: '102' });
+    assert.equal(searchedFail.length, 1);
+    assert.equal(searchedFail[0].name, 'Failer 1');
+
+    // Search for specific failed student (by Bengali digit)
+    const bnSearchedFail = getFailedStudents(students, { writtenPass: 33, searchTerm: '১০৩' });
+    assert.equal(bnSearchedFail.length, 1);
+    assert.equal(bnSearchedFail[0].name, 'Failer 2');
 });
