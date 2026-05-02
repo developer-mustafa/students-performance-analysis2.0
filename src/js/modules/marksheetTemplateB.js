@@ -515,14 +515,17 @@ export function renderTemplateB(data) {
                 ${(() => {
             if (!putQrInGrid) return '';
             return `
-                <div class="msb-bottom-card msb-qr-card" style="display: flex; align-items: center; justify-content: center; gap: 15px; padding: 12px;">
-                    <div style="flex-shrink: 0; background: #fff; padding: 4px; border-radius: 4px; border: 1px solid #f1f5f9;">
-                        <canvas class="ms-mr-qr-canvas" data-uid="${uid}" data-exam="${examDisplayName}" data-name="${student.name}" style="max-height: 85px; width: 85px;"></canvas>
+                <div class="msb-bottom-card msb-qr-card" style="display: flex; align-items: center; justify-content: center; gap: 12px; padding: 10px 15px;">
+                    <!-- QR and ID Block -->
+                    <div style="display: flex; flex-direction: column; align-items: center; gap: 3px;">
+                        <canvas class="ms-mr-qr-canvas" data-uid="${uid}" data-exam="${examDisplayName}" data-name="${student.name}" style="max-height: 80px; width: 80px;"></canvas>
+                        <div style="font-size: 0.58rem; color: #94a3b8; font-weight: 700; font-family: monospace; letter-spacing: -0.2px;">${uid}</div>
                     </div>
-                    <div style="display: flex; flex-direction: column; gap: 2px; align-items: flex-start; border-left: 2px solid #f1f5f9; padding-left: 12px; height: 100%; justify-content: center;">
-                        <div style="font-size: 0.7rem; font-weight: 800; color: #0f172a; line-height: 1;">স্ক্যান করে যাচাই করুন</div>
-                        <div style="font-size: 0.62rem; color: #2563eb; font-weight: 700; margin-bottom: 2px; text-transform: lowercase;">${window.location.hostname}</div>
-                        <div style="margin-top: 4px; background: #f8fafc; padding: 2px 6px; border-radius: 4px; border: 1px dashed #cbd5e1; font-size: 0.65rem; color: #1e293b; font-weight: 700;">ID No. ${uid}</div>
+                    
+                    <!-- Vertical Info Block -->
+                    <div style="display: flex; align-items: center; height: 80px; border-left: 1px solid #f1f5f9; padding-left: 10px; writing-mode: vertical-rl; transform: rotate(180deg); gap: 6px;">
+                        <span style="font-size: 0.6rem; font-weight: 800; color: #cbd5e1; white-space: nowrap; letter-spacing: 1px;">SCAN TO VERIFY</span>
+                        <span style="font-size: 0.55rem; font-weight: 700; color: #3b82f6; white-space: nowrap; text-transform: lowercase;">${window.location.hostname}</span>
                     </div>
                 </div>`;
         })()}
