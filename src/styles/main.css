@@ -25368,7 +25368,7 @@ body.dark-mode .ms-compact-info {
   padding: 8px;
   border: 1px solid var(--msb-gray-border);
   border-radius: 12px;
-  background: #FAFBFC;
+  background: rgba(250, 251, 252, 0.6);
 }
 
 .msb-student-photo-area {
@@ -25440,7 +25440,7 @@ body.dark-mode .ms-compact-info {
   border: 1px solid var(--msb-gray-border);
   border-radius: 12px;
   padding: 8px 10px;
-  background: #FAFBFC;
+  background: rgba(250, 251, 252, 0.6);
   display: flex;
   flex-direction: column;
 }
@@ -25696,7 +25696,7 @@ body.dark-mode .ms-compact-info {
   align-items: center;
   justify-content: space-between;
   padding: 8px 16px;
-  background: #F8FAFC;
+  background: rgba(248, 250, 252, 0.6);
   border: 1px solid #BFDBFE;
   border-radius: 10px;
   margin-bottom: 10px;
@@ -25786,7 +25786,7 @@ body.dark-mode .ms-compact-info {
   border: 1px solid var(--msb-gray-border);
   border-radius: 10px;
   padding: 6px;
-  background: #fff;
+  background: rgba(255, 255, 255, 0.6);
   display: flex;
   flex-direction: column;
 }
