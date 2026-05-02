@@ -26142,9 +26142,12 @@ body.dark-mode .ms-compact-info {
   .msb-page .msb-student-card { background-color: rgba(250, 251, 252, 0.5) !important; border-color: var(--msb-gray-border) !important; }
   .msb-page .msb-photo-placeholder { background-color: rgba(239, 246, 255, 0.5) !important; border-color: var(--msb-gray-border) !important; }
   
-  .msb-page .msb-box-pass { background-color: #F0FDF4 !important; border-color: #86EFAC !important; }
-  .msb-page .msb-box-fail { background-color: #FEF2F2 !important; border-color: #FECACA !important; }
+  .msb-page .msb-box-pass { background-color: rgba(240, 253, 244, 0.8) !important; border-color: #86EFAC !important; }
+  .msb-page .msb-box-fail { background-color: rgba(254, 242, 242, 0.8) !important; border-color: #FECACA !important; }
   .msb-page .msb-sum-box { background-color: #ffffff !important; border-color: var(--msb-gray-border) !important; }
+  .msb-page .msb-tb-val-large { color: var(--msb-primary) !important; -webkit-text-fill-color: var(--msb-primary) !important; }
+  .msb-page .msb-tb-val-grade { -webkit-print-color-adjust: exact !important; }
+  .msb-page .msb-perf-fill { stroke: var(--msb-green) !important; -webkit-print-color-adjust: exact !important; }
 
   .msb-page .msb-table thead th { background-color: rgba(255, 255, 255, 0.5) !important; border-color: var(--msb-gray-border) !important; }
   .msb-page .msb-row-optional td { background-color: rgba(240, 253, 244, 0.4) !important; }
@@ -26152,7 +26155,10 @@ body.dark-mode .ms-compact-info {
   .msb-page .msb-bottom-card { background-color: rgba(255, 255, 255, 0.5) !important; }
   .msb-page .msb-mark-fail { color: #DC2626 !important; -webkit-text-fill-color: #DC2626 !important; font-weight: 800 !important; }
   
+  .msb-page .msb-total-section { background-color: rgba(248, 250, 252, 0.85) !important; border: 1px solid #BFDBFE !important; -webkit-print-color-adjust: exact !important; }
+  .msb-page .msb-bottom-card { background-color: rgba(255, 255, 255, 0.85) !important; border: 1px solid var(--msb-gray-border) !important; -webkit-print-color-adjust: exact !important; }
   .msb-page .msb-detail-row i { color: var(--msb-primary) !important; -webkit-text-fill-color: var(--msb-primary) !important; }
+  .msb-page .msb-sum-detail i, .msb-page .msb-sum-detail strong { -webkit-print-color-adjust: exact !important; }
 
   .msb-frame {
     margin: 4px;
