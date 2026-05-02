@@ -135,7 +135,6 @@ export function renderTemplateB(data) {
                         <div class="msb-opt-subject">${row.name}</div>
                     </div>
                 </td>
-                <td class="msb-td-num">${row.highestMark}</td>
                 ${tutIntEnabled && tutCount > 0 ? (() => {
                         const tAvg = row.tutorialAvg || 0;
                         const point = row.tutorialEarnedPoint || 0;
@@ -148,6 +147,7 @@ export function renderTemplateB(data) {
                             </div>
                         </td>`;
                     })() : ''}
+                <td class="msb-td-num">${row.highestMark}</td>
                 <td class="msb-td-num">${row.fullMarks}</td>
                 <td class="msb-td-num ${row.mcqFail ? 'msb-mark-fail' : ''}">${row.mcq || '-'}</td>
                 <td class="msb-td-num ${row.cqFail ? 'msb-mark-fail' : ''}">${row.cq || '-'}</td>
@@ -166,7 +166,6 @@ export function renderTemplateB(data) {
         return `<tr>
             <td class="msb-td-num">${toBnNum(idx + 1)}</td>
             <td class="msb-td-subject">${row.name}</td>
-            <td class="msb-td-num">${row.highestMark}</td>
             ${tutIntEnabled && tutCount > 0 ? (() => {
                         const tAvg = row.tutorialAvg || 0;
                         const point = row.tutorialEarnedPoint || 0;
@@ -179,6 +178,7 @@ export function renderTemplateB(data) {
                             </div>
                         </td>`;
                     })() : ''}
+            <td class="msb-td-num">${row.highestMark}</td>
             <td class="msb-td-num">${row.fullMarks}</td>
             <td class="msb-td-num ${row.mcqFail ? 'msb-mark-fail' : ''}">${row.mcq || '-'}</td>
             <td class="msb-td-num ${row.cqFail ? 'msb-mark-fail' : ''}">${row.cq || '-'}</td>
@@ -404,8 +404,8 @@ export function renderTemplateB(data) {
                         <tr>
                             <th class="msb-th-sl">ক্র.</th>
                             <th class="msb-th-subject">বিষয়ের নাম</th>
+                            ${(tutIntEnabled && tutCount > 0) ? `<th class="msb-th-num" style="width: 60px; line-height: 1.2;">টি.গড়<br><span style="font-size: 0.65rem; color: #4b5563; font-weight: 500;">(${toBnNum(tutCount)}টি)</span></th>` : ''}
                             <th class="msb-th-num">সর্বোচ্চ</th>
-                            ${(tutIntEnabled && tutCount > 0) ? '<th class="msb-th-num" style="width: 50px;">টি.গড়</th>' : ''}
                             <th class="msb-th-num">পূর্ণমান</th>
                             <th class="msb-th-num">MCQ</th>
                             <th class="msb-th-num">CQ</th>
