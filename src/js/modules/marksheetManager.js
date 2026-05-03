@@ -2010,7 +2010,11 @@ export async function renderSingleMarksheet(student, subjects, examDisplayName, 
     }
 
     // --- TEMPLATE B RENDERING BRANCH ---
-    const selectedTemplate = document.getElementById('msDesignTemplate')?.value || 'A';
+    // When rendering for ID search (public page), use the saved setting from Firestore.
+    // When rendering on the marksheet page, use the DOM dropdown.
+    const selectedTemplate = isIdSearch
+        ? (ms.idSearchTemplate || 'A')
+        : (document.getElementById('msDesignTemplate')?.value || 'A');
     if (selectedTemplate === 'B') {
         // Build subject row data for Template B
         const templateBSubjectRows = visibleSubjects.map((subjObj, idx) => {
@@ -2673,6 +2677,7 @@ async function updateSettingsLivePreview() {
         idSearchShowQRCode: document.getElementById('msIdSearchShowQRCode') ? document.getElementById('msIdSearchShowQRCode').checked : true,
         idSearchShowComments: document.getElementById('msIdSearchShowComments') ? document.getElementById('msIdSearchShowComments').checked : true,
         idSearchStatusMode: document.querySelector('input[name="msIdSearchStatusMode"]:checked')?.value || 'full',
+        idSearchTemplate: document.getElementById('msIdSearchTemplate')?.value || 'A',
         signatures: marksheetSettings.signatures || [],
         // Include tutorial settings for live preview
         tutorialIntegrationEnabled: document.getElementById('msTutorialEnabled')?.checked,
@@ -2821,6 +2826,7 @@ function initMarksheetSettingsModal() {
             if (el('msIdSearchShowRanking')) el('msIdSearchShowRanking').checked = marksheetSettings.idSearchShowRanking !== false;
             if (el('msIdSearchShowQRCode')) el('msIdSearchShowQRCode').checked = marksheetSettings.idSearchShowQRCode !== false;
             if (el('msIdSearchShowComments')) el('msIdSearchShowComments').checked = marksheetSettings.idSearchShowComments !== false;
+            if (el('msIdSearchTemplate')) el('msIdSearchTemplate').value = marksheetSettings.idSearchTemplate || 'A';
             if (marksheetSettings.idSearchStatusMode === 'status_only') {
                 if (el('msIdSearchModeStatus')) el('msIdSearchModeStatus').checked = true;
             } else {
@@ -3069,6 +3075,7 @@ function initMarksheetSettingsModal() {
                 idSearchShowQRCode: document.getElementById('msIdSearchShowQRCode').checked,
                 idSearchShowComments: document.getElementById('msIdSearchShowComments').checked,
                 idSearchStatusMode: document.querySelector('input[name="msIdSearchStatusMode"]:checked')?.value || 'full',
+                idSearchTemplate: document.getElementById('msIdSearchTemplate')?.value || 'A',
                 footerEnabled: document.getElementById('msFooterEnabled')?.checked !== false,
                 footerPubDate: document.getElementById('msFooterPubDate')?.value.trim() || '',
                 footerDevName: document.getElementById('msFooterDevName')?.value.trim() || '',
