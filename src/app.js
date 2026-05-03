@@ -40,7 +40,7 @@ import {
     loadThemePreference, saveThemePreference, captureElementAsImage
 } from './js/dataService.js';
 import { getChartTitle } from './js/chartModule.js';
-import { getSavedExams, subscribeToSettings, getSettings, subscribeToSubjectConfigs, getSubjectConfigs, getStudentLookupMap, generateStudentDocId } from './js/firestoreService.js';
+import { getSavedExams, subscribeToSettings, getSettings, subscribeToSubjectConfigs, getSubjectConfigs, getStudentLookupMap, generateStudentDocId, waitForAuthReady } from './js/firestoreService.js';
 import { getMarksheetSettings, loadMarksheetSettings, initMarksheetManager, populateMSDropdowns, initStudentMappingUI, subscribeToMarksheetSettings } from './js/modules/marksheetManager.js';
 import { loadMarksheetRules, currentMarksheetRules, initMarksheetRulesManager, populateMarksheetSettingsDropdowns } from './js/modules/marksheetRulesManager.js';
 import { initStudentResultsManager } from './js/modules/studentResultsManager.js';
@@ -252,6 +252,11 @@ async function init() {
         if (state.onAuthUnsubscribe) state.onAuthUnsubscribe();
         if (state.onAccessReqUnsubscribe) state.onAccessReqUnsubscribe();
         if (state.onMarksheetSettingsUnsubscribe) state.onMarksheetSettingsUnsubscribe();
+
+        // ★ CRITICAL: Wait for Firebase Auth to resolve initial state BEFORE any Firestore calls.
+        // This prevents "Missing or insufficient permissions" errors on cold page loads.
+        const initialUser = await waitForAuthReady();
+        console.log('Auth ready:', initialUser ? `Logged in as ${initialUser.email}` : 'Not logged in');
 
         const theme = await loadThemePreference();
         applyTheme(theme === 'dark', elements.themeToggle);

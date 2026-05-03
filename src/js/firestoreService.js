@@ -1469,6 +1469,23 @@ export async function onAuthChange(callback) {
 }
 
 /**
+ * Wait for Firebase Auth to determine the initial auth state.
+ * Resolves with the user object (or null if not logged in).
+ * This MUST be called before any Firestore read/write to prevent
+ * "Missing or insufficient permissions" errors on page load.
+ * @returns {Promise<import('firebase/auth').User|null>}
+ */
+export async function waitForAuthReady() {
+    const { auth, onAuthStateChanged } = await getAuthInstance();
+    return new Promise((resolve) => {
+        const unsubscribe = onAuthStateChanged(auth, (user) => {
+            unsubscribe(); // Only need the first emission
+            resolve(user);
+        });
+    });
+}
+
+/**
  * Save Subject Configuration
  * @param {string} subject - Subject Name
  * @param {Object} config - Configuration object
