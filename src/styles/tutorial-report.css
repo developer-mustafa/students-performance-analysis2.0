@@ -215,7 +215,7 @@ body.dark-mode {
 .tr-header-right {
   display: flex;
   align-items: center;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: 10px;
   flex: 1;
 }
@@ -257,11 +257,11 @@ body.dark-mode {
 }
 
 .tr-qr-code {
-  width: 56px;
-  height: 56px;
+  width: 76px;
+  height: 76px;
   border: 1px solid var(--tr-border);
   border-radius: var(--tr-radius-sm);
-  padding: 2px;
+  padding: 3px;
   background: #fff;
   box-shadow: var(--tr-shadow-sm);
   flex-shrink: 0;
