@@ -720,6 +720,7 @@ async function generateSingleCard(student, className, session, currentExamName, 
     const logoUrl = tutConfigData.logoUrl || '/edtechmataprologomain.png';
     const institutionName = tutConfigData.institutionName || 'আপনার শিক্ষাপ্রতিষ্ঠান';
     const address = tutConfigData.institutionAddress || 'EIIN: ------ | স্থাপিত: ----';
+    const studentDocId = generateStudentDocId({ id: student.id, group: student.group, class: className, session: session });
     
     return `
     <div class="tut-report-page">
@@ -739,11 +740,11 @@ async function generateSingleCard(student, className, session, currentExamName, 
             </div>
             
             <div class="tr-header-right">
-                <div class="tr-student-info">
-                    <div class="tr-student-info-item" style="grid-column: 1 / -1; margin-bottom: 2px;">
+                <div class="tr-student-info" style="grid-template-columns: 1fr 1fr 1fr; gap: 4px 14px; padding: 8px 14px;">
+                    <div class="tr-student-info-item" style="grid-column: 1 / -1; margin-bottom: 3px;">
                         <span class="tr-icon"><i class="fas fa-user-graduate"></i></span>
                         <span class="tr-label">নাম:</span>
-                        <span class="tr-value" style="font-size:0.7rem;">${student.name}</span>
+                        <span class="tr-value" style="font-size:0.72rem;">${student.name}</span>
                     </div>
                     <div class="tr-student-info-item">
                         <span class="tr-icon"><i class="fas fa-id-badge"></i></span>
@@ -756,14 +757,19 @@ async function generateSingleCard(student, className, session, currentExamName, 
                         <span class="tr-value">${className}</span>
                     </div>
                     <div class="tr-student-info-item">
+                        <span class="tr-icon"><i class="fas fa-fingerprint"></i></span>
+                        <span class="tr-label">ID:</span>
+                        <span class="tr-value">${studentDocId}</span>
+                    </div>
+                    <div class="tr-student-info-item">
                         <span class="tr-icon"><i class="fas fa-users"></i></span>
                         <span class="tr-label">গ্রুপ:</span>
                         <span class="tr-value">${student.group.replace(' গ্রুপ', '')}</span>
                     </div>
                     <div class="tr-student-info-item">
-                        <span class="tr-icon"><i class="fas fa-fingerprint"></i></span>
-                        <span class="tr-label">ID:</span>
-                        <span class="tr-value">${student.id}</span>
+                        <span class="tr-icon"><i class="fas fa-calendar-alt"></i></span>
+                        <span class="tr-label">সেশন:</span>
+                        <span class="tr-value">${session}</span>
                     </div>
                 </div>
                 ${qrDataUrl ? `<div class="tr-qr-code"><img src="${qrDataUrl}" alt="QR"></div>` : ''}
