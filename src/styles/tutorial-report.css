@@ -215,9 +215,9 @@ body.dark-mode {
 .tr-header-right {
   display: flex;
   align-items: center;
-  justify-content: flex-start;
-  gap: 10px;
-  flex: 1;
+  justify-content: flex-end;
+  gap: 8px;
+  flex: 1.2;
 }
 
 .tr-student-info {
@@ -257,9 +257,9 @@ body.dark-mode {
 }
 
 .tr-qr-code {
-  width: 76px;
-  height: 76px;
-  border: 1px solid var(--tr-border);
+  width: 68px;
+  height: 68px;
+  border: 1.5px solid var(--tr-border);
   border-radius: var(--tr-radius-sm);
   padding: 3px;
   background: #fff;
