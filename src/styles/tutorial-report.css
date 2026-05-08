@@ -15,22 +15,22 @@
   --tr-red: #dc2626;
   --tr-red-bg: #fef2f2;
   --tr-amber: #f59e0b;
-  --tr-amber-bg: #fffbeb;
-  --tr-bg: #F8FAFC;
+  --tr-amber-bg: #fffcf0;
+  --tr-bg: #ffffff;
   --tr-surface: #ffffff;
-  --tr-border: #E2E8F0;
-  --tr-text: #0F172A;
-  --tr-text-secondary: #64748b;
-  --tr-text-muted: #94a3b8;
-  --tr-shadow-sm: 0 1px 3px rgba(0,0,0,0.06);
-  --tr-shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-  --tr-shadow-lg: 0 8px 24px rgba(0,0,0,0.1);
+  --tr-border: #e2e8f0;
+  --tr-text: #0f172a;
+  --tr-text-secondary: #475569;
+  --tr-text-muted: #64748b;
+  --tr-shadow-sm: 0 1px 2px rgba(0,0,0,0.05);
+  --tr-shadow-md: 0 4px 6px -1px rgba(0,0,0,0.1);
+  --tr-shadow-lg: 0 10px 15px -3px rgba(0,0,0,0.1);
   --tr-radius: 8px;
   --tr-radius-sm: 5px;
   --tr-font: 'Noto Sans Bengali', 'Hind Siliguri', 'Noto Sans', sans-serif;
-  --tr-compare-bg: linear-gradient(135deg, #f8fafc 0%, #eff6ff 50%, #f0fdf4 100%);
-  --tr-compare-border: #bfdbfe;
-  --tr-table-even: rgba(248,250,252,0.5);
+  --tr-compare-bg: #ffffff;
+  --tr-compare-border: #e2e8f0;
+  --tr-table-even: #f8fafc;
   --tr-table-border: #f1f5f9;
   --tr-chip-bg-aplus: #ecfdf5;
   --tr-chip-bg-a: #eff6ff;
@@ -306,10 +306,10 @@ body.dark-mode {
   height: 3px;
 }
 
-.tr-kpi-card--primary::before { background: linear-gradient(90deg, var(--tr-primary), var(--tr-primary-light)); }
-.tr-kpi-card--green::before { background: linear-gradient(90deg, var(--tr-green), var(--tr-green-light)); }
-.tr-kpi-card--amber::before { background: linear-gradient(90deg, var(--tr-amber), #fbbf24); }
-.tr-kpi-card--red::before { background: linear-gradient(90deg, var(--tr-red), #f87171); }
+.tr-kpi-card--primary::before { background: var(--tr-primary); }
+.tr-kpi-card--green::before { background: var(--tr-green); }
+.tr-kpi-card--amber::before { background: var(--tr-amber); }
+.tr-kpi-card--red::before { background: var(--tr-red); }
 
 .tr-kpi-icon {
   width: 28px;
@@ -362,13 +362,13 @@ body.dark-mode {
 /* Comparison Highlight Card */
 .tr-kpi-compare {
   flex: 1.8;
-  background: var(--tr-compare-bg);
-  border: 1.5px solid var(--tr-compare-border);
+  background: #ffffff;
+  border: 1px solid var(--tr-border);
   padding: 6px 10px;
 }
 
 .tr-kpi-compare::before {
-  background: linear-gradient(90deg, var(--tr-primary), var(--tr-green));
+  background: var(--tr-primary);
   height: 3px;
 }
 
@@ -386,14 +386,14 @@ body.dark-mode {
   border-radius: var(--tr-radius-sm);
 }
 
-/* Previous month block - RED tint */
+/* Previous month block - subtle solid */
 .tr-compare-side--prev {
-  background: rgba(220,38,38,0.06);
-  border: 1.5px solid rgba(220,38,38,0.2);
+  background: #fdf2f2;
+  border: 1px solid #fee2e2;
 }
 
 .tr-compare-side--prev .tr-compare-month {
-  color: #dc2626;
+  color: #b91c1c;
   font-weight: 800;
 }
 
@@ -401,11 +401,10 @@ body.dark-mode {
   color: #dc2626;
 }
 
-/* Current month block - GREEN tint */
+/* Current month block - subtle solid */
 .tr-compare-side--current {
-  background: rgba(22,163,74,0.08);
-  border: 1.5px solid rgba(22,163,74,0.25);
-  box-shadow: 0 0 12px rgba(22,163,74,0.08);
+  background: #f0fdf4;
+  border: 1px solid #dcfce7;
 }
 
 .tr-compare-side--current .tr-compare-month {
@@ -414,7 +413,7 @@ body.dark-mode {
 }
 
 .tr-compare-side--current .tr-compare-pct {
-  color: #15803d;
+  color: #16a34a;
 }
 
 .tr-compare-month {
@@ -600,20 +599,21 @@ body.dark-mode {
   word-break: break-word;
 }
 
-/* Previous exam header - red/orange tint */
+/* Previous exam header - subtle solid */
 .tr-subject-table thead .tr-th-group {
-  background: linear-gradient(135deg, rgba(220,38,38,0.1), rgba(239,68,68,0.06));
+  background: #fef2f2;
   font-size: 0.66rem;
   font-weight: 800;
   padding: 4px 6px;
-  border-bottom: 1px solid var(--tr-border);
+  border-bottom: 1px solid #fee2e2;
   color: #dc2626;
 }
 
-/* Current exam header - green highlight */
+/* Current exam header - solid highlight */
 .tr-subject-table thead .tr-th-group.tr-col-current {
-  background: linear-gradient(135deg, rgba(22,163,74,0.15), rgba(16,185,129,0.1)) !important;
+  background: #f0fdf4 !important;
   color: #15803d;
+  border-bottom: 1px solid #dcfce7;
   font-weight: 800;
 }
 
@@ -653,13 +653,13 @@ body.dark-mode {
   border-bottom: none;
 }
 
-/* Current month highlight column - green vibe */
+/* Current month highlight column - clean */
 .tr-col-current {
-  background: rgba(22,163,74,0.08) !important;
+  background: #f9fffb !important;
 }
 
 .tr-subject-table thead th.tr-col-current {
-  background: rgba(22,163,74,0.12) !important;
+  background: #f0fdf4 !important;
   color: #15803d;
 }
 
