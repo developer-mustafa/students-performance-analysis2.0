@@ -239,7 +239,7 @@ function printTutorialReport() {
 // SVG CHART GENERATOR
 // --------------------------------------------------------------------------------------
 function generateSVGChart(months, scores, percentages) {
-    // VERTICAL Bar Chart — Clean, no ghost bars for empty months
+    // VERTICAL Bar Chart - Line connects bar-top to bar-top
     const maxScore = Math.max(...scores.filter(s => s >= 0), 10);
     const xMax = Math.ceil(maxScore / 50) * 50 || 50;
 
@@ -262,10 +262,11 @@ function generateSVGChart(months, scores, percentages) {
     // Defs
     svg += '<defs>';
     svg += '<linearGradient id="trBarGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#1e40af"/></linearGradient>';
+    svg += '<linearGradient id="trBarGradFade" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#cbd5e1"/><stop offset="100%" stop-color="#e2e8f0"/></linearGradient>';
     svg += '<filter id="trShadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="1" dy="2" stdDeviation="1.5" flood-color="#000" flood-opacity="0.08"/></filter>';
     svg += '</defs>';
 
-    // Y-axis grid lines & labels
+    // Y-axis grid lines & labels (score scale only)
     for (let i = 0; i <= 5; i++) {
         const y = padding.top + chartH - (i / 5) * chartH;
         const val = Math.round((i / 5) * xMax);
@@ -273,8 +274,8 @@ function generateSVGChart(months, scores, percentages) {
         svg += '<text x="' + (padding.left - 6) + '" y="' + (y + 4) + '" text-anchor="end" font-size="12" fill="#64748b" font-weight="700">' + val + '</text>';
     }
 
-    // First pass: draw bars (only for months WITH data)
-    const barTops = [];
+    // First pass: draw bars
+    const barTops = []; // Store bar top Y positions for line
 
     for (let idx = 0; idx < numPoints; idx++) {
         const cx = padding.left + (idx + 0.5) * spacing;
@@ -284,9 +285,9 @@ function generateSVGChart(months, scores, percentages) {
         if (score >= 0) {
             const bH = (score / xMax) * chartH;
             const bY = padding.top + chartH - bH;
-            svg += '<rect x="' + bX + '" y="' + bY + '" width="' + barW + '" height="' + bH + '" fill="url(#trBarGrad)" rx="4" filter="url(#trShadow)"/>';
+            svg += '<rect x="' + bX + '" y="' + bY + '" width="' + barW + '" height="' + bH + '" fill="url(#trBarGrad)" rx="3" filter="url(#trShadow)"/>';
 
-            // Score label INSIDE bar (white) or above
+            // Score label INSIDE bar (white)
             if (bH > 22) {
                 svg += '<text x="' + cx + '" y="' + (bY + 18) + '" text-anchor="middle" font-size="14" font-weight="800" fill="#fff">' + score + '</text>';
             } else {
@@ -295,9 +296,9 @@ function generateSVGChart(months, scores, percentages) {
 
             barTops.push({ cx: cx, bY: bY, idx: idx, pct: percentages[idx] });
         } else {
-            // NO ghost bar — just a clean "—" at baseline
-            const baseY = padding.top + chartH;
-            svg += '<text x="' + cx + '" y="' + (baseY - 6) + '" text-anchor="middle" font-size="11" fill="#cbd5e1" font-weight="600">—</text>';
+            const fadedH = chartH * 0.35;
+            const fadedY = padding.top + chartH - fadedH;
+            svg += '<rect x="' + bX + '" y="' + fadedY + '" width="' + barW + '" height="' + fadedH + '" fill="url(#trBarGradFade)" rx="3" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,3" opacity="0.5"/>';
             barTops.push(null);
         }
     }
@@ -326,7 +327,7 @@ function generateSVGChart(months, scores, percentages) {
         svg += '<path d="' + linePath + '" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linejoin="round"/>';
     }
 
-    // Third pass: draw dots at bar tops and percentage labels ABOVE dots
+    // Third pass: draw dots at bar tops and percentage labels ABOVE dots (no overlap)
     for (let i = 0; i < barTops.length; i++) {
         const pt = barTops[i];
         if (pt === null) continue;
@@ -334,19 +335,17 @@ function generateSVGChart(months, scores, percentages) {
         // Dot at bar top
         svg += '<circle cx="' + pt.cx + '" cy="' + pt.bY + '" r="5" fill="#fff" stroke="#ef4444" stroke-width="2.5"/>';
 
-        // Percentage label ABOVE the dot
+        // Percentage label ABOVE the dot (well separated from bar score inside)
         svg += '<text x="' + pt.cx + '" y="' + (pt.bY - 10) + '" text-anchor="middle" font-size="11" font-weight="800" fill="#059669">' + pt.pct.toFixed(1) + '%</text>';
     }
 
-    // Month labels at bottom
+    // Month labels at bottom - STRAIGHT, bigger font
     for (let idx = 0; idx < numPoints; idx++) {
         const month = months[idx];
         const cx = padding.left + (idx + 0.5) * spacing;
         const isActive = scores[idx] >= 0;
-        const fillColor = isActive ? '#1e293b' : '#b0b8c4';
-        const fWeight = isActive ? '800' : '500';
-        const fSize = isActive ? '14' : '12';
-        svg += '<text x="' + cx + '" y="' + (height - padding.bottom + 20) + '" text-anchor="middle" font-size="' + fSize + '" fill="' + fillColor + '" font-weight="' + fWeight + '">' + month + '</text>';
+        const fillColor = isActive ? '#1e293b' : '#94a3b8';
+        svg += '<text x="' + cx + '" y="' + (height - padding.bottom + 20) + '" text-anchor="middle" font-size="14" fill="' + fillColor + '" font-weight="' + (isActive ? '800' : '600') + '">' + month + '</text>';
     }
 
     svg += '</svg>';
@@ -356,7 +355,7 @@ function generateSVGChart(months, scores, percentages) {
     for (let i = 0; i < scores.length; i++) { if (scores[i] < 0) { hasEmpty = true; break; } }
     let noteText = '';
     if (hasEmpty) {
-        noteText = '<div style="text-align:center;font-size:0.55rem;color:#94a3b8;margin-top:2px;font-weight:500;"><i class="fas fa-info-circle" style="margin-right:3px;"></i>যে মাসে ডাটা ইনপুট না থাকায় চার্টে প্রদর্শিত হয়নি</div>';
+        noteText = '<div style="text-align:center;font-size:0.58rem;color:#64748b;margin-top:1px;"><i class="fas fa-info-circle"></i> \u09AF\u09C7 \u09AE\u09BE\u09B8\u09C7 \u09A1\u09BE\u099F\u09BE \u0987\u09A8\u09AA\u09C1\u099F \u09A8\u09BE \u09A5\u09BE\u0995\u09BE\u09AF\u09BC \u099A\u09BE\u09B0\u09CD\u099F\u09C7 \u09AA\u09CD\u09B0\u09A6\u09B0\u09CD\u09B6\u09BF\u09A4 \u09B9\u09AF\u09BC\u09A8\u09BF</div>';
     }
 
     return svg + noteText;

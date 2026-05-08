@@ -386,14 +386,14 @@ body.dark-mode {
   border-radius: var(--tr-radius-sm);
 }
 
-/* Previous month block - subtle solid */
+/* Previous month block - Clean Transparent */
 .tr-compare-side--prev {
-  background: #fdf2f2;
-  border: 1px solid #fee2e2;
+  background: transparent;
+  border: 1.5px solid #fca5a5; /* High contrast red border */
 }
 
 .tr-compare-side--prev .tr-compare-month {
-  color: #b91c1c;
+  color: #dc2626;
   font-weight: 800;
 }
 
@@ -401,14 +401,14 @@ body.dark-mode {
   color: #dc2626;
 }
 
-/* Current month block - subtle solid */
+/* Current month block - Clean Transparent */
 .tr-compare-side--current {
-  background: #f0fdf4;
-  border: 1px solid #dcfce7;
+  background: transparent;
+  border: 1.5px solid #86efac; /* High contrast green border */
 }
 
 .tr-compare-side--current .tr-compare-month {
-  color: #15803d;
+  color: #16a34a;
   font-weight: 800;
 }
 
