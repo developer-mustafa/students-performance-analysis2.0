@@ -848,8 +848,14 @@ async function generateSingleCard(student, className, session, currentExamName, 
                             <th rowspan="2" style="text-align:center;width:28px;">ক্রম</th>
                             <th rowspan="2" style="text-align:left;">বিষয়</th>
                             <th rowspan="2">সর্বোচ্চ নম্বর</th>
-                            <th colspan="2" class="tr-th-group">${shortNameMap.get(prevExamName) || 'গত মাস'}</th>
-                            <th colspan="2" class="tr-th-group tr-col-current">${shortNameMap.get(currentExamName) || 'বর্তমান মাস'}</th>
+                            <th colspan="2" class="tr-th-group">
+                                <div style="font-size:0.5rem; font-weight:600; text-transform:uppercase; margin-bottom:2px; opacity:0.8;">পূর্বের মাস</div>
+                                ${shortNameMap.get(prevExamName) || 'গত মাস'}
+                            </th>
+                            <th colspan="2" class="tr-th-group tr-col-current">
+                                <div style="font-size:0.5rem; font-weight:600; text-transform:uppercase; margin-bottom:2px; opacity:0.8;">বর্তমান মাস</div>
+                                ${shortNameMap.get(currentExamName) || 'বর্তমান মাস'}
+                            </th>
                             <th rowspan="2">উন্নতি/অবনতি</th>
                         </tr>
                         <tr>
