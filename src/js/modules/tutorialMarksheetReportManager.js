@@ -239,14 +239,13 @@ function printTutorialReport() {
 // SVG CHART GENERATOR
 // --------------------------------------------------------------------------------------
 function generateSVGChart(months, scores, percentages) {
-    // Horizontal Bar Chart: months on Y-axis, bars grow left to right
+    // VERTICAL Bar Chart — Clean, no ghost bars for empty months
     const maxScore = Math.max(...scores.filter(s => s >= 0), 10);
     const xMax = Math.ceil(maxScore / 50) * 50 || 50;
 
-    const width = 560;
-    const height = 12 * 28 + 60;
-
-    const padding = { top: 32, right: 50, bottom: 28, left: 82 };
+    const width = 960;
+    const height = 250;
+    const padding = { top: 36, right: 52, bottom: 34, left: 44 };
     const chartW = width - padding.left - padding.right;
     const chartH = height - padding.top - padding.bottom;
 
@@ -255,96 +254,109 @@ function generateSVGChart(months, scores, percentages) {
         return '<svg viewBox="0 0 ' + width + ' ' + height + '"><text x="50%" y="50%" text-anchor="middle" font-family="inherit" fill="#64748b">No data</text></svg>';
     }
 
-    const spacing = chartH / numPoints;
-    const barH = Math.min(18, spacing * 0.55);
+    const spacing = chartW / numPoints;
+    const barW = Math.min(48, spacing * 0.56);
 
-    let svg = '<svg viewBox="0 0 ' + width + ' ' + height + '" xmlns="http://www.w3.org/2000/svg" style="font-family:inherit;width:100%;height:100%;display:block;">';
+    let svg = '<svg viewBox="0 0 ' + width + ' ' + height + '" xmlns="http://www.w3.org/2000/svg" preserveAspectRatio="none" style="font-family:inherit;width:100%;height:100%;display:block;">';
 
+    // Defs
     svg += '<defs>';
-    svg += '<linearGradient id="trBarGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#1e40af"/></linearGradient>';
-    svg += '<linearGradient id="trBarGradFade" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#e2e8f0"/><stop offset="100%" stop-color="#f1f5f9"/></linearGradient>';
-    svg += '<filter id="trShadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="2" dy="1" stdDeviation="1.5" flood-color="#000" flood-opacity="0.08"/></filter>';
+    svg += '<linearGradient id="trBarGrad" x1="0" y1="1" x2="0" y2="0"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#1e40af"/></linearGradient>';
+    svg += '<filter id="trShadow" x="-10%" y="-10%" width="120%" height="130%"><feDropShadow dx="1" dy="2" stdDeviation="1.5" flood-color="#000" flood-opacity="0.08"/></filter>';
     svg += '</defs>';
 
+    // Y-axis grid lines & labels
     for (let i = 0; i <= 5; i++) {
-        const x = padding.left + (i / 5) * chartW;
+        const y = padding.top + chartH - (i / 5) * chartH;
         const val = Math.round((i / 5) * xMax);
-        const pctVal = Math.round((i / 5) * 100);
-        svg += '<line x1="' + x + '" y1="' + padding.top + '" x2="' + x + '" y2="' + (height - padding.bottom) + '" stroke="#e2e8f0" stroke-width="1"' + (i > 0 ? ' stroke-dasharray="4,4"' : '') + '/>';
-        svg += '<text x="' + x + '" y="' + (padding.top - 8) + '" text-anchor="middle" font-size="9" fill="#16a34a" font-weight="700">' + pctVal + '%</text>';
-        svg += '<text x="' + x + '" y="' + (height - padding.bottom + 16) + '" text-anchor="middle" font-size="9" fill="#64748b" font-weight="700">' + val + '</text>';
+        svg += '<line x1="' + padding.left + '" y1="' + y + '" x2="' + (width - padding.right) + '" y2="' + y + '" stroke="#e2e8f0" stroke-width="1"' + (i > 0 ? ' stroke-dasharray="4,4"' : '') + '/>';
+        svg += '<text x="' + (padding.left - 6) + '" y="' + (y + 4) + '" text-anchor="end" font-size="12" fill="#64748b" font-weight="700">' + val + '</text>';
     }
 
-    svg += '<text x="' + (padding.left + chartW / 2) + '" y="' + (padding.top - 20) + '" text-anchor="middle" font-size="10" font-weight="800" fill="#16a34a">প্রাপ্ত শতাংশ (%)</text>';
-    svg += '<text x="' + (padding.left + chartW / 2) + '" y="' + (height - padding.bottom + 26) + '" text-anchor="middle" font-size="10" font-weight="800" fill="#3b82f6">মোট নম্বর</text>';
+    // First pass: draw bars (only for months WITH data)
+    const barTops = [];
 
+    for (let idx = 0; idx < numPoints; idx++) {
+        const cx = padding.left + (idx + 0.5) * spacing;
+        const score = scores[idx];
+        const bX = cx - barW / 2;
+
+        if (score >= 0) {
+            const bH = (score / xMax) * chartH;
+            const bY = padding.top + chartH - bH;
+            svg += '<rect x="' + bX + '" y="' + bY + '" width="' + barW + '" height="' + bH + '" fill="url(#trBarGrad)" rx="4" filter="url(#trShadow)"/>';
+
+            // Score label INSIDE bar (white) or above
+            if (bH > 22) {
+                svg += '<text x="' + cx + '" y="' + (bY + 18) + '" text-anchor="middle" font-size="14" font-weight="800" fill="#fff">' + score + '</text>';
+            } else {
+                svg += '<text x="' + cx + '" y="' + (bY - 4) + '" text-anchor="middle" font-size="14" font-weight="800" fill="#1e293b">' + score + '</text>';
+            }
+
+            barTops.push({ cx: cx, bY: bY, idx: idx, pct: percentages[idx] });
+        } else {
+            // NO ghost bar — just a clean "—" at baseline
+            const baseY = padding.top + chartH;
+            svg += '<text x="' + cx + '" y="' + (baseY - 6) + '" text-anchor="middle" font-size="11" fill="#cbd5e1" font-weight="600">—</text>';
+            barTops.push(null);
+        }
+    }
+
+    // Second pass: draw trend line connecting BAR TOPS
     let linePath = '';
-    let lastActiveIdx = -1;
+    let prevPoint = null;
 
+    for (let i = 0; i < barTops.length; i++) {
+        const pt = barTops[i];
+        if (pt === null) continue;
+
+        // Connect with dashed line if there was a gap
+        if (prevPoint !== null && prevPoint.idx !== i - 1) {
+            svg += '<path d="M ' + prevPoint.cx + ' ' + prevPoint.bY + ' L ' + pt.cx + ' ' + pt.bY + '" fill="none" stroke="#f97316" stroke-width="2" stroke-dasharray="6,4" opacity="0.6"/>';
+        }
+
+        if (linePath === '') linePath += 'M ' + pt.cx + ' ' + pt.bY;
+        else linePath += ' L ' + pt.cx + ' ' + pt.bY;
+
+        prevPoint = pt;
+    }
+
+    // Draw the solid trend line
+    if (linePath !== '') {
+        svg += '<path d="' + linePath + '" fill="none" stroke="#ef4444" stroke-width="2.5" stroke-linejoin="round"/>';
+    }
+
+    // Third pass: draw dots at bar tops and percentage labels ABOVE dots
+    for (let i = 0; i < barTops.length; i++) {
+        const pt = barTops[i];
+        if (pt === null) continue;
+
+        // Dot at bar top
+        svg += '<circle cx="' + pt.cx + '" cy="' + pt.bY + '" r="5" fill="#fff" stroke="#ef4444" stroke-width="2.5"/>';
+
+        // Percentage label ABOVE the dot
+        svg += '<text x="' + pt.cx + '" y="' + (pt.bY - 10) + '" text-anchor="middle" font-size="11" font-weight="800" fill="#059669">' + pt.pct.toFixed(1) + '%</text>';
+    }
+
+    // Month labels at bottom
     for (let idx = 0; idx < numPoints; idx++) {
         const month = months[idx];
-        const cy = padding.top + (idx + 0.5) * spacing;
-        const score = scores[idx];
-        const pct = percentages[idx];
-        const bY = cy - barH / 2;
-
-        svg += '<text x="' + (padding.left - 8) + '" y="' + (cy + 4) + '" text-anchor="end" font-size="10" fill="#475569" font-weight="700">' + month + '</text>';
-
-        if (score >= 0) {
-            const bW = (score / xMax) * chartW;
-            svg += '<rect x="' + padding.left + '" y="' + bY + '" width="' + bW + '" height="' + barH + '" fill="url(#trBarGrad)" rx="3" filter="url(#trShadow)"/>';
-            var textX, anchor, clr;
-            if (bW > 30) { textX = padding.left + bW - 6; anchor = 'end'; clr = '#ffffff'; }
-            else { textX = padding.left + bW + 6; anchor = 'start'; clr = '#1e293b'; }
-            svg += '<text x="' + textX + '" y="' + (cy + 4) + '" text-anchor="' + anchor + '" font-size="10.5" font-weight="800" fill="' + clr + '">' + score + '</text>';
-
-            const lX = padding.left + (pct / 100) * chartW;
-            if (lastActiveIdx >= 0 && lastActiveIdx !== idx - 1) {
-                const prevPct = percentages[lastActiveIdx];
-                const prevLX = padding.left + (prevPct / 100) * chartW;
-                const prevCY = padding.top + (lastActiveIdx + 0.5) * spacing;
-                svg += '<path d="M ' + prevLX + ' ' + prevCY + ' L ' + lX + ' ' + cy + '" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5,5"/>';
-            }
-            if (linePath === '') linePath += 'M ' + lX + ' ' + cy + ' ';
-            else linePath += 'L ' + lX + ' ' + cy + ' ';
-            lastActiveIdx = idx;
-        } else {
-            const fadedW = chartW * 0.35;
-            svg += '<rect x="' + padding.left + '" y="' + bY + '" width="' + fadedW + '" height="' + barH + '" fill="url(#trBarGradFade)" rx="3" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,3" opacity="0.7"/>';
-        }
-    }
-
-    if (linePath !== '') {
-        svg += '<path d="' + linePath + '" fill="none" stroke="#10b981" stroke-width="2.5" filter="url(#trShadow)"/>';
-    }
-
-    for (let idx = 0; idx < numPoints; idx++) {
-        const cy = padding.top + (idx + 0.5) * spacing;
-        const score = scores[idx];
-        if (score >= 0) {
-            const pct = percentages[idx];
-            const lX = padding.left + (pct / 100) * chartW;
-            svg += '<circle cx="' + lX + '" cy="' + cy + '" r="4.5" fill="#fff" stroke="#10b981" stroke-width="2.5" filter="url(#trShadow)"/>';
-            svg += '<text x="' + (lX + 8) + '" y="' + (cy - 6) + '" text-anchor="start" font-size="9" font-weight="800" fill="#059669">' + pct.toFixed(1) + '%</text>';
-        } else {
-            const fadedLX = padding.left + 0.35 * chartW + 8;
-            svg += '<circle cx="' + fadedLX + '" cy="' + cy + '" r="3" fill="#fff" stroke="#94a3b8" stroke-width="1.5" opacity="0.6"/>';
-        }
+        const cx = padding.left + (idx + 0.5) * spacing;
+        const isActive = scores[idx] >= 0;
+        const fillColor = isActive ? '#1e293b' : '#b0b8c4';
+        const fWeight = isActive ? '800' : '500';
+        const fSize = isActive ? '14' : '12';
+        svg += '<text x="' + cx + '" y="' + (height - padding.bottom + 20) + '" text-anchor="middle" font-size="' + fSize + '" fill="' + fillColor + '" font-weight="' + fWeight + '">' + month + '</text>';
     }
 
     svg += '</svg>';
 
-    let firstEmpty = -1, lastEmpty = -1;
-    for (let i = 0; i < scores.length; i++) {
-        if (scores[i] < 0) { if (firstEmpty === -1) firstEmpty = i; lastEmpty = i; }
-    }
+    // Info note
+    let hasEmpty = false;
+    for (let i = 0; i < scores.length; i++) { if (scores[i] < 0) { hasEmpty = true; break; } }
     let noteText = '';
-    if (firstEmpty !== -1) {
-        if (firstEmpty === lastEmpty) {
-            noteText = '<div style="text-align:center;font-size:0.55rem;color:#64748b;margin-top:2px;"><i class="fas fa-info-circle"></i> ' + months[firstEmpty] + ' মাসে ডাটা ইনপুট না থাকায় চার্ট প্রদর্শিত হয়নি।</div>';
-        } else {
-            noteText = '<div style="text-align:center;font-size:0.55rem;color:#64748b;margin-top:2px;"><i class="fas fa-info-circle"></i> ' + months[firstEmpty] + ' থেকে ' + months[lastEmpty] + ' পর্যন্ত ডাটা ইনপুট না থাকায় চার্ট প্রদর্শিত হয়নি।</div>';
-        }
+    if (hasEmpty) {
+        noteText = '<div style="text-align:center;font-size:0.55rem;color:#94a3b8;margin-top:2px;font-weight:500;"><i class="fas fa-info-circle" style="margin-right:3px;"></i>যে মাসে ডাটা ইনপুট না থাকায় চার্টে প্রদর্শিত হয়নি</div>';
     }
 
     return svg + noteText;
@@ -540,10 +552,28 @@ async function generateSingleCard(student, className, session, currentExamName, 
     const grp = (rules.groupSubjects || {})[student.group] || [];
     const opt = (rules.optionalSubjects || {})[student.group] || [];
     
-    subjectList.sort((a,b) => {
-        let scoreA = gen.includes(a) ? 1 : grp.includes(a) ? 2 : opt.includes(a) ? 3 : 4;
-        let scoreB = gen.includes(b) ? 1 : grp.includes(b) ? 2 : opt.includes(b) ? 3 : 4;
-        if(scoreA !== scoreB) return scoreA - scoreB;
+    // --- Hierarchical Subject Sorting (matching main Marksheet) ---
+    subjectList.sort((a, b) => {
+        const getScore = (sub) => {
+            // 1. General Subjects (index-based priority from rules)
+            const genIdx = gen.indexOf(sub);
+            if (genIdx !== -1) return 1000 + genIdx;
+            
+            // 2. Group Subjects
+            const grpIdx = grp.indexOf(sub);
+            if (grpIdx !== -1) return 2000 + grpIdx;
+            
+            // 3. Optional Subjects (always at end)
+            const optIdx = opt.indexOf(sub);
+            if (optIdx !== -1) return 5000 + optIdx;
+            
+            // 4. Everything else
+            return 3000;
+        };
+        
+        const scoreA = getScore(a);
+        const scoreB = getScore(b);
+        if (scoreA !== scoreB) return scoreA - scoreB;
         return a.localeCompare(b, 'bn');
     });
     // Remove hidden subjects
@@ -556,7 +586,7 @@ async function generateSingleCard(student, className, session, currentExamName, 
     
     let tableRows = '';
     
-    subjectList.forEach(sub => {
+    subjectList.forEach((sub, idx) => {
         const cMark = student.currentSubs[sub] || 0;
         const maxM = student.maxMarksMap[sub] || 30;
         const pMark = student.prevSubs[sub];
@@ -590,6 +620,7 @@ async function generateSingleCard(student, className, session, currentExamName, 
         
         tableRows += `
             <tr>
+                <td style="text-align:center;font-weight:800;color:var(--tr-text-muted);">${convertToBengaliDigits(idx + 1)}</td>
                 <td>${sub}</td>
                 <td>${convertToBengaliDigits(maxM)}</td>
                 <td>${pText}</td>
@@ -788,12 +819,11 @@ async function generateSingleCard(student, className, session, currentExamName, 
         
         <!-- Main Content -->
         <div class="tr-main-content">
-            <!-- Left: Chart -->
+            <!-- Top: Chart (Full Width) -->
+            <!-- Top: Chart (Full Width) -->
+            <!-- Bottom: Chart -->
             <div class="tr-chart-section">
                 <h4 class="tr-section-title"><i class="fas fa-chart-line"></i> ১২ মাসের টিউটোরিয়াল পারফরম্যান্স ট্রেন্ড</h4>
-                <div class="tr-chart-container">
-                    ${chartSvg}
-                </div>
                 <div class="tr-chart-legend">
                     <div class="tr-chart-legend-item">
                         <div class="tr-chart-legend-dot" style="background:#3b82f6;"></div> মোট প্রাপ্ত নম্বর
@@ -802,25 +832,32 @@ async function generateSingleCard(student, className, session, currentExamName, 
                         <div class="tr-chart-legend-dot" style="background:#16a34a; border-radius:50%;"></div> প্রাপ্ত শতাংশ (%)
                     </div>
                 </div>
+                <div class="tr-chart-container">
+                    ${chartSvg}
+                </div>
+                
             </div>
             
-            <!-- Right: Table -->
+            <!-- Bottom: Table (Full Width) -->
+            <!-- Bottom: Table (Full Width) -->
+            <!-- Top: Table -->
             <div class="tr-table-section">
                 <h4 class="tr-section-title"><i class="fas fa-tasks"></i> বিষয়ভিত্তিক পারফরম্যান্স তুলনা</h4>
                 <table class="tr-subject-table">
                     <thead>
                         <tr>
+                            <th rowspan="2" style="text-align:center;width:28px;">ক্রম</th>
                             <th rowspan="2" style="text-align:left;">বিষয়</th>
                             <th rowspan="2">সর্বোচ্চ নম্বর</th>
                             <th colspan="2" class="tr-th-group">${shortNameMap.get(prevExamName) || 'গত মাস'}</th>
-                            <th colspan="2" class="tr-th-group tr-col-current" style="color:var(--tr-primary);">${shortNameMap.get(currentExamName) || 'বর্তমান মাস'}</th>
+                            <th colspan="2" class="tr-th-group tr-col-current">${shortNameMap.get(currentExamName) || 'বর্তমান মাস'}</th>
                             <th rowspan="2">উন্নতি/অবনতি</th>
                         </tr>
                         <tr>
-                            <th style="font-weight:600;font-size:0.52rem;">প্রাপ্ত নম্বর</th>
-                            <th style="font-weight:600;font-size:0.52rem;">শতাংশ</th>
-                            <th class="tr-col-current" style="font-weight:600;font-size:0.52rem;">প্রাপ্ত নম্বর</th>
-                            <th class="tr-col-current" style="font-weight:600;font-size:0.52rem;">শতাংশ</th>
+                            <th style="font-weight:700;font-size:0.62rem;">প্রাপ্ত নম্বর</th>
+                            <th style="font-weight:700;font-size:0.62rem;">শতাংশ</th>
+                            <th class="tr-col-current" style="font-weight:700;font-size:0.62rem;">প্রাপ্ত নম্বর</th>
+                            <th class="tr-col-current" style="font-weight:700;font-size:0.62rem;">শতাংশ</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -828,6 +865,7 @@ async function generateSingleCard(student, className, session, currentExamName, 
                     </tbody>
                     <tfoot>
                         <tr>
+                            <td style="text-align:center;">-</td>
                             <td>মোট / গড়</td>
                             <td>${convertToBengaliDigits(totalMax)}</td>
                             <td>${prevTotalPct !== null ? convertToBengaliDigits(totalPrev) : '-'}</td>
@@ -840,7 +878,6 @@ async function generateSingleCard(student, className, session, currentExamName, 
                 </table>
             </div>
         </div>
-        
         <!-- Footer -->
         <div class="tr-footer">
             <div class="tr-grade-legend">

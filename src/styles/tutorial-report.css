@@ -386,21 +386,44 @@ body.dark-mode {
   border-radius: var(--tr-radius-sm);
 }
 
+/* Previous month block - RED tint */
 .tr-compare-side--prev {
-  background: rgba(100,116,139,0.06);
+  background: rgba(220,38,38,0.06);
+  border: 1.5px solid rgba(220,38,38,0.2);
 }
 
+.tr-compare-side--prev .tr-compare-month {
+  color: #dc2626;
+  font-weight: 800;
+}
+
+.tr-compare-side--prev .tr-compare-pct {
+  color: #dc2626;
+}
+
+/* Current month block - GREEN tint */
 .tr-compare-side--current {
-  background: linear-gradient(135deg, rgba(15,61,222,0.08), rgba(22,163,74,0.08));
-  border: 1px solid rgba(22,163,74,0.2);
+  background: rgba(22,163,74,0.08);
+  border: 1.5px solid rgba(22,163,74,0.25);
   box-shadow: 0 0 12px rgba(22,163,74,0.08);
 }
 
+.tr-compare-side--current .tr-compare-month {
+  color: #15803d;
+  font-weight: 800;
+}
+
+.tr-compare-side--current .tr-compare-pct {
+  color: #15803d;
+}
+
 .tr-compare-month {
-  font-size: 0.55rem;
-  font-weight: 700;
+  font-size: 0.6rem;
+  font-weight: 800;
   color: var(--tr-text-muted);
   margin: 0;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
 }
 
 .tr-compare-marks {
@@ -448,24 +471,24 @@ body.dark-mode {
   font-weight: 700;
 }
 
-/* ---------- MAIN CONTENT AREA ---------- */
+/* ---------- MAIN CONTENT AREA (Vertical: Table on top, Chart below) ---------- */
 .tr-main-content {
   display: flex;
-  gap: 8px;
-  margin-bottom: 6px;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 4px;
   flex: 1;
   min-height: 0;
-  align-items: stretch;
   overflow: hidden;
 }
 
-/* Left: Chart */
+/* Top: Chart (Full Width) */
 .tr-chart-section {
-  flex: 2;
+  flex: 1;
   background: var(--tr-surface);
   border: 1px solid var(--tr-border);
   border-radius: var(--tr-radius);
-  padding: 6px 8px;
+  padding: 4px 6px;
   box-shadow: var(--tr-shadow-sm);
   display: flex;
   flex-direction: column;
@@ -473,7 +496,7 @@ body.dark-mode {
 }
 
 .tr-section-title {
-  font-size: 0.68rem;
+  font-size: 0.78rem;
   font-weight: 800;
   color: var(--tr-text);
   margin: 0 0 4px;
@@ -492,18 +515,17 @@ body.dark-mode {
 
 .tr-chart-container {
   flex: 1;
-  min-height: 0;
+  min-height: 120px;
   position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  overflow-x: auto; /* horizontally scrollable if space is insufficient */
+  justify-content: stretch;
+  overflow: visible;
 }
 
 .tr-chart-container svg {
   width: 100%;
-  height: 100%;
-  min-width: 550px;
+  flex: 1;
 }
 
 .tr-chart-legend {
@@ -529,66 +551,98 @@ body.dark-mode {
   border-radius: 2px;
 }
 
-/* Right: Subject Table */
+/* Bottom: Table (Full Width) */
 .tr-table-section {
-  flex: 3;
+  flex: 1.5;
   background: var(--tr-surface);
   border: 1px solid var(--tr-border);
   border-radius: var(--tr-radius);
-  padding: 6px 8px;
+  padding: 4px 6px;
   box-shadow: var(--tr-shadow-sm);
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: auto;
+  overflow: visible;
 }
 
 .tr-subject-table {
   width: 100%;
-  height: 100%; /* Stretch table to fill section */
+  height: auto;
   border-collapse: collapse;
-  font-size: 0.65rem;
+  font-size: 0.78rem;
+  table-layout: fixed;
 }
 
 .tr-subject-table thead th {
   background: var(--tr-bg);
   color: var(--tr-text);
   font-weight: 800;
-  padding: 4px 5px;
+  padding: 4px 4px;
   text-align: center;
   border-bottom: 2px solid var(--tr-border);
-  font-size: 0.6rem;
+  font-size: 0.7rem;
   white-space: nowrap;
   position: sticky;
   top: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tr-subject-table thead th:first-child {
-  text-align: left;
-  min-width: 80px;
+  text-align: center;
+  width: 30px;
 }
 
+.tr-subject-table thead th:nth-child(2) {
+  text-align: left;
+  width: 25%;
+  white-space: normal;
+  word-break: break-word;
+}
+
+/* Previous exam header - red/orange tint */
 .tr-subject-table thead .tr-th-group {
-  background: linear-gradient(135deg, rgba(15,61,222,0.05), rgba(22,163,74,0.05));
-  font-size: 0.55rem;
-  padding: 3px 5px;
+  background: linear-gradient(135deg, rgba(220,38,38,0.1), rgba(239,68,68,0.06));
+  font-size: 0.66rem;
+  font-weight: 800;
+  padding: 4px 6px;
   border-bottom: 1px solid var(--tr-border);
+  color: #dc2626;
+}
+
+/* Current exam header - green highlight */
+.tr-subject-table thead .tr-th-group.tr-col-current {
+  background: linear-gradient(135deg, rgba(22,163,74,0.15), rgba(16,185,129,0.1)) !important;
+  color: #15803d;
+  font-weight: 800;
 }
 
 .tr-subject-table tbody td {
-  padding: 3px 5px;
+  padding: 3px 4px;
   border-bottom: 1px solid var(--tr-table-border);
   text-align: center;
   font-weight: 600;
   color: var(--tr-text);
-  font-size: 0.62rem;
+  font-size: 0.74rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .tr-subject-table tbody td:first-child {
+  text-align: center;
+  font-weight: 800;
+  color: var(--tr-text-muted);
+  font-size: 0.68rem;
+}
+
+.tr-subject-table tbody td:nth-child(2) {
   text-align: left;
   font-weight: 700;
   color: var(--tr-text);
-  font-size: 0.62rem;
+  font-size: 0.74rem;
+  white-space: normal;
+  word-break: break-word;
+  line-height: 1.3;
 }
 
 .tr-subject-table tbody tr:nth-child(even) {
@@ -599,16 +653,21 @@ body.dark-mode {
   border-bottom: none;
 }
 
-/* Current month highlight column */
+/* Current month highlight column - green vibe */
 .tr-col-current {
-  background: linear-gradient(180deg, rgba(15,61,222,0.04), rgba(22,163,74,0.04)) !important;
+  background: rgba(22,163,74,0.08) !important;
+}
+
+.tr-subject-table thead th.tr-col-current {
+  background: rgba(22,163,74,0.12) !important;
+  color: #15803d;
 }
 
 /* Total/Footer row */
 .tr-subject-table tfoot td {
   padding: 4px 5px;
   font-weight: 900;
-  font-size: 0.65rem;
+  font-size: 0.72rem;
   border-top: 2px solid var(--tr-border);
   background: var(--tr-bg);
   text-align: center;
