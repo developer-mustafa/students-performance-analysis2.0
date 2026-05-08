@@ -239,131 +239,115 @@ function printTutorialReport() {
 // SVG CHART GENERATOR
 // --------------------------------------------------------------------------------------
 function generateSVGChart(months, scores, percentages) {
-    // Horizontal Chart logic
-    const maxScore = Math.max(...scores, 10);
-    const xMax = Math.ceil(maxScore / 50) * 50; 
-    
-    // Size relative to flex layout
-    const width = 600;
-    const height = Math.max(220, months.length * 35 + 60); // Auto-height based on number of bars
-    
-    // Left padding accommodates month names
-    const padding = { top: 40, right: 40, bottom: 40, left: 90 };
+    // Horizontal Bar Chart: months on Y-axis, bars grow left to right
+    const maxScore = Math.max(...scores.filter(s => s >= 0), 10);
+    const xMax = Math.ceil(maxScore / 50) * 50 || 50;
+
+    const width = 560;
+    const height = 12 * 28 + 60;
+
+    const padding = { top: 32, right: 50, bottom: 28, left: 82 };
     const chartW = width - padding.left - padding.right;
     const chartH = height - padding.top - padding.bottom;
-    
+
     const numPoints = months.length;
-    if (numPoints === 0) return `<svg viewBox="0 0 ${width} ${height}"><text x="50%" y="50%" text-anchor="middle" font-family="inherit" fill="#64748b">No data</text></svg>`;
-    
-    const barHeight = Math.min(20, (chartH / numPoints) * 0.6);
+    if (numPoints === 0) {
+        return '<svg viewBox="0 0 ' + width + ' ' + height + '"><text x="50%" y="50%" text-anchor="middle" font-family="inherit" fill="#64748b">No data</text></svg>';
+    }
+
     const spacing = chartH / numPoints;
-    
-    let svg = `<svg viewBox="0 0 ${width} ${height}" xmlns="http://www.w3.org/2000/svg" style="font-family: inherit;">`;
-    
-    // Defs for gradients
-    svg += `<defs>
-        <linearGradient id="trBarGrad" x1="0" y1="0" x2="1" y2="0">
-            <stop offset="0%" stop-color="#3b82f6"/>
-            <stop offset="100%" stop-color="#1e40af"/>
-        </linearGradient>
-        <filter id="trShadow" x="-10%" y="-10%" width="120%" height="120%">
-            <feDropShadow dx="2" dy="2" stdDeviation="2" flood-color="#000" flood-opacity="0.1"/>
-        </filter>
-    </defs>`;
-    
-    // Grid Lines (Vertical for X-Axis)
+    const barH = Math.min(18, spacing * 0.55);
+
+    let svg = '<svg viewBox="0 0 ' + width + ' ' + height + '" xmlns="http://www.w3.org/2000/svg" style="font-family:inherit;width:100%;height:100%;display:block;">';
+
+    svg += '<defs>';
+    svg += '<linearGradient id="trBarGrad" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#3b82f6"/><stop offset="100%" stop-color="#1e40af"/></linearGradient>';
+    svg += '<linearGradient id="trBarGradFade" x1="0" y1="0" x2="1" y2="0"><stop offset="0%" stop-color="#e2e8f0"/><stop offset="100%" stop-color="#f1f5f9"/></linearGradient>';
+    svg += '<filter id="trShadow" x="-10%" y="-10%" width="120%" height="120%"><feDropShadow dx="2" dy="1" stdDeviation="1.5" flood-color="#000" flood-opacity="0.08"/></filter>';
+    svg += '</defs>';
+
     for (let i = 0; i <= 5; i++) {
         const x = padding.left + (i / 5) * chartW;
         const val = Math.round((i / 5) * xMax);
         const pctVal = Math.round((i / 5) * 100);
-        
-        // Vertical Line
-        svg += `<line x1="${x}" y1="${padding.top}" x2="${x}" y2="${height - padding.bottom}" stroke="#e2e8f0" stroke-width="1" ${i > 0 ? 'stroke-dasharray="4,4"' : ''}/>`;
-        // Top Label (Percentage)
-        svg += `<text x="${x}" y="${padding.top - 10}" text-anchor="middle" font-size="10" fill="#16a34a" font-weight="700">${pctVal}%</text>`;
-        // Bottom Label (Score)
-        svg += `<text x="${x}" y="${height - padding.bottom + 16}" text-anchor="middle" font-size="10" fill="#64748b" font-weight="700">${val}</text>`;
+        svg += '<line x1="' + x + '" y1="' + padding.top + '" x2="' + x + '" y2="' + (height - padding.bottom) + '" stroke="#e2e8f0" stroke-width="1"' + (i > 0 ? ' stroke-dasharray="4,4"' : '') + '/>';
+        svg += '<text x="' + x + '" y="' + (padding.top - 8) + '" text-anchor="middle" font-size="9" fill="#16a34a" font-weight="700">' + pctVal + '%</text>';
+        svg += '<text x="' + x + '" y="' + (height - padding.bottom + 16) + '" text-anchor="middle" font-size="9" fill="#64748b" font-weight="700">' + val + '</text>';
     }
-    
-    // Top X-Axis title
-    svg += `<text x="${padding.left + chartW/2}" y="${padding.top - 24}" text-anchor="middle" font-size="11" font-weight="800" fill="#16a34a">প্রাপ্ত শতাংশ (%)</text>`;
-    // Bottom X-Axis title
-    svg += `<text x="${padding.left + chartW/2}" y="${height - padding.bottom + 32}" text-anchor="middle" font-size="11" font-weight="800" fill="#3b82f6">মোট নম্বর</text>`;
-    
-    // Draw Bars and Line Points
+
+    svg += '<text x="' + (padding.left + chartW / 2) + '" y="' + (padding.top - 20) + '" text-anchor="middle" font-size="10" font-weight="800" fill="#16a34a">প্রাপ্ত শতাংশ (%)</text>';
+    svg += '<text x="' + (padding.left + chartW / 2) + '" y="' + (height - padding.bottom + 26) + '" text-anchor="middle" font-size="10" font-weight="800" fill="#3b82f6">মোট নম্বর</text>';
+
     let linePath = '';
-    
-    months.forEach((month, idx) => {
-        // Calculate Y position for this item (top to bottom)
+    let lastActiveIdx = -1;
+
+    for (let idx = 0; idx < numPoints; idx++) {
+        const month = months[idx];
         const cy = padding.top + (idx + 0.5) * spacing;
-        
-        // Data
         const score = scores[idx];
         const pct = percentages[idx];
-        
-        // Bar Width mapping
-        const bW = (score / xMax) * chartW;
-        
-        // Line X mapping (Percentage)
-        const lX = padding.left + (pct / 100) * chartW;
-        
-        // Y coord for bar
-        const bY = cy - barHeight / 2;
-        
-        // Y-Axis Label (Months on left)
-        const lines = month.split(' ');
-        if(lines.length > 1) {
-            svg += `<text x="${padding.left - 10}" y="${cy - 2}" text-anchor="end" font-size="9.5" fill="#475569" font-weight="700">${lines[0]}</text>`;
-            svg += `<text x="${padding.left - 10}" y="${cy + 8}" text-anchor="end" font-size="9" fill="#64748b" font-weight="600">${lines[1]}</text>`;
-        } else {
-            svg += `<text x="${padding.left - 10}" y="${cy + 3}" text-anchor="end" font-size="9.5" fill="#475569" font-weight="700">${month}</text>`;
-        }
-        
-        // Draw Bar (growing left to right)
+        const bY = cy - barH / 2;
+
+        svg += '<text x="' + (padding.left - 8) + '" y="' + (cy + 4) + '" text-anchor="end" font-size="10" fill="#475569" font-weight="700">' + month + '</text>';
+
         if (score >= 0) {
-            svg += `<rect x="${padding.left}" y="${bY}" width="${bW}" height="${barHeight}" fill="url(#trBarGrad)" rx="2" filter="url(#trShadow)"/>`;
-            // Value text at end of bar
-            const textX = bW > 25 ? padding.left + bW - 6 : padding.left + bW + 6;
-            const textAnchor = bW > 25 ? "end" : "start";
-            const textColor = bW > 25 ? "#ffffff" : "#1e293b";
-            svg += `<text x="${textX}" y="${cy + 4}" text-anchor="${textAnchor}" font-size="10.5" font-weight="800" fill="${textColor}">${score}</text>`;
-        } else {
-            // Draw gray offline bar
-            svg += `<rect x="${padding.left}" y="${bY}" width="50" height="${barHeight}" fill="#f1f5f9" rx="2" stroke="#e2e8f0" stroke-width="1"/>`;
-            svg += `<text x="${padding.left + 25}" y="${cy + 4}" text-anchor="middle" font-size="9" font-weight="700" fill="#94a3b8">No Data</text>`;
-        }
-        
-        // Build Line Path (Vertical progression)
-        if (score >= 0) {
-            if (linePath === '') {
-                linePath += `M ${lX} ${cy} `;
-            } else {
-                linePath += `L ${lX} ${cy} `;
+            const bW = (score / xMax) * chartW;
+            svg += '<rect x="' + padding.left + '" y="' + bY + '" width="' + bW + '" height="' + barH + '" fill="url(#trBarGrad)" rx="3" filter="url(#trShadow)"/>';
+            var textX, anchor, clr;
+            if (bW > 30) { textX = padding.left + bW - 6; anchor = 'end'; clr = '#ffffff'; }
+            else { textX = padding.left + bW + 6; anchor = 'start'; clr = '#1e293b'; }
+            svg += '<text x="' + textX + '" y="' + (cy + 4) + '" text-anchor="' + anchor + '" font-size="10.5" font-weight="800" fill="' + clr + '">' + score + '</text>';
+
+            const lX = padding.left + (pct / 100) * chartW;
+            if (lastActiveIdx >= 0 && lastActiveIdx !== idx - 1) {
+                const prevPct = percentages[lastActiveIdx];
+                const prevLX = padding.left + (prevPct / 100) * chartW;
+                const prevCY = padding.top + (lastActiveIdx + 0.5) * spacing;
+                svg += '<path d="M ' + prevLX + ' ' + prevCY + ' L ' + lX + ' ' + cy + '" fill="none" stroke="#cbd5e1" stroke-width="1.5" stroke-dasharray="5,5"/>';
             }
+            if (linePath === '') linePath += 'M ' + lX + ' ' + cy + ' ';
+            else linePath += 'L ' + lX + ' ' + cy + ' ';
+            lastActiveIdx = idx;
+        } else {
+            const fadedW = chartW * 0.35;
+            svg += '<rect x="' + padding.left + '" y="' + bY + '" width="' + fadedW + '" height="' + barH + '" fill="url(#trBarGradFade)" rx="3" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="4,3" opacity="0.7"/>';
         }
-    });
-    
-    // Draw Line
-    if (linePath !== '') {
-        svg += `<path d="${linePath}" fill="none" stroke="#10b981" stroke-width="2.5" filter="url(#trShadow)"/>`;
     }
-    
-    // Draw Line Points & Pct Labels
-    months.forEach((month, idx) => {
+
+    if (linePath !== '') {
+        svg += '<path d="' + linePath + '" fill="none" stroke="#10b981" stroke-width="2.5" filter="url(#trShadow)"/>';
+    }
+
+    for (let idx = 0; idx < numPoints; idx++) {
+        const cy = padding.top + (idx + 0.5) * spacing;
         const score = scores[idx];
         if (score >= 0) {
-            const cy = padding.top + (idx + 0.5) * spacing;
             const pct = percentages[idx];
             const lX = padding.left + (pct / 100) * chartW;
-            
-            svg += `<circle cx="${lX}" cy="${cy}" r="4.5" fill="#fff" stroke="#10b981" stroke-width="2.5" filter="url(#trShadow)"/>`;
-            // Value text beside line point
-            svg += `<text x="${lX + 8}" y="${cy - 6}" text-anchor="start" font-size="9" font-weight="800" fill="#059669">${pct.toFixed(1)}%</text>`;
+            svg += '<circle cx="' + lX + '" cy="' + cy + '" r="4.5" fill="#fff" stroke="#10b981" stroke-width="2.5" filter="url(#trShadow)"/>';
+            svg += '<text x="' + (lX + 8) + '" y="' + (cy - 6) + '" text-anchor="start" font-size="9" font-weight="800" fill="#059669">' + pct.toFixed(1) + '%</text>';
+        } else {
+            const fadedLX = padding.left + 0.35 * chartW + 8;
+            svg += '<circle cx="' + fadedLX + '" cy="' + cy + '" r="3" fill="#fff" stroke="#94a3b8" stroke-width="1.5" opacity="0.6"/>';
         }
-    });
-    
-    svg += `</svg>`;
-    return svg;
+    }
+
+    svg += '</svg>';
+
+    let firstEmpty = -1, lastEmpty = -1;
+    for (let i = 0; i < scores.length; i++) {
+        if (scores[i] < 0) { if (firstEmpty === -1) firstEmpty = i; lastEmpty = i; }
+    }
+    let noteText = '';
+    if (firstEmpty !== -1) {
+        if (firstEmpty === lastEmpty) {
+            noteText = '<div style="text-align:center;font-size:0.55rem;color:#64748b;margin-top:2px;"><i class="fas fa-info-circle"></i> ' + months[firstEmpty] + ' মাসে ডাটা ইনপুট না থাকায় চার্ট প্রদর্শিত হয়নি।</div>';
+        } else {
+            noteText = '<div style="text-align:center;font-size:0.55rem;color:#64748b;margin-top:2px;"><i class="fas fa-info-circle"></i> ' + months[firstEmpty] + ' থেকে ' + months[lastEmpty] + ' পর্যন্ত ডাটা ইনপুট না থাকায় চার্ট প্রদর্শিত হয়নি।</div>';
+        }
+    }
+
+    return svg + noteText;
 }
 
 // --------------------------------------------------------------------------------------
@@ -427,7 +411,7 @@ async function generateReportContent(params) {
             }
         });
         
-        const historyExamsList = [...uniqueExamsMap.keys()].slice(-12); // Last 12
+        const historyExamsList = [...uniqueExamsMap.keys()]; // Keep all for chronological order
         const targetExamIndex = historyExamsList.indexOf(ex);
         const prevExamName = targetExamIndex > 0 ? historyExamsList[targetExamIndex - 1] : null;
         
@@ -641,20 +625,56 @@ async function generateSingleCard(student, className, session, currentExamName, 
         }
     }
     
-    // Build Chart Data
-    const chartMonths = [];
-    const chartScores = [];
-    const chartPcts = [];
+    // Build Chart Data - Fixed 12 months
+    let chartMonths = [];
+    let chartScores = [];
+    let chartPcts = [];
+    
+    const standardMonths = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+    
+    const monthToHistoryMap = new Map();
+    const unmappedExams = [];
     
     historyList.forEach(hn => {
-        const hData = student.history[hn];
-        chartMonths.push(shortNameMap.get(hn) || hn);
+        let matched = false;
+        if (hn.match(/জানু/)) { monthToHistoryMap.set('জানুয়ারি', hn); matched = true; }
+        else if (hn.match(/ফেব্রু/)) { monthToHistoryMap.set('ফেব্রুয়ারি', hn); matched = true; }
+        else if (hn.match(/মার্চ/)) { monthToHistoryMap.set('মার্চ', hn); matched = true; }
+        else if (hn.match(/এপ্রিল/)) { monthToHistoryMap.set('এপ্রিল', hn); matched = true; }
+        else if (hn.match(/(^|\s)মে(\s|$)/)) { monthToHistoryMap.set('মে', hn); matched = true; }
+        else if (hn.match(/জুন/)) { monthToHistoryMap.set('জুন', hn); matched = true; }
+        else if (hn.match(/জুলাই/)) { monthToHistoryMap.set('জুলাই', hn); matched = true; }
+        else if (hn.match(/আগস্ট|অগাস্ট/)) { monthToHistoryMap.set('আগস্ট', hn); matched = true; }
+        else if (hn.match(/সেপ্টে/)) { monthToHistoryMap.set('সেপ্টেম্বর', hn); matched = true; }
+        else if (hn.match(/অক্টো/)) { monthToHistoryMap.set('অক্টোবর', hn); matched = true; }
+        else if (hn.match(/নভে/)) { monthToHistoryMap.set('নভেম্বর', hn); matched = true; }
+        else if (hn.match(/ডিসে/)) { monthToHistoryMap.set('ডিসেম্বর', hn); matched = true; }
         
-        if(hData && hData.max > 0) {
-            chartScores.push(hData.marks);
-            chartPcts.push((hData.marks / hData.max) * 100);
+        if (!matched) unmappedExams.push(hn);
+    });
+    
+    let unmappedIndex = 0;
+    standardMonths.forEach(m => {
+        if (!monthToHistoryMap.has(m) && unmappedIndex < unmappedExams.length) {
+            monthToHistoryMap.set(m, unmappedExams[unmappedIndex]);
+            unmappedIndex++;
+        }
+    });
+    
+    standardMonths.forEach(m => {
+        chartMonths.push(m);
+        const hn = monthToHistoryMap.get(m);
+        if (hn && student.history[hn]) {
+            const hData = student.history[hn];
+            if (hData.max > 0) {
+                chartScores.push(hData.marks);
+                chartPcts.push((hData.marks / hData.max) * 100);
+            } else {
+                chartScores.push(-1);
+                chartPcts.push(0);
+            }
         } else {
-            chartScores.push(-1); // -1 denotes 'No Data'
+            chartScores.push(-1);
             chartPcts.push(0);
         }
     });

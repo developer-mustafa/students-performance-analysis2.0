@@ -455,12 +455,13 @@ body.dark-mode {
   margin-bottom: 6px;
   flex: 1;
   min-height: 0;
-  align-items: flex-start; /* Sections only take the height they need */
+  align-items: stretch;
+  overflow: hidden;
 }
 
 /* Left: Chart */
 .tr-chart-section {
-  flex: 1;
+  flex: 2;
   background: var(--tr-surface);
   border: 1px solid var(--tr-border);
   border-radius: var(--tr-radius);
@@ -493,11 +494,16 @@ body.dark-mode {
   flex: 1;
   min-height: 0;
   position: relative;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  overflow-x: auto; /* horizontally scrollable if space is insufficient */
 }
 
 .tr-chart-container svg {
   width: 100%;
   height: 100%;
+  min-width: 550px;
 }
 
 .tr-chart-legend {
@@ -525,7 +531,7 @@ body.dark-mode {
 
 /* Right: Subject Table */
 .tr-table-section {
-  flex: 1.1;
+  flex: 3;
   background: var(--tr-surface);
   border: 1px solid var(--tr-border);
   border-radius: var(--tr-radius);
@@ -534,11 +540,12 @@ body.dark-mode {
   display: flex;
   flex-direction: column;
   min-height: 0;
-  overflow: hidden;
+  overflow: auto;
 }
 
 .tr-subject-table {
   width: 100%;
+  height: 100%; /* Stretch table to fill section */
   border-collapse: collapse;
   font-size: 0.65rem;
 }

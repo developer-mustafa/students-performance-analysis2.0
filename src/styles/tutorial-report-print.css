@@ -12,13 +12,16 @@
   }
 
   /* Global */
-  body.tr-printing {
+  html, body.tr-printing {
     margin: 0 !important;
     padding: 0 !important;
     background: #fff !important;
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
     color-adjust: exact !important;
+    overflow: hidden !important;
+    height: 100% !important;
+    max-height: 100% !important;
   }
 
   body.tr-printing * {
@@ -42,7 +45,8 @@
   body.tr-printing #tutorialMarksheetPage .result-entry-selectors,
   body.tr-printing .tr-preview-controls,
   body.tr-printing #tutMsEmptyState,
-  body.tr-printing .page-hidden {
+  body.tr-printing .page-hidden,
+  body.tr-printing .tr-view-settings-panel {
     display: none !important;
   }
 
@@ -68,12 +72,18 @@
     display: block !important;
     margin: 0 !important;
     padding: 0 !important;
+    overflow: hidden !important;
+    height: auto !important;
+    max-height: 100vh !important;
   }
 
   body.tr-printing #tutMsPreview {
     margin: 0 !important;
     padding: 0 !important;
     transform: none !important;
+    overflow: hidden !important;
+    height: auto !important;
+    max-height: 100vh !important;
   }
 
   /* ============================================================
@@ -97,7 +107,8 @@
     flex-direction: column !important;
     background: #fff !important;
     page-break-inside: avoid !important;
-    /* NO page-break-after — this prevents the blank 2nd page */
+    page-break-after: avoid !important;
+    break-after: avoid !important;
   }
 
   /* ---- HEADER ---- */
